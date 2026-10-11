@@ -62,6 +62,7 @@ public enum PatchFamily {
     SPOOF_SIGNATURE(FamilyNames.SPOOF_SIGNATURE, "spoofSignature",
             "Tumblr's original signature is added to the app"),
     HIDE_AD_FREE_BANNER(FamilyNames.HIDE_AD_FREE_BANNER, "hideAdFreeBanner", null, Settings.HIDE_AD_FREE_BANNER),
+    HIDE_TUMBLR_TV(FamilyNames.HIDE_TUMBLR_TV, "hideTumblrTv", null, Settings.HIDE_TUMBLR_TV),
     FIX_PUSH_NOTIFICATIONS(FamilyNames.FIX_PUSH_NOTIFICATIONS, "fixPushNotifications", null, Settings.FIX_PUSH_NOTIFICATIONS);
 
     /** The patch's name in Morphe Manager. */
@@ -110,6 +111,9 @@ public enum PatchFamily {
     /** The families the Feed page holds. The page and its home row both read this. */
     static final Set<PatchFamily> FEED_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_AD_FREE_BANNER, HIDE_ADS));
 
+    /** The families the Interface page holds. The page and its home row both read this. */
+    static final Set<PatchFamily> INTERFACE_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_TUMBLR_TV));
+
     /** The families the Privacy page holds. The page and its home row both read this. */
     static final Set<PatchFamily> PRIVACY_PAGE = Collections.unmodifiableSet(EnumSet.of(DISABLE_ANALYTICS,
             HIDE_ADVERTISING_ID, REMOVE_AD_TRACKING_PERMISSIONS, SPOOF_SIGNATURE));
@@ -120,6 +124,7 @@ public enum PatchFamily {
         ADVERTISING_ID(HIDE_ADVERTISING_ID, "advertisingId", "Hide advertising ID"),
         ANALYTICS_FLAGS(DISABLE_ANALYTICS, "analyticsFlags", "Disable analytics"),
         AD_FREE_BANNER_FLAGS(HIDE_AD_FREE_BANNER, "adFreeBannerFlags", "Hide the ad-free banner"),
+        TUMBLR_TV_FLAGS(HIDE_TUMBLR_TV, "tumblrTvFlags", "Hide Tumblr TV"),
         FIREBASE_CERTIFICATE(FIX_PUSH_NOTIFICATIONS, "firebaseCertificate", "Fix push notifications");
 
         public final PatchFamily family;

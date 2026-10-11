@@ -261,6 +261,15 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                         + "Ad-Free Browsing. Restart Tumblr to see the change."), SettingsIcons.BLOCK);
         }
 
+        // Tabs, prompts and pop-ups. Each switch here answers one of Tumblr's own feature flags,
+        // which Tumblr reads once a run, so each says a restart shows it.
+        if (!Collections.disjoint(build, PatchFamily.INTERFACE_PAGE)) {
+            PreferenceCategory ui = category(screen, L10n.t("Interface"));
+            patchToggle(ui, context, build, PatchFamily.HIDE_TUMBLR_TV, Settings.HIDE_TUMBLR_TV, L10n.t("Hide Tumblr TV"),
+                    L10n.t("Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there. "
+                        + "Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+        }
+
         if (!Collections.disjoint(build, PatchFamily.PRIVACY_PAGE)) {
             PreferenceCategory privacy = category(screen, L10n.t("Privacy"));
             // The switch covers Tumblr's own tracking flags. The manifest half was set when patching,

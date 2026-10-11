@@ -94,6 +94,7 @@ public class HushTumblrPreferenceFragmentTest {
         ROW_TITLES.put(PatchFamily.REMOVE_AD_TRACKING_PERMISSIONS, "Remove ad tracking permissions");
         ROW_TITLES.put(PatchFamily.SPOOF_SIGNATURE, "Spoof signature for Google sign-in");
         ROW_TITLES.put(PatchFamily.HIDE_AD_FREE_BANNER, "Hide the ad-free banner");
+        ROW_TITLES.put(PatchFamily.HIDE_TUMBLR_TV, "Hide Tumblr TV");
         ROW_TITLES.put(PatchFamily.FIX_PUSH_NOTIFICATIONS, "Fix push notifications");
     }
 
@@ -199,6 +200,7 @@ public class HushTumblrPreferenceFragmentTest {
                 List<String> sections = sections(page);
                 List<String> expected = new ArrayList<>();
                 if (!Collections.disjoint(build, PatchFamily.FEED_PAGE)) expected.add("Feed");
+                if (!Collections.disjoint(build, PatchFamily.INTERFACE_PAGE)) expected.add("Interface");
                 if (!Collections.disjoint(build, PatchFamily.PRIVACY_PAGE)) expected.add("Privacy");
                 expected.addAll(EVERY_BUILD);
                 // Its one switch is the page, so it comes with the patch, right after Links.

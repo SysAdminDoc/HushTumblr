@@ -215,3 +215,7 @@ Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Go
 # context: the Hide the ad-free banner switch on the Feed page.
 Hide the ad-free banner	Reklamsız gezinme banner'ını gizle
 Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.	Panoda reklamsız gezinme için ödeme yapmanı isteyen banner'ı gizler. Değişikliği görmek için Tumblr'ı yeniden başlat.
+# context: the Interface page and its Hide Tumblr TV switch. Tumblr TV is Tumblr's product name.
+Interface	Arayüz
+Hide Tumblr TV	Tumblr TV'yi gizle
+Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there. Restart Tumblr to see the change.	Tumblr TV sekmesini alt çubuktan kaldırır ve kayıt olduktan sonra seni oraya göndermesini engeller. Değişikliği görmek için Tumblr'ı yeniden başlat.

@@ -241,6 +241,7 @@ public class SettingsBackupTest {
                 Settings.HIDE_ADVERTISING_ID,
                 Settings.DISABLE_ANALYTICS,
                 Settings.HIDE_AD_FREE_BANNER,
+                Settings.HIDE_TUMBLR_TV,
                 Settings.FIX_PUSH_NOTIFICATIONS),
                 SettingsBackup.ALLOWLIST);
     }

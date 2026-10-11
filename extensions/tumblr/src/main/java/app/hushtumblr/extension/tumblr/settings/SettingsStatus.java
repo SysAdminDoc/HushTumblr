@@ -42,6 +42,8 @@ public final class SettingsStatus {
     public static boolean analyticsFlags() { return false; }
     public static boolean hideAdFreeBanner() { return false; }
     public static boolean adFreeBannerFlags() { return false; }
+    public static boolean hideTumblrTv() { return false; }
+    public static boolean tumblrTvFlags() { return false; }
     public static boolean fixPushNotifications() { return false; }
     public static boolean firebaseCertificate() { return false; }
 }

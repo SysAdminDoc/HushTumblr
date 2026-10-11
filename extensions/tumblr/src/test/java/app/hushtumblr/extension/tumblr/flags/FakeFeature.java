@@ -41,4 +41,8 @@ public enum FakeFeature {
 
     // Hide the ad-free banner
     AD_FREE_CTA_BANNER,
+
+    // Hide Tumblr TV
+    TUMBLR_TV_MOBILE_NAV,
+    TUMBLR_TV_ONBOARDING_REDIRECT,
 }

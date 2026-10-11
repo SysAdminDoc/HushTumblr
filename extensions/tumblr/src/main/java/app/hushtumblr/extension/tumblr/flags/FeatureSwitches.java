@@ -68,6 +68,10 @@ public final class FeatureSwitches {
         // The banner selling Ad-Free Browsing that Tumblr's tabbed dashboard shows.
         claim(claims, "HIDE_AD_FREE_BANNER", FamilyNames.HIDE_AD_FREE_BANNER,
                 "AD_FREE_CTA_BANNER");
+        // The Tumblr TV tab in the bottom bar (RootActivity's tab list), and the jump to Tumblr TV
+        // at the end of sign-up.
+        claim(claims, "HIDE_TUMBLR_TV", FamilyNames.HIDE_TUMBLR_TV,
+                "TUMBLR_TV_MOBILE_NAV", "TUMBLR_TV_ONBOARDING_REDIRECT");
         return Collections.unmodifiableMap(claims);
     }
 

@@ -84,6 +84,45 @@
       "options": []
     },
     {
+      "name": "Hide Tumblr TV",
+      "description": "Takes the Tumblr TV tab out of the bottom bar, and stops sign-up from sending you there. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface.",
+      "category": "Navigation",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch",
+        "HushTumblr settings"
+      ],
+      "compatiblePackages": {
+        "com.tumblr": [
+          "46.5.0.109"
+        ]
+      },
+      "compatibility": [
+        {
+          "name": "Tumblr",
+          "packageName": "com.tumblr",
+          "description": null,
+          "appIconColor": 6453,
+          "signatures": [
+            "39ac9c821ad2d605e4849f066e8aad3cca27d5e13eb03ad8755be234a2985dfd"
+          ],
+          "targets": [
+            {
+              "version": "46.5.0.109",
+              "experimental": false,
+              "versionCodes": {
+                "ARM64_V8A": 1460500109,
+                "ARMEABI_V7A": 1460500109,
+                "X86": 1460500109,
+                "X86_64": 1460500109
+              }
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
       "name": "Hide ads",
       "description": "Takes ads and paid Blaze posts out of your dashboard and other feeds, and stops Tumblr asking its ad networks for more. On by default. Turn it off in Tumblr settings > HushTumblr > Feed.",
       "category": "Ads",

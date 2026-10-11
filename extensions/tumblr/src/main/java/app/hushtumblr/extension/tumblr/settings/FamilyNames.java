@@ -34,6 +34,7 @@ public final class FamilyNames {
     public static final String REMOVE_AD_TRACKING_PERMISSIONS = "Remove ad tracking permissions";
     public static final String SPOOF_SIGNATURE = "Spoof signature for Google sign-in";
     public static final String HIDE_AD_FREE_BANNER = "Hide the ad-free banner";
+    public static final String HIDE_TUMBLR_TV = "Hide Tumblr TV";
     public static final String FIX_PUSH_NOTIFICATIONS = "Fix push notifications";
 
     private FamilyNames() {
