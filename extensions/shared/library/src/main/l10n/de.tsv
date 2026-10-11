@@ -1,0 +1,209 @@
+# German for HushTumblr: the English key, a tab, the translation. One row per string.
+# After editing, run python scripts/gen-l10n.py from the repository root.
+%1$d item in that file isn't a setting this version of HushTumblr knows, so it'll be left out.	%1$d Eintrag in dieser Datei ist keine Einstellung, die diese Version von HushTumblr kennt, und wird deshalb ausgelassen.
+%1$d items in that file aren't settings this version of HushTumblr knows, so they'll be left out.	%1$d Einträge in dieser Datei sind keine Einstellungen, die diese Version von HushTumblr kennt, und werden deshalb ausgelassen.
+%1$d switch will change.	%1$d Schalter wird geändert.
+%1$d switches will change.	%1$d Schalter werden geändert.
+%1$s. It was set when you patched, so Pause can't turn it off. To rule it out, patch again and leave out that patch.	%1$s. Das wurde beim Patchen festgelegt, deshalb kann die Pause es nicht ausschalten. Um es auszuschließen, patche erneut und lass diesen Patch weg.
+%1$s. They were set when you patched, so Pause can't turn them off. To rule one out, patch again and leave out the patch in brackets after it.	%1$s. Diese wurden beim Patchen festgelegt, deshalb kann die Pause sie nicht ausschalten. Um eines davon auszuschließen, patche erneut und lass den Patch weg, der in Klammern dahinter steht.
+A diagnostic report is already being saved.	Ein Diagnosebericht wird bereits gespeichert.
+A file named %1$s in %2$s paused HushTumblr.	Eine Datei namens %1$s in %2$s hat HushTumblr pausiert.
+About	Info
+Android 11 and older don't say which links open here. Tap to open this app's settings, then Open by default.	Android 11 und älter melden nicht, welche Links sich hier öffnen. Tippe, um die Einstellungen dieser App zu öffnen, dann auf „Standardmäßig öffnen“.
+Back	Zurück
+Cancel	Abbrechen
+Clear diagnostic data	Diagnosedaten löschen
+Copy quick report	Kurzbericht kopieren
+Couldn't import the settings, and couldn't put back the ones you had. Check the switches on this screen.	Die Einstellungen ließen sich nicht importieren, und deine vorherigen ließen sich nicht wiederherstellen. Prüfe die Schalter auf diesem Bildschirm.
+Couldn't import the settings. Nothing was changed.	Die Einstellungen ließen sich nicht importieren. Es wurde nichts geändert.
+Couldn't open that file. Nothing was changed.	Diese Datei ließ sich nicht öffnen. Es wurde nichts geändert.
+Couldn't open the file picker. Try again.	Die Dateiauswahl ließ sich nicht öffnen. Versuche es noch einmal.
+Couldn't put back the diagnostic data. Try again.	Die Diagnosedaten ließen sich nicht wiederherstellen. Versuche es noch einmal.
+Couldn't save the settings file. Try again.	Die Einstellungsdatei ließ sich nicht speichern. Versuche es noch einmal.
+Couldn't start that. Try again in a moment.	Das ließ sich nicht starten. Versuche es gleich noch einmal.
+Couldn't start the report export. Try again shortly.	Der Export des Berichts ließ sich nicht starten. Versuche es gleich noch einmal.
+Couldn't turn HushTumblr back on. Try again.	HushTumblr ließ sich nicht wieder einschalten. Versuche es noch einmal.
+Debug logging	Debug-Protokollierung
+Diagnostic data cleared. Tap again to put it back.	Diagnosedaten gelöscht. Tippe erneut, um sie wiederherzustellen.
+Diagnostic data put back.	Diagnosedaten wiederhergestellt.
+Diagnostic report copied to the clipboard.	Diagnosebericht in die Zwischenablage kopiert.
+Clears the saved log and patch check results that a report would include.	Leert das gespeicherte Protokoll und die Patch-Prüfergebnisse, die ein Bericht enthalten würde.
+Every switch but Debug logging acts as if it were off, and what was set when you patched stays in. Your settings stay as they are.	Jeder Schalter außer der Debug-Protokollierung verhält sich, als wäre er aus, und was beim Patchen festgelegt wurde, bleibt aktiv. Deine Einstellungen bleiben, wie sie sind.
+Export diagnostic report	Diagnosebericht exportieren
+Export settings	Einstellungen exportieren
+Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.	Schaltet beim nächsten Start von Tumblr jeden HushTumblr-Schalter außer der Debug-Protokollierung aus. Was du beim Patchen gewählt hast, bleibt, und deine Auswahl bleibt gespeichert.
+Links, updates, backup and more	Links, Updates, Sicherung und mehr
+Save your switches to a file. They cover all the accounts in this Tumblr app. Pause and Debug logging aren't included, and neither is the release check.	Speichert deine Schalter in einer Datei. Sie gelten für alle Konten in dieser Tumblr-App. Pause und Debug-Protokollierung sind nicht enthalten, die Suche nach neuen Versionen auch nicht.
+Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.	Einstellungen exportiert. Die App, in der die Datei liegt, ließ HushTumblr sie nicht zurücklesen, daher wurde sie nicht geprüft.
+The app holding that file is taking too long, so HushTumblr stopped waiting. Nothing was changed.	Die App, in der die Datei liegt, braucht zu lange, deshalb wartet HushTumblr nicht mehr. Es wurde nichts geändert.
+The app holding the last settings file still hasn't answered. Try again later.	Die App mit der letzten Einstellungsdatei hat noch immer nicht geantwortet. Versuche es später noch einmal.
+The app holding the settings file is taking too long, so HushTumblr stopped waiting. That app may still finish saving it, so check the file before you rely on it.	Die App, in der die Einstellungsdatei liegt, braucht zu lange, deshalb wartet HushTumblr nicht mehr. Sie kann das Speichern noch abschließen, also prüfe die Datei, bevor du dich darauf verlässt.
+The file %1$s couldn't be removed. Delete it from %2$s, then tap Resume again.	Die Datei %1$s ließ sich nicht entfernen. Lösche sie aus %2$s und tippe dann noch einmal auf Fortsetzen.
+The settings file was saved, but it doesn't read back as what was written. Save it again as a new file.	Die Einstellungsdatei wurde gespeichert, liest sich aber nicht so zurück, wie sie geschrieben wurde. Speichere sie noch einmal als neue Datei.
+Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.	Bis zum Fortsetzen verhält sich jeder Schalter außer der Debug-Protokollierung, als wäre er aus. Was beim Patchen festgelegt wurde, bleibt aktiv.
+Full report saved to %1$s	Vollständiger Bericht gespeichert unter %1$s
+GPL-3.0, with the notices of the projects this is built on	GPL-3.0, mit den Hinweisen der Projekte, auf denen es aufbaut
+HushTumblr is on	HushTumblr ist aktiv
+HushTumblr is paused	HushTumblr ist pausiert
+HushTumblr settings	HushTumblr-Einstellungen
+HushTumblr settings couldn't open	HushTumblr-Einstellungen ließen sich nicht öffnen
+Import	Importieren
+Import settings	Einstellungen importieren
+Importing settings	Einstellungen werden importiert
+Licenses	Lizenzen
+Links	Links
+OK	OK
+Pause HushTumblr	HushTumblr pausieren
+Reading the settings file	Einstellungsdatei wird gelesen
+Retry	Erneut versuchen
+Save full report	Vollständigen Bericht speichern
+# The release check: its switch and Check now row under Updates, the status card's line about a newer release, and what a failed try says.
+Check for new HushTumblr releases	Nach neuen HushTumblr-Versionen suchen
+Once a day, when Tumblr starts, checks GitHub for a newer HushTumblr and tells you at the top of these settings. Nothing is downloaded.	Prüft einmal am Tag beim Start von Tumblr auf GitHub, ob es ein neueres HushTumblr gibt, und sagt es dir oben in diesen Einstellungen. Es wird nichts heruntergeladen.
+Check now	Jetzt prüfen
+Asks GitHub for the newest release right now, even with the switch above off.	Fragt GitHub sofort nach der neuesten Version, auch wenn der Schalter darüber aus ist.
+Checking GitHub now.	GitHub wird gerade gefragt.
+HushTumblr %1$s is out. Update it in Morphe Manager.	HushTumblr %1$s ist erschienen. Aktualisiere es im Morphe Manager.
+You have the newest HushTumblr release.	Du hast die neueste Version von HushTumblr.
+The newest HushTumblr release is %1$s.	Die neueste Version von HushTumblr ist %1$s.
+Couldn't reach GitHub. Try again later.	GitHub war nicht erreichbar. Versuche es später noch einmal.
+GitHub is turning away checks from this network for now. Try again later.	GitHub weist Anfragen aus diesem Netz gerade ab. Versuche es später noch einmal.
+GitHub sent back something HushTumblr couldn't read. Try again later.	GitHub hat etwas geschickt, das HushTumblr nicht lesen konnte. Versuche es später noch einmal.
+Saving the settings file	Einstellungsdatei wird gespeichert
+Set when you patched	Beim Patchen festgelegt
+Settings couldn't open	Einstellungen ließen sich nicht öffnen
+Settings couldn't refresh completely. Reopen settings and try again.	Die Einstellungen ließen sich nicht vollständig aktualisieren. Öffne sie neu und versuche es noch einmal.
+Settings exported.	Einstellungen exportiert.
+Settings imported. %1$d switch changed.	Einstellungen importiert. %1$d Schalter wurde geändert.
+Settings imported. %1$d switches changed.	Einstellungen importiert. %1$d Schalter wurden geändert.
+Source code and issues	Quellcode und Issues
+Stays in while paused	Bleibt während der Pause aktiv
+Tap to turn it back on.	Zum Wiedereinschalten tippen.
+That file is too large to be a settings file. Nothing was changed.	Diese Datei ist zu groß für eine Einstellungsdatei. Es wurde nichts geändert.
+That file isn't readable text, so it may have been damaged on the way. Nothing was changed.	Diese Datei ist kein lesbarer Text, sie wurde also womöglich bei der Übertragung beschädigt. Es wurde nichts geändert.
+That file lists a setting twice, so there's no telling which value to use. Nothing was changed.	Diese Datei führt eine Einstellung zweimal auf, daher ist unklar, welcher Wert gilt. Es wurde nichts geändert.
+That isn't a HushTumblr settings file. Nothing was changed.	Das ist keine HushTumblr-Einstellungsdatei. Es wurde nichts geändert.
+That settings file holds a value HushTumblr can't read. Nothing was changed.	Diese Einstellungsdatei enthält einen Wert, den HushTumblr nicht lesen kann. Es wurde nichts geändert.
+That settings file is damaged or only partly downloaded. Nothing was changed.	Diese Einstellungsdatei ist beschädigt oder nur teilweise heruntergeladen. Es wurde nichts geändert.
+That settings file was written by a newer HushTumblr than this one. Nothing was changed.	Diese Einstellungsdatei stammt aus einer neueren HushTumblr-Version als dieser. Es wurde nichts geändert.
+The diagnostic report couldn't be saved yet. Try again in a moment.	Der Diagnosebericht ließ sich noch nicht speichern. Versuche es gleich noch einmal.
+The diagnostic report couldn't be saved. Try again.	Der Diagnosebericht ließ sich nicht speichern. Versuche es noch einmal.
+The file %1$s couldn't be removed. Delete it from %2$s to turn HushTumblr back on.	Die Datei %1$s ließ sich nicht entfernen. Lösche sie aus %2$s, um HushTumblr wieder einzuschalten.
+The setting couldn't finish updating. Its saved value is shown.	Die Einstellung ließ sich nicht vollständig aktualisieren. Der gespeicherte Wert wird angezeigt.
+There's no diagnostic data to clear.	Es gibt keine Diagnosedaten zum Löschen.
+There's no diagnostic data to put back.	Es gibt keine Diagnosedaten zum Wiederherstellen.
+This phone has no file picker, so there's no way to choose a file here.	Dieses Handy hat keine Dateiauswahl, hier lässt sich also keine Datei wählen.
+Version	Version
+Record patch activity and show errors for a bug report. Leave off during normal use.	Zeichnet Patch-Aktivität auf und zeigt Fehler für einen Fehlerbericht. Im Alltag ausgeschaltet lassen.
+You paused HushTumblr.	Du hast HushTumblr pausiert.
+Your switches already match that file, so nothing will change.	Deine Schalter entsprechen bereits dieser Datei, es ändert sich also nichts.
+Copy a short report to the clipboard.	Kurzen Bericht in die Zwischenablage kopieren.
+Settings imported.	Einstellungen importiert.
+No app on this phone can open the link. The address is %1$s.	Keine App auf diesem Handy kann den Link öffnen. Die Adresse ist %1$s.
+Pause, backup and diagnostics	Pause, Sicherung und Diagnose
+Updates	Updates
+Jump to a section	Zu einem Abschnitt springen
+Go straight to one group of settings. Back returns to where you were.	Direkt zu einer Gruppe von Einstellungen. Zurück bringt dich dorthin, wo du warst.
+Browse settings	Einstellungen durchsuchen
+More settings	Weitere Einstellungen
+# context: title of the last row on the settings home page; a tap opens the maintainer's Ko-fi page in a browser
+Support HushTumblr	HushTumblr unterstützen
+# context: that row's summary; Ko-fi is a tipping site's name and stays as it is
+Buy me a coffee on Ko-fi	Spendier mir einen Kaffee auf Ko-fi
+No matching settings	Keine passenden Einstellungen
+%1$d setting found	%1$d Einstellung gefunden
+%1$d settings found	%1$d Einstellungen gefunden
+Try a different word or clear the search.	Versuch ein anderes Wort oder lösche die Suche.
+Search settings	Einstellungen suchen
+Clear search	Suche löschen
+Your switches are working.	Deine Schalter sind aktiv.
+Pause	Pausieren
+Resume	Fortsetzen
+Undo	Rückgängig
+
+# context: Links section, the Supported links row. It reads Android's own per-app selection of Tumblr's web addresses (Android 12 and later) and opens Android's Open by default page for this app. Use the phone's own names for Open supported links, Open by default and App info.
+Supported links	Unterstützte Links
+Opening supported links is off for this app in Android's settings. Tap to turn it on.	„Unterstützte Links öffnen“ ist für diese App in den Android-Einstellungen aus. Tippe, um es einzuschalten.
+Android didn't say which links open here. Tap to check in Android's settings.	Android hat nicht gemeldet, welche Links sich hier öffnen. Tippe, um in den Android-Einstellungen nachzusehen.
+Selecting links by hand	Links von Hand auswählen
+
+A change here applies after Tumblr restarts.	Eine Änderung hier gilt erst nach einem Neustart von Tumblr.
+Android verified this app for Tumblr's web addresses, so their links open here.	Android hat diese App für die Webadressen von Tumblr bestätigt, deshalb öffnen sich ihre Links hier.
+Android's settings for this app didn't open. Open App info from Tumblr's icon, then Open by default.	Die Android-Einstellungen für diese App ließen sich nicht öffnen. Öffne die App-Info über das Tumblr-Symbol, dann „Standardmäßig öffnen“.
+HushTumblr %1$s on Tumblr %2$s	HushTumblr %1$s auf Tumblr %2$s
+HushTumblr %1$s supports Tumblr %2$s.	HushTumblr %1$s unterstützt Tumblr %2$s.
+HushTumblr pauses when Tumblr restarts.	HushTumblr pausiert, sobald Tumblr neu startet.
+HushTumblr turns back on when Tumblr restarts.	HushTumblr ist wieder aktiv, sobald Tumblr neu startet.
+It supports Tumblr %1$s.	Es unterstützt Tumblr %1$s.
+None of Tumblr's web addresses are selected for this app, so their links open elsewhere. Tap to select them in Android's settings.	Keine Webadresse von Tumblr ist für diese App ausgewählt, deshalb öffnen sich ihre Links woanders. Tippe, um sie in den Android-Einstellungen auszuwählen.
+Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.	Nur einige Webadressen von Tumblr sind für diese App ausgewählt, und Links zu den übrigen öffnen sich woanders. Tippe, um sie in den Android-Einstellungen auszuwählen.
+Saved. Restart Tumblr to apply this change.	Gespeichert. Starte Tumblr neu, um diese Änderung zu übernehmen.
+# context: Immutable hook coverage shown when a patch has missing targets.
+This build doesn't include the parts that handle %1$s.	Dieser Build enthält die Teile nicht, die %1$s behandeln.
+This build handles %1$s. It's missing the parts for %2$s.	Dieser Build behandelt %1$s. Es fehlen die Teile für %2$s.
+Tumblr crashed or froze within a minute of starting three times in a row, so HushTumblr paused itself.	Tumblr ist dreimal hintereinander innerhalb einer Minute nach dem Start abgestürzt oder hängen geblieben, deshalb hat sich HushTumblr selbst pausiert.
+Tumblr's web addresses are selected for this app in Android's settings, so their links open here.	Die Webadressen von Tumblr sind in den Android-Einstellungen für diese App ausgewählt, deshalb öffnen sich ihre Links hier.
+Try again, or go back to Tumblr.	Versuche es noch einmal oder kehre zu Tumblr zurück.
+Release notes	Versionshinweise
+Read HushTumblr releases on GitHub. Nothing is downloaded here.	Lies die HushTumblr-Versionshinweise auf GitHub. Hier wird nichts heruntergeladen.
+Update instructions	Anleitung zum Aktualisieren
+Open the installation steps on GitHub.	Öffne die Installationsanleitung auf GitHub.
+Your choices are saved. Tap Resume, then restart Tumblr.	Deine Auswahl bleibt gespeichert. Tippe auf Fortsetzen und starte Tumblr dann neu.
+No HushTumblr release is out yet.	Es gibt noch keine Version von HushTumblr.
+Accounts	Konten
+Every switch here applies to all the accounts in this Tumblr app, not only the one you have open.	Jeder Schalter hier gilt für alle Konten in dieser Tumblr-App, nicht nur für das gerade geöffnete.
+Privacy	Datenschutz
+Disable analytics	Analyse deaktivieren
+Firebase and Google Analytics collection is turned off	Die Datenerfassung von Firebase und Google Analytics ist ausgeschaltet
+Hide advertising ID	Werbe-ID verbergen
+Remove ad tracking permissions	Werbe-Tracking-Berechtigungen entfernen
+Tumblr can no longer use Google's ad ID permission or Android's ad services. This was set when you patched. Patch again without it to bring them back.	Tumblr kann die Werbe-ID-Berechtigung von Google und die Werbedienste von Android nicht mehr nutzen. Das wurde beim Patchen festgelegt. Patche erneut ohne diesen Patch, um sie zurückzubekommen.
+Tumblr's access to the ad ID and Android's ad services is removed	Tumblrs Zugriff auf die Werbe-ID und die Werbedienste von Android ist entfernt
+Spoof signature for Google sign-in	Signatur für Google-Anmeldung vortäuschen
+Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.	Sagt Android, dass dies das originale Tumblr ist, damit die Google-Anmeldung mit microG-RE oder dem XSpoofSignatures-Modul funktionieren kann. Das normale Google Play Services ignoriert es. Das wurde beim Patchen festgelegt. Patche erneut ohne diesen Patch, um es zu entfernen.
+Tumblr's original signature is added to the app	Die originale Signatur von Tumblr wurde der App hinzugefügt
+%1$s (%2$s to %3$s)	%1$s (%2$s zu %3$s)
+Your choice is saved, but this build doesn't include the patch for it.	Deine Auswahl ist gespeichert, aber dieser Build enthält den Patch dafür nicht.
+Undoing import	Import wird rückgängig gemacht
+Import undone. Your earlier switches are back.	Import rückgängig gemacht. Deine früheren Schalter sind wiederhergestellt.
+Undo ended because a saved switch changed.	Rückgängig ist nicht mehr möglich, weil ein gespeicherter Schalter geändert wurde.
+There's no import to undo.	Es gibt keinen Import zum Rückgängigmachen.
+Couldn't undo the import. Your imported switches are unchanged.	Der Import konnte nicht rückgängig gemacht werden. Die importierten Schalter sind unverändert.
+Couldn't undo the import or restore the imported switches. Check the switches on this screen.	Der Import konnte weder rückgängig gemacht noch die importierten Schalter wiederhergestellt werden. Prüfe die Schalter auf diesem Bildschirm.
+Restore the switches from before the last import. Editing a switch or restarting Tumblr ends Undo.	Stellt die Schalter vor dem letzten Import wieder her. Das Ändern eines Schalters oder ein Neustart von Tumblr beendet diese Möglichkeit.
+Undo import	Import rückgängig machen
+Choose a settings file. Review each switch's name and old and new values before importing. Your choices apply to all accounts in this Tumblr app.	Wähle eine Einstellungsdatei. Prüfe vor dem Import den Namen und die alten und neuen Werte jedes Schalters. Deine Auswahl gilt für alle Konten in dieser Tumblr-App.
+On	An
+Off	Aus
+Copy a quick report or save the full one to %1$s. Links, IDs, cookies and sign-in tokens are left out. Check it for other private text before you share it.	Kopiere einen Kurzbericht oder speichere den vollständigen Bericht unter %1$s. Links, IDs, Cookies und Anmeldetokens werden ausgelassen. Prüfe ihn vor dem Teilen auf andere private Texte.
+Save the full report in %1$s.	Speichere den vollständigen Bericht unter %1$s.
+Fix push notifications	Push-Benachrichtigungen reparieren
+Setup and backup guide	Hilfe zur Einrichtung und Sicherung
+Optional help with sign-in, supported links, patch choices and backups.	Optionale Hilfe zur Anmeldung, zu unterstützten Links, zur Patch-Auswahl und zu Sicherungen.
+Installed patches and switches	Installierte Patches und Schalter
+Pick the patches in Morphe Manager when you patch the app. The switches here only control patches that are in your build. Changing a switch doesn't add or remove a patch. Pause keeps your saved choices, but anything set while patching stays in the app.	Wähle die Patches in Morphe Manager aus, wenn du die App patchst. Die Schalter hier steuern nur Patches, die in deinem Build enthalten sind. Ein Schalter fügt keinen Patch hinzu und entfernt keinen. Pause behält deine gespeicherte Auswahl, aber alles, was beim Patchen festgelegt wurde, bleibt in der App.
+Sign in to your existing account	Mit deinem bestehenden Konto anmelden
+Tumblr password help	Tumblr-Hilfe zum Passwort
+Android may not trust a patched app's links on its own. You can choose the web addresses in Android's Open by default settings.	Android vertraut den Links einer gepatchten App möglicherweise nicht von selbst. Du kannst die Webadressen in den Android-Einstellungen unter Standardmäßig öffnen auswählen.
+Open link settings	Linkeinstellungen öffnen
+Back up before changing builds	Vor dem Wechsel des Builds sichern
+An update signed with the same key keeps the app's data. A build signed with a different key can't update this one, and Android may refuse to install an older version. If an update is refused, keep the installed app and its data.	Ein Update, das mit demselben Schlüssel signiert ist, behält die Daten der App. Ein Build mit einem anderen Schlüssel kann diese App nicht aktualisieren, und Android lehnt eine ältere Version möglicherweise ab. Wird ein Update abgelehnt, behalte die installierte App und ihre Daten.
+Tumblr's data export is separate from Export settings. Tumblr's help page explains how to request your personal data from the account you're already using.	Der Datenexport von Tumblr ist unabhängig von „Einstellungen exportieren“. Die Hilfeseite von Tumblr erklärt, wie du deine persönlichen Daten für das Konto anfordern kannst, das du bereits verwendest.
+Tumblr data export help	Tumblr-Hilfe zum Datenexport
+Couldn't open the setup guide. Try again.	Die Einrichtungshilfe konnte nicht geöffnet werden. Versuche es erneut.
+# context: Tumblr's own settings, named on the HushTumblr page so the reader can find them.
+Tumblr's own settings	Tumblrs eigene Einstellungen
+Finding them	So findest du sie
+Notifications	Benachrichtigungen
+In Tumblr: %1$s	In Tumblr: %1$s
+# Rows added for HushTumblr.
+Ad tracking	Werbe-Tracking
+Android sends tumblr.com links to a patched Tumblr only after you select those addresses for it. Selecting them sends their links here. Your other link settings stay as they are.	Android schickt tumblr.com-Links nur dann an ein gepatchtes Tumblr, wenn du diese Adressen dafür auswählst. Wenn du sie auswählst, kommen ihre Links hierher. Deine anderen Link-Einstellungen bleiben, wie sie sind.
+Export settings saves HushTumblr's switches. It doesn't include your Tumblr account, posts, downloaded files or Morphe Manager's signing key. Keep the settings file and a backup of Manager's signing key somewhere you can find them.	Einstellungen exportieren sichert die Schalter von HushTumblr. Dein Tumblr-Konto, Beiträge, heruntergeladene Dateien und der Signaturschlüssel von Morphe Manager sind nicht enthalten. Bewahre die Einstellungsdatei und eine Sicherung des Signaturschlüssels von Manager an einem Ort auf, den du wiederfindest.
+Firebase crash reports and Google's analytics collection are off in Tumblr. This was set when you patched. Patch again without it to turn them back on.	Firebase-Absturzberichte und die Analysedatenerfassung von Google sind in Tumblr aus. Das wurde beim Patchen festgelegt. Patche erneut ohne diesen Patch, um sie wieder einzuschalten.
+If you joined through Google or don't know your Tumblr password, ask for a password reset on Tumblr's login screen. Enter the email already linked to that account, then use the reset link sent to your email to set a Tumblr password. It's separate from your Google password.	Wenn du dich über Google registriert hast oder dein Tumblr-Passwort nicht kennst, fordere auf dem Anmeldebildschirm von Tumblr ein neues Passwort an. Gib die E-Mail-Adresse ein, die bereits mit diesem Konto verknüpft ist. Lege dann über den Link in der E-Mail ein Tumblr-Passwort fest. Es ist unabhängig von deinem Google-Passwort.
+Lets a patched Tumblr sign up for push notifications when Google would turn it away. A change applies the next time Tumblr starts.	Lässt ein gepatchtes Tumblr sich für Push-Benachrichtigungen anmelden, wenn Google es sonst abweisen würde. Eine Änderung gilt beim nächsten Start von Tumblr.
+Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.	Öffne Tumblrs Einstellungen über das Zahnrad im Konto-Tab. HushTumblr ändert keine davon.
+Push alerts	Push-Hinweise
+Tumblr and the ad companies inside it see an empty advertising ID with ad tracking limited, as if you deleted your ad ID in Android settings.	Tumblr und die Werbefirmen darin sehen eine leere Werbe-ID mit eingeschränktem Werbe-Tracking, so als hättest du deine Werbe-ID in den Android-Einstellungen gelöscht.
+Use the email on your Tumblr account and a Tumblr password. Google sign-in may not work, because this patched app is signed with a different key. Push notifications haven't been tested.	Nutze die E-Mail-Adresse deines Tumblr-Kontos und ein Tumblr-Passwort. Die Google-Anmeldung funktioniert vielleicht nicht, weil diese gepatchte App mit einem anderen Schlüssel signiert ist. Push-Benachrichtigungen wurden nicht getestet.

@@ -1,0 +1,319 @@
+/*
+ * Forked from https://github.com/SysAdminDoc/HushPinterest at debdac4 (GPL-3.0),
+ * modified for HushTumblr (Tumblr), 2026.
+ *
+ * Forked from https://github.com/SysAdminDoc/HushTelegram at 8c54a1d (GPL-3.0),
+ * modified for HushPinterest (Pinterest), 2026.
+ *
+ * Forked from https://github.com/SysAdminDoc/HushThreads at b141524 (GPL-3.0),
+ * modified for HushTelegram (Telegram), 2026.
+ *
+ * Forked from https://github.com/SysAdminDoc/Hushfacebook at c15d4f79 (GPL-3.0),
+ * modified for HushThreads (Threads), 2026.
+ *
+ * Modified for Hushfacebook (Facebook), 2026.
+ * Copyright 2026 Hushfeed contributors
+ * https://github.com/SysAdminDoc/hushfeed
+ */
+package app.hushtumblr.extension.shared.settings;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.robolectric.Shadows.shadowOf;
+
+import android.app.ActivityManager;
+import android.app.ApplicationExitInfo;
+import android.content.Context;
+import android.os.Looper;
+
+import app.hushtumblr.extension.shared.Utils;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
+import org.robolectric.annotation.Config;
+import org.robolectric.shadows.ShadowActivityManager;
+import org.robolectric.shadows.ShadowSystemClock;
+
+import java.io.File;
+import java.util.concurrent.TimeUnit;
+
+/** Three crashed starts in a row, the marker file and the way back, for Pause HushTumblr. */
+@RunWith(RobolectricTestRunner.class)
+@Config(sdk = 30)
+public class HushTumblrPauseTest {
+    private Context context;
+    private File record;
+    private File streak;
+
+    @Before public void setUp() {
+        context = RuntimeEnvironment.getApplication();
+        Utils.setContext(context);
+        HushTumblrPause.resetForTests();
+        record = new File(context.getFilesDir(), HushTumblrPause.START_RECORD_NAME);
+        streak = new File(context.getFilesDir(), HushTumblrPause.CRASH_STREAK_NAME);
+        record.delete();
+        streak.delete();
+        File marker = HushTumblrPause.markerFile(context);
+        if (marker != null) marker.delete();
+        BaseSettings.SAFE_MODE.save(false);
+        BaseSettings.PAUSED.save(false);
+    }
+
+    @After public void tearDown() {
+        setUp();
+        HushTumblrPause.resetForTests();
+    }
+
+    /** One start that ended the way [lastRecord] says, then this start. */
+    private void start(String lastRecord) {
+        HushTumblrPause.resetForTests();
+        if (lastRecord == null) record.delete();
+        else HushTumblrPause.write(record, lastRecord);
+        HushTumblrPause.onProcessStart(context);
+    }
+
+    @Test public void threeStartsThatCrashedInTheirFirstMinuteTurnSafeModeOn() {
+        start(null);
+        assertFalse(Setting.isPaused());
+
+        start("4101 1000 crashed");
+        assertEquals("1", HushTumblrPause.read(streak));
+        start("4102 2000 crashed");
+        assertEquals("2", HushTumblrPause.read(streak));
+        assertFalse("two crashes are not yet a loop", Setting.isPaused());
+
+        start("4103 3000 crashed");
+        assertTrue("the fourth start runs in safe mode", Setting.isPaused());
+        assertEquals(HushTumblrPause.Reason.CRASH_LOOP, HushTumblrPause.reason());
+        assertTrue(BaseSettings.SAFE_MODE.savedValue());
+        assertEquals("the count starts again once safe mode is on", "0", HushTumblrPause.read(streak));
+
+        // Safe mode holds for every later start until someone turns HushTumblr back on.
+        start(null);
+        assertEquals(HushTumblrPause.Reason.CRASH_LOOP, HushTumblrPause.reason());
+    }
+
+    @Test public void aStartThatDiedWithoutACrashEndsTheStreak() {
+        start("4101 1000 crashed");
+        start("4102 2000 crashed");
+        assertEquals("2", HushTumblrPause.read(streak));
+
+        // Swiped away inside its first minute: no crash mark, and the streak is over.
+        start("4103 3000");
+        assertEquals("0", HushTumblrPause.read(streak));
+        start("4104 4000 crashed");
+        assertEquals("1", HushTumblrPause.read(streak));
+        assertFalse(Setting.isPaused());
+    }
+
+    @Test public void aStartThatRanForAMinuteClearsItsRecordAndTheStreak() {
+        start("4101 1000 crashed");
+        assertTrue("this start left its own record", record.exists());
+        shadowOf(Looper.getMainLooper()).idleFor(HushTumblrPause.START_WINDOW_MS + 1, TimeUnit.MILLISECONDS);
+        assertFalse("the record of a start that survived is gone", record.exists());
+        assertEquals("0", HushTumblrPause.read(streak));
+    }
+
+    @Test public void aCrashAndroidHoldsOpenPastTheMinuteStillCounts() {
+        start("4101 1000 crashed");
+        start("4102 2000 crashed");
+        assertEquals("2", HushTumblrPause.read(streak));
+
+        // This start crashes off the main thread, and Android holds it open behind "keeps
+        // stopping" while the main looper runs on past the minute.
+        HushTumblrPause.markCrash();
+        HushTumblrPause.crashState = () -> true;
+        shadowOf(Looper.getMainLooper()).idleFor(HushTumblrPause.START_WINDOW_MS + 1, TimeUnit.MILLISECONDS);
+        assertTrue("the minute cleared the record of a start that crashed", record.exists());
+        assertEquals("2", HushTumblrPause.read(streak));
+
+        // The next start judges the record this one left: the third crash in a row.
+        HushTumblrPause.resetForTests();
+        HushTumblrPause.onProcessStart(context);
+        assertEquals(HushTumblrPause.Reason.CRASH_LOOP, HushTumblrPause.reason());
+    }
+
+    @Test public void anExceptionAHandlerSwallowedDoesNotEndTheStart() {
+        start("4101 1000 crashed");
+        assertEquals("1", HushTumblrPause.read(streak));
+        HushTumblrPause.markCrash();
+        HushTumblrPause.crashState = () -> false;
+        shadowOf(Looper.getMainLooper()).idleFor(HushTumblrPause.START_WINDOW_MS + 1, TimeUnit.MILLISECONDS);
+        assertFalse("a start still running after the minute kept its record", record.exists());
+        assertEquals("0", HushTumblrPause.read(streak));
+    }
+
+    @Test public void onlyACrashInsideTheFirstMinuteMarksTheStart() {
+        start(null);
+        ShadowSystemClock.advanceBy(HushTumblrPause.START_WINDOW_MS - 1000, TimeUnit.MILLISECONDS);
+        HushTumblrPause.markCrash();
+        assertTrue("a crash inside the minute was not marked",
+                HushTumblrPause.read(record).trim().endsWith("crashed"));
+
+        // The clock runs past the minute before the looper gets to clear the record: a crash
+        // this late is not a start crash.
+        start(null);
+        ShadowSystemClock.advanceBy(HushTumblrPause.START_WINDOW_MS + 1000, TimeUnit.MILLISECONDS);
+        HushTumblrPause.markCrash();
+        assertTrue(record.exists());
+        assertFalse("a crash after the minute was marked",
+                HushTumblrPause.read(record).trim().endsWith("crashed"));
+    }
+
+    /** An exit Android wrote down for the pid at the wall-clock moment [at]. */
+    private void exited(int pid, int reason, long at) {
+        ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        shadowOf(manager).addApplicationExitInfo(ShadowActivityManager.ApplicationExitInfoBuilder.newBuilder()
+                .setProcessName(context.getPackageName())
+                .setPid(pid)
+                .setReason(reason)
+                .setStatus(reason == ApplicationExitInfo.REASON_CRASH ? 1 : 0)
+                .setTimestamp(at)
+                .build());
+    }
+
+    @Test @Config(sdk = 30)
+    public void android11CountsCrashesNativeCrashesAndHangsButNotBeingSwipedAway() {
+        exited(5101, ApplicationExitInfo.REASON_CRASH, 11_000);
+        exited(5102, ApplicationExitInfo.REASON_CRASH_NATIVE, 12_000);
+        exited(5103, ApplicationExitInfo.REASON_ANR, 13_000);
+        exited(5104, ApplicationExitInfo.REASON_USER_REQUESTED, 14_000);
+        exited(5105, ApplicationExitInfo.REASON_LOW_MEMORY, 15_000);
+
+        assertTrue(HushTumblrPause.diedYoungFromACrash(context, "5101 1000"));
+        assertTrue(HushTumblrPause.diedYoungFromACrash(context, "5102 1000"));
+        assertTrue(HushTumblrPause.diedYoungFromACrash(context, "5103 1000"));
+        // Android's own reason wins over the handler's mark: a force stop is not a crash.
+        assertFalse(HushTumblrPause.diedYoungFromACrash(context, "5104 1000 crashed"));
+        assertFalse(HushTumblrPause.diedYoungFromACrash(context, "5105 1000"));
+        // No reason on record for the process, so the handler's mark decides.
+        assertTrue(HushTumblrPause.diedYoungFromACrash(context, "5199 1000 crashed"));
+        assertFalse(HushTumblrPause.diedYoungFromACrash(context, "5199 1000"));
+        assertFalse(HushTumblrPause.diedYoungFromACrash(context, "not a pid"));
+    }
+
+    @Test @Config(sdk = 30)
+    public void android11ReadsTheCrashOffTheFirstRecordSinceTheStart() {
+        // Held open behind "keeps stopping": Android wrote the crash down at 30 s and the kill
+        // that ended the dialog five minutes later. The first record is the crash.
+        exited(6101, ApplicationExitInfo.REASON_CRASH, 1000 + 30_000);
+        exited(6101, ApplicationExitInfo.REASON_CRASH, 1000 + 330_000);
+        assertTrue(HushTumblrPause.diedYoungFromACrash(context, "6101 1000"));
+
+        // The device slept before the process saw a minute of uptime, so the record was still
+        // there when it crashed two minutes of wall time after its start: not a young crash.
+        exited(6102, ApplicationExitInfo.REASON_CRASH, 1000 + 120_000);
+        assertFalse(HushTumblrPause.diedYoungFromACrash(context, "6102 1000 crashed"));
+
+        // A pid handed out again: the crash on record is older than this start, so it belonged
+        // to another process, and only the handler's mark can speak for this one.
+        exited(6103, ApplicationExitInfo.REASON_CRASH, 500);
+        assertFalse(HushTumblrPause.diedYoungFromACrash(context, "6103 1000"));
+        assertTrue(HushTumblrPause.diedYoungFromACrash(context, "6103 1000 crashed"));
+    }
+
+    @Test public void theMarkerFilePausesEveryStartUntilItIsGone() throws Exception {
+        File marker = HushTumblrPause.markerFile(context);
+        assertTrue(marker.getParentFile().exists() || marker.getParentFile().mkdirs());
+        assertTrue(marker.createNewFile());
+
+        start(null);
+        assertEquals(HushTumblrPause.Reason.MARKER_FILE, HushTumblrPause.reason());
+        assertTrue(Setting.isPaused());
+
+        assertEquals("turning back on could not remove the marker", HushTumblrPause.Reason.NONE,
+                HushTumblrPause.turnBackOn(context));
+        assertFalse(marker.exists());
+        start(null);
+        assertEquals(HushTumblrPause.Reason.NONE, HushTumblrPause.reason());
+    }
+
+    @Test public void thePauseSwitchPausesTheNextStartAndTurningBackOnUndoesEverything() {
+        BaseSettings.PAUSED.save(true);
+        start(null);
+        assertEquals(HushTumblrPause.Reason.SWITCH, HushTumblrPause.reason());
+
+        BaseSettings.SAFE_MODE.save(true);
+        HushTumblrPause.write(streak, "2");
+        assertEquals(HushTumblrPause.Reason.NONE, HushTumblrPause.turnBackOn(context));
+        assertFalse(BaseSettings.PAUSED.savedValue());
+        assertFalse(BaseSettings.SAFE_MODE.savedValue());
+        assertEquals("0", HushTumblrPause.read(streak));
+        start(null);
+        assertFalse(Setting.isPaused());
+    }
+
+    /**
+     * Safe mode and the Pause switch go off together or not at all, so a failed write can't leave
+     * the next start paused by one of them after the other went. Whatever happened, the switches,
+     * the store and the next start agree.
+     */
+    @Test public void resumeTurnsBothSwitchesOffTogetherOrNeither() {
+        FailingStore.Fault[][] scripts = {
+                {FailingStore.Fault.NONE, FailingStore.Fault.COMMIT_THROWS},
+                {FailingStore.Fault.COMMIT_THROWS, FailingStore.Fault.COMMIT_THROWS},
+                {FailingStore.Fault.COMMIT_FALSE, FailingStore.Fault.LOST}};
+        for (FailingStore.Fault[] script : scripts) {
+            BaseSettings.SAFE_MODE.save(true);
+            BaseSettings.PAUSED.save(true);
+            HushTumblrPause.Reason still;
+            try (FailingStore ignored = FailingStore.install(script)) {
+                still = HushTumblrPause.turnBackOn(context);
+            }
+            String name = java.util.Arrays.toString(script);
+            assertEquals(name + " answered " + still, BaseSettings.PAUSED.savedValue(), still != HushTumblrPause.Reason.NONE);
+            assertEquals(name + " turned one switch off", BaseSettings.SAFE_MODE.savedValue(),
+                    BaseSettings.PAUSED.savedValue());
+            assertEquals(name, BaseSettings.SAFE_MODE.savedValue(), stored(BaseSettings.SAFE_MODE));
+            assertEquals(name, BaseSettings.PAUSED.savedValue(), stored(BaseSettings.PAUSED));
+            assertEquals(name, BaseSettings.PAUSED.savedValue(), HushTumblrPause.pausesNextStart(context));
+        }
+    }
+
+    /**
+     * A marker that can't be removed leaves the switches on: the pause they hold still applies
+     * once the file is gone, and nothing says it won't.
+     */
+    @Test public void aMarkerThatCanNotBeRemovedLeavesThePauseSwitchOn() throws Exception {
+        File marker = HushTumblrPause.markerFile(context);
+        File held = new File(marker, "held");
+        // A folder with something in it can't be deleted.
+        assertTrue(marker.mkdirs() && held.createNewFile());
+        try {
+            BaseSettings.PAUSED.save(true);
+            assertEquals(HushTumblrPause.Reason.MARKER_FILE, HushTumblrPause.turnBackOn(context));
+            assertTrue("the Pause switch went while the file stayed", BaseSettings.PAUSED.savedValue());
+            assertTrue(marker.exists());
+            assertTrue(HushTumblrPause.pausesNextStart(context));
+        } finally {
+            held.delete();
+            marker.delete();
+        }
+    }
+
+    private static boolean stored(BooleanSetting setting) {
+        return Setting.preferences.preferences.getBoolean(setting.key, setting.defaultValue);
+    }
+
+    @Test public void theStreakFileSurvivesNonsense() {
+        HushTumblrPause.write(streak, "not a number");
+        assertEquals(0, HushTumblrPause.parseCount(HushTumblrPause.read(streak)));
+        assertEquals(0, HushTumblrPause.parseCount("-4"));
+        assertEquals(0, HushTumblrPause.parseCount(null));
+        assertNull(HushTumblrPause.read(new File(context.getFilesDir(), "never-written")));
+    }
+
+    /** Android 10 keeps no exit reasons, so there the handler's mark alone decides. */
+    @Test @Config(sdk = 29)
+    public void android10GoesByTheHandlersMarkAlone() {
+        assertTrue(HushTumblrPause.diedYoungFromACrash(context, "5199 1000 crashed"));
+        assertFalse(HushTumblrPause.diedYoungFromACrash(context, "5199 1000"));
+        assertFalse(HushTumblrPause.diedYoungFromACrash(context, "not a pid"));
+    }
+}
