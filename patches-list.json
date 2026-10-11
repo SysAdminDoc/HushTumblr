@@ -5,6 +5,56 @@
   },
   "patches": [
     {
+      "name": "Dark background color",
+      "description": "Makes the background of Tumblr's Dark Mode palette black, which can save battery on OLED screens, or another dark color you pick when patching. Other palettes stay as they are. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface.",
+      "category": "Interface",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch",
+        "HushTumblr settings",
+        "ResourcePatch"
+      ],
+      "compatiblePackages": {
+        "com.tumblr": [
+          "46.5.0.109"
+        ]
+      },
+      "compatibility": [
+        {
+          "name": "Tumblr",
+          "packageName": "com.tumblr",
+          "description": null,
+          "appIconColor": 6453,
+          "signatures": [
+            "39ac9c821ad2d605e4849f066e8aad3cca27d5e13eb03ad8755be234a2985dfd"
+          ],
+          "targets": [
+            {
+              "version": "46.5.0.109",
+              "experimental": false,
+              "versionCodes": {
+                "ARM64_V8A": 1460500109,
+                "ARMEABI_V7A": 1460500109,
+                "X86": 1460500109,
+                "X86_64": 1460500109
+              }
+            }
+          ]
+        }
+      ],
+      "options": [
+        {
+          "key": "backgroundColor",
+          "title": "Background color",
+          "description": "The color the Dark Mode palette's background turns, as a six-digit color code (#RRGGBB), like #121212. Leave it blank for black. Cards get the same color and highlighted parts a slightly lighter one. Grays up to #3F3F3F work, and lighter colors are refused so text stays readable.",
+          "required": false,
+          "type": "kotlin.String",
+          "default": "#000000",
+          "values": null
+        }
+      ]
+    },
+    {
       "name": "Disable analytics",
       "description": "Turns off Firebase crash reports and Google's analytics collection, and Tumblr's own tracking and ad measurement once it restarts. The Firebase and Google part stays until you patch again without it. On by default. Turn it off in Tumblr settings > HushTumblr > Privacy.",
       "category": "Privacy",

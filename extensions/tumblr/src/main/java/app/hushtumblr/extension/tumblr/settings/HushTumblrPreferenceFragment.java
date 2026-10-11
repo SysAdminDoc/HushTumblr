@@ -355,6 +355,10 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             patchToggle(ui, context, build, PatchFamily.SKIP_REVIEW_PROMPTS, Settings.SKIP_REVIEW_PROMPTS,
                     L10n.t("Skip review prompts"), L10n.t("Stops the pop-up that asks what you think of the Tumblr "
                         + "app and then asks for a rating or feedback."), SettingsIcons.BLOCK);
+            // Read when a screen's theme is made (DarkBackground), so screens already open keep their colors.
+            patchToggle(ui, context, build, PatchFamily.DARK_BACKGROUND, Settings.DARK_BACKGROUND,
+                    L10n.t("Dark background color"), L10n.t("Makes the Dark Mode palette's background black, or the "
+                        + "dark color picked when patching. Restart Tumblr to see the change."), SettingsIcons.INTERFACE);
         }
 
         if (!Collections.disjoint(build, PatchFamily.PRIVACY_PAGE)) {

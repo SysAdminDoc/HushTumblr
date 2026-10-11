@@ -45,10 +45,11 @@ Each of these has to be checked against Tumblr itself before it's described as a
 
 ## Patches
 
-There are 31 patches so far, all for Tumblr 46.5.0.109. None of them has been built or tried on a phone yet.
+There are 32 patches so far, all for Tumblr 46.5.0.109. None of them has been built or tried on a phone yet.
 
 | Patch | What it does |
 |---|---|
+| `Dark background color` | Makes the background of Tumblr's Dark Mode palette black, which can save battery on OLED screens, or another dark color you pick when patching. Other palettes stay as they are. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `Disable analytics` | Turns off Firebase crash reports and Google's analytics collection, and Tumblr's own tracking and ad measurement once it restarts. The Firebase and Google part stays until you patch again without it. On by default. Turn it off in Tumblr settings > HushTumblr > Privacy. |
 | `Disable update prompts` | Stops Tumblr asking Google Play for a newer version and showing Play's update prompt. Starts off. Turn it on in Tumblr settings > HushTumblr > More settings > Updates. |
 | `Fix push notifications` | Lets the patched app sign up for push notifications. Firebase can refuse a patched Tumblr whose request doesn't name Tumblr's original signature, so this sends its fingerprint. On by default. Turn it off in Tumblr settings > HushTumblr > More settings > Notifications. |

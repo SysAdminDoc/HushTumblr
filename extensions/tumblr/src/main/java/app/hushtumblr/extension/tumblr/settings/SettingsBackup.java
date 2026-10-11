@@ -112,6 +112,7 @@ public final class SettingsBackup {
             Settings.HIDE_PHOTO_POSTS,
             Settings.HIDE_TEXT_POSTS,
             Settings.HIDE_POSTS_WITH_WORDS,
+            Settings.DARK_BACKGROUND,
             Settings.FIX_PUSH_NOTIFICATIONS));
 
     /**

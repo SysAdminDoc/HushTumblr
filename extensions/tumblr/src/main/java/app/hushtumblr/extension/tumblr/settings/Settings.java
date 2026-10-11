@@ -239,6 +239,13 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_hide_posts_with_words", FALSE);
 
     /**
+     * Tumblr's Dark palette paints its backgrounds in the color picked when patching, black unless
+     * another was picked ({@link app.hushtumblr.extension.tumblr.ui.DarkBackground}). Off to start.
+     */
+    public static final BooleanSetting DARK_BACKGROUND =
+            new BooleanSetting("hushtumblr_dark_background", FALSE);
+
+    /**
      * Once a day, when Tumblr starts, ask api.github.com whether a newer HushTumblr release is
      * out, and say so on the settings screen ({@link ReleaseCheck}). It's the settings entry's own
      * switch rather than a patch's, so every build has it ({@link PatchFamily#ENTRY_SWITCHES}). Off

@@ -284,3 +284,6 @@ Posts with any of these in their text, tags or summary are hidden. Case doesn't 
 Save	Simpan
 The list is empty. Tap to add words or phrases.	Daftarnya kosong. Ketuk untuk menambahkan kata atau frasa.
 Looks for: %1$s	Mencari: %1$s
+# context: Dark background color turns the background of Tumblr's Dark Mode palette (Settings > Appearance) black, or a dark color chosen when the app was patched. Use Tumblr's own name for the Dark Mode palette in your language.
+Dark background color	Warna latar gelap
+Makes the Dark Mode palette's background black, or the dark color picked when patching. Restart Tumblr to see the change.	Membuat latar palet Mode Gelap menjadi hitam, atau warna gelap yang dipilih saat menambal. Mulai ulang Tumblr untuk melihat perubahannya.

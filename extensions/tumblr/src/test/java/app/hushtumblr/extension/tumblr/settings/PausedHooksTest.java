@@ -47,6 +47,7 @@ import app.hushtumblr.extension.tumblr.notifications.PushNotificationsTest;
 import app.hushtumblr.extension.tumblr.privacy.AdvertisingId;
 import app.hushtumblr.extension.tumblr.timeline.TimelineItems;
 import app.hushtumblr.extension.tumblr.ui.BottomBar;
+import app.hushtumblr.extension.tumblr.ui.DarkBackgroundForTests;
 import app.hushtumblr.extension.tumblr.ui.PostFooter;
 import app.hushtumblr.extension.tumblr.ui.PostFooterForTests;
 import app.hushtumblr.extension.tumblr.ui.PostParts;
@@ -179,6 +180,8 @@ public class PausedHooksTest {
         // with the context and unpaused; paused, the list answers empty like a switch answers off.
         TextSettings.HIDDEN_WORDS.save(TimelineItems.PROBE_WORD);
         probes.put(Settings.HIDE_POSTS_WITH_WORDS, Collections.singletonList(TimelineItems::aPageLosesItsPostWithAHiddenWord));
+        // A theme on the Dark palette gets the patch's background style.
+        probes.put(Settings.DARK_BACKGROUND, Collections.singletonList(DarkBackgroundForTests::paintsATheme));
         // Firebase's sign-up for push notifications names Tumblr's own certificate.
         probes.put(Settings.FIX_PUSH_NOTIFICATIONS, Collections.singletonList(PushNotificationsTest::fixesACertificate));
         return probes;

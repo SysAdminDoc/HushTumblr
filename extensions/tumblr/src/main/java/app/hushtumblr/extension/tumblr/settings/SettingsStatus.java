@@ -89,6 +89,8 @@ public final class SettingsStatus {
     public static boolean textPosts() { return false; }
     public static boolean hidePostsWithWords() { return false; }
     public static boolean postWords() { return false; }
+    public static boolean darkBackground() { return false; }
+    public static boolean themeBackground() { return false; }
     public static boolean fixPushNotifications() { return false; }
     public static boolean firebaseCertificate() { return false; }
 }

@@ -284,3 +284,6 @@ Posts with any of these in their text, tags or summary are hidden. Case doesn't 
 Save	Speichern
 The list is empty. Tap to add words or phrases.	Die Liste ist leer. Tippe, um Wörter oder Wortgruppen hinzuzufügen.
 Looks for: %1$s	Sucht nach: %1$s
+# context: Dark background color turns the background of Tumblr's Dark Mode palette (Settings > Appearance) black, or a dark color chosen when the app was patched. Use Tumblr's own name for the Dark Mode palette in your language.
+Dark background color	Dunkle Hintergrundfarbe
+Makes the Dark Mode palette's background black, or the dark color picked when patching. Restart Tumblr to see the change.	Macht den Hintergrund der Palette Dunkelmodus schwarz oder zu der dunklen Farbe, die beim Patchen gewählt wurde. Starte Tumblr neu, um die Änderung zu sehen.

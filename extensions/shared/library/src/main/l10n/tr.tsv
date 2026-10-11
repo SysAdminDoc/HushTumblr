@@ -284,3 +284,6 @@ Posts with any of these in their text, tags or summary are hidden. Case doesn't 
 Save	Kaydet
 The list is empty. Tap to add words or phrases.	Liste boş. Kelime ya da ifade eklemek için dokun.
 Looks for: %1$s	Aranan: %1$s
+# context: Dark background color turns the background of Tumblr's Dark Mode palette (Settings > Appearance) black, or a dark color chosen when the app was patched. Use Tumblr's own name for the Dark Mode palette in your language.
+Dark background color	Koyu arka plan rengi
+Makes the Dark Mode palette's background black, or the dark color picked when patching. Restart Tumblr to see the change.	Karanlık Mod paletinin arka planını siyah ya da yama sırasında seçilen koyu renk yapar. Değişikliği görmek için Tumblr'ı yeniden başlat.

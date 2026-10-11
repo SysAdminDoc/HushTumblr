@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(518);
+        Map<String, String> table = new HashMap<>(522);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -162,6 +162,8 @@ public final class L10nTranslations {
                 "Der Import konnte weder r\u00fcckg\u00e4ngig gemacht noch die importierten Schalter wiederhergestellt werden. Pr\u00fcfe die Schalter auf diesem Bildschirm.");
         table.put("Couldn't undo the import. Your imported switches are unchanged.",
                 "Der Import konnte nicht r\u00fcckg\u00e4ngig gemacht werden. Die importierten Schalter sind unver\u00e4ndert.");
+        table.put("Dark background color",
+                "Dunkle Hintergrundfarbe");
         table.put("Debug logging",
                 "Debug-Protokollierung");
         table.put("Diagnostic data cleared. Tap again to put it back.",
@@ -178,11 +180,11 @@ public final class L10nTranslations {
                 "Jeder Schalter au\u00dfer der Debug-Protokollierung verh\u00e4lt sich, als w\u00e4re er aus, und was beim Patchen festgelegt wurde, bleibt aktiv. Deine Einstellungen bleiben, wie sie sind.");
         table.put("Every switch here applies to all the accounts in this Tumblr app, not only the one you have open.",
                 "Jeder Schalter hier gilt f\u00fcr alle Konten in dieser Tumblr-App, nicht nur f\u00fcr das gerade ge\u00f6ffnete.");
-        table.put("Export diagnostic report",
-                "Diagnosebericht exportieren");
     }
 
     private static void fillDe1(Map<String, String> table) {
+        table.put("Export diagnostic report",
+                "Diagnosebericht exportieren");
         table.put("Export settings",
                 "Einstellungen exportieren");
         table.put("Export settings saves HushTumblr's switches. It doesn't include your Tumblr account, posts, downloaded files or Morphe Manager's signing key. Keep the settings file and a backup of Manager's signing key somewhere you can find them.",
@@ -301,15 +303,17 @@ public final class L10nTranslations {
                 "L\u00e4sst ein gepatchtes Tumblr sich f\u00fcr Push-Benachrichtigungen anmelden, wenn Google es sonst abweisen w\u00fcrde. Eine \u00c4nderung gilt beim n\u00e4chsten Start von Tumblr.");
         table.put("Licenses",
                 "Lizenzen");
-        table.put("Links",
-                "Links");
     }
 
     private static void fillDe2(Map<String, String> table) {
+        table.put("Links",
+                "Links");
         table.put("Links, updates, backup and more",
                 "Links, Updates, Sicherung und mehr");
         table.put("Looks for: %1$s",
                 "Sucht nach: %1$s");
+        table.put("Makes the Dark Mode palette's background black, or the dark color picked when patching. Restart Tumblr to see the change.",
+                "Macht den Hintergrund der Palette Dunkelmodus schwarz oder zu der dunklen Farbe, die beim Patchen gew\u00e4hlt wurde. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
         table.put("More settings",
                 "Weitere Einstellungen");
         table.put("No HushTumblr release is out yet.",
@@ -422,13 +426,13 @@ public final class L10nTranslations {
                 "Bleibt w\u00e4hrend der Pause aktiv");
         table.put("Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt. Restart Tumblr to see the change.",
                 "Tumblr fragt Google Play nicht mehr nach einer neueren Version und zeigt die Update-Aufforderung von Play nicht mehr an. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
+    }
+
+    private static void fillDe3(Map<String, String> table) {
         table.put("Stops Tumblr watching for screenshots and offering to save the post as an image. Restart Tumblr to see the change.",
                 "Tumblr achtet nicht mehr auf Screenshots und bietet nicht mehr an, den Beitrag als Bild zu speichern. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
         table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
                 "Beendet Tumblrs eigenes Tracking und die Werbemessung, sobald Tumblr neu startet. Die Datenerfassung von Firebase und Google Analytics bleibt aus, bis du ohne diesen Patch neu patchst.");
-    }
-
-    private static void fillDe3(Map<String, String> table) {
         table.put("Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.",
                 "Verhindert das Pop-up, das fragt, was du von der Tumblr-App h\u00e4ltst, und dann um eine Bewertung oder Feedback bittet.");
         table.put("Support HushTumblr",
@@ -545,13 +549,13 @@ public final class L10nTranslations {
                 "Die originale Signatur von Tumblr wurde der App hinzugef\u00fcgt");
         table.put("Tumblr's own settings",
                 "Tumblrs eigene Einstellungen");
+    }
+
+    private static void fillDe4(Map<String, String> table) {
         table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
                 "Die Webadressen von Tumblr sind in den Android-Einstellungen f\u00fcr diese App ausgew\u00e4hlt, deshalb \u00f6ffnen sich ihre Links hier.");
         table.put("TumblrMart buttons",
                 "TumblrMart-Buttons");
-    }
-
-    private static void fillDe4(Map<String, String> table) {
         table.put("Turn off screenshot sharing",
                 "Screenshot-Teilen ausschalten");
         table.put("Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.",
@@ -593,7 +597,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(518);
+        Map<String, String> table = new HashMap<>(522);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -705,6 +709,8 @@ public final class L10nTranslations {
                 "No se pudo deshacer la importaci\u00f3n ni restaurar los ajustes importados. Revisa los ajustes de esta pantalla.");
         table.put("Couldn't undo the import. Your imported switches are unchanged.",
                 "No se pudo deshacer la importaci\u00f3n. Tus ajustes importados no cambiaron.");
+        table.put("Dark background color",
+                "Color de fondo oscuro");
         table.put("Debug logging",
                 "Registro de depuraci\u00f3n");
         table.put("Diagnostic data cleared. Tap again to put it back.",
@@ -721,11 +727,11 @@ public final class L10nTranslations {
                 "Todos los interruptores, salvo el Registro de depuraci\u00f3n, funcionan como si estuvieran desactivados, y lo que se aplic\u00f3 al parchear se mantiene. Tu configuraci\u00f3n no cambia.");
         table.put("Every switch here applies to all the accounts in this Tumblr app, not only the one you have open.",
                 "Cada interruptor de aqu\u00ed se aplica a todas las cuentas de esta app de Tumblr, no solo a la que tienes abierta.");
-        table.put("Export diagnostic report",
-                "Exportar informe de diagn\u00f3stico");
     }
 
     private static void fillEs1(Map<String, String> table) {
+        table.put("Export diagnostic report",
+                "Exportar informe de diagn\u00f3stico");
         table.put("Export settings",
                 "Exportar configuraci\u00f3n");
         table.put("Export settings saves HushTumblr's switches. It doesn't include your Tumblr account, posts, downloaded files or Morphe Manager's signing key. Keep the settings file and a backup of Manager's signing key somewhere you can find them.",
@@ -844,15 +850,17 @@ public final class L10nTranslations {
                 "Permite que un Tumblr parcheado se registre para recibir notificaciones push cuando Google lo rechazar\u00eda. Un cambio se aplica la pr\u00f3xima vez que Tumblr se inicie.");
         table.put("Licenses",
                 "Licencias");
-        table.put("Links",
-                "Enlaces");
     }
 
     private static void fillEs2(Map<String, String> table) {
+        table.put("Links",
+                "Enlaces");
         table.put("Links, updates, backup and more",
                 "Enlaces, actualizaciones, copia de seguridad y m\u00e1s");
         table.put("Looks for: %1$s",
                 "Busca: %1$s");
+        table.put("Makes the Dark Mode palette's background black, or the dark color picked when patching. Restart Tumblr to see the change.",
+                "Pone en negro el fondo de la paleta Modo oscuro, o en el color oscuro elegido al parchear. Reinicia Tumblr para ver el cambio.");
         table.put("More settings",
                 "M\u00e1s ajustes");
         table.put("No HushTumblr release is out yet.",
@@ -965,13 +973,13 @@ public final class L10nTranslations {
                 "Se mantiene durante la pausa");
         table.put("Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt. Restart Tumblr to see the change.",
                 "Tumblr deja de preguntar a Google Play por una versi\u00f3n m\u00e1s nueva y de mostrar el aviso de actualizaci\u00f3n de Play. Reinicia Tumblr para ver el cambio.");
+    }
+
+    private static void fillEs3(Map<String, String> table) {
         table.put("Stops Tumblr watching for screenshots and offering to save the post as an image. Restart Tumblr to see the change.",
                 "Tumblr deja de vigilar las capturas de pantalla y de ofrecer guardar la publicaci\u00f3n como imagen. Reinicia Tumblr para ver el cambio.");
         table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
                 "Detiene el seguimiento propio de Tumblr y la medici\u00f3n de anuncios cuando se reinicia. La recopilaci\u00f3n de Firebase y Google Analytics sigue desactivada hasta que vuelvas a parchear sin \u00e9l.");
-    }
-
-    private static void fillEs3(Map<String, String> table) {
         table.put("Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.",
                 "Evita la ventana emergente que pregunta qu\u00e9 opinas de la app de Tumblr y luego pide una valoraci\u00f3n o comentarios.");
         table.put("Support HushTumblr",
@@ -1088,13 +1096,13 @@ public final class L10nTranslations {
                 "La firma original de Tumblr se a\u00f1adi\u00f3 a la app");
         table.put("Tumblr's own settings",
                 "Configuraci\u00f3n propia de Tumblr");
+    }
+
+    private static void fillEs4(Map<String, String> table) {
         table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
                 "Las direcciones web de Tumblr est\u00e1n seleccionadas para esta app en los ajustes de Android, as\u00ed que sus enlaces se abren aqu\u00ed.");
         table.put("TumblrMart buttons",
                 "los botones de TumblrMart");
-    }
-
-    private static void fillEs4(Map<String, String> table) {
         table.put("Turn off screenshot sharing",
                 "Desactivar compartir capturas de pantalla");
         table.put("Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.",
@@ -1136,7 +1144,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(518);
+        Map<String, String> table = new HashMap<>(522);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -1248,6 +1256,8 @@ public final class L10nTranslations {
                 "Tidak dapat mengurungkan impor atau memulihkan sakelar yang diimpor. Periksa sakelar di layar ini.");
         table.put("Couldn't undo the import. Your imported switches are unchanged.",
                 "Tidak dapat mengurungkan impor. Sakelar yang diimpor tidak berubah.");
+        table.put("Dark background color",
+                "Warna latar gelap");
         table.put("Debug logging",
                 "Pencatatan debug");
         table.put("Diagnostic data cleared. Tap again to put it back.",
@@ -1264,11 +1274,11 @@ public final class L10nTranslations {
                 "Semua sakelar kecuali Pencatatan debug dianggap nonaktif, dan yang diatur saat Anda menambal tetap aktif. Pengaturan Anda tetap seperti semula.");
         table.put("Every switch here applies to all the accounts in this Tumblr app, not only the one you have open.",
                 "Setiap sakelar di sini berlaku untuk semua akun di aplikasi Tumblr ini, bukan hanya akun yang sedang Anda buka.");
-        table.put("Export diagnostic report",
-                "Ekspor laporan diagnostik");
     }
 
     private static void fillIn1(Map<String, String> table) {
+        table.put("Export diagnostic report",
+                "Ekspor laporan diagnostik");
         table.put("Export settings",
                 "Ekspor pengaturan");
         table.put("Export settings saves HushTumblr's switches. It doesn't include your Tumblr account, posts, downloaded files or Morphe Manager's signing key. Keep the settings file and a backup of Manager's signing key somewhere you can find them.",
@@ -1387,15 +1397,17 @@ public final class L10nTranslations {
                 "Memungkinkan Tumblr yang ditambal mendaftar untuk notifikasi push saat Google akan menolaknya. Perubahan berlaku saat Tumblr dimulai berikutnya.");
         table.put("Licenses",
                 "Lisensi");
-        table.put("Links",
-                "Tautan");
     }
 
     private static void fillIn2(Map<String, String> table) {
+        table.put("Links",
+                "Tautan");
         table.put("Links, updates, backup and more",
                 "Tautan, pembaruan, cadangan, dan lainnya");
         table.put("Looks for: %1$s",
                 "Mencari: %1$s");
+        table.put("Makes the Dark Mode palette's background black, or the dark color picked when patching. Restart Tumblr to see the change.",
+                "Membuat latar palet Mode Gelap menjadi hitam, atau warna gelap yang dipilih saat menambal. Mulai ulang Tumblr untuk melihat perubahannya.");
         table.put("More settings",
                 "Pengaturan lainnya");
         table.put("No HushTumblr release is out yet.",
@@ -1508,13 +1520,13 @@ public final class L10nTranslations {
                 "Tetap aktif saat dijeda");
         table.put("Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt. Restart Tumblr to see the change.",
                 "Tumblr berhenti menanyakan versi yang lebih baru ke Google Play dan menampilkan permintaan pembaruan dari Play. Mulai ulang Tumblr untuk melihat perubahannya.");
+    }
+
+    private static void fillIn3(Map<String, String> table) {
         table.put("Stops Tumblr watching for screenshots and offering to save the post as an image. Restart Tumblr to see the change.",
                 "Tumblr berhenti memantau tangkapan layar dan menawarkan untuk menyimpan postingan sebagai gambar. Mulai ulang Tumblr untuk melihat perubahannya.");
         table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
                 "Menghentikan pelacakan dan pengukuran iklan milik Tumblr setelah dimulai ulang. Pengumpulan data Firebase dan Google Analytics tetap mati sampai kamu menambal ulang tanpanya.");
-    }
-
-    private static void fillIn3(Map<String, String> table) {
         table.put("Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.",
                 "Menghentikan pop-up yang menanyakan pendapatmu tentang aplikasi Tumblr lalu meminta rating atau masukan.");
         table.put("Support HushTumblr",
@@ -1631,13 +1643,13 @@ public final class L10nTranslations {
                 "Tanda tangan asli Tumblr ditambahkan ke aplikasi");
         table.put("Tumblr's own settings",
                 "Pengaturan Tumblr sendiri");
+    }
+
+    private static void fillIn4(Map<String, String> table) {
         table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
                 "Alamat web Tumblr dipilih untuk aplikasi ini di pengaturan Android, jadi tautannya terbuka di sini.");
         table.put("TumblrMart buttons",
                 "tombol TumblrMart");
-    }
-
-    private static void fillIn4(Map<String, String> table) {
         table.put("Turn off screenshot sharing",
                 "Matikan berbagi tangkapan layar");
         table.put("Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.",
@@ -1679,7 +1691,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(518);
+        Map<String, String> table = new HashMap<>(522);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -1791,6 +1803,8 @@ public final class L10nTranslations {
                 "N\u00e3o foi poss\u00edvel desfazer a importa\u00e7\u00e3o nem restaurar os ajustes importados. Confira os ajustes nesta tela.");
         table.put("Couldn't undo the import. Your imported switches are unchanged.",
                 "N\u00e3o foi poss\u00edvel desfazer a importa\u00e7\u00e3o. Seus ajustes importados n\u00e3o mudaram.");
+        table.put("Dark background color",
+                "Cor de fundo escura");
         table.put("Debug logging",
                 "Registro de depura\u00e7\u00e3o");
         table.put("Diagnostic data cleared. Tap again to put it back.",
@@ -1807,11 +1821,11 @@ public final class L10nTranslations {
                 "Todas as op\u00e7\u00f5es, exceto Registro de depura\u00e7\u00e3o, funcionam como se estivessem desativadas, e o que foi definido ao aplicar os patches permanece ativo. Suas configura\u00e7\u00f5es n\u00e3o s\u00e3o alteradas.");
         table.put("Every switch here applies to all the accounts in this Tumblr app, not only the one you have open.",
                 "Cada op\u00e7\u00e3o aqui vale para todas as contas deste app do Tumblr, n\u00e3o s\u00f3 para a que est\u00e1 aberta.");
-        table.put("Export diagnostic report",
-                "Exportar relat\u00f3rio de diagn\u00f3stico");
     }
 
     private static void fillPt_rBR1(Map<String, String> table) {
+        table.put("Export diagnostic report",
+                "Exportar relat\u00f3rio de diagn\u00f3stico");
         table.put("Export settings",
                 "Exportar configura\u00e7\u00f5es");
         table.put("Export settings saves HushTumblr's switches. It doesn't include your Tumblr account, posts, downloaded files or Morphe Manager's signing key. Keep the settings file and a backup of Manager's signing key somewhere you can find them.",
@@ -1930,15 +1944,17 @@ public final class L10nTranslations {
                 "Permite que um Tumblr com patches se cadastre para receber notifica\u00e7\u00f5es push quando o Google o recusaria. Uma mudan\u00e7a vale na pr\u00f3xima vez que o Tumblr abrir.");
         table.put("Licenses",
                 "Licen\u00e7as");
-        table.put("Links",
-                "Links");
     }
 
     private static void fillPt_rBR2(Map<String, String> table) {
+        table.put("Links",
+                "Links");
         table.put("Links, updates, backup and more",
                 "Links, atualiza\u00e7\u00f5es, backup e mais");
         table.put("Looks for: %1$s",
                 "Procura: %1$s");
+        table.put("Makes the Dark Mode palette's background black, or the dark color picked when patching. Restart Tumblr to see the change.",
+                "Deixa o fundo da paleta Modo escuro preto, ou na cor escura escolhida ao aplicar o patch. Reinicie o Tumblr para ver a mudan\u00e7a.");
         table.put("More settings",
                 "Mais configura\u00e7\u00f5es");
         table.put("No HushTumblr release is out yet.",
@@ -2051,13 +2067,13 @@ public final class L10nTranslations {
                 "O que continua ativo na pausa");
         table.put("Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt. Restart Tumblr to see the change.",
                 "O Tumblr para de perguntar ao Google Play por uma vers\u00e3o mais nova e de mostrar o aviso de atualiza\u00e7\u00e3o do Play. Reinicie o Tumblr para ver a mudan\u00e7a.");
+    }
+
+    private static void fillPt_rBR3(Map<String, String> table) {
         table.put("Stops Tumblr watching for screenshots and offering to save the post as an image. Restart Tumblr to see the change.",
                 "O Tumblr para de observar capturas de tela e de oferecer salvar o post como imagem. Reinicie o Tumblr para ver a mudan\u00e7a.");
         table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
                 "Para o rastreamento pr\u00f3prio do Tumblr e a medi\u00e7\u00e3o de an\u00fancios depois que ele reinicia. A coleta do Firebase e do Google Analytics continua desligada at\u00e9 voc\u00ea aplicar o patch de novo sem ele.");
-    }
-
-    private static void fillPt_rBR3(Map<String, String> table) {
         table.put("Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.",
                 "Impede o pop-up que pergunta o que voc\u00ea acha do app do Tumblr e depois pede uma avalia\u00e7\u00e3o ou feedback.");
         table.put("Support HushTumblr",
@@ -2174,13 +2190,13 @@ public final class L10nTranslations {
                 "A assinatura original do Tumblr foi adicionada ao app");
         table.put("Tumblr's own settings",
                 "Configura\u00e7\u00f5es do pr\u00f3prio Tumblr");
+    }
+
+    private static void fillPt_rBR4(Map<String, String> table) {
         table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
                 "Os endere\u00e7os web do Tumblr est\u00e3o selecionados para este app nas configura\u00e7\u00f5es do Android, ent\u00e3o os links deles abrem aqui.");
         table.put("TumblrMart buttons",
                 "os bot\u00f5es da TumblrMart");
-    }
-
-    private static void fillPt_rBR4(Map<String, String> table) {
         table.put("Turn off screenshot sharing",
                 "Desativar compartilhamento de capturas de tela");
         table.put("Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.",
@@ -2222,7 +2238,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(518);
+        Map<String, String> table = new HashMap<>(522);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -2334,6 +2350,8 @@ public final class L10nTranslations {
                 "\u0130\u00e7e aktarma geri al\u0131namad\u0131 ve i\u00e7e aktar\u0131lan anahtarlar geri y\u00fcklenemedi. Bu ekrandaki anahtarlar\u0131 kontrol edin.");
         table.put("Couldn't undo the import. Your imported switches are unchanged.",
                 "\u0130\u00e7e aktarma geri al\u0131namad\u0131. \u0130\u00e7e aktar\u0131lan anahtarlar\u0131n\u0131z de\u011fi\u015fmedi.");
+        table.put("Dark background color",
+                "Koyu arka plan rengi");
         table.put("Debug logging",
                 "Hata ay\u0131klama g\u00fcnl\u00fc\u011f\u00fc");
         table.put("Diagnostic data cleared. Tap again to put it back.",
@@ -2350,11 +2368,11 @@ public final class L10nTranslations {
                 "Hata ay\u0131klama g\u00fcnl\u00fc\u011f\u00fc d\u0131\u015f\u0131ndaki her anahtar kapal\u0131ym\u0131\u015f gibi davran\u0131r, yamalad\u0131\u011f\u0131nda ayarlananlar ise devrede kal\u0131r. Ayarlar\u0131n oldu\u011fu gibi kal\u0131r.");
         table.put("Every switch here applies to all the accounts in this Tumblr app, not only the one you have open.",
                 "Buradaki her anahtar yaln\u0131zca a\u00e7\u0131k olan hesap i\u00e7in de\u011fil, bu Tumblr uygulamas\u0131ndaki t\u00fcm hesaplar i\u00e7in ge\u00e7erlidir.");
-        table.put("Export diagnostic report",
-                "Tan\u0131lama raporunu d\u0131\u015fa aktar");
     }
 
     private static void fillTr1(Map<String, String> table) {
+        table.put("Export diagnostic report",
+                "Tan\u0131lama raporunu d\u0131\u015fa aktar");
         table.put("Export settings",
                 "Ayarlar\u0131 d\u0131\u015fa aktar");
         table.put("Export settings saves HushTumblr's switches. It doesn't include your Tumblr account, posts, downloaded files or Morphe Manager's signing key. Keep the settings file and a backup of Manager's signing key somewhere you can find them.",
@@ -2473,15 +2491,17 @@ public final class L10nTranslations {
                 "Google geri \u00e7evirecekken yamal\u0131 Tumblr'\u0131n anl\u0131k bildirimlere kaydolmas\u0131n\u0131 sa\u011flar. De\u011fi\u015fiklik, Tumblr bir sonraki a\u00e7\u0131l\u0131\u015f\u0131nda ge\u00e7erli olur.");
         table.put("Licenses",
                 "Lisanslar");
-        table.put("Links",
-                "Ba\u011flant\u0131lar");
     }
 
     private static void fillTr2(Map<String, String> table) {
+        table.put("Links",
+                "Ba\u011flant\u0131lar");
         table.put("Links, updates, backup and more",
                 "Ba\u011flant\u0131lar, g\u00fcncellemeler, yedekleme ve daha fazlas\u0131");
         table.put("Looks for: %1$s",
                 "Aranan: %1$s");
+        table.put("Makes the Dark Mode palette's background black, or the dark color picked when patching. Restart Tumblr to see the change.",
+                "Karanl\u0131k Mod paletinin arka plan\u0131n\u0131 siyah ya da yama s\u0131ras\u0131nda se\u00e7ilen koyu renk yapar. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
         table.put("More settings",
                 "Di\u011fer ayarlar");
         table.put("No HushTumblr release is out yet.",
@@ -2594,13 +2614,13 @@ public final class L10nTranslations {
                 "Duraklat\u0131lsa da devrede kal\u0131r");
         table.put("Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt. Restart Tumblr to see the change.",
                 "Tumblr, Google Play'e daha yeni bir s\u00fcr\u00fcm olup olmad\u0131\u011f\u0131n\u0131 sormay\u0131 ve Play'in g\u00fcncelleme uyar\u0131s\u0131n\u0131 g\u00f6stermeyi b\u0131rak\u0131r. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
+    }
+
+    private static void fillTr3(Map<String, String> table) {
         table.put("Stops Tumblr watching for screenshots and offering to save the post as an image. Restart Tumblr to see the change.",
                 "Tumblr ekran g\u00f6r\u00fcnt\u00fclerini izlemeyi ve g\u00f6nderiyi resim olarak kaydetmeyi \u00f6nermeyi b\u0131rak\u0131r. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
         table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
                 "Tumblr yeniden ba\u015flad\u0131ktan sonra kendi izlemesini ve reklam \u00f6l\u00e7\u00fcm\u00fcn\u00fc durdurur. Firebase ve Google Analytics veri toplama, bu yama olmadan yeniden yamalayana kadar kapal\u0131 kal\u0131r.");
-    }
-
-    private static void fillTr3(Map<String, String> table) {
         table.put("Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.",
                 "Tumblr uygulamas\u0131 hakk\u0131nda ne d\u00fc\u015f\u00fcnd\u00fc\u011f\u00fcn\u00fc soran ve ard\u0131ndan puan ya da geri bildirim isteyen a\u00e7\u0131l\u0131r pencereyi durdurur.");
         table.put("Support HushTumblr",
@@ -2717,13 +2737,13 @@ public final class L10nTranslations {
                 "Tumblr'\u0131n orijinal imzas\u0131 uygulamaya eklendi");
         table.put("Tumblr's own settings",
                 "Tumblr'\u0131n kendi ayarlar\u0131");
+    }
+
+    private static void fillTr4(Map<String, String> table) {
         table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
                 "Tumblr'\u0131n web adresleri Android ayarlar\u0131nda bu uygulama i\u00e7in se\u00e7ili, bu y\u00fczden ba\u011flant\u0131lar\u0131 burada a\u00e7\u0131l\u0131r.");
         table.put("TumblrMart buttons",
                 "TumblrMart d\u00fc\u011fmeleri");
-    }
-
-    private static void fillTr4(Map<String, String> table) {
         table.put("Turn off screenshot sharing",
                 "Ekran g\u00f6r\u00fcnt\u00fcs\u00fc payla\u015f\u0131m\u0131n\u0131 kapat");
         table.put("Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.",
