@@ -103,6 +103,23 @@ public class FeatureSwitchesTest {
         assertEquals(new ArrayList<String>(), wrong);
     }
 
+    /**
+     * A claimed flag asked before the settings are ready keeps Tumblr's answer and is counted under
+     * its family, so a read that comes too early for the switch shows in the report. An answer
+     * that's already off has nothing to turn off and isn't counted.
+     */
+    @Test
+    public void aClaimedFlagAskedBeforeTheSettingsIsCounted() {
+        FeatureSwitches.Claim claim = FeatureSwitches.claimOn("LIVERAMP_ATS");
+        SettingsContextRule.withoutContext(() -> {
+            assertFalse(FeatureSwitches.isEnabled(flag("LIVERAMP_ATS"), false));
+            assertTrue(FeatureSwitches.isEnabled(flag("LIVERAMP_ATS"), true));
+        });
+        String report = String.join("\n", HookStatus.report());
+        assertTrue(report, report.contains(claim.patchName));
+        assertTrue(report, report.contains(FeatureSwitches.READ_EARLY + " 1"));
+    }
+
     /** The probes reach a flag through {@link FakeFeature}, so it needs one constant per claimed flag. */
     @Test
     public void everyClaimedFlagHasAStandIn() {

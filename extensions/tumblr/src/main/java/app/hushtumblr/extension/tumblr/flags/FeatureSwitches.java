@@ -29,10 +29,19 @@ import app.hushtumblr.extension.tumblr.settings.PatchFamily;
  * <p>Tumblr checks flags while it starts, before HushTumblr has a context. Nothing here loads the
  * settings until {@link Utils#settingsReady()} says it may: the table names each family by its
  * {@link PatchFamily} constant and its patch name, both plain text, and until then every flag gets
- * Tumblr's own answer.
+ * Tumblr's own answer. Reading Tumblr 46.5.0.109 found no claimed flag asked that early: every
+ * reader sits in code the app's onCreate or a later screen starts. A claimed flag that is asked
+ * early anyway, with Tumblr's answer on, is counted under its family as {@link #READ_EARLY}, so the
+ * diagnostics report shows it.
  */
 public final class FeatureSwitches {
     private FeatureSwitches() {}
+
+    /**
+     * The count a claimed flag asked before the settings are ready lands under. Tumblr keeps its
+     * first answer, so that flag stays on until the next start whatever the switch says.
+     */
+    static final String READ_EARLY = "flag read before HushTumblr started";
 
     /** The family that forces a flag off: its {@link PatchFamily} constant and its patch name. */
     static final class Claim {
@@ -124,7 +133,12 @@ public final class FeatureSwitches {
         try {
             if (feature == null) return server;
             claim = CLAIMS.get(feature.name());
-            if (claim == null || !Utils.settingsReady()) return server;
+            if (claim == null) return server;
+            if (!Utils.settingsReady()) {
+                // Counting reads no setting, so it's safe this early.
+                if (server) HookStatus.counted(claim.patchName, READ_EARLY);
+                return server;
+            }
             // The hook is in every build with one flag-backed patch, so a claim of a family this
             // build leaves out is passed over before it's counted as that family's.
             PatchFamily family = PatchFamily.valueOf(claim.family);
