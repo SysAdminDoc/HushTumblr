@@ -232,3 +232,6 @@ Stops the pop-up that asks what you think of the Tumblr app and then asks for a 
 # context: the Turn off screenshot sharing switch on the Interface page. Tumblr watches for screenshots and offers to save the post as an image.
 Turn off screenshot sharing	Screenshot-Teilen ausschalten
 Stops Tumblr watching for screenshots and offering to save the post as an image. Restart Tumblr to see the change.	Tumblr achtet nicht mehr auf Screenshots und bietet nicht mehr an, den Beitrag als Bild zu speichern. Starte Tumblr neu, um die Änderung zu sehen.
+# context: the Disable update prompts switch on the Updates page. Tumblr asks Google Play for a newer version and opens Play's update prompt.
+Disable update prompts	Update-Aufforderungen deaktivieren
+Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt. Restart Tumblr to see the change.	Tumblr fragt Google Play nicht mehr nach einer neueren Version und zeigt die Update-Aufforderung von Play nicht mehr an. Starte Tumblr neu, um die Änderung zu sehen.

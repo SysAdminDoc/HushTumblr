@@ -128,6 +128,9 @@ public class PausedHooksTest {
         // Tumblr's screenshot watcher answers off.
         probes.put(Settings.TURN_OFF_SCREENSHOT_SHARING, Collections.singletonList(
                 () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("SCREENSHOT_INTERCEPTION"), true)));
+        // Tumblr's in-app update check answers off.
+        probes.put(Settings.DISABLE_UPDATE_PROMPTS, Collections.singletonList(
+                () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("IN_APP_UPDATE"), true)));
         // Firebase's sign-up for push notifications names Tumblr's own certificate.
         probes.put(Settings.FIX_PUSH_NOTIFICATIONS, Collections.singletonList(PushNotificationsTest::fixesACertificate));
         return probes;

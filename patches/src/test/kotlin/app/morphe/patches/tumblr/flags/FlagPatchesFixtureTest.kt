@@ -19,6 +19,7 @@ import app.morphe.patches.tumblr.ui.hideBlazePromptsPatch
 import app.morphe.patches.tumblr.ui.hideCommunitiesTabPatch
 import app.morphe.patches.tumblr.ui.hideTumblrTvPatch
 import app.morphe.patches.tumblr.ui.turnOffScreenshotSharingPatch
+import app.morphe.patches.tumblr.ui.disableUpdatePromptsPatch
 import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -55,6 +56,10 @@ class FlagPatchesFixtureTest {
     @Test
     fun `Turn off screenshot sharing claims a flag Tumblr has and turns its switch on`() =
         check(turnOffScreenshotSharingPatch, "turnOffScreenshotSharing", "screenshotSharingFlags", "SCREENSHOT_INTERCEPTION")
+
+    @Test
+    fun `Disable update prompts claims a flag Tumblr has and turns its switch on`() =
+        check(disableUpdatePromptsPatch, "disableUpdatePrompts", "updatePromptFlags", "IN_APP_UPDATE")
 
     /**
      * Applies [patch] to the extension and checks it flips the [status] and [capability] stubs, after

@@ -88,6 +88,10 @@ public final class FeatureSwitches {
         // this one flag.
         claim(claims, "TURN_OFF_SCREENSHOT_SHARING", FamilyNames.TURN_OFF_SCREENSHOT_SHARING,
                 "SCREENSHOT_INTERCEPTION");
+        // Tumblr's own update check, which asks Google Play for a newer Tumblr and opens Play's
+        // update prompt. With the flag off it logs "not today" and stops there.
+        claim(claims, "DISABLE_UPDATE_PROMPTS", FamilyNames.DISABLE_UPDATE_PROMPTS,
+                "IN_APP_UPDATE");
         return Collections.unmodifiableMap(claims);
     }
 

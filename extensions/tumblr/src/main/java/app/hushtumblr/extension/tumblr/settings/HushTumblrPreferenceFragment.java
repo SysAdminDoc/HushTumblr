@@ -346,6 +346,11 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         // In every build: the release check is the settings entry's own, not a patch's. Its switch
         // is one Pause turns off, so it sits above the Pause row with the rest.
         PreferenceCategory updates = category(screen, L10n.t("Updates"));
+        // Only with the patch, and first: Tumblr's own update check, which answers one of Tumblr's
+        // feature flags, so it says a restart shows it.
+        patchToggle(updates, context, build, PatchFamily.DISABLE_UPDATE_PROMPTS, Settings.DISABLE_UPDATE_PROMPTS,
+                L10n.t("Disable update prompts"), L10n.t("Stops Tumblr asking Google Play for a newer Tumblr and "
+                    + "showing Play's update prompt. Restart Tumblr to see the change."), SettingsIcons.BLOCK);
         updates.addPreference(mark(toggle(context, Settings.CHECK_FOR_RELEASES, L10n.t("Check for new HushTumblr releases"),
                 L10n.t("Once a day, when Tumblr starts, checks GitHub for a newer HushTumblr and tells you at "
                     + "the top of these settings. Nothing is downloaded.")), SettingsIcons.BELL));

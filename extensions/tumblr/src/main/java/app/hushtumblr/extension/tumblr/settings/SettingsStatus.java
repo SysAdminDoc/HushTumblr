@@ -52,6 +52,8 @@ public final class SettingsStatus {
     public static boolean reviewPrompt() { return false; }
     public static boolean turnOffScreenshotSharing() { return false; }
     public static boolean screenshotSharingFlags() { return false; }
+    public static boolean disableUpdatePrompts() { return false; }
+    public static boolean updatePromptFlags() { return false; }
     public static boolean fixPushNotifications() { return false; }
     public static boolean firebaseCertificate() { return false; }
 }

@@ -232,3 +232,6 @@ Stops the pop-up that asks what you think of the Tumblr app and then asks for a 
 # context: the Turn off screenshot sharing switch on the Interface page. Tumblr watches for screenshots and offers to save the post as an image.
 Turn off screenshot sharing	Matikan berbagi tangkapan layar
 Stops Tumblr watching for screenshots and offering to save the post as an image. Restart Tumblr to see the change.	Tumblr berhenti memantau tangkapan layar dan menawarkan untuk menyimpan postingan sebagai gambar. Mulai ulang Tumblr untuk melihat perubahannya.
+# context: the Disable update prompts switch on the Updates page. Tumblr asks Google Play for a newer version and opens Play's update prompt.
+Disable update prompts	Nonaktifkan permintaan pembaruan
+Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt. Restart Tumblr to see the change.	Tumblr berhenti menanyakan versi yang lebih baru ke Google Play dan menampilkan permintaan pembaruan dari Play. Mulai ulang Tumblr untuk melihat perubahannya.

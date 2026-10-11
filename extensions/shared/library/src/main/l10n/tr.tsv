@@ -232,3 +232,6 @@ Stops the pop-up that asks what you think of the Tumblr app and then asks for a 
 # context: the Turn off screenshot sharing switch on the Interface page. Tumblr watches for screenshots and offers to save the post as an image.
 Turn off screenshot sharing	Ekran görüntüsü paylaşımını kapat
 Stops Tumblr watching for screenshots and offering to save the post as an image. Restart Tumblr to see the change.	Tumblr ekran görüntülerini izlemeyi ve gönderiyi resim olarak kaydetmeyi önermeyi bırakır. Değişikliği görmek için Tumblr'ı yeniden başlat.
+# context: the Disable update prompts switch on the Updates page. Tumblr asks Google Play for a newer version and opens Play's update prompt.
+Disable update prompts	Güncelleme uyarılarını kapat
+Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt. Restart Tumblr to see the change.	Tumblr, Google Play'e daha yeni bir sürüm olup olmadığını sormayı ve Play'in güncelleme uyarısını göstermeyi bırakır. Değişikliği görmek için Tumblr'ı yeniden başlat.

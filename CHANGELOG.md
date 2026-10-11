@@ -16,6 +16,7 @@
 * **Tumblr:** New Hide Blaze prompts patch. Its switch, off to start and on the Interface page, hides the buttons, banners and after-post nudge selling Blaze, Tumblr's paid post promotion, once Tumblr restarts.
 * **Tumblr:** New Skip review prompts patch. Its switch, off to start and on the Interface page, stops the "What do you think of the Tumblr app?" pop-up that leads to a store rating or a feedback form. It's read each time the pop-up would open, so it works without a restart.
 * **Tumblr:** New Turn off screenshot sharing patch. Its switch, off to start and on the Interface page, stops Tumblr watching for screenshots and opening its offer to save the post as an image, once Tumblr restarts.
+* **Tumblr:** New Disable update prompts patch. Its switch, off to start and first on the Updates page under More settings, stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt, once Tumblr restarts.
 * **Tumblr:** Fix push notifications hands Firebase Tumblr's original certificate fingerprint in its request builder, and Hide advertising ID answers Tumblr's ad ID lookups with an empty ID.
 * **Tooling:** The Pinterest-only patches, their settings and their checks are gone. The build, the settings framework, diagnostics, pause and backup stay.
 * **Tooling:** Every package, setting key, environment variable and script now uses the HushTumblr and Tumblr names, the fixtures and stand-in builds are Tumblr's, and the patched minimum Android version is API 26.

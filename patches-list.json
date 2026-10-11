@@ -45,6 +45,45 @@
       "options": []
     },
     {
+      "name": "Disable update prompts",
+      "description": "Stops Tumblr asking Google Play for a newer version and showing Play's update prompt. Starts off. Turn it on in Tumblr settings > HushTumblr > More settings > Updates.",
+      "category": "Updates",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch",
+        "HushTumblr settings"
+      ],
+      "compatiblePackages": {
+        "com.tumblr": [
+          "46.5.0.109"
+        ]
+      },
+      "compatibility": [
+        {
+          "name": "Tumblr",
+          "packageName": "com.tumblr",
+          "description": null,
+          "appIconColor": 6453,
+          "signatures": [
+            "39ac9c821ad2d605e4849f066e8aad3cca27d5e13eb03ad8755be234a2985dfd"
+          ],
+          "targets": [
+            {
+              "version": "46.5.0.109",
+              "experimental": false,
+              "versionCodes": {
+                "ARM64_V8A": 1460500109,
+                "ARMEABI_V7A": 1460500109,
+                "X86": 1460500109,
+                "X86_64": 1460500109
+              }
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
       "name": "Fix push notifications",
       "description": "Lets the patched app sign up for push notifications. Firebase can refuse a patched Tumblr whose request doesn't name Tumblr's original signature, so this sends that signature's fingerprint and changes nothing else. On by default. Turn it off in Tumblr settings > HushTumblr > More settings > Notifications.",
       "category": "Notifications",

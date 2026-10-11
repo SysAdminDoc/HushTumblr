@@ -112,6 +112,13 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_turn_off_screenshot_sharing", FALSE);
 
     /**
+     * Tumblr doesn't ask Google Play for a newer version or show Play's update prompt
+     * ({@link app.hushtumblr.extension.tumblr.flags.FeatureSwitches}). Off to start.
+     */
+    public static final BooleanSetting DISABLE_UPDATE_PROMPTS =
+            new BooleanSetting("hushtumblr_disable_update_prompts", FALSE);
+
+    /**
      * Once a day, when Tumblr starts, ask api.github.com whether a newer HushTumblr release is
      * out, and say so on the settings screen ({@link ReleaseCheck}). It's the settings entry's own
      * switch rather than a patch's, so every build has it ({@link PatchFamily#ENTRY_SWITCHES}). Off

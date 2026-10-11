@@ -68,6 +68,7 @@ public enum PatchFamily {
     SKIP_REVIEW_PROMPTS(FamilyNames.SKIP_REVIEW_PROMPTS, "skipReviewPrompts", null, Settings.SKIP_REVIEW_PROMPTS),
     TURN_OFF_SCREENSHOT_SHARING(FamilyNames.TURN_OFF_SCREENSHOT_SHARING, "turnOffScreenshotSharing", null,
             Settings.TURN_OFF_SCREENSHOT_SHARING),
+    DISABLE_UPDATE_PROMPTS(FamilyNames.DISABLE_UPDATE_PROMPTS, "disableUpdatePrompts", null, Settings.DISABLE_UPDATE_PROMPTS),
     FIX_PUSH_NOTIFICATIONS(FamilyNames.FIX_PUSH_NOTIFICATIONS, "fixPushNotifications", null, Settings.FIX_PUSH_NOTIFICATIONS);
 
     /** The patch's name in Morphe Manager. */
@@ -135,6 +136,7 @@ public enum PatchFamily {
         BLAZE_PROMPT_FLAGS(HIDE_BLAZE_PROMPTS, "blazePromptFlags", "Hide Blaze prompts"),
         REVIEW_PROMPT(SKIP_REVIEW_PROMPTS, "reviewPrompt", "Skip review prompts"),
         SCREENSHOT_SHARING_FLAGS(TURN_OFF_SCREENSHOT_SHARING, "screenshotSharingFlags", "Turn off screenshot sharing"),
+        UPDATE_PROMPT_FLAGS(DISABLE_UPDATE_PROMPTS, "updatePromptFlags", "Disable update prompts"),
         FIREBASE_CERTIFICATE(FIX_PUSH_NOTIFICATIONS, "firebaseCertificate", "Fix push notifications");
 
         public final PatchFamily family;

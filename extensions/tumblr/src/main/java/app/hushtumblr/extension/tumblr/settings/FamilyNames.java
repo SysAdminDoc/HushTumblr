@@ -39,6 +39,7 @@ public final class FamilyNames {
     public static final String HIDE_BLAZE_PROMPTS = "Hide Blaze prompts";
     public static final String SKIP_REVIEW_PROMPTS = "Skip review prompts";
     public static final String TURN_OFF_SCREENSHOT_SHARING = "Turn off screenshot sharing";
+    public static final String DISABLE_UPDATE_PROMPTS = "Disable update prompts";
     public static final String FIX_PUSH_NOTIFICATIONS = "Fix push notifications";
 
     private FamilyNames() {

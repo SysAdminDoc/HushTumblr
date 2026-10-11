@@ -59,4 +59,7 @@ public enum FakeFeature {
 
     // Turn off screenshot sharing
     SCREENSHOT_INTERCEPTION,
+
+    // Disable update prompts
+    IN_APP_UPDATE,
 }

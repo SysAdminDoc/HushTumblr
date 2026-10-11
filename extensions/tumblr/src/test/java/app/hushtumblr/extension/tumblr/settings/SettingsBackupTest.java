@@ -246,6 +246,7 @@ public class SettingsBackupTest {
                 Settings.HIDE_BLAZE_PROMPTS,
                 Settings.SKIP_REVIEW_PROMPTS,
                 Settings.TURN_OFF_SCREENSHOT_SHARING,
+                Settings.DISABLE_UPDATE_PROMPTS,
                 Settings.FIX_PUSH_NOTIFICATIONS),
                 SettingsBackup.ALLOWLIST);
     }

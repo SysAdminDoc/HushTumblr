@@ -99,6 +99,7 @@ public class HushTumblrPreferenceFragmentTest {
         ROW_TITLES.put(PatchFamily.HIDE_BLAZE_PROMPTS, "Hide Blaze prompts");
         ROW_TITLES.put(PatchFamily.SKIP_REVIEW_PROMPTS, "Skip review prompts");
         ROW_TITLES.put(PatchFamily.TURN_OFF_SCREENSHOT_SHARING, "Turn off screenshot sharing");
+        ROW_TITLES.put(PatchFamily.DISABLE_UPDATE_PROMPTS, "Disable update prompts");
         ROW_TITLES.put(PatchFamily.FIX_PUSH_NOTIFICATIONS, "Fix push notifications");
     }
 
