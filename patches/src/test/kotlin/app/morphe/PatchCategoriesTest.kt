@@ -34,13 +34,13 @@ import org.junit.Test
 class PatchCategoriesTest {
     /**
      * One name per group, and no more than fits on a phone screen without scrolling. The names are
-     * the Hush family's, and Notifications matches the HushTumblr settings page that holds its
-     * switch. Only the groups a shipped patch uses are here: the family's other one (Downloads)
-     * comes back with the first Tumblr patch filed under it, since the last test refuses a heading
-     * Manager would never show.
+     * the Hush family's, and Notifications and Posts match the HushTumblr settings pages that hold
+     * their switches. Only the groups a shipped patch uses are here: the family's other one
+     * (Downloads) comes back with the first Tumblr patch filed under it, since the last test refuses
+     * a heading Manager would never show.
      */
     private val taxonomy = setOf(
-        "Settings", "Ads", "Feed", "Interface", "Navigation", "Privacy", "Notifications", "Updates",
+        "Settings", "Ads", "Feed", "Posts", "Interface", "Navigation", "Privacy", "Notifications", "Updates",
     )
 
     /**

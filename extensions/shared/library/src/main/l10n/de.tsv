@@ -242,3 +242,9 @@ Hide suggested communities	Vorgeschlagene Communitys ausblenden
 Takes the communities Tumblr suggests you join, and their headings, out of your dashboard and other feeds.	Entfernt die Communitys, denen du laut Tumblr beitreten sollst, samt ihren Überschriften aus deinem Dashboard und anderen Feeds.
 Hide Watch it rows	Watch-it-Reihen ausblenden
 Takes Tumblr TV's Watch it rows and video hub cards, and their headings, out of your dashboard and other feeds.	Entfernt die Watch-it-Reihen und Video-Hub-Karten von Tumblr TV samt ihren Überschriften aus deinem Dashboard und anderen Feeds.
+# context: the Posts page and its two switches. Posts is the page's title in HushTumblr settings; Follow is the label on Tumblr's own button, so use the word Tumblr shows in your language.
+Posts	Beiträge
+Hide hashtags	Hashtags ausblenden
+Hide the Follow button	Folgen-Button ausblenden
+Takes the Follow button out of the header of posts from blogs you don't follow yet.	Entfernt den Folgen-Button aus dem Kopf von Beiträgen aus Blogs, denen du noch nicht folgst.
+Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.	Entfernt die Tags unten an Beiträgen in deinem Dashboard und anderen Feeds und lässt den Quellenlink stehen.

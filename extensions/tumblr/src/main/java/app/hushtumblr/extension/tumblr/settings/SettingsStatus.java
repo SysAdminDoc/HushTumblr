@@ -60,6 +60,10 @@ public final class SettingsStatus {
     public static boolean suggestedCommunityCards() { return false; }
     public static boolean hideWatchItRows() { return false; }
     public static boolean watchItRows() { return false; }
+    public static boolean hideHashtags() { return false; }
+    public static boolean postTags() { return false; }
+    public static boolean hideFollowButton() { return false; }
+    public static boolean followButton() { return false; }
     public static boolean fixPushNotifications() { return false; }
     public static boolean firebaseCertificate() { return false; }
 }

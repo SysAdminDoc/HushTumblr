@@ -1,0 +1,110 @@
+/*
+ * Copyright 2026 HushTumblr contributors
+ * https://github.com/SysAdminDoc/HushTumblr
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+package app.morphe.patches.tumblr.ui
+
+import app.morphe.ExtensionDex
+import app.morphe.FixtureDex
+import app.morphe.FixtureTests
+import app.morphe.Fixtures
+import app.morphe.PatchContexts
+import app.morphe.patcher.patch.BytecodePatchContext
+import app.morphe.patches.tumblr.lookup.fieldRef
+import app.morphe.patches.tumblr.lookup.instructionList
+import app.morphe.patches.tumblr.lookup.methodRef
+import app.morphe.patches.tumblr.lookup.stringRef
+import app.morphe.patches.tumblr.misc.extension.SETTINGS_STATUS
+import app.morphe.patches.tumblr.misc.extension.parameterRegisterNumber
+import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.iface.instruction.Instruction
+import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
+import org.junit.Assert.assertEquals
+import org.junit.Test
+import org.junit.experimental.categories.Category
+
+/**
+ * The tag drawer and the header's Follow button check in each declared build, and the question put
+ * in front of each one's first instruction. On true the drawer gets an empty tag text and tag list
+ * and the check answers yes; on false Tumblr's own code runs unchanged. Each patch then turns its
+ * switch and its target on.
+ */
+@Category(FixtureTests::class)
+class PostPartsFixtureTest {
+    @Test
+    fun `each declared build hands the tag drawer no tags when asked to`() {
+        for (build in Fixtures.declaredBuilds()) {
+            val classes = FixtureDex.classesWhere(build, { true }) { it.definingClass == WRAPPED_TAGS }
+            val context = PatchContexts.of(ExtensionDex.classes() + classes)
+            val drawer = context.resolveTagDrawer()
+            val identity = "${drawer.definingClass}->${drawer.name}"
+            val before = drawer.instructionList().map { it.opcode }
+            val text = drawer.parameterRegisterNumber(drawer.tagParameter("Ljava/lang/String;"))
+            val list = drawer.parameterRegisterNumber(drawer.tagParameter("Ljava/util/List;"))
+
+            hideHashtagsPatch.execute(context)
+
+            val body = context.mutableClassDefBy(drawer.definingClass).methods
+                .single { it.name == drawer.name && it.parameterTypes == drawer.parameterTypes }
+                .instructionList()
+            assertEquals("$identity: five instructions added", before.size + 5, body.size)
+            assertAsks(identity, HIDE_TAGS_HOOK, body)
+            assertEquals("$identity: the tag text is emptied", Opcode.CONST_STRING, body[3].opcode)
+            assertEquals(identity, text, (body[3] as OneRegisterInstruction).registerA)
+            assertEquals(identity, "", body[3].stringRef())
+            assertEquals("$identity: the tag list is emptied", Opcode.SGET_OBJECT, body[4].opcode)
+            assertEquals(identity, list, (body[4] as OneRegisterInstruction).registerA)
+            assertEquals(identity, EMPTY_LIST, body[4].fieldRef()?.let { "${it.definingClass}->${it.name}:${it.type}" })
+            assertEquals("$identity: what follows is Tumblr's own code", before, body.drop(5).map { it.opcode })
+            assertSwitchedOn(context, build.name, "hideHashtags", "postTags")
+        }
+    }
+
+    @Test
+    fun `each declared build answers the header's Follow button check first thing when asked to`() {
+        for (build in Fixtures.declaredBuilds()) {
+            val classes = FixtureDex.classesWhere(build, { true }) { it.definingClass == POST_CARD_HEADER }
+            val context = PatchContexts.of(ExtensionDex.classes() + classes)
+            val check = context.resolveFollowButtonCheck()
+            val identity = "${check.definingClass}->${check.name}"
+            val before = check.instructionList().map { it.opcode }
+
+            hideFollowButtonPatch.execute(context)
+
+            val body = context.mutableClassDefBy(check.definingClass).methods
+                .single { it.name == check.name && it.parameterTypes == check.parameterTypes }
+                .instructionList()
+            assertEquals("$identity: five instructions added", before.size + 5, body.size)
+            assertAsks(identity, HIDE_FOLLOW_HOOK, body)
+            assertEquals("$identity: true answers yes", Opcode.CONST_4, body[3].opcode)
+            assertEquals(identity, 1, (body[3] as NarrowLiteralInstruction).narrowLiteral)
+            assertEquals(identity, Opcode.RETURN, body[4].opcode)
+            assertEquals("$identity: the yes is what's returned",
+                (body[3] as OneRegisterInstruction).registerA, (body[4] as OneRegisterInstruction).registerA)
+            assertEquals("$identity: what follows is Tumblr's own code", before, body.drop(5).map { it.opcode })
+            assertSwitchedOn(context, build.name, "hideFollowButton", "followButton")
+        }
+    }
+
+    /** The first three instructions ask [hook] and test its answer. */
+    private fun assertAsks(identity: String, hook: String, body: List<Instruction>) {
+        assertEquals(identity, Opcode.INVOKE_STATIC, body[0].opcode)
+        assertEquals("$identity: the extension is asked", hook, body[0].methodRef()?.let {
+            "${it.definingClass}->${it.name}(${it.parameterTypes.joinToString("")})${it.returnType}" })
+        assertEquals(identity, Opcode.MOVE_RESULT, body[1].opcode)
+        assertEquals(identity, Opcode.IF_EQZ, body[2].opcode)
+        assertEquals("$identity: the answer is what's tested",
+            (body[1] as OneRegisterInstruction).registerA, (body[2] as OneRegisterInstruction).registerA)
+    }
+
+    /** Each of [flags] in the status class now answers true. */
+    private fun assertSwitchedOn(context: BytecodePatchContext, build: String, vararg flags: String) {
+        for (flag in flags) {
+            val first = context.mutableClassDefBy(SETTINGS_STATUS).methods.single { it.name == flag }
+                .implementation!!.instructions.first()
+            assertEquals("$build: $flag", 1, (first as NarrowLiteralInstruction).narrowLiteral)
+        }
+    }
+}

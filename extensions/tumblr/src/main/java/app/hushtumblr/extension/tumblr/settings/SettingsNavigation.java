@@ -107,6 +107,7 @@ final class SettingsNavigation extends BaseAdapter {
         searchAliases = localizedSearchAliases();
         // Stable English route IDs survive a locale change; the displayed names are localized.
         section("Feed", L10n.t("Feed"), null, SettingsIcons.FEED, true);
+        section("Posts", L10n.t("Posts"), null, SettingsIcons.POSTS, true);
         section("Interface", L10n.t("Interface"), null, SettingsIcons.INTERFACE, true);
         section("Privacy", L10n.t("Privacy"), null, SettingsIcons.BLOCK, true);
         section("Links", L10n.t("Links"), null, SettingsIcons.LINKS, false);

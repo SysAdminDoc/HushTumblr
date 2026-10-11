@@ -242,3 +242,9 @@ Hide suggested communities	Önerilen toplulukları gizle
 Takes the communities Tumblr suggests you join, and their headings, out of your dashboard and other feeds.	Tumblr'ın katılmanı önerdiği toplulukları ve başlıklarını panondan ve diğer akışlardan kaldırır.
 Hide Watch it rows	Watch it satırlarını gizle
 Takes Tumblr TV's Watch it rows and video hub cards, and their headings, out of your dashboard and other feeds.	Tumblr TV'nin Watch it satırlarını ve video kartlarını, başlıklarıyla birlikte panondan ve diğer akışlardan kaldırır.
+# context: the Posts page and its two switches. Posts is the page's title in HushTumblr settings; Follow is the label on Tumblr's own button, so use the word Tumblr shows in your language.
+Posts	Gönderiler
+Hide hashtags	Hashtag'leri gizle
+Hide the Follow button	Takip et düğmesini gizle
+Takes the Follow button out of the header of posts from blogs you don't follow yet.	Henüz takip etmediğin blogların gönderilerinin başlığındaki Takip et düğmesini kaldırır.
+Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.	Panondaki ve diğer akışlardaki gönderilerin altındaki etiketleri kaldırır, kaynak bağlantısını bırakır.

@@ -140,6 +140,20 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_hide_watch_it_rows", FALSE);
 
     /**
+     * Posts in your feeds don't show their tags
+     * ({@link app.hushtumblr.extension.tumblr.ui.PostParts}). Off to start.
+     */
+    public static final BooleanSetting HIDE_HASHTAGS =
+            new BooleanSetting("hushtumblr_hide_hashtags", FALSE);
+
+    /**
+     * Post headers don't show the Follow button
+     * ({@link app.hushtumblr.extension.tumblr.ui.PostParts}). Off to start.
+     */
+    public static final BooleanSetting HIDE_FOLLOW_BUTTON =
+            new BooleanSetting("hushtumblr_hide_follow_button", FALSE);
+
+    /**
      * Once a day, when Tumblr starts, ask api.github.com whether a newer HushTumblr release is
      * out, and say so on the settings screen ({@link ReleaseCheck}). It's the settings entry's own
      * switch rather than a patch's, so every build has it ({@link PatchFamily#ENTRY_SWITCHES}). Off

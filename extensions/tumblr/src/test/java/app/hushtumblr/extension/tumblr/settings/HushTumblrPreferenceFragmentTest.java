@@ -103,6 +103,8 @@ public class HushTumblrPreferenceFragmentTest {
         ROW_TITLES.put(PatchFamily.HIDE_SUGGESTED_BLOGS, "Hide suggested blogs");
         ROW_TITLES.put(PatchFamily.HIDE_SUGGESTED_COMMUNITIES, "Hide suggested communities");
         ROW_TITLES.put(PatchFamily.HIDE_WATCH_IT_ROWS, "Hide Watch it rows");
+        ROW_TITLES.put(PatchFamily.HIDE_HASHTAGS, "Hide hashtags");
+        ROW_TITLES.put(PatchFamily.HIDE_FOLLOW_BUTTON, "Hide the Follow button");
         ROW_TITLES.put(PatchFamily.FIX_PUSH_NOTIFICATIONS, "Fix push notifications");
     }
 
@@ -208,6 +210,7 @@ public class HushTumblrPreferenceFragmentTest {
                 List<String> sections = sections(page);
                 List<String> expected = new ArrayList<>();
                 if (!Collections.disjoint(build, PatchFamily.FEED_PAGE)) expected.add("Feed");
+                if (!Collections.disjoint(build, PatchFamily.POSTS_PAGE)) expected.add("Posts");
                 if (!Collections.disjoint(build, PatchFamily.INTERFACE_PAGE)) expected.add("Interface");
                 if (!Collections.disjoint(build, PatchFamily.PRIVACY_PAGE)) expected.add("Privacy");
                 expected.addAll(EVERY_BUILD);

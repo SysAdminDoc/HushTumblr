@@ -43,6 +43,8 @@ public final class FamilyNames {
     public static final String HIDE_SUGGESTED_BLOGS = "Hide suggested blogs";
     public static final String HIDE_SUGGESTED_COMMUNITIES = "Hide suggested communities";
     public static final String HIDE_WATCH_IT_ROWS = "Hide Watch it rows";
+    public static final String HIDE_HASHTAGS = "Hide hashtags";
+    public static final String HIDE_FOLLOW_BUTTON = "Hide the Follow button";
     public static final String FIX_PUSH_NOTIFICATIONS = "Fix push notifications";
 
     private FamilyNames() {

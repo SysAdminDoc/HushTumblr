@@ -43,6 +43,7 @@ import app.hushtumblr.extension.tumblr.flags.FeatureSwitchesTest;
 import app.hushtumblr.extension.tumblr.notifications.PushNotificationsTest;
 import app.hushtumblr.extension.tumblr.privacy.AdvertisingId;
 import app.hushtumblr.extension.tumblr.timeline.TimelineItems;
+import app.hushtumblr.extension.tumblr.ui.PostParts;
 import app.hushtumblr.extension.tumblr.ui.ReviewPrompts;
 import app.hushtumblr.extension.shared.SettingsContextRule;
 import app.hushtumblr.extension.shared.Utils;
@@ -137,6 +138,10 @@ public class PausedHooksTest {
         probes.put(Settings.HIDE_SUGGESTED_COMMUNITIES, Collections.singletonList(TimelineItems::aPageLosesItsCommunityCard));
         // A page with a Watch it row comes back without it.
         probes.put(Settings.HIDE_WATCH_IT_ROWS, Collections.singletonList(TimelineItems::aPageLosesItsWatchItRow));
+        // A post's tags are left out.
+        probes.put(Settings.HIDE_HASHTAGS, Collections.singletonList(PostParts::hideTags));
+        // A post header's Follow button is hidden.
+        probes.put(Settings.HIDE_FOLLOW_BUTTON, Collections.singletonList(PostParts::hideFollowButton));
         // Firebase's sign-up for push notifications names Tumblr's own certificate.
         probes.put(Settings.FIX_PUSH_NOTIFICATIONS, Collections.singletonList(PushNotificationsTest::fixesACertificate));
         return probes;

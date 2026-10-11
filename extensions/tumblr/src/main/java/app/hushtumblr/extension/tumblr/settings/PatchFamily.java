@@ -73,6 +73,8 @@ public enum PatchFamily {
     HIDE_SUGGESTED_COMMUNITIES(FamilyNames.HIDE_SUGGESTED_COMMUNITIES, "hideSuggestedCommunities", null,
             Settings.HIDE_SUGGESTED_COMMUNITIES),
     HIDE_WATCH_IT_ROWS(FamilyNames.HIDE_WATCH_IT_ROWS, "hideWatchItRows", null, Settings.HIDE_WATCH_IT_ROWS),
+    HIDE_HASHTAGS(FamilyNames.HIDE_HASHTAGS, "hideHashtags", null, Settings.HIDE_HASHTAGS),
+    HIDE_FOLLOW_BUTTON(FamilyNames.HIDE_FOLLOW_BUTTON, "hideFollowButton", null, Settings.HIDE_FOLLOW_BUTTON),
     FIX_PUSH_NOTIFICATIONS(FamilyNames.FIX_PUSH_NOTIFICATIONS, "fixPushNotifications", null, Settings.FIX_PUSH_NOTIFICATIONS);
 
     /** The patch's name in Morphe Manager. */
@@ -126,6 +128,10 @@ public enum PatchFamily {
     static final Set<PatchFamily> INTERFACE_PAGE = Collections.unmodifiableSet(EnumSet.of(
             TURN_OFF_SCREENSHOT_SHARING, SKIP_REVIEW_PROMPTS, HIDE_BLAZE_PROMPTS, HIDE_COMMUNITIES_TAB, HIDE_TUMBLR_TV));
 
+    /** The families the Posts page holds. The page and its home row both read this. */
+    static final Set<PatchFamily> POSTS_PAGE = Collections.unmodifiableSet(EnumSet.of(
+            HIDE_FOLLOW_BUTTON, HIDE_HASHTAGS));
+
     /** The families the Privacy page holds. The page and its home row both read this. */
     static final Set<PatchFamily> PRIVACY_PAGE = Collections.unmodifiableSet(EnumSet.of(DISABLE_ANALYTICS,
             HIDE_ADVERTISING_ID, REMOVE_AD_TRACKING_PERMISSIONS, SPOOF_SIGNATURE));
@@ -146,6 +152,8 @@ public enum PatchFamily {
         SUGGESTED_COMMUNITY_CARDS(HIDE_SUGGESTED_COMMUNITIES, "suggestedCommunityCards",
                 "Hide suggested communities"),
         WATCH_IT_ROWS(HIDE_WATCH_IT_ROWS, "watchItRows", "Hide Watch it rows"),
+        POST_TAGS(HIDE_HASHTAGS, "postTags", "Hide hashtags"),
+        FOLLOW_BUTTON(HIDE_FOLLOW_BUTTON, "followButton", "Hide the Follow button"),
         FIREBASE_CERTIFICATE(FIX_PUSH_NOTIFICATIONS, "firebaseCertificate", "Fix push notifications");
 
         public final PatchFamily family;

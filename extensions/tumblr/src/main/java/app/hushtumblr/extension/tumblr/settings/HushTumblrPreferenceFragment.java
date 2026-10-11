@@ -272,6 +272,17 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                         + "their headings, out of your dashboard and other feeds."), SettingsIcons.BLOCK);
         }
 
+        // Parts of each post card. Both are read as each card is drawn, so they need no restart.
+        if (!Collections.disjoint(build, PatchFamily.POSTS_PAGE)) {
+            PreferenceCategory posts = category(screen, L10n.t("Posts"));
+            patchToggle(posts, context, build, PatchFamily.HIDE_HASHTAGS, Settings.HIDE_HASHTAGS,
+                    L10n.t("Hide hashtags"), L10n.t("Takes the tags off the bottom of posts in your dashboard "
+                        + "and other feeds, and keeps the source link."), SettingsIcons.BLOCK);
+            patchToggle(posts, context, build, PatchFamily.HIDE_FOLLOW_BUTTON, Settings.HIDE_FOLLOW_BUTTON,
+                    L10n.t("Hide the Follow button"), L10n.t("Takes the Follow button out of the header of "
+                        + "posts from blogs you don't follow yet."), SettingsIcons.BLOCK);
+        }
+
         // Tabs, prompts and pop-ups. A switch that answers one of Tumblr's own feature flags says a
         // restart shows it, since Tumblr reads each flag once a run. Skip review prompts is read each
         // time the prompt would open, so it needs none.

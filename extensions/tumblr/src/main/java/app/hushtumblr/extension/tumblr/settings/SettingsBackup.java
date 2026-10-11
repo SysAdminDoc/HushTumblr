@@ -98,6 +98,8 @@ public final class SettingsBackup {
             Settings.HIDE_SUGGESTED_BLOGS,
             Settings.HIDE_SUGGESTED_COMMUNITIES,
             Settings.HIDE_WATCH_IT_ROWS,
+            Settings.HIDE_HASHTAGS,
+            Settings.HIDE_FOLLOW_BUTTON,
             Settings.FIX_PUSH_NOTIFICATIONS));
 
     /**
