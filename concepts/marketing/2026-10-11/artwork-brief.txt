@@ -1,0 +1,29 @@
+HushTumblr artwork
+
+Selected direction
+Navy enamel H emblem with a pale-blue folded ribbon, matched to the established Hush family. Near-black editorial poster with white typography and an abstract blog-card motif. The cards are illustration, not a product screenshot. No real posts, accounts or version number. No claims that planned features have shipped.
+
+Exact poster copy
+HushTumblr
+Tumblr, on your terms.
+A quieter home for your dashboard.
+Morphe patches for Tumblr
+
+Family references
+HushGram and HushThreads icon geometry. HushGram and HushTelegram editorial README heroes. Preserve the white H and restrained dimensional finish. Use Tumblr navy and pale blue rather than another sibling's accent.
+
+Five identity directions considered
+1. Minimal icon. HushTumblr, Morphe patches for Tumblr. A flat white H with a navy outline and a small folded-paper crossbar. High contrast, clean geometry, no wordmark. True transparent RGBA PNG, alpha zero outside the glyph, no background or checkerboard.
+2. App icon. HushTumblr, Morphe patches for Tumblr. White H on a subtly dimensional navy rounded square with a pale-blue folded ribbon. This is the selected direction. High contrast on dark and light surfaces, clear geometry, monogram only. True transparent RGBA PNG, alpha zero outside the badge, no background or checkerboard.
+3. Wordmark. HushTumblr, Morphe patches for Tumblr. An opaque white and navy HushTumblr wordmark with a pale-blue accent. Clean typography, high contrast, no other text. True transparent RGBA PNG, alpha zero outside the lettering, no background or checkerboard.
+4. Emblem. HushTumblr, Morphe patches for Tumblr. A compact navy badge framing a white H and folded-paper motif. High contrast, clean geometry, no wordmark. True transparent RGBA PNG, alpha zero outside the emblem, no background or checkerboard.
+5. Abstract. HushTumblr, Morphe patches for Tumblr. Two folded page shapes forming an H in white and pale blue with a navy edge. High contrast, clean geometry, no wordmark. True transparent RGBA PNG, alpha zero outside the symbol, no background or checkerboard.
+
+Selected masters
+selected/logo-master.png is the unchanged transparent icon master.
+selected/hero-master.png is the unchanged wide README poster master.
+selected/social-master.png is the unchanged two-to-one social preview master.
+The selected files are byte-identical to their shipping copies in assets.
+
+Layout
+The hero has one brand row, one large two-line headline, a short support sentence and a small descriptive footer. The right-hand illustration carries the selected icon. Every line must remain readable at typical README width. Artwork stays independent of releases.

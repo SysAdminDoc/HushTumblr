@@ -1,0 +1,33 @@
+{
+  "icon.png": {
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA",
+    "sha256": "4258cc1e2a6d13601a77df4c576b95ab4ac2f2585c3ab66e34f4cf8e45d2efda",
+    "transparent_percent": 40.35
+  },
+  "readme-hero.png": {
+    "size": [
+      1672,
+      941
+    ],
+    "mode": "RGB",
+    "sha256": "f7153ae280775b9fa36d59f82018c654da84e337f7e7d5f94f9da472f1c16420"
+  },
+  "github-social-preview.png": {
+    "size": [
+      1774,
+      887
+    ],
+    "mode": "RGB",
+    "sha256": "860a286723a82e9af75fa64aab6296fdd763562dc152255fd4f3cc226de95262"
+  },
+  "readme": {
+    "local_links": "pass",
+    "hero_references": 1,
+    "desktop_and_mobile_render": "pass",
+    "mobile_overflow": false
+  }
+}
