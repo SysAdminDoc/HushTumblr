@@ -272,7 +272,9 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                         + "their headings, out of your dashboard and other feeds."), SettingsIcons.BLOCK);
         }
 
-        // Parts of each post card. Both are read as each card is drawn, so they need no restart.
+        // Parts of each post card. Tags, the Follow button and the counts are read as each card is drawn,
+        // so they need no restart. The footer's buttons keep their first answer until Tumblr restarts
+        // (PostFooter), since Compose expects a footer to draw the same buttons each time.
         if (!Collections.disjoint(build, PatchFamily.POSTS_PAGE)) {
             PreferenceCategory posts = category(screen, L10n.t("Posts"));
             patchToggle(posts, context, build, PatchFamily.HIDE_HASHTAGS, Settings.HIDE_HASHTAGS,
@@ -281,6 +283,21 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             patchToggle(posts, context, build, PatchFamily.HIDE_FOLLOW_BUTTON, Settings.HIDE_FOLLOW_BUTTON,
                     L10n.t("Hide the Follow button"), L10n.t("Takes the Follow button out of the header of "
                         + "posts from blogs you don't follow yet."), SettingsIcons.BLOCK);
+            patchToggle(posts, context, build, PatchFamily.HIDE_NOTE_COUNTS, Settings.HIDE_NOTE_COUNTS,
+                    L10n.t("Hide note counts"), L10n.t("Takes the like, reblog and comment counts off the footer "
+                        + "under posts, and keeps the buttons."), SettingsIcons.BLOCK);
+            patchToggle(posts, context, build, PatchFamily.HIDE_LIKE_BUTTON, Settings.HIDE_LIKE_BUTTON,
+                    L10n.t("Hide the like button"), L10n.t("Takes the like button out of the footer under posts. "
+                        + "Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+            patchToggle(posts, context, build, PatchFamily.HIDE_REBLOG_BUTTON, Settings.HIDE_REBLOG_BUTTON,
+                    L10n.t("Hide the reblog button"), L10n.t("Takes the reblog button out of the footer under "
+                        + "posts. Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+            patchToggle(posts, context, build, PatchFamily.HIDE_COMMENT_BUTTON, Settings.HIDE_COMMENT_BUTTON,
+                    L10n.t("Hide the comment button"), L10n.t("Takes the comment button out of the footer under "
+                        + "posts. Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+            patchToggle(posts, context, build, PatchFamily.HIDE_SHARE_BUTTON, Settings.HIDE_SHARE_BUTTON,
+                    L10n.t("Hide the share button"), L10n.t("Takes the share button out of the footer under "
+                        + "posts. Restart Tumblr to see the change."), SettingsIcons.BLOCK);
         }
 
         // Tabs, buttons, prompts and pop-ups. A switch that answers one of Tumblr's own feature flags says a

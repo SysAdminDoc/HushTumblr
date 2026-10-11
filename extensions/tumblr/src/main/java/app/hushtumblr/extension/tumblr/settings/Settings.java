@@ -161,6 +161,41 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_hide_tumblrmart", FALSE);
 
     /**
+     * The footer under posts doesn't show the like, reblog and comment counts
+     * ({@link app.hushtumblr.extension.tumblr.ui.PostFooter}). Off to start.
+     */
+    public static final BooleanSetting HIDE_NOTE_COUNTS =
+            new BooleanSetting("hushtumblr_hide_note_counts", FALSE);
+
+    /**
+     * The footer under posts doesn't show the like button
+     * ({@link app.hushtumblr.extension.tumblr.ui.PostFooter}). Off to start.
+     */
+    public static final BooleanSetting HIDE_LIKE_BUTTON =
+            new BooleanSetting("hushtumblr_hide_like_button", FALSE);
+
+    /**
+     * The footer under posts doesn't show the reblog button
+     * ({@link app.hushtumblr.extension.tumblr.ui.PostFooter}). Off to start.
+     */
+    public static final BooleanSetting HIDE_REBLOG_BUTTON =
+            new BooleanSetting("hushtumblr_hide_reblog_button", FALSE);
+
+    /**
+     * The footer under posts doesn't show the comment button
+     * ({@link app.hushtumblr.extension.tumblr.ui.PostFooter}). Off to start.
+     */
+    public static final BooleanSetting HIDE_COMMENT_BUTTON =
+            new BooleanSetting("hushtumblr_hide_comment_button", FALSE);
+
+    /**
+     * The footer under posts doesn't show the share button
+     * ({@link app.hushtumblr.extension.tumblr.ui.PostFooter}). Off to start.
+     */
+    public static final BooleanSetting HIDE_SHARE_BUTTON =
+            new BooleanSetting("hushtumblr_hide_share_button", FALSE);
+
+    /**
      * Once a day, when Tumblr starts, ask api.github.com whether a newer HushTumblr release is
      * out, and say so on the settings screen ({@link ReleaseCheck}). It's the settings entry's own
      * switch rather than a patch's, so every build has it ({@link PatchFamily#ENTRY_SWITCHES}). Off

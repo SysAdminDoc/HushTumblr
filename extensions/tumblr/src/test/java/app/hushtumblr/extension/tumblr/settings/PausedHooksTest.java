@@ -43,6 +43,8 @@ import app.hushtumblr.extension.tumblr.flags.FeatureSwitchesTest;
 import app.hushtumblr.extension.tumblr.notifications.PushNotificationsTest;
 import app.hushtumblr.extension.tumblr.privacy.AdvertisingId;
 import app.hushtumblr.extension.tumblr.timeline.TimelineItems;
+import app.hushtumblr.extension.tumblr.ui.PostFooter;
+import app.hushtumblr.extension.tumblr.ui.PostFooterForTests;
 import app.hushtumblr.extension.tumblr.ui.PostParts;
 import app.hushtumblr.extension.tumblr.ui.ReviewPrompts;
 import app.hushtumblr.extension.tumblr.ui.StoreButtons;
@@ -145,6 +147,18 @@ public class PausedHooksTest {
         probes.put(Settings.HIDE_FOLLOW_BUTTON, Collections.singletonList(PostParts::hideFollowButton));
         // The Premium diamond is hidden.
         probes.put(Settings.HIDE_TUMBLRMART, Collections.singletonList(() -> StoreButtons.hideDiamond(null, null)));
+        // The like, reblog and comment counts under a post are blank.
+        probes.put(Settings.HIDE_NOTE_COUNTS, Collections.singletonList(() -> PostFooter.noteCount(5) == 0));
+        // The footer under a post leaves out a button. Each answer is kept until Tumblr restarts, so
+        // each probe asks as a fresh start would.
+        probes.put(Settings.HIDE_LIKE_BUTTON,
+                Collections.singletonList(() -> PostFooterForTests.askedAfresh(PostFooter::hideLikeButton)));
+        probes.put(Settings.HIDE_REBLOG_BUTTON,
+                Collections.singletonList(() -> PostFooterForTests.askedAfresh(PostFooter::hideReblogButton)));
+        probes.put(Settings.HIDE_COMMENT_BUTTON,
+                Collections.singletonList(() -> PostFooterForTests.askedAfresh(PostFooter::hideCommentButton)));
+        probes.put(Settings.HIDE_SHARE_BUTTON,
+                Collections.singletonList(() -> PostFooterForTests.askedAfresh(PostFooter::hideShareButton)));
         // Firebase's sign-up for push notifications names Tumblr's own certificate.
         probes.put(Settings.FIX_PUSH_NOTIFICATIONS, Collections.singletonList(PushNotificationsTest::fixesACertificate));
         return probes;

@@ -67,6 +67,16 @@ public final class SettingsStatus {
     public static boolean hideTumblrMart() { return false; }
     public static boolean premiumDiamond() { return false; }
     public static boolean tumblrMartButtons() { return false; }
+    public static boolean hideNoteCounts() { return false; }
+    public static boolean noteCounts() { return false; }
+    public static boolean hideLikeButton() { return false; }
+    public static boolean likeButton() { return false; }
+    public static boolean hideReblogButton() { return false; }
+    public static boolean reblogButton() { return false; }
+    public static boolean hideCommentButton() { return false; }
+    public static boolean commentButton() { return false; }
+    public static boolean hideShareButton() { return false; }
+    public static boolean shareButton() { return false; }
     public static boolean fixPushNotifications() { return false; }
     public static boolean firebaseCertificate() { return false; }
 }

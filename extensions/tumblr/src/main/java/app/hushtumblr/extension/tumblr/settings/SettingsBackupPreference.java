@@ -431,6 +431,11 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
             case "hushtumblr_hide_hashtags": return L10n.t("Hide hashtags");
             case "hushtumblr_hide_follow_button": return L10n.t("Hide the Follow button");
             case "hushtumblr_hide_tumblrmart": return L10n.t("Hide the diamond and TumblrMart");
+            case "hushtumblr_hide_note_counts": return L10n.t("Hide note counts");
+            case "hushtumblr_hide_like_button": return L10n.t("Hide the like button");
+            case "hushtumblr_hide_reblog_button": return L10n.t("Hide the reblog button");
+            case "hushtumblr_hide_comment_button": return L10n.t("Hide the comment button");
+            case "hushtumblr_hide_share_button": return L10n.t("Hide the share button");
             case "hushtumblr_fix_push_notifications": return L10n.t("Fix push notifications");
             default: throw new IllegalArgumentException("Unlisted backup switch");
         }

@@ -253,3 +253,14 @@ Hide the diamond and TumblrMart	Diamant und TumblrMart ausblenden
 Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.	Blendet den Premium-Diamanten und den TumblrMart-Button oben in deinem Dashboard, in Entdecken und in den Mitteilungen aus. Starte Tumblr neu, um die Änderung zu sehen.
 the Premium diamond	den Premium-Diamanten
 TumblrMart buttons	TumblrMart-Buttons
+# context: the footer under a post, with its like, reblog, comment and share buttons and their counts. Use the words Tumblr shows in your language for notes and for each button.
+Hide note counts	Anzahl der Anmerkungen ausblenden
+Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.	Nimmt die Zahlen für Likes, Reblogs und Kommentare aus der Leiste unter Beiträgen. Die Buttons bleiben.
+Hide the like button	Like-Button ausblenden
+Takes the like button out of the footer under posts. Restart Tumblr to see the change.	Nimmt den Like-Button aus der Leiste unter Beiträgen. Starte Tumblr neu, um die Änderung zu sehen.
+Hide the reblog button	Reblog-Button ausblenden
+Takes the reblog button out of the footer under posts. Restart Tumblr to see the change.	Nimmt den Reblog-Button aus der Leiste unter Beiträgen. Starte Tumblr neu, um die Änderung zu sehen.
+Hide the comment button	Kommentar-Button ausblenden
+Takes the comment button out of the footer under posts. Restart Tumblr to see the change.	Nimmt den Kommentar-Button aus der Leiste unter Beiträgen. Starte Tumblr neu, um die Änderung zu sehen.
+Hide the share button	Teilen-Button ausblenden
+Takes the share button out of the footer under posts. Restart Tumblr to see the change.	Nimmt den Teilen-Button aus der Leiste unter Beiträgen. Starte Tumblr neu, um die Änderung zu sehen.

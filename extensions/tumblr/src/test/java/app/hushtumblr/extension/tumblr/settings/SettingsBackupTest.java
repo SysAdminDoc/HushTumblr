@@ -253,6 +253,11 @@ public class SettingsBackupTest {
                 Settings.HIDE_HASHTAGS,
                 Settings.HIDE_FOLLOW_BUTTON,
                 Settings.HIDE_TUMBLRMART,
+                Settings.HIDE_NOTE_COUNTS,
+                Settings.HIDE_LIKE_BUTTON,
+                Settings.HIDE_REBLOG_BUTTON,
+                Settings.HIDE_COMMENT_BUTTON,
+                Settings.HIDE_SHARE_BUTTON,
                 Settings.FIX_PUSH_NOTIFICATIONS),
                 SettingsBackup.ALLOWLIST);
     }

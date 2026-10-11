@@ -76,6 +76,11 @@ public enum PatchFamily {
     HIDE_HASHTAGS(FamilyNames.HIDE_HASHTAGS, "hideHashtags", null, Settings.HIDE_HASHTAGS),
     HIDE_FOLLOW_BUTTON(FamilyNames.HIDE_FOLLOW_BUTTON, "hideFollowButton", null, Settings.HIDE_FOLLOW_BUTTON),
     HIDE_TUMBLRMART(FamilyNames.HIDE_TUMBLRMART, "hideTumblrMart", null, Settings.HIDE_TUMBLRMART),
+    HIDE_NOTE_COUNTS(FamilyNames.HIDE_NOTE_COUNTS, "hideNoteCounts", null, Settings.HIDE_NOTE_COUNTS),
+    HIDE_LIKE_BUTTON(FamilyNames.HIDE_LIKE_BUTTON, "hideLikeButton", null, Settings.HIDE_LIKE_BUTTON),
+    HIDE_REBLOG_BUTTON(FamilyNames.HIDE_REBLOG_BUTTON, "hideReblogButton", null, Settings.HIDE_REBLOG_BUTTON),
+    HIDE_COMMENT_BUTTON(FamilyNames.HIDE_COMMENT_BUTTON, "hideCommentButton", null, Settings.HIDE_COMMENT_BUTTON),
+    HIDE_SHARE_BUTTON(FamilyNames.HIDE_SHARE_BUTTON, "hideShareButton", null, Settings.HIDE_SHARE_BUTTON),
     FIX_PUSH_NOTIFICATIONS(FamilyNames.FIX_PUSH_NOTIFICATIONS, "fixPushNotifications", null, Settings.FIX_PUSH_NOTIFICATIONS);
 
     /** The patch's name in Morphe Manager. */
@@ -130,8 +135,9 @@ public enum PatchFamily {
             TURN_OFF_SCREENSHOT_SHARING, SKIP_REVIEW_PROMPTS, HIDE_BLAZE_PROMPTS, HIDE_COMMUNITIES_TAB, HIDE_TUMBLR_TV));
 
     /** The families the Posts page holds. The page and its home row both read this. */
-    static final Set<PatchFamily> POSTS_PAGE = Collections.unmodifiableSet(EnumSet.of(
-            HIDE_FOLLOW_BUTTON, HIDE_HASHTAGS));
+    static final Set<PatchFamily> POSTS_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_SHARE_BUTTON,
+            HIDE_COMMENT_BUTTON, HIDE_REBLOG_BUTTON, HIDE_LIKE_BUTTON, HIDE_NOTE_COUNTS, HIDE_FOLLOW_BUTTON,
+            HIDE_HASHTAGS));
 
     /** The families the Privacy page holds. The page and its home row both read this. */
     static final Set<PatchFamily> PRIVACY_PAGE = Collections.unmodifiableSet(EnumSet.of(DISABLE_ANALYTICS,
@@ -158,6 +164,11 @@ public enum PatchFamily {
         // Two hooks, so the coverage line names each part rather than the patch.
         PREMIUM_DIAMOND(HIDE_TUMBLRMART, "premiumDiamond", "the Premium diamond"),
         TUMBLRMART_BUTTONS(HIDE_TUMBLRMART, "tumblrMartButtons", "TumblrMart buttons"),
+        NOTE_COUNTS(HIDE_NOTE_COUNTS, "noteCounts", "Hide note counts"),
+        LIKE_BUTTON(HIDE_LIKE_BUTTON, "likeButton", "Hide the like button"),
+        REBLOG_BUTTON(HIDE_REBLOG_BUTTON, "reblogButton", "Hide the reblog button"),
+        COMMENT_BUTTON(HIDE_COMMENT_BUTTON, "commentButton", "Hide the comment button"),
+        SHARE_BUTTON(HIDE_SHARE_BUTTON, "shareButton", "Hide the share button"),
         FIREBASE_CERTIFICATE(FIX_PUSH_NOTIFICATIONS, "firebaseCertificate", "Fix push notifications");
 
         public final PatchFamily family;

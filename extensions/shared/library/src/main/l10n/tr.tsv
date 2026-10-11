@@ -253,3 +253,14 @@ Hide the diamond and TumblrMart	Elmas ve TumblrMart'ı gizle
 Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.	Panonun, Keşfet'in ve bildirimlerin üstündeki Premium elmasını ve TumblrMart düğmesini gizler. Değişikliği görmek için Tumblr'ı yeniden başlat.
 the Premium diamond	Premium elması
 TumblrMart buttons	TumblrMart düğmeleri
+# context: the footer under a post, with its like, reblog, comment and share buttons and their counts. Use the words Tumblr shows in your language for notes and for each button.
+Hide note counts	Not sayılarını gizle
+Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.	Gönderilerin altındaki beğeni, RB ve yorum sayılarını kaldırır, düğmeler kalır.
+Hide the like button	Beğen düğmesini gizle
+Takes the like button out of the footer under posts. Restart Tumblr to see the change.	Gönderilerin altındaki beğen düğmesini kaldırır. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Hide the reblog button	RB düğmesini gizle
+Takes the reblog button out of the footer under posts. Restart Tumblr to see the change.	Gönderilerin altındaki RB düğmesini kaldırır. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Hide the comment button	Yorum düğmesini gizle
+Takes the comment button out of the footer under posts. Restart Tumblr to see the change.	Gönderilerin altındaki yorum düğmesini kaldırır. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Hide the share button	Paylaş düğmesini gizle
+Takes the share button out of the footer under posts. Restart Tumblr to see the change.	Gönderilerin altındaki paylaş düğmesini kaldırır. Değişikliği görmek için Tumblr'ı yeniden başlat.

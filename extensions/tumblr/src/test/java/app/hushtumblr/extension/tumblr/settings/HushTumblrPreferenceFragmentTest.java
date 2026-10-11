@@ -106,6 +106,11 @@ public class HushTumblrPreferenceFragmentTest {
         ROW_TITLES.put(PatchFamily.HIDE_HASHTAGS, "Hide hashtags");
         ROW_TITLES.put(PatchFamily.HIDE_FOLLOW_BUTTON, "Hide the Follow button");
         ROW_TITLES.put(PatchFamily.HIDE_TUMBLRMART, "Hide the diamond and TumblrMart");
+        ROW_TITLES.put(PatchFamily.HIDE_NOTE_COUNTS, "Hide note counts");
+        ROW_TITLES.put(PatchFamily.HIDE_LIKE_BUTTON, "Hide the like button");
+        ROW_TITLES.put(PatchFamily.HIDE_REBLOG_BUTTON, "Hide the reblog button");
+        ROW_TITLES.put(PatchFamily.HIDE_COMMENT_BUTTON, "Hide the comment button");
+        ROW_TITLES.put(PatchFamily.HIDE_SHARE_BUTTON, "Hide the share button");
         ROW_TITLES.put(PatchFamily.FIX_PUSH_NOTIFICATIONS, "Fix push notifications");
     }
 
