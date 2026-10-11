@@ -116,6 +116,9 @@ public class PausedHooksTest {
         // The Tumblr TV tab's flag answers off.
         probes.put(Settings.HIDE_TUMBLR_TV, Collections.singletonList(
                 () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("TUMBLR_TV_MOBILE_NAV"), true)));
+        // The Communities tab's flag answers off.
+        probes.put(Settings.HIDE_COMMUNITIES_TAB, Collections.singletonList(
+                () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("COMMUNITIES_TAB_BAR_ITEM"), true)));
         // Firebase's sign-up for push notifications names Tumblr's own certificate.
         probes.put(Settings.FIX_PUSH_NOTIFICATIONS, Collections.singletonList(PushNotificationsTest::fixesACertificate));
         return probes;

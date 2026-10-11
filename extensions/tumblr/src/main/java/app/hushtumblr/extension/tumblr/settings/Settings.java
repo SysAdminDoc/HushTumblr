@@ -84,6 +84,13 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_hide_tumblr_tv", FALSE);
 
     /**
+     * The Communities tab leaves the bottom bar, and the post editor stops showing Communities tips
+     * ({@link app.hushtumblr.extension.tumblr.flags.FeatureSwitches}). Off to start.
+     */
+    public static final BooleanSetting HIDE_COMMUNITIES_TAB =
+            new BooleanSetting("hushtumblr_hide_communities_tab", FALSE);
+
+    /**
      * Once a day, when Tumblr starts, ask api.github.com whether a newer HushTumblr release is
      * out, and say so on the settings screen ({@link ReleaseCheck}). It's the settings entry's own
      * switch rather than a patch's, so every build has it ({@link PatchFamily#ENTRY_SWITCHES}). Off

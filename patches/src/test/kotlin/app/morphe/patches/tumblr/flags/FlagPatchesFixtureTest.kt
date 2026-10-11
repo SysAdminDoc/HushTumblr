@@ -16,6 +16,7 @@ import app.morphe.patches.tumblr.misc.extension.SETTINGS_STATUS
 import app.morphe.patches.tumblr.privacy.disableAnalyticsPatch
 import app.morphe.patches.tumblr.ads.hideAdFreeBannerPatch
 import app.morphe.patches.tumblr.ui.hideTumblrTvPatch
+import app.morphe.patches.tumblr.ui.hideCommunitiesTabPatch
 import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -40,6 +41,10 @@ class FlagPatchesFixtureTest {
     @Test
     fun `Hide Tumblr TV claims flags Tumblr has and turns its switch on`() =
         check(hideTumblrTvPatch, "hideTumblrTv", "tumblrTvFlags", "TUMBLR_TV_MOBILE_NAV", "TUMBLR_TV_ONBOARDING_REDIRECT")
+
+    @Test
+    fun `Hide the Communities tab claims flags Tumblr has and turns its switch on`() =
+        check(hideCommunitiesTabPatch, "hideCommunitiesTab", "communitiesTabFlags", "COMMUNITIES_TAB_BAR_ITEM", "COMMUNITIES_TOOLTIPS")
 
     /**
      * Applies [patch] to the extension and checks it flips the [status] and [capability] stubs, after

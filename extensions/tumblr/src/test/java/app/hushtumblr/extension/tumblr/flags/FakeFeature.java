@@ -45,4 +45,8 @@ public enum FakeFeature {
     // Hide Tumblr TV
     TUMBLR_TV_MOBILE_NAV,
     TUMBLR_TV_ONBOARDING_REDIRECT,
+
+    // Hide the Communities tab
+    COMMUNITIES_TAB_BAR_ITEM,
+    COMMUNITIES_TOOLTIPS,
 }

@@ -72,6 +72,10 @@ public final class FeatureSwitches {
         // at the end of sign-up.
         claim(claims, "HIDE_TUMBLR_TV", FamilyNames.HIDE_TUMBLR_TV,
                 "TUMBLR_TV_MOBILE_NAV", "TUMBLR_TV_ONBOARDING_REDIRECT");
+        // The Communities tab in the bottom bar (RootActivity's tab list), and the Communities tips
+        // in the post editor (CanvasActivity).
+        claim(claims, "HIDE_COMMUNITIES_TAB", FamilyNames.HIDE_COMMUNITIES_TAB,
+                "COMMUNITIES_TAB_BAR_ITEM", "COMMUNITIES_TOOLTIPS");
         return Collections.unmodifiableMap(claims);
     }
 

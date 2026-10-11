@@ -95,6 +95,7 @@ public class HushTumblrPreferenceFragmentTest {
         ROW_TITLES.put(PatchFamily.SPOOF_SIGNATURE, "Spoof signature for Google sign-in");
         ROW_TITLES.put(PatchFamily.HIDE_AD_FREE_BANNER, "Hide the ad-free banner");
         ROW_TITLES.put(PatchFamily.HIDE_TUMBLR_TV, "Hide Tumblr TV");
+        ROW_TITLES.put(PatchFamily.HIDE_COMMUNITIES_TAB, "Hide the Communities tab");
         ROW_TITLES.put(PatchFamily.FIX_PUSH_NOTIFICATIONS, "Fix push notifications");
     }
 

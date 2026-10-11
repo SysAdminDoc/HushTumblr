@@ -216,3 +216,6 @@ Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tu
 Interface	Interface
 Hide Tumblr TV	Ocultar o Tumblr TV
 Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there. Restart Tumblr to see the change.	Tira a aba do Tumblr TV da barra inferior e impede que o cadastro mande você para lá. Reinicie o Tumblr para ver a mudança.
+# context: the Hide the Communities tab switch on the Interface page. Communities is Tumblr's name for its group spaces.
+Hide the Communities tab	Ocultar a aba Comunidades
+Takes the Communities tab out of the bottom bar and stops Communities tips in the post editor. Restart Tumblr to see the change.	Tira a aba Comunidades da barra inferior e para as dicas sobre comunidades no editor de posts. Reinicie o Tumblr para ver a mudança.

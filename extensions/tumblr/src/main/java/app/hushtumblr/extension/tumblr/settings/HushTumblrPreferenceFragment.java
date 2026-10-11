@@ -268,6 +268,10 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             patchToggle(ui, context, build, PatchFamily.HIDE_TUMBLR_TV, Settings.HIDE_TUMBLR_TV, L10n.t("Hide Tumblr TV"),
                     L10n.t("Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there. "
                         + "Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+            patchToggle(ui, context, build, PatchFamily.HIDE_COMMUNITIES_TAB, Settings.HIDE_COMMUNITIES_TAB,
+                    L10n.t("Hide the Communities tab"), L10n.t("Takes the Communities tab out of the bottom bar and "
+                        + "stops Communities tips in the post editor. Restart Tumblr to see the change."),
+                    SettingsIcons.BLOCK);
         }
 
         if (!Collections.disjoint(build, PatchFamily.PRIVACY_PAGE)) {

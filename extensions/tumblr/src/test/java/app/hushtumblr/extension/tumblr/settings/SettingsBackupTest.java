@@ -242,6 +242,7 @@ public class SettingsBackupTest {
                 Settings.DISABLE_ANALYTICS,
                 Settings.HIDE_AD_FREE_BANNER,
                 Settings.HIDE_TUMBLR_TV,
+                Settings.HIDE_COMMUNITIES_TAB,
                 Settings.FIX_PUSH_NOTIFICATIONS),
                 SettingsBackup.ALLOWLIST);
     }
