@@ -12,6 +12,8 @@ package app.morphe.patches.tumblr.privacy
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.resourcePatch
+import app.morphe.patches.tumblr.flags.featureSwitchHookPatch
+import app.morphe.patches.tumblr.misc.extension.enableCapability
 import app.morphe.patches.tumblr.misc.extension.enableStatus
 import app.morphe.patches.tumblr.misc.extension.requireStatusMethod
 import app.morphe.patches.tumblr.misc.extension.tumblrExtensionPatch
@@ -61,10 +63,13 @@ internal fun deactivateFirebaseAnalytics(document: Document) {
     }
 }
 
-/** Checks the status flag first, so a broken extension refuses before the manifest is changed. */
+/** Checks the status flags first, so a broken extension refuses before the manifest is changed. */
 internal val analyticsPreflightPatch = bytecodePatch {
     dependsOn(settingsPatch, tumblrExtensionPatch)
-    execute { requireStatusMethod("disableAnalytics") }
+    execute {
+        requireStatusMethod("disableAnalytics")
+        requireStatusMethod("analyticsFlags")
+    }
 }
 
 internal val disableFirebaseAnalyticsManifestPatch = resourcePatch {
@@ -74,21 +79,26 @@ internal val disableFirebaseAnalyticsManifestPatch = resourcePatch {
 
 /**
  * Tumblr 46.5.0.109 carries Firebase Crashlytics and the analytics connector, and declares none of
- * these switches itself, so the edit adds them all. It's a manifest change: there is no switch to
- * turn it back on in the app.
+ * these switches itself, so the edit adds them all. That half is a manifest change with no switch
+ * in the app. The other half is the switch: it claims Tumblr's own tracking flags (LiveRamp, Open
+ * Measurement, Moat, its exposure, network, performance and supply logging) in the extension's
+ * feature switch table, so they answer off once Tumblr restarts.
  */
 @Suppress("unused")
 val disableAnalyticsPatch = bytecodePatch(
     name = PATCH,
-    description = "Turns off Firebase crash reports and Google's analytics collection inside Tumblr. Good if " +
-        "you'd rather share less. Works as soon as you patch it in, with no switch.",
+    description = "Turns off Firebase crash reports and Google's analytics collection, and Tumblr's own tracking" +
+        " and ad measurement once it restarts. The Firebase and Google part stays until you patch again" +
+        " without it. On by default. Turn it off in Tumblr settings > HushTumblr > Privacy.",
     default = true,
 ) {
     category("Privacy")
-    dependsOn(settingsPatch, tumblrExtensionPatch, disableFirebaseAnalyticsManifestPatch)
+    dependsOn(settingsPatch, tumblrExtensionPatch, disableFirebaseAnalyticsManifestPatch, featureSwitchHookPatch)
     compatibleWith(*AppCompatibilities.tumblr())
 
     execute {
+        requireStatusMethod("analyticsFlags")
+        enableCapability("analyticsFlags")
         enableStatus("disableAnalytics")
     }
 }

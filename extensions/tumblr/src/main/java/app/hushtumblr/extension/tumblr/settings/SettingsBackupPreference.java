@@ -417,6 +417,7 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
         switch (setting.key) {
             case "hushtumblr_hide_ads": return L10n.t("Hide ads");
             case "hushtumblr_hide_ad_id": return L10n.t("Hide advertising ID");
+            case "hushtumblr_disable_analytics": return L10n.t("Disable analytics");
             case "hushtumblr_fix_push_notifications": return L10n.t("Fix push notifications");
             default: throw new IllegalArgumentException("Unlisted backup switch");
         }

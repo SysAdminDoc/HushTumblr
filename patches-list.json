@@ -6,7 +6,7 @@
   "patches": [
     {
       "name": "Disable analytics",
-      "description": "Turns off Firebase crash reports and Google's analytics collection inside Tumblr. Good if you'd rather share less. Works as soon as you patch it in, with no switch.",
+      "description": "Turns off Firebase crash reports and Google's analytics collection, and Tumblr's own tracking and ad measurement once it restarts. The Firebase and Google part stays until you patch again without it. On by default. Turn it off in Tumblr settings > HushTumblr > Privacy.",
       "category": "Privacy",
       "use": true,
       "dependencies": [

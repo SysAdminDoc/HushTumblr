@@ -48,11 +48,14 @@ import app.hushtumblr.extension.shared.settings.preference.LogBufferManager;
  */
 public enum PatchFamily {
     HIDE_ADS(FamilyNames.HIDE_ADS, "hideAds", null, Settings.HIDE_ADS),
-    /** Analytics switches written into the manifest when patching: no switch, so Pause can't reach it. */
+    /**
+     * Tumblr's tracking flags behind a switch, and analytics switches written into the manifest when
+     * patching, which Pause can't reach.
+     */
     DISABLE_ANALYTICS(FamilyNames.DISABLE_ANALYTICS, "disableAnalytics",
-            "Firebase and Google Analytics collection is turned off"),
+            "Firebase and Google Analytics collection is turned off", Settings.DISABLE_ANALYTICS),
     HIDE_ADVERTISING_ID(FamilyNames.HIDE_ADVERTISING_ID, "hideAdvertisingId", null, Settings.HIDE_ADVERTISING_ID),
-    /** Manifest permissions removed when patching: no switch either. */
+    /** Manifest permissions removed when patching: no switch, so Pause can't reach it. */
     REMOVE_AD_TRACKING_PERMISSIONS(FamilyNames.REMOVE_AD_TRACKING_PERMISSIONS, "removeAdTrackingPermissions",
             "Tumblr's access to the ad ID and Android's ad services is removed"),
     /** Signature spoofing metadata added to the manifest when patching: no switch either. */
@@ -114,6 +117,7 @@ public enum PatchFamily {
     public enum Capability {
         TIMELINE_ADS(HIDE_ADS, "timelineAds", "Hide ads"),
         ADVERTISING_ID(HIDE_ADVERTISING_ID, "advertisingId", "Hide advertising ID"),
+        ANALYTICS_FLAGS(DISABLE_ANALYTICS, "analyticsFlags", "Disable analytics"),
         FIREBASE_CERTIFICATE(FIX_PUSH_NOTIFICATIONS, "firebaseCertificate", "Fix push notifications");
 
         public final PatchFamily family;

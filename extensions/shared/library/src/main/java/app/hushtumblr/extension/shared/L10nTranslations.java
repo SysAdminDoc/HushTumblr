@@ -190,8 +190,6 @@ public final class L10nTranslations {
                 "So findest du sie");
         table.put("Firebase and Google Analytics collection is turned off",
                 "Die Datenerfassung von Firebase und Google Analytics ist ausgeschaltet");
-        table.put("Firebase crash reports and Google's analytics collection are off in Tumblr. This was set when you patched. Patch again without it to turn them back on.",
-                "Firebase-Absturzberichte und die Analysedatenerfassung von Google sind in Tumblr aus. Das wurde beim Patchen festgelegt. Patche erneut ohne diesen Patch, um sie wieder einzuschalten.");
         table.put("Fix push notifications",
                 "Push-Benachrichtigungen reparieren");
         table.put("Full report saved to %1$s",
@@ -302,11 +300,11 @@ public final class L10nTranslations {
                 "Einstellungsdatei wird gelesen");
         table.put("Record patch activity and show errors for a bug report. Leave off during normal use.",
                 "Zeichnet Patch-Aktivit\u00e4t auf und zeigt Fehler f\u00fcr einen Fehlerbericht. Im Alltag ausgeschaltet lassen.");
+        table.put("Release notes",
+                "Versionshinweise");
     }
 
     private static void fillDe2(Map<String, String> table) {
-        table.put("Release notes",
-                "Versionshinweise");
         table.put("Remove ad tracking permissions",
                 "Werbe-Tracking-Berechtigungen entfernen");
         table.put("Restore the switches from before the last import. Editing a switch or restarting Tumblr ends Undo.",
@@ -355,6 +353,8 @@ public final class L10nTranslations {
                 "Signatur f\u00fcr Google-Anmeldung vort\u00e4uschen");
         table.put("Stays in while paused",
                 "Bleibt w\u00e4hrend der Pause aktiv");
+        table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
+                "Beendet Tumblrs eigenes Tracking und die Werbemessung, sobald Tumblr neu startet. Die Datenerfassung von Firebase und Google Analytics bleibt aus, bis du ohne diesen Patch neu patchst.");
         table.put("Support HushTumblr",
                 "HushTumblr unterst\u00fctzen");
         table.put("Supported links",
@@ -613,8 +613,6 @@ public final class L10nTranslations {
                 "D\u00f3nde encontrarlas");
         table.put("Firebase and Google Analytics collection is turned off",
                 "La recopilaci\u00f3n de Firebase y Google Analytics est\u00e1 desactivada");
-        table.put("Firebase crash reports and Google's analytics collection are off in Tumblr. This was set when you patched. Patch again without it to turn them back on.",
-                "Los informes de fallos de Firebase y la recopilaci\u00f3n de anal\u00edticas de Google est\u00e1n desactivados en Tumblr. Esto se defini\u00f3 al parchear. Vuelve a parchear sin \u00e9l para activarlos de nuevo.");
         table.put("Fix push notifications",
                 "Arreglar notificaciones push");
         table.put("Full report saved to %1$s",
@@ -725,11 +723,11 @@ public final class L10nTranslations {
                 "Leyendo el archivo de configuraci\u00f3n");
         table.put("Record patch activity and show errors for a bug report. Leave off during normal use.",
                 "Registra la actividad de los parches y muestra errores para un informe. D\u00e9jalo desactivado en el uso normal.");
+        table.put("Release notes",
+                "Notas de la versi\u00f3n");
     }
 
     private static void fillEs2(Map<String, String> table) {
-        table.put("Release notes",
-                "Notas de la versi\u00f3n");
         table.put("Remove ad tracking permissions",
                 "Quitar permisos de seguimiento publicitario");
         table.put("Restore the switches from before the last import. Editing a switch or restarting Tumblr ends Undo.",
@@ -778,6 +776,8 @@ public final class L10nTranslations {
                 "Falsear la firma para iniciar sesi\u00f3n con Google");
         table.put("Stays in while paused",
                 "Se mantiene durante la pausa");
+        table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
+                "Detiene el seguimiento propio de Tumblr y la medici\u00f3n de anuncios cuando se reinicia. La recopilaci\u00f3n de Firebase y Google Analytics sigue desactivada hasta que vuelvas a parchear sin \u00e9l.");
         table.put("Support HushTumblr",
                 "Apoya HushTumblr");
         table.put("Supported links",
@@ -1036,8 +1036,6 @@ public final class L10nTranslations {
                 "Cara menemukannya");
         table.put("Firebase and Google Analytics collection is turned off",
                 "Pengumpulan data Firebase dan Google Analytics dinonaktifkan");
-        table.put("Firebase crash reports and Google's analytics collection are off in Tumblr. This was set when you patched. Patch again without it to turn them back on.",
-                "Laporan error Firebase dan pengumpulan analitik Google dimatikan di Tumblr. Ini diatur saat Anda menambal. Tambal ulang tanpanya untuk menyalakannya kembali.");
         table.put("Fix push notifications",
                 "Perbaiki notifikasi push");
         table.put("Full report saved to %1$s",
@@ -1148,11 +1146,11 @@ public final class L10nTranslations {
                 "Membaca file pengaturan");
         table.put("Record patch activity and show errors for a bug report. Leave off during normal use.",
                 "Catat aktivitas patch dan tampilkan kesalahan untuk laporan bug. Matikan saat penggunaan biasa.");
+        table.put("Release notes",
+                "Catatan rilis");
     }
 
     private static void fillIn2(Map<String, String> table) {
-        table.put("Release notes",
-                "Catatan rilis");
         table.put("Remove ad tracking permissions",
                 "Hapus izin pelacakan iklan");
         table.put("Restore the switches from before the last import. Editing a switch or restarting Tumblr ends Undo.",
@@ -1201,6 +1199,8 @@ public final class L10nTranslations {
                 "Palsukan tanda tangan untuk login Google");
         table.put("Stays in while paused",
                 "Tetap aktif saat dijeda");
+        table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
+                "Menghentikan pelacakan dan pengukuran iklan milik Tumblr setelah dimulai ulang. Pengumpulan data Firebase dan Google Analytics tetap mati sampai kamu menambal ulang tanpanya.");
         table.put("Support HushTumblr",
                 "Dukung HushTumblr");
         table.put("Supported links",
@@ -1459,8 +1459,6 @@ public final class L10nTranslations {
                 "Como encontrar");
         table.put("Firebase and Google Analytics collection is turned off",
                 "A coleta do Firebase e do Google Analytics est\u00e1 desativada");
-        table.put("Firebase crash reports and Google's analytics collection are off in Tumblr. This was set when you patched. Patch again without it to turn them back on.",
-                "Os relat\u00f3rios de falhas do Firebase e a coleta de an\u00e1lises do Google est\u00e3o desativados no Tumblr. Isso foi definido ao aplicar os patches. Aplique de novo sem ele para reativ\u00e1-los.");
         table.put("Fix push notifications",
                 "Corrigir notifica\u00e7\u00f5es push");
         table.put("Full report saved to %1$s",
@@ -1571,11 +1569,11 @@ public final class L10nTranslations {
                 "Lendo o arquivo de configura\u00e7\u00f5es");
         table.put("Record patch activity and show errors for a bug report. Leave off during normal use.",
                 "Registra a atividade dos patches e mostra os erros para um relat\u00f3rio de problema. Mantenha desativado durante o uso normal.");
+        table.put("Release notes",
+                "Notas da vers\u00e3o");
     }
 
     private static void fillPt_rBR2(Map<String, String> table) {
-        table.put("Release notes",
-                "Notas da vers\u00e3o");
         table.put("Remove ad tracking permissions",
                 "Remover permiss\u00f5es de rastreamento de an\u00fancios");
         table.put("Restore the switches from before the last import. Editing a switch or restarting Tumblr ends Undo.",
@@ -1624,6 +1622,8 @@ public final class L10nTranslations {
                 "Falsificar assinatura para login com Google");
         table.put("Stays in while paused",
                 "O que continua ativo na pausa");
+        table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
+                "Para o rastreamento pr\u00f3prio do Tumblr e a medi\u00e7\u00e3o de an\u00fancios depois que ele reinicia. A coleta do Firebase e do Google Analytics continua desligada at\u00e9 voc\u00ea aplicar o patch de novo sem ele.");
         table.put("Support HushTumblr",
                 "Apoie o HushTumblr");
         table.put("Supported links",
@@ -1882,8 +1882,6 @@ public final class L10nTranslations {
                 "Nerede bulunur");
         table.put("Firebase and Google Analytics collection is turned off",
                 "Firebase ve Google Analytics veri toplama kapal\u0131");
-        table.put("Firebase crash reports and Google's analytics collection are off in Tumblr. This was set when you patched. Patch again without it to turn them back on.",
-                "Firebase \u00e7\u00f6kme raporlar\u0131 ve Google'\u0131n analiz verisi toplamas\u0131 Tumblr'da kapal\u0131. Bu, yamalarken ayarland\u0131. Yeniden a\u00e7mak i\u00e7in bu yama olmadan yeniden yamala.");
         table.put("Fix push notifications",
                 "Anl\u0131k bildirimleri d\u00fczelt");
         table.put("Full report saved to %1$s",
@@ -1994,11 +1992,11 @@ public final class L10nTranslations {
                 "Ayar dosyas\u0131 okunuyor");
         table.put("Record patch activity and show errors for a bug report. Leave off during normal use.",
                 "Hata raporu i\u00e7in yama etkinli\u011fini kaydeder ve hatalar\u0131 g\u00f6sterir. Normal kullan\u0131mda kapal\u0131 b\u0131rak\u0131n.");
+        table.put("Release notes",
+                "S\u00fcr\u00fcm notlar\u0131");
     }
 
     private static void fillTr2(Map<String, String> table) {
-        table.put("Release notes",
-                "S\u00fcr\u00fcm notlar\u0131");
         table.put("Remove ad tracking permissions",
                 "Reklam izleme izinlerini kald\u0131r");
         table.put("Restore the switches from before the last import. Editing a switch or restarting Tumblr ends Undo.",
@@ -2047,6 +2045,8 @@ public final class L10nTranslations {
                 "Google ile oturum a\u00e7ma i\u00e7in imzay\u0131 taklit et");
         table.put("Stays in while paused",
                 "Duraklat\u0131lsa da devrede kal\u0131r");
+        table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
+                "Tumblr yeniden ba\u015flad\u0131ktan sonra kendi izlemesini ve reklam \u00f6l\u00e7\u00fcm\u00fcn\u00fc durdurur. Firebase ve Google Analytics veri toplama, bu yama olmadan yeniden yamalayana kadar kapal\u0131 kal\u0131r.");
         table.put("Support HushTumblr",
                 "HushTumblr'\u0131 destekle");
         table.put("Supported links",

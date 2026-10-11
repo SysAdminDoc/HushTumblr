@@ -165,11 +165,11 @@ public class PatchFamilyTest {
     }
 
     /**
-     * Firebase's and Google Analytics' manifest flags are a manifest edit with no switch: the stays
-     * row and the report name it alone and beside the other two, whatever Pause says.
+     * Firebase's and Google Analytics' manifest flags stay set whatever the switch for Tumblr's own
+     * tracking flags says: the stays row and the report name them with the switch on, off and paused.
      */
     @Test
-    public void firebaseManifestDeactivationIsDisclosedWithNoSwitch() {
+    public void firebaseManifestDeactivationIsDisclosedWithAnalyticsOnOffAndPaused() {
         PatchFamily family = PatchFamily.DISABLE_ANALYTICS;
         Set<PatchFamily> build = EnumSet.of(family);
         String permanent = "Firebase and Google Analytics collection is turned off";
@@ -179,8 +179,8 @@ public class PatchFamilyTest {
         assertEquals("Disable analytics", family.patchName);
         assertEquals("disableAnalytics", family.statusMethod);
         assertEquals(permanent, family.staysWhilePaused);
-        assertTrue("no switch can turn it off", family.switches.isEmpty());
-        assertTrue("it has no separately recorded targets", family.expectedCapabilities().isEmpty());
+        assertEquals(Collections.singletonList(Settings.DISABLE_ANALYTICS), family.switches);
+        assertEquals(EnumSet.of(PatchFamily.Capability.ANALYTICS_FLAGS), family.expectedCapabilities());
         assertTrue("the Privacy page draws it", PatchFamily.PRIVACY_PAGE.contains(family));
         assertEquals(summary, PatchFamily.staysWhilePausedSummary(build));
         // Every other family but the two manifest-only ones, which have patch-time edits of their own.
@@ -192,13 +192,21 @@ public class PatchFamilyTest {
         withoutAnalytics.remove(PatchFamily.DISABLE_ANALYTICS);
         assertNull(PatchFamily.staysWhilePausedSummary(withoutAnalytics));
 
-        String line = "Disable analytics: no switch, stays in while paused: " + permanent;
-        assertEquals(Collections.singletonList(line), PatchFamily.reportLines(build, false).subList(0, 1));
+        Settings.DISABLE_ANALYTICS.save(true);
+        assertEquals("Disable analytics: on (hushtumblr_disable_analytics=on); stays in while paused: "
+                + permanent, PatchFamily.reportLines(build, false).get(0));
         PauseForTests.pause(HushTumblrPause.Reason.SWITCH);
-        assertEquals(line, PatchFamily.reportLines(build, true).get(0));
+        assertFalse(Settings.DISABLE_ANALYTICS.get());
+        assertTrue(Settings.DISABLE_ANALYTICS.savedValue());
+        assertEquals("Disable analytics: disabled while paused (saved hushtumblr_disable_analytics=on); "
+                + "stays in while paused: " + permanent, PatchFamily.reportLines(build, true).get(0));
         assertEquals(summary, PatchFamily.staysWhilePausedSummary(build));
-        assertFalse(PatchFamily.reportLines(EnumSet.allOf(PatchFamily.class), true).stream()
-                .anyMatch(text -> text.startsWith("Disable analytics coverage")));
+
+        PauseForTests.resume();
+        Settings.DISABLE_ANALYTICS.save(false);
+        assertEquals("Disable analytics: disabled by its switch (hushtumblr_disable_analytics=off); "
+                + "stays in while paused: " + permanent, PatchFamily.reportLines(build, false).get(0));
+        assertEquals(summary, PatchFamily.staysWhilePausedSummary(build));
     }
 
     /**
@@ -372,9 +380,9 @@ public class PatchFamilyTest {
 
     /**
      * A paused export marks the Hook status lines of the families a switch runs, and only those.
-     * registerDiagnostics() exempts a family with no switch, today Disable analytics, Remove ad
-     * tracking permissions and Spoof signature for Google sign-in: a pause changes nothing for any
-     * of them, so their lines stay unmarked.
+     * registerDiagnostics() exempts a family with no switch, today Remove ad tracking permissions and
+     * Spoof signature for Google sign-in: a pause changes nothing for either of them, so their lines
+     * stay unmarked.
      */
     @Test
     public void aPausedExportMarksEveryFamilyASwitchRuns() {
@@ -390,8 +398,7 @@ public class PatchFamilyTest {
             assertTrue(String.join("\n", lines),
                     lines.contains(family.patchName + ": invoked 1, 0 found, 0 missing" + mark));
         }
-        assertEquals(EnumSet.of(PatchFamily.DISABLE_ANALYTICS, PatchFamily.REMOVE_AD_TRACKING_PERMISSIONS,
-                PatchFamily.SPOOF_SIGNATURE), unswitched);
+        assertEquals(EnumSet.of(PatchFamily.REMOVE_AD_TRACKING_PERMISSIONS, PatchFamily.SPOOF_SIGNATURE), unswitched);
     }
 
     /** The section goes through the redactor like every other one, and has to come out whole. */

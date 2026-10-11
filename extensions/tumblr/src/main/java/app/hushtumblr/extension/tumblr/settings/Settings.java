@@ -27,11 +27,11 @@ import app.hushtumblr.extension.shared.settings.BooleanSetting;
 /**
  * The switches behind the hooks that ask before they act.
  *
- * <p>A switch's default is the second argument of its {@link BooleanSetting}. Hide ads, Hide
- * advertising ID and Fix push notifications keep their switches on: they're what most people patch
- * for, and a patched build gets no push notifications without the last one. A patch added
- * later joins the default selection with its switches off, so a build patched with the defaults
- * acts like Tumblr until one is turned on. While HushTumblr is paused, safe mode included
+ * <p>A switch's default is the second argument of its {@link BooleanSetting}. Hide ads, Disable
+ * analytics, Hide advertising ID and Fix push notifications keep their switches on: they're what
+ * most people patch for, and a patched build gets no push notifications without the last one. A
+ * patch added later joins the default selection with its switches off, so a build patched with
+ * the defaults acts like Tumblr until one is turned on. While HushTumblr is paused, safe mode included
  * ({@link app.hushtumblr.extension.shared.settings.HushTumblrPause}), a switch answers off unless
  * {@link app.hushtumblr.extension.shared.settings.Setting#keepWhenPaused} marks it, and the hook behind
  * it takes Tumblr's own path.
@@ -60,6 +60,14 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting FIX_PUSH_NOTIFICATIONS =
             new BooleanSetting("hushtumblr_fix_push_notifications", TRUE);
+
+    /**
+     * Tumblr's own tracking and ad measurement flags answer off
+     * ({@link app.hushtumblr.extension.tumblr.flags.FeatureSwitches}). The manifest half of Disable
+     * analytics was set when patching and stays whatever this says. On to start, like the patch.
+     */
+    public static final BooleanSetting DISABLE_ANALYTICS =
+            new BooleanSetting("hushtumblr_disable_analytics", TRUE);
 
     /**
      * Once a day, when Tumblr starts, ask api.github.com whether a newer HushTumblr release is

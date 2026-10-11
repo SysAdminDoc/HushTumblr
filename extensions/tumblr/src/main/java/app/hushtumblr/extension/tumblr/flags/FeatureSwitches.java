@@ -57,6 +57,14 @@ public final class FeatureSwitches {
                 "MAKE_DISPLAY_IO_INTERSCROLLER_REQUEST", "MAKE_FAN_REQUESTS", "MAKE_NIMBUS_CLIENT_AD_REQUESTS",
                 "GOOGLE_BANNER_ADS", "GOOGLE_NATIVE_ADS", "GOOGLE_REWARDED_ADS", "SMART_BANNER_ADS",
                 "RENDER_NIMBUS_ADS", "RENDER_VUNGLE_ADS", "RENDER_DISPLAY_IO_INTERSCROLLER_S2S_ADS");
+        // Tumblr's own tracking: LiveRamp's ID on its requests, Open Measurement and Moat ad
+        // measurement, its log of which flags you were shown, and its network, performance and ad
+        // supply logging. The two Moat flags have no reader in 46.5.0.109 and are here for the
+        // builds that read them.
+        claim(claims, "DISABLE_ANALYTICS", FamilyNames.DISABLE_ANALYTICS,
+                "LIVERAMP_ATS", "ENABLE_OM_SDK", "MOAT_VIDEO_AD_BEACONING",
+                "LITTLE_SISTER_MOAT_LOGGING", "SEND_FEATURE_EXPOSED_ANALYTICS",
+                "SEND_NETWORK_USAGE_DATA", "MOBILE_PERFORMANCE_LOGGING", "SUPPLY_LOGGING");
         return Collections.unmodifiableMap(claims);
     }
 

@@ -260,13 +260,12 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
 
         if (!Collections.disjoint(build, PatchFamily.PRIVACY_PAGE)) {
             PreferenceCategory privacy = category(screen, L10n.t("Privacy"));
-            // A patch-time fact with no switch: an explanation, so it takes the info mark.
-            if (build.contains(PatchFamily.DISABLE_ANALYTICS)) {
-                privacy.addPreference(mark(info(context, L10n.t("Disable analytics"),
-                        L10n.t("Firebase crash reports and Google's analytics collection are off in Tumblr. "
-                            + "This was set when you patched. Patch again without it to turn them back on.")),
-                        SettingsIcons.ABOUT));
-            }
+            // The switch covers Tumblr's own tracking flags. The manifest half was set when patching,
+            // and the summary says so.
+            patchToggle(privacy, context, build, PatchFamily.DISABLE_ANALYTICS, Settings.DISABLE_ANALYTICS,
+                    L10n.t("Disable analytics"), L10n.t("Stops Tumblr's own tracking and ad measurement once it "
+                        + "restarts. Firebase and Google's analytics collection stay off until you patch again "
+                        + "without it."), SettingsIcons.BLOCK);
             patchToggle(privacy, context, build, PatchFamily.HIDE_ADVERTISING_ID, Settings.HIDE_ADVERTISING_ID,
                     L10n.t("Hide advertising ID"), L10n.t("Tumblr and the ad companies inside it see an empty "
                         + "advertising ID with ad tracking limited, as if you deleted your ad ID in Android "

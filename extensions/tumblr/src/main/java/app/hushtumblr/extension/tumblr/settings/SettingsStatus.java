@@ -39,6 +39,7 @@ public final class SettingsStatus {
     public static boolean advertisingId() { return false; }
     public static boolean removeAdTrackingPermissions() { return false; }
     public static boolean spoofSignature() { return false; }
+    public static boolean analyticsFlags() { return false; }
     public static boolean fixPushNotifications() { return false; }
     public static boolean firebaseCertificate() { return false; }
 }
