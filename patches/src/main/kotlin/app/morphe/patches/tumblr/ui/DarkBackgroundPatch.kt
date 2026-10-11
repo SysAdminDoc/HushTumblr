@@ -30,6 +30,7 @@ import app.morphe.patches.tumblr.misc.extension.requireStatusMethod
 import app.morphe.patches.tumblr.misc.extension.tumblrExtensionPatch
 import app.morphe.patches.tumblr.misc.settings.EXTENSION_ROOT
 import app.morphe.patches.tumblr.misc.settings.settingsPatch
+import app.morphe.util.extendsClass
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
@@ -293,7 +294,7 @@ internal fun BytecodePatchContext.resolveThemeHooks(): ThemeHooks {
 
     val setter = setters.only(PATCH, "the method that sets an activity's theme from its palette")
     val activityType = setter.parameterTypes[0].toString()
-    requireShape(PATCH, reachesActivity(activityType), "$activityType, whose theme Tumblr sets, isn't an activity")
+    requireShape(PATCH, extendsClass(activityType, ACTIVITY),"$activityType, whose theme Tumblr sets, isn't an activity")
     val setterBody = setter.instructionList()
     val set = setterBody.indexOfFirst { it.isSetThemeOn(activityType) }
     val activityRegister = (setterBody[set] as FiveRegisterInstruction).registerC
@@ -313,17 +314,6 @@ internal fun BytecodePatchContext.resolveThemeHooks(): ThemeHooks {
         composeIndex = asked + 2,
         composeRegister = (answer as OneRegisterInstruction).registerA,
     )
-}
-
-/** Whether [type], or a class it extends, is `android.app.Activity`. */
-private fun BytecodePatchContext.reachesActivity(type: String): Boolean {
-    var current: String? = type
-    repeat(16) {
-        val now = current ?: return false
-        if (now == ACTIVITY) return true
-        current = classDefByOrNull(now)?.superclass
-    }
-    return false
 }
 
 /** An instance `(activity, int)` method that calls `setTheme(int)` on its activity, then reads its companion. */
