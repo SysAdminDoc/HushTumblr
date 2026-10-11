@@ -34,6 +34,7 @@ import android.preference.PreferenceCategory;
 import android.preference.PreferenceScreen;
 import android.preference.SwitchPreference;
 import android.preference.TwoStatePreference;
+import android.text.InputType;
 import android.text.Layout;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
@@ -45,9 +46,11 @@ import android.view.ContextThemeWrapper;
 import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.ScrollView;
@@ -74,6 +77,7 @@ import app.hushtumblr.extension.shared.settings.preference.ClearLogBufferPrefere
 import app.hushtumblr.extension.shared.settings.preference.ExportDiagnosticReportPreference;
 import app.hushtumblr.extension.shared.settings.preference.ImmediateAction;
 import app.hushtumblr.extension.shared.settings.preference.LogBufferManager;
+import app.hushtumblr.extension.tumblr.timeline.PostRules;
 
 /**
  * The preference list, built in code rather than from an XML resource so the bundle adds no
@@ -105,6 +109,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
     static final String UPDATE_INSTRUCTIONS_URL = SOURCE_URL + "#install";
     /** The Supported links row's key. It stores nothing either. */
     static final String SUPPORTED_LINKS = "action_supported_links";
+    /** The Words to hide row's key. The list itself is {@link TextSettings#HIDDEN_WORDS}. */
+    static final String HIDDEN_WORDS_ROW = "action_hidden_words";
 
     /** Thrown by the next initialize() and then cleared: how a test reaches the recovery page. */
     static volatile RuntimeException failNextInitialization;
@@ -270,6 +276,24 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             patchToggle(feed, context, build, PatchFamily.HIDE_WATCH_IT_ROWS, Settings.HIDE_WATCH_IT_ROWS,
                     L10n.t("Hide Watch it rows"), L10n.t("Takes Tumblr TV's Watch it rows and video hub cards, and "
                         + "their headings, out of your dashboard and other feeds."), SettingsIcons.BLOCK);
+            // The post switches act on each page as it loads too (PostRules). A post's kind counts
+            // the part it reblogs, and the word list is read with each page.
+            patchToggle(feed, context, build, PatchFamily.HIDE_REBLOGS, Settings.HIDE_REBLOGS, L10n.t("Hide reblogs"),
+                    L10n.t("Takes reblogs out of your dashboard and other feeds, and keeps the posts people made "
+                        + "themselves."), SettingsIcons.BLOCK);
+            patchToggle(feed, context, build, PatchFamily.HIDE_VIDEO_POSTS, Settings.HIDE_VIDEO_POSTS,
+                    L10n.t("Hide video posts"), L10n.t("Takes posts with a video anywhere in them, the reblogged part "
+                        + "included, out of your dashboard and other feeds."), SettingsIcons.BLOCK);
+            patchToggle(feed, context, build, PatchFamily.HIDE_PHOTO_POSTS, Settings.HIDE_PHOTO_POSTS,
+                    L10n.t("Hide photo posts"), L10n.t("Takes posts with pictures and no video, the reblogged part "
+                        + "included, out of your dashboard and other feeds."), SettingsIcons.BLOCK);
+            patchToggle(feed, context, build, PatchFamily.HIDE_TEXT_POSTS, Settings.HIDE_TEXT_POSTS,
+                    L10n.t("Hide text posts"), L10n.t("Takes posts with no pictures or video, the reblogged part "
+                        + "included, out of your dashboard and other feeds."), SettingsIcons.BLOCK);
+            patchToggle(feed, context, build, PatchFamily.HIDE_POSTS_WITH_WORDS, Settings.HIDE_POSTS_WITH_WORDS,
+                    L10n.t("Hide posts with these words"), L10n.t("Takes posts out of your dashboard and other feeds "
+                        + "when their text, tags or summary has a word from the list below."), SettingsIcons.BLOCK);
+            if (build.contains(PatchFamily.HIDE_POSTS_WITH_WORDS)) feed.addPreference(mark(wordsRow(context), SettingsIcons.SEARCH));
         }
 
         // Parts of each post card. Tags, the Follow button and the counts are read as each card is drawn,
@@ -672,6 +696,50 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         });
         checkNowRow = row;
         return row;
+    }
+
+    /**
+     * The list Hide posts with these words looks for. A tap opens it in a box, one entry a line, and
+     * Save keeps it for the next page that loads.
+     */
+    private Preference wordsRow(Context context) {
+        Row row = new Row(context);
+        row.setKey(HIDDEN_WORDS_ROW);
+        row.setTitle(L10n.t("Words to hide"));
+        row.setPersistent(false);
+        row.setSummary(wordsSummary(TextSettings.HIDDEN_WORDS.savedValue()));
+        row.setOnPreferenceClickListener(p -> {
+            showWords(context, p);
+            return true;
+        });
+        return row;
+    }
+
+    private void showWords(Context context, Preference row) {
+        EditText field = new EditText(context);
+        field.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        field.setImeOptions(EditorInfo.IME_FLAG_NO_FULLSCREEN | EditorInfo.IME_FLAG_NO_EXTRACT_UI);
+        field.setMinLines(3);
+        field.setHint(L10n.t("One word or phrase a line"));
+        field.setText(TextSettings.HIDDEN_WORDS.savedValue());
+        show(new AlertDialog.Builder(context)
+                .setTitle(L10n.t("Words to hide"))
+                .setMessage(L10n.t("Posts with any of these in their text, tags or summary are hidden. Case doesn't "
+                        + "matter, and only whole words count."))
+                .setView(field)
+                .setPositiveButton(L10n.t("Save"), (dialog, which) -> {
+                    String words = field.getText().toString().trim();
+                    TextSettings.HIDDEN_WORDS.save(words);
+                    row.setSummary(wordsSummary(words));
+                })
+                .setNegativeButton(L10n.t("Cancel"), null));
+    }
+
+    /** The words row's summary: the saved entries, or how to add the first. */
+    static String wordsSummary(String saved) {
+        List<String> words = PostRules.wordList(saved);
+        if (words.isEmpty()) return L10n.t("The list is empty. Tap to add words or phrases.");
+        return L10n.f("Looks for: %1$s", L10n.isolate(String.join(", ", words)));
     }
 
     /** Fixed project pages. Neither a release's body nor its html_url can choose the destination. */

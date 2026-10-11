@@ -79,6 +79,16 @@ public final class SettingsStatus {
     public static boolean shareButton() { return false; }
     public static boolean hideUnreadDots() { return false; }
     public static boolean unreadDots() { return false; }
+    public static boolean hideReblogs() { return false; }
+    public static boolean reblogPosts() { return false; }
+    public static boolean hideVideoPosts() { return false; }
+    public static boolean videoPosts() { return false; }
+    public static boolean hidePhotoPosts() { return false; }
+    public static boolean photoPosts() { return false; }
+    public static boolean hideTextPosts() { return false; }
+    public static boolean textPosts() { return false; }
+    public static boolean hidePostsWithWords() { return false; }
+    public static boolean postWords() { return false; }
     public static boolean fixPushNotifications() { return false; }
     public static boolean firebaseCertificate() { return false; }
 }

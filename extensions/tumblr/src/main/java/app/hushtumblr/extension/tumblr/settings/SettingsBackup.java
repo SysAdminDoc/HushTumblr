@@ -107,6 +107,11 @@ public final class SettingsBackup {
             Settings.HIDE_COMMENT_BUTTON,
             Settings.HIDE_SHARE_BUTTON,
             Settings.HIDE_UNREAD_DOTS,
+            Settings.HIDE_REBLOGS,
+            Settings.HIDE_VIDEO_POSTS,
+            Settings.HIDE_PHOTO_POSTS,
+            Settings.HIDE_TEXT_POSTS,
+            Settings.HIDE_POSTS_WITH_WORDS,
             Settings.FIX_PUSH_NOTIFICATIONS));
 
     /**

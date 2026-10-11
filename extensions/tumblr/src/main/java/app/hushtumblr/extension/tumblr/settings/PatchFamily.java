@@ -82,6 +82,11 @@ public enum PatchFamily {
     HIDE_COMMENT_BUTTON(FamilyNames.HIDE_COMMENT_BUTTON, "hideCommentButton", null, Settings.HIDE_COMMENT_BUTTON),
     HIDE_SHARE_BUTTON(FamilyNames.HIDE_SHARE_BUTTON, "hideShareButton", null, Settings.HIDE_SHARE_BUTTON),
     HIDE_UNREAD_DOTS(FamilyNames.HIDE_UNREAD_DOTS, "hideUnreadDots", null, Settings.HIDE_UNREAD_DOTS),
+    HIDE_REBLOGS(FamilyNames.HIDE_REBLOGS, "hideReblogs", null, Settings.HIDE_REBLOGS),
+    HIDE_VIDEO_POSTS(FamilyNames.HIDE_VIDEO_POSTS, "hideVideoPosts", null, Settings.HIDE_VIDEO_POSTS),
+    HIDE_PHOTO_POSTS(FamilyNames.HIDE_PHOTO_POSTS, "hidePhotoPosts", null, Settings.HIDE_PHOTO_POSTS),
+    HIDE_TEXT_POSTS(FamilyNames.HIDE_TEXT_POSTS, "hideTextPosts", null, Settings.HIDE_TEXT_POSTS),
+    HIDE_POSTS_WITH_WORDS(FamilyNames.HIDE_POSTS_WITH_WORDS, "hidePostsWithWords", null, Settings.HIDE_POSTS_WITH_WORDS),
     FIX_PUSH_NOTIFICATIONS(FamilyNames.FIX_PUSH_NOTIFICATIONS, "fixPushNotifications", null, Settings.FIX_PUSH_NOTIFICATIONS);
 
     /** The patch's name in Morphe Manager. */
@@ -128,7 +133,7 @@ public enum PatchFamily {
     static volatile Set<Capability> capabilitiesForTests;
 
     /** The families the Feed page holds. The page and its home row both read this. */
-    static final Set<PatchFamily> FEED_PAGE = Collections.unmodifiableSet(EnumSet.of(
+    static final Set<PatchFamily> FEED_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_POSTS_WITH_WORDS, HIDE_TEXT_POSTS, HIDE_PHOTO_POSTS, HIDE_VIDEO_POSTS, HIDE_REBLOGS, 
             HIDE_WATCH_IT_ROWS, HIDE_SUGGESTED_COMMUNITIES, HIDE_SUGGESTED_BLOGS, HIDE_AD_FREE_BANNER, HIDE_ADS));
 
     /** The families the Interface page holds. The page and its home row both read this. */
@@ -172,6 +177,11 @@ public enum PatchFamily {
         COMMENT_BUTTON(HIDE_COMMENT_BUTTON, "commentButton", "Hide the comment button"),
         SHARE_BUTTON(HIDE_SHARE_BUTTON, "shareButton", "Hide the share button"),
         UNREAD_DOTS(HIDE_UNREAD_DOTS, "unreadDots", "Hide unread dots"),
+        REBLOG_POSTS(HIDE_REBLOGS, "reblogPosts", "Hide reblogs"),
+        VIDEO_POSTS(HIDE_VIDEO_POSTS, "videoPosts", "Hide video posts"),
+        PHOTO_POSTS(HIDE_PHOTO_POSTS, "photoPosts", "Hide photo posts"),
+        TEXT_POSTS(HIDE_TEXT_POSTS, "textPosts", "Hide text posts"),
+        POST_WORDS(HIDE_POSTS_WITH_WORDS, "postWords", "Hide posts with these words"),
         FIREBASE_CERTIFICATE(FIX_PUSH_NOTIFICATIONS, "firebaseCertificate", "Fix push notifications");
 
         public final PatchFamily family;

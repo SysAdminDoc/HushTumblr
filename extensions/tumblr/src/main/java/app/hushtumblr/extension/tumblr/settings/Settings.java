@@ -203,6 +203,42 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_hide_unread_dots", FALSE);
 
     /**
+     * Reblogs leave each page of posts Tumblr loads: a post that names the post it reblogs or
+     * carries a reblog trail ({@link app.hushtumblr.extension.tumblr.timeline.PostRules}).
+     */
+    public static final BooleanSetting HIDE_REBLOGS =
+            new BooleanSetting("hushtumblr_hide_reblogs", FALSE);
+
+    /**
+     * Posts with a video anywhere in them, the reblog trail included, leave each page of posts
+     * Tumblr loads ({@link app.hushtumblr.extension.tumblr.timeline.PostRules}).
+     */
+    public static final BooleanSetting HIDE_VIDEO_POSTS =
+            new BooleanSetting("hushtumblr_hide_video_posts", FALSE);
+
+    /**
+     * Posts with pictures and no video, the reblog trail included, leave each page of posts Tumblr
+     * loads ({@link app.hushtumblr.extension.tumblr.timeline.PostRules}).
+     */
+    public static final BooleanSetting HIDE_PHOTO_POSTS =
+            new BooleanSetting("hushtumblr_hide_photo_posts", FALSE);
+
+    /**
+     * Posts with neither pictures nor video, the reblog trail included, leave each page of posts
+     * Tumblr loads ({@link app.hushtumblr.extension.tumblr.timeline.PostRules}).
+     */
+    public static final BooleanSetting HIDE_TEXT_POSTS =
+            new BooleanSetting("hushtumblr_hide_text_posts", FALSE);
+
+    /**
+     * Posts holding a word or phrase from {@link TextSettings#HIDDEN_WORDS} in their text, reblog
+     * trail, tags or summary leave each page of posts Tumblr loads
+     * ({@link app.hushtumblr.extension.tumblr.timeline.PostRules}).
+     */
+    public static final BooleanSetting HIDE_POSTS_WITH_WORDS =
+            new BooleanSetting("hushtumblr_hide_posts_with_words", FALSE);
+
+    /**
      * Once a day, when Tumblr starts, ask api.github.com whether a newer HushTumblr release is
      * out, and say so on the settings screen ({@link ReleaseCheck}). It's the settings entry's own
      * switch rather than a patch's, so every build has it ({@link PatchFamily#ENTRY_SWITCHES}). Off

@@ -267,3 +267,20 @@ Takes the share button out of the footer under posts. Restart Tumblr to see the 
 # context: the bottom bar's unread badges, the small dots and numbers on the Dashboard, Communities and Notifications tabs. Use Tumblr's own names for the tabs in your language.
 Hide unread dots	Ocultar los puntos de no leídos
 Hides the unread dots and counts on the bottom bar's Dashboard, Communities and Notifications tabs.	Oculta los puntos y números de no leídos en las pestañas Panel, Comunidades y Notificaciones de la barra inferior.
+# Post filters on the Feed page, and the word list
+Hide reblogs	Ocultar reblogs
+Takes reblogs out of your dashboard and other feeds, and keeps the posts people made themselves.	Quita los reblogs de tu panel y otros feeds, y deja las publicaciones que la gente hizo por su cuenta.
+Hide video posts	Ocultar publicaciones con video
+Takes posts with a video anywhere in them, the reblogged part included, out of your dashboard and other feeds.	Quita de tu panel y otros feeds las publicaciones que tienen un video en cualquier parte, incluida la parte rebloggeada.
+Hide photo posts	Ocultar publicaciones con fotos
+Takes posts with pictures and no video, the reblogged part included, out of your dashboard and other feeds.	Quita de tu panel y otros feeds las publicaciones con imágenes y sin video, incluida la parte rebloggeada.
+Hide text posts	Ocultar publicaciones de texto
+Takes posts with no pictures or video, the reblogged part included, out of your dashboard and other feeds.	Quita de tu panel y otros feeds las publicaciones sin imágenes ni video, incluida la parte rebloggeada.
+Hide posts with these words	Ocultar publicaciones con estas palabras
+Takes posts out of your dashboard and other feeds when their text, tags or summary has a word from the list below.	Quita publicaciones de tu panel y otros feeds cuando su texto, sus etiquetas o su resumen tienen una palabra de la lista de abajo.
+Words to hide	Palabras para ocultar
+One word or phrase a line	Una palabra o frase por línea
+Posts with any of these in their text, tags or summary are hidden. Case doesn't matter, and only whole words count.	Se ocultan las publicaciones que tienen alguna de estas en su texto, etiquetas o resumen. Da igual si van en mayúsculas, y solo cuentan palabras completas.
+Save	Guardar
+The list is empty. Tap to add words or phrases.	La lista está vacía. Toca para añadir palabras o frases.
+Looks for: %1$s	Busca: %1$s

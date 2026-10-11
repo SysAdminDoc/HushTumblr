@@ -5,11 +5,16 @@
  */
 package app.hushtumblr.extension.tumblr.timeline;
 
+import com.tumblr.rumblr.model.BlazedPost;
 import com.tumblr.rumblr.model.TimelineObject;
 import com.tumblr.rumblr.model.TimelineObjectType;
 import com.tumblr.rumblr.model.Timelineable;
+import com.tumblr.rumblr.model.post.blocks.ImageBlock;
+import com.tumblr.rumblr.model.post.blocks.TextBlock;
+import com.tumblr.rumblr.model.post.blocks.VideoBlock;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /** Timeline objects built from the stand-ins in {@code com.tumblr.rumblr.model}. */
@@ -71,8 +76,86 @@ public final class TimelineItems {
 
     /** True when a page with an item of [type] between two posts comes back without it. */
     private static boolean aPageLoses(TimelineObjectType type) {
-        List<Object> page = Arrays.asList(post(), of(type), post());
+        return aPageLoses(of(type));
+    }
+
+    /** True when a page with [item] between two posts comes back without it. */
+    private static boolean aPageLoses(TimelineObject item) {
+        List<Object> page = Arrays.asList(post(), item, post());
         return TimelineFilter.filter(page).size() == 2;
+    }
+
+    /** A post Tumblr's model would carry, with [blocks] as its own content and no trail. */
+    public static TimelineObject postWith(Object... blocks) {
+        return new TimelineObject(new Post(Arrays.asList(blocks), null, null, null, null), false);
+    }
+
+    /** A reblog of a post made of [original], adding [added] of its own. */
+    public static TimelineObject reblogOf(List<?> original, Object... added) {
+        List<HushTrail> trail = Collections.singletonList(() -> original);
+        return new TimelineObject(new Post(Arrays.asList(added), trail, null, null, "100"), false);
+    }
+
+    /** A post with nothing but [tags] and a [summary]. */
+    public static TimelineObject postTagged(String summary, String... tags) {
+        return new TimelineObject(new Post(Collections.emptyList(), null, Arrays.asList(tags), summary, null), false);
+    }
+
+    /** A paid Blaze post carrying [post]'s payload. */
+    public static TimelineObject blazed(TimelineObject post) {
+        return new TimelineObject(new BlazedPost(post.getData()), false);
+    }
+
+    /** PausedHooksTest's probe for Hide reblogs. */
+    public static boolean aPageLosesItsReblog() {
+        return aPageLoses(reblogOf(Collections.singletonList(new TextBlock("first")), new TextBlock("second")));
+    }
+
+    /** PausedHooksTest's probe for Hide video posts. */
+    public static boolean aPageLosesItsVideoPost() {
+        return aPageLoses(postWith(new TextBlock("look"), new VideoBlock()));
+    }
+
+    /** PausedHooksTest's probe for Hide photo posts. */
+    public static boolean aPageLosesItsPhotoPost() {
+        return aPageLoses(postWith(new ImageBlock(), new TextBlock("a photo")));
+    }
+
+    /** PausedHooksTest's probe for Hide text posts. */
+    public static boolean aPageLosesItsTextPost() {
+        return aPageLoses(postWith(new TextBlock("just words")));
+    }
+
+    /** The word PausedHooksTest saves for Hide posts with these words to look for. */
+    public static final String PROBE_WORD = "spoilers";
+
+    /** PausedHooksTest's probe for Hide posts with these words, once [PROBE_WORD] is saved. */
+    public static boolean aPageLosesItsPostWithAHiddenWord() {
+        return aPageLoses(postWith(new TextBlock("Big Spoilers ahead")));
+    }
+
+    /** A post Tumblr's model would carry, as the post bridge patch makes it. */
+    static class Post extends Item implements HushPost {
+        private final List<?> content;
+        private final List<?> trail;
+        private final List<?> tags;
+        private final String summary;
+        private final String rebloggedFrom;
+
+        Post(List<?> content, List<?> trail, List<?> tags, String summary, String rebloggedFrom) {
+            super(TimelineObjectType.POST);
+            this.content = content;
+            this.trail = trail;
+            this.tags = tags;
+            this.summary = summary;
+            this.rebloggedFrom = rebloggedFrom;
+        }
+
+        @Override public List<?> hushContent() { return content; }
+        @Override public List<?> hushTrail() { return trail; }
+        @Override public List<?> hushTags() { return tags; }
+        @Override public String hushSummary() { return summary; }
+        @Override public String hushRebloggedFrom() { return rebloggedFrom; }
     }
 
     private static final class Carousel extends Item {

@@ -267,3 +267,20 @@ Takes the share button out of the footer under posts. Restart Tumblr to see the 
 # context: the bottom bar's unread badges, the small dots and numbers on the Dashboard, Communities and Notifications tabs. Use Tumblr's own names for the tabs in your language.
 Hide unread dots	Ungelesen-Punkte ausblenden
 Hides the unread dots and counts on the bottom bar's Dashboard, Communities and Notifications tabs.	Blendet die Ungelesen-Punkte und Zahlen auf den Tabs Dashboard, Communitys und Benachrichtigungen in der unteren Leiste aus.
+# Post filters on the Feed page, and the word list
+Hide reblogs	Reblogs ausblenden
+Takes reblogs out of your dashboard and other feeds, and keeps the posts people made themselves.	Entfernt Reblogs aus deinem Dashboard und anderen Feeds und lässt Beiträge stehen, die Leute selbst erstellt haben.
+Hide video posts	Videobeiträge ausblenden
+Takes posts with a video anywhere in them, the reblogged part included, out of your dashboard and other feeds.	Entfernt Beiträge, die irgendwo ein Video enthalten, auch im rebloggten Teil, aus deinem Dashboard und anderen Feeds.
+Hide photo posts	Fotobeiträge ausblenden
+Takes posts with pictures and no video, the reblogged part included, out of your dashboard and other feeds.	Entfernt Beiträge mit Bildern und ohne Video, auch im rebloggten Teil, aus deinem Dashboard und anderen Feeds.
+Hide text posts	Textbeiträge ausblenden
+Takes posts with no pictures or video, the reblogged part included, out of your dashboard and other feeds.	Entfernt Beiträge ohne Bilder und Videos, auch im rebloggten Teil, aus deinem Dashboard und anderen Feeds.
+Hide posts with these words	Beiträge mit diesen Wörtern ausblenden
+Takes posts out of your dashboard and other feeds when their text, tags or summary has a word from the list below.	Entfernt Beiträge aus deinem Dashboard und anderen Feeds, wenn ihr Text, ihre Tags oder ihre Zusammenfassung ein Wort aus der Liste unten enthalten.
+Words to hide	Auszublendende Wörter
+One word or phrase a line	Ein Wort oder eine Wortgruppe pro Zeile
+Posts with any of these in their text, tags or summary are hidden. Case doesn't matter, and only whole words count.	Beiträge, deren Text, Tags oder Zusammenfassung eines davon enthält, werden ausgeblendet. Groß- und Kleinschreibung ist egal, und nur ganze Wörter zählen.
+Save	Speichern
+The list is empty. Tap to add words or phrases.	Die Liste ist leer. Tippe, um Wörter oder Wortgruppen hinzuzufügen.
+Looks for: %1$s	Sucht nach: %1$s

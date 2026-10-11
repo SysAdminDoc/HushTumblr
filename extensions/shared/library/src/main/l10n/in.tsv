@@ -267,3 +267,20 @@ Takes the share button out of the footer under posts. Restart Tumblr to see the 
 # context: the bottom bar's unread badges, the small dots and numbers on the Dashboard, Communities and Notifications tabs. Use Tumblr's own names for the tabs in your language.
 Hide unread dots	Sembunyikan titik belum dibaca
 Hides the unread dots and counts on the bottom bar's Dashboard, Communities and Notifications tabs.	Menyembunyikan titik dan angka belum dibaca di tab Dasbor, Komunitas, dan Notifikasi pada bilah bawah.
+# Post filters on the Feed page, and the word list
+Hide reblogs	Sembunyikan reblog
+Takes reblogs out of your dashboard and other feeds, and keeps the posts people made themselves.	Menghapus reblog dari dasbor dan feed lainnya, dan tetap menampilkan postingan yang dibuat orang sendiri.
+Hide video posts	Sembunyikan postingan video
+Takes posts with a video anywhere in them, the reblogged part included, out of your dashboard and other feeds.	Menghapus postingan yang berisi video di bagian mana pun, termasuk bagian yang di-reblog, dari dasbor dan feed lainnya.
+Hide photo posts	Sembunyikan postingan foto
+Takes posts with pictures and no video, the reblogged part included, out of your dashboard and other feeds.	Menghapus postingan dengan gambar dan tanpa video, termasuk bagian yang di-reblog, dari dasbor dan feed lainnya.
+Hide text posts	Sembunyikan postingan teks
+Takes posts with no pictures or video, the reblogged part included, out of your dashboard and other feeds.	Menghapus postingan tanpa gambar atau video, termasuk bagian yang di-reblog, dari dasbor dan feed lainnya.
+Hide posts with these words	Sembunyikan postingan dengan kata ini
+Takes posts out of your dashboard and other feeds when their text, tags or summary has a word from the list below.	Menghapus postingan dari dasbor dan feed lainnya jika teks, tag, atau ringkasannya berisi kata dari daftar di bawah.
+Words to hide	Kata yang disembunyikan
+One word or phrase a line	Satu kata atau frasa per baris
+Posts with any of these in their text, tags or summary are hidden. Case doesn't matter, and only whole words count.	Postingan yang teks, tag, atau ringkasannya berisi salah satu dari ini akan disembunyikan. Huruf besar atau kecil tidak berpengaruh, dan hanya kata utuh yang dihitung.
+Save	Simpan
+The list is empty. Tap to add words or phrases.	Daftarnya kosong. Ketuk untuk menambahkan kata atau frasa.
+Looks for: %1$s	Mencari: %1$s

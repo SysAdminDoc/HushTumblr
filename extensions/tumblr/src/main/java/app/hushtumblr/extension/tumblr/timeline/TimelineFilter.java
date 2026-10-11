@@ -40,6 +40,9 @@ import app.hushtumblr.extension.tumblr.settings.Settings;
  * <p>Suggestion cards often come after a {@code TITLE} item carrying their heading ("Check out these
  * blogs"). A heading goes with the item right after it, and one that ends a page goes too while a
  * card switch is on, since its card may be the first item of the next page.
+ *
+ * <p>The post switches (reblogs, video, photo and text posts, and the word list) are
+ * {@link PostRules}'. A heading never goes with a post they take out.
  */
 public final class TimelineFilter {
     private TimelineFilter() {}
@@ -115,7 +118,8 @@ public final class TimelineFilter {
             for (int i = size - 1; i >= 0; i--) {
                 if (removedBy[i] != null) continue;
                 String with = i + 1 < size ? removedBy[i + 1] : rules.cardOwner();
-                if (with == null || !isTitle(items.get(i), rules.owner())) continue;
+                // A heading over a run of posts heads the rest of them too, so it stays.
+                if (with == null || PostRules.FAMILIES.contains(with) || !isTitle(items.get(i), rules.owner())) continue;
                 removedBy[i] = with;
                 heading[i] = true;
                 any = true;
@@ -135,7 +139,8 @@ public final class TimelineFilter {
 
     /** What a removal by [family] is counted as. English, for the report. */
     static String removal(String family) {
-        return FamilyNames.HIDE_ADS.equals(family) ? "ad removed" : "card removed";
+        if (FamilyNames.HIDE_ADS.equals(family)) return "ad removed";
+        return PostRules.FAMILIES.contains(family) ? "post removed" : "card removed";
     }
 
     /** Which switches take items out of this page, read once a page. */
@@ -144,12 +149,16 @@ public final class TimelineFilter {
         final boolean blogs;
         final boolean communities;
         final boolean watchIt;
+        /** The post switches, or null when none is on. */
+        @Nullable
+        final PostRules posts;
 
-        private Rules(boolean ads, boolean blogs, boolean communities, boolean watchIt) {
+        private Rules(boolean ads, boolean blogs, boolean communities, boolean watchIt, @Nullable PostRules posts) {
             this.ads = ads;
             this.blogs = blogs;
             this.communities = communities;
             this.watchIt = watchIt;
+            this.posts = posts;
         }
 
         /** The switches on now, or null when none is. Never throws. */
@@ -166,7 +175,10 @@ public final class TimelineFilter {
                         Settings.HIDE_SUGGESTED_COMMUNITIES);
                 reading = FamilyNames.HIDE_WATCH_IT_ROWS;
                 boolean watchIt = on(PatchFamily.Capability.WATCH_IT_ROWS, reading, Settings.HIDE_WATCH_IT_ROWS);
-                return ads || blogs || communities || watchIt ? new Rules(ads, blogs, communities, watchIt) : null;
+                reading = FamilyNames.HIDE_REBLOGS;
+                PostRules posts = PostRules.now();
+                return ads || blogs || communities || watchIt || posts != null
+                        ? new Rules(ads, blogs, communities, watchIt, posts) : null;
             } catch (Throwable failure) {
                 HookStatus.threw(reading, "switch read", failure);
                 return null;
@@ -184,7 +196,8 @@ public final class TimelineFilter {
         String owner() {
             if (ads) return FamilyNames.HIDE_ADS;
             String card = cardOwner();
-            return card != null ? card : FamilyNames.HIDE_ADS;
+            if (card != null) return card;
+            return posts != null ? posts.owner() : FamilyNames.HIDE_ADS;
         }
 
         /** The first card switch that's on, or null when none is. */
@@ -201,7 +214,9 @@ public final class TimelineFilter {
         String removes(Object item) {
             if (ads && isAd(item)) return FamilyNames.HIDE_ADS;
             String card = cardOwner();
-            return card == null ? null : cardFamily(item, this, card);
+            String byCard = card == null ? null : cardFamily(item, this, card);
+            if (byCard != null || posts == null) return byCard;
+            return postFamily(item, posts);
         }
 
         /** The patch name whose switch is on and whose cards include [kind], or null. */
@@ -252,6 +267,23 @@ public final class TimelineFilter {
             return rules.family(kind);
         } catch (Throwable failure) {
             HookStatus.threw(owner, "timeline item", failure);
+            return null;
+        }
+    }
+
+    /**
+     * The patch name of the post switch that takes [item] out, or null to keep it. One that can't be
+     * read is kept, and the failure is recorded under the first post switch that's on.
+     */
+    @Nullable
+    static String postFamily(Object item, PostRules posts) {
+        String owner = posts.owner();
+        Model found = modelFor(item, owner);
+        if (found == null) return null;
+        try {
+            return posts.removes(found.data.invoke(item));
+        } catch (Throwable failure) {
+            HookStatus.threw(owner, "timeline post", failure);
             return null;
         }
     }

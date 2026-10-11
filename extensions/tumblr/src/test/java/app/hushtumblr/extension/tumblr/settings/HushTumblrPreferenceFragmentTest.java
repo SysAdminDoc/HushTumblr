@@ -112,6 +112,11 @@ public class HushTumblrPreferenceFragmentTest {
         ROW_TITLES.put(PatchFamily.HIDE_COMMENT_BUTTON, "Hide the comment button");
         ROW_TITLES.put(PatchFamily.HIDE_SHARE_BUTTON, "Hide the share button");
         ROW_TITLES.put(PatchFamily.HIDE_UNREAD_DOTS, "Hide unread dots");
+        ROW_TITLES.put(PatchFamily.HIDE_REBLOGS, "Hide reblogs");
+        ROW_TITLES.put(PatchFamily.HIDE_VIDEO_POSTS, "Hide video posts");
+        ROW_TITLES.put(PatchFamily.HIDE_PHOTO_POSTS, "Hide photo posts");
+        ROW_TITLES.put(PatchFamily.HIDE_TEXT_POSTS, "Hide text posts");
+        ROW_TITLES.put(PatchFamily.HIDE_POSTS_WITH_WORDS, "Hide posts with these words");
         ROW_TITLES.put(PatchFamily.FIX_PUSH_NOTIFICATIONS, "Fix push notifications");
     }
 

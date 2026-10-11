@@ -82,6 +82,7 @@ public class PausedHooksTest {
     public void restore() {
         PauseForTests.resume();
         for (BooleanSetting setting : settingsSwitches()) setting.resetToDefault();
+        TextSettings.HIDDEN_WORDS.resetToDefault();
         PatchFamily.capabilitiesForTests = null;
         PatchFamily.inBuildForTests = null;
         ReleaseCheckForTests.forget();
@@ -166,6 +167,18 @@ public class PausedHooksTest {
         // The bottom bar gets no unread badge to pop in.
         probes.put(Settings.HIDE_UNREAD_DOTS, Collections.singletonList(
                 () -> BottomBar.unreadBadge(new TextView(RuntimeEnvironment.getApplication())) == null));
+        // A page with a reblog comes back without it.
+        probes.put(Settings.HIDE_REBLOGS, Collections.singletonList(TimelineItems::aPageLosesItsReblog));
+        // A page with a video post comes back without it.
+        probes.put(Settings.HIDE_VIDEO_POSTS, Collections.singletonList(TimelineItems::aPageLosesItsVideoPost));
+        // A page with a photo post comes back without it.
+        probes.put(Settings.HIDE_PHOTO_POSTS, Collections.singletonList(TimelineItems::aPageLosesItsPhotoPost));
+        // A page with a text post comes back without it.
+        probes.put(Settings.HIDE_TEXT_POSTS, Collections.singletonList(TimelineItems::aPageLosesItsTextPost));
+        // A page with a post holding the saved word comes back without it. The word is saved here,
+        // with the context and unpaused; paused, the list answers empty like a switch answers off.
+        TextSettings.HIDDEN_WORDS.save(TimelineItems.PROBE_WORD);
+        probes.put(Settings.HIDE_POSTS_WITH_WORDS, Collections.singletonList(TimelineItems::aPageLosesItsPostWithAHiddenWord));
         // Firebase's sign-up for push notifications names Tumblr's own certificate.
         probes.put(Settings.FIX_PUSH_NOTIFICATIONS, Collections.singletonList(PushNotificationsTest::fixesACertificate));
         return probes;
