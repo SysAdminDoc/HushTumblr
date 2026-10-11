@@ -103,7 +103,7 @@ class AppCompatibilitiesMatchFixturesTest {
                     }
                     assertEquals(
                         "${fixture.name} version code",
-                        codes.values.single(),
+                        codes.values.toSet().single(),
                         ApkUtils.getVersionCodeFromBinaryAndroidManifest(manifest.duplicate()),
                     )
                     val vendorMinSdk = ApkUtils.getMinSdkVersionFromBinaryAndroidManifest(manifest.duplicate())
@@ -117,6 +117,32 @@ class AppCompatibilitiesMatchFixturesTest {
             }
         }
         assertEquals("a universal APK and a bundle for each declared target", targets.size * 2, checked)
+    }
+
+    /**
+     * One bundle serves every device, its native code split per ABI. Manager hides the patches on
+     * a phone whose ABI the target leaves out, so the declared ABIs are exactly the bundle's
+     * `split_config.<abi>.apk` splits: one missing would hide the patches from phones the bundle
+     * installs on.
+     */
+    @Test
+    fun `every declared target names exactly the ABIs its bundle carries`() {
+        var checked = 0
+        for (target in AppCompatibilities.tumblr().single().targets) {
+            val version = checkNotNull(target.version)
+            val declared = checkNotNull(target.versionCodes).keys.map { it.name.lowercase() }.toSortedSet()
+            val bundles = Fixtures.files { it.extension == "apkm" && it.name.startsWith("tumblr-$version-") }
+            for (bundle in bundles) {
+                val splits = ZipFile(bundle).use { zip ->
+                    zip.entries().asSequence().mapNotNull { entry ->
+                        Regex("split_config\\.(arm64_v8a|armeabi_v7a|x86|x86_64)\\.apk").matchEntire(entry.name)?.groupValues?.get(1)
+                    }.toSortedSet()
+                }
+                assertEquals("${bundle.name}: declared ABIs", splits, declared)
+                checked++
+            }
+        }
+        assertTrue("no fixture bundle was checked", checked > 0)
     }
 
     /** The APK whose manifest names the build: the universal APK itself, or base.apk in a bundle. */

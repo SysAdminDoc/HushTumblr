@@ -48,8 +48,10 @@ internal object AppCompatibilities {
     const val TUMBLR_TARGET_VERSION = "46.5.0.109"
 
     /**
-     * The version code of the [TUMBLR_TARGET_VERSION] bundle. Tumblr ships it as a split bundle
-     * whose base carries this code, so the one code stands for arm64-v8a too.
+     * The version code of the [TUMBLR_TARGET_VERSION] bundle. Tumblr ships one split bundle for
+     * every device: its base carries this code and its native code comes as config splits for
+     * arm64-v8a, armeabi-v7a, x86 and x86_64, so the one code stands for all four ABIs. Unlike
+     * Facebook's per-ABI builds, the DEX is the same on each.
      */
     const val TUMBLR_TARGET_VERSION_CODE = 1460500109
 
@@ -69,7 +71,12 @@ internal object AppCompatibilities {
             targets = listOf(
                 AppTarget(
                     version = TUMBLR_TARGET_VERSION,
-                    versionCodes = mapOf(SupportedAbi.ARM64_V8A to TUMBLR_TARGET_VERSION_CODE),
+                    versionCodes = mapOf(
+                        SupportedAbi.ARM64_V8A to TUMBLR_TARGET_VERSION_CODE,
+                        SupportedAbi.ARMEABI_V7A to TUMBLR_TARGET_VERSION_CODE,
+                        SupportedAbi.X86 to TUMBLR_TARGET_VERSION_CODE,
+                        SupportedAbi.X86_64 to TUMBLR_TARGET_VERSION_CODE,
+                    ),
                     minSdk = TUMBLR_TARGET_MIN_SDK,
                 ),
             ),
