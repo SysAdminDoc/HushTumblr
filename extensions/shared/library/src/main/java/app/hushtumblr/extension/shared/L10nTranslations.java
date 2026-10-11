@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(420);
+        Map<String, String> table = new HashMap<>(424);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -361,6 +361,8 @@ public final class L10nTranslations {
                 "Hilfe zur Einrichtung und Sicherung");
         table.put("Sign in to your existing account",
                 "Mit deinem bestehenden Konto anmelden");
+        table.put("Skip review prompts",
+                "Bewertungsaufforderungen \u00fcberspringen");
         table.put("Source code and issues",
                 "Quellcode und Issues");
         table.put("Spoof signature for Google sign-in",
@@ -369,6 +371,8 @@ public final class L10nTranslations {
                 "Bleibt w\u00e4hrend der Pause aktiv");
         table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
                 "Beendet Tumblrs eigenes Tracking und die Werbemessung, sobald Tumblr neu startet. Die Datenerfassung von Firebase und Google Analytics bleibt aus, bis du ohne diesen Patch neu patchst.");
+        table.put("Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.",
+                "Verhindert das Pop-up, das fragt, was du von der Tumblr-App h\u00e4ltst, und dann um eine Bewertung oder Feedback bittet.");
         table.put("Support HushTumblr",
                 "HushTumblr unterst\u00fctzen");
         table.put("Supported links",
@@ -421,13 +425,13 @@ public final class L10nTranslations {
                 "Es gibt keine Diagnosedaten zum L\u00f6schen.");
         table.put("There's no diagnostic data to put back.",
                 "Es gibt keine Diagnosedaten zum Wiederherstellen.");
+    }
+
+    private static void fillDe3(Map<String, String> table) {
         table.put("There's no import to undo.",
                 "Es gibt keinen Import zum R\u00fcckg\u00e4ngigmachen.");
         table.put("This build doesn't include the parts that handle %1$s.",
                 "Dieser Build enth\u00e4lt die Teile nicht, die %1$s behandeln.");
-    }
-
-    private static void fillDe3(Map<String, String> table) {
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
                 "Dieser Build behandelt %1$s. Es fehlen die Teile f\u00fcr %2$s.");
         table.put("This phone has no file picker, so there's no way to choose a file here.",
@@ -491,7 +495,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(420);
+        Map<String, String> table = new HashMap<>(424);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -802,6 +806,8 @@ public final class L10nTranslations {
                 "Gu\u00eda de configuraci\u00f3n y copias de seguridad");
         table.put("Sign in to your existing account",
                 "Inicia sesi\u00f3n en tu cuenta actual");
+        table.put("Skip review prompts",
+                "Omitir solicitudes de rese\u00f1a");
         table.put("Source code and issues",
                 "C\u00f3digo fuente e incidencias");
         table.put("Spoof signature for Google sign-in",
@@ -810,6 +816,8 @@ public final class L10nTranslations {
                 "Se mantiene durante la pausa");
         table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
                 "Detiene el seguimiento propio de Tumblr y la medici\u00f3n de anuncios cuando se reinicia. La recopilaci\u00f3n de Firebase y Google Analytics sigue desactivada hasta que vuelvas a parchear sin \u00e9l.");
+        table.put("Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.",
+                "Evita la ventana emergente que pregunta qu\u00e9 opinas de la app de Tumblr y luego pide una valoraci\u00f3n o comentarios.");
         table.put("Support HushTumblr",
                 "Apoya HushTumblr");
         table.put("Supported links",
@@ -862,13 +870,13 @@ public final class L10nTranslations {
                 "No hay datos de diagn\u00f3stico que borrar.");
         table.put("There's no diagnostic data to put back.",
                 "No hay datos de diagn\u00f3stico que restaurar.");
+    }
+
+    private static void fillEs3(Map<String, String> table) {
         table.put("There's no import to undo.",
                 "No hay ninguna importaci\u00f3n que deshacer.");
         table.put("This build doesn't include the parts that handle %1$s.",
                 "Esta versi\u00f3n no incluye las partes que se encargan de %1$s.");
-    }
-
-    private static void fillEs3(Map<String, String> table) {
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
                 "Esta versi\u00f3n se encarga de %1$s. Faltan las partes para %2$s.");
         table.put("This phone has no file picker, so there's no way to choose a file here.",
@@ -932,7 +940,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(420);
+        Map<String, String> table = new HashMap<>(424);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -1243,6 +1251,8 @@ public final class L10nTranslations {
                 "Panduan penyiapan dan pencadangan");
         table.put("Sign in to your existing account",
                 "Masuk ke akun yang sudah ada");
+        table.put("Skip review prompts",
+                "Lewati permintaan ulasan");
         table.put("Source code and issues",
                 "Kode sumber dan laporan masalah");
         table.put("Spoof signature for Google sign-in",
@@ -1251,6 +1261,8 @@ public final class L10nTranslations {
                 "Tetap aktif saat dijeda");
         table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
                 "Menghentikan pelacakan dan pengukuran iklan milik Tumblr setelah dimulai ulang. Pengumpulan data Firebase dan Google Analytics tetap mati sampai kamu menambal ulang tanpanya.");
+        table.put("Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.",
+                "Menghentikan pop-up yang menanyakan pendapatmu tentang aplikasi Tumblr lalu meminta rating atau masukan.");
         table.put("Support HushTumblr",
                 "Dukung HushTumblr");
         table.put("Supported links",
@@ -1303,13 +1315,13 @@ public final class L10nTranslations {
                 "Tidak ada data diagnostik yang dapat dihapus.");
         table.put("There's no diagnostic data to put back.",
                 "Tidak ada data diagnostik yang dapat dikembalikan.");
+    }
+
+    private static void fillIn3(Map<String, String> table) {
         table.put("There's no import to undo.",
                 "Tidak ada impor untuk diurungkan.");
         table.put("This build doesn't include the parts that handle %1$s.",
                 "Build ini tidak menyertakan bagian yang menangani %1$s.");
-    }
-
-    private static void fillIn3(Map<String, String> table) {
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
                 "Build ini menangani %1$s. Bagian untuk %2$s tidak ada.");
         table.put("This phone has no file picker, so there's no way to choose a file here.",
@@ -1373,7 +1385,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(420);
+        Map<String, String> table = new HashMap<>(424);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -1684,6 +1696,8 @@ public final class L10nTranslations {
                 "Guia de configura\u00e7\u00e3o e backup");
         table.put("Sign in to your existing account",
                 "Entre na sua conta existente");
+        table.put("Skip review prompts",
+                "Pular pedidos de avalia\u00e7\u00e3o");
         table.put("Source code and issues",
                 "C\u00f3digo-fonte e relatos de problemas");
         table.put("Spoof signature for Google sign-in",
@@ -1692,6 +1706,8 @@ public final class L10nTranslations {
                 "O que continua ativo na pausa");
         table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
                 "Para o rastreamento pr\u00f3prio do Tumblr e a medi\u00e7\u00e3o de an\u00fancios depois que ele reinicia. A coleta do Firebase e do Google Analytics continua desligada at\u00e9 voc\u00ea aplicar o patch de novo sem ele.");
+        table.put("Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.",
+                "Impede o pop-up que pergunta o que voc\u00ea acha do app do Tumblr e depois pede uma avalia\u00e7\u00e3o ou feedback.");
         table.put("Support HushTumblr",
                 "Apoie o HushTumblr");
         table.put("Supported links",
@@ -1744,13 +1760,13 @@ public final class L10nTranslations {
                 "N\u00e3o h\u00e1 dados de diagn\u00f3stico para limpar.");
         table.put("There's no diagnostic data to put back.",
                 "N\u00e3o h\u00e1 dados de diagn\u00f3stico para restaurar.");
+    }
+
+    private static void fillPt_rBR3(Map<String, String> table) {
         table.put("There's no import to undo.",
                 "N\u00e3o h\u00e1 importa\u00e7\u00e3o para desfazer.");
         table.put("This build doesn't include the parts that handle %1$s.",
                 "Esta vers\u00e3o n\u00e3o inclui as partes que cuidam de %1$s.");
-    }
-
-    private static void fillPt_rBR3(Map<String, String> table) {
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
                 "Esta vers\u00e3o cuida de %1$s. Faltam as partes para %2$s.");
         table.put("This phone has no file picker, so there's no way to choose a file here.",
@@ -1814,7 +1830,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(420);
+        Map<String, String> table = new HashMap<>(424);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -2125,6 +2141,8 @@ public final class L10nTranslations {
                 "Kurulum ve yedekleme rehberi");
         table.put("Sign in to your existing account",
                 "Mevcut hesab\u0131n\u0131za giri\u015f yap\u0131n");
+        table.put("Skip review prompts",
+                "De\u011ferlendirme isteklerini atla");
         table.put("Source code and issues",
                 "Kaynak kodu ve sorunlar");
         table.put("Spoof signature for Google sign-in",
@@ -2133,6 +2151,8 @@ public final class L10nTranslations {
                 "Duraklat\u0131lsa da devrede kal\u0131r");
         table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
                 "Tumblr yeniden ba\u015flad\u0131ktan sonra kendi izlemesini ve reklam \u00f6l\u00e7\u00fcm\u00fcn\u00fc durdurur. Firebase ve Google Analytics veri toplama, bu yama olmadan yeniden yamalayana kadar kapal\u0131 kal\u0131r.");
+        table.put("Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.",
+                "Tumblr uygulamas\u0131 hakk\u0131nda ne d\u00fc\u015f\u00fcnd\u00fc\u011f\u00fcn\u00fc soran ve ard\u0131ndan puan ya da geri bildirim isteyen a\u00e7\u0131l\u0131r pencereyi durdurur.");
         table.put("Support HushTumblr",
                 "HushTumblr'\u0131 destekle");
         table.put("Supported links",
@@ -2185,13 +2205,13 @@ public final class L10nTranslations {
                 "Temizlenecek tan\u0131lama verisi yok.");
         table.put("There's no diagnostic data to put back.",
                 "Geri getirilecek tan\u0131lama verisi yok.");
+    }
+
+    private static void fillTr3(Map<String, String> table) {
         table.put("There's no import to undo.",
                 "Geri al\u0131nacak i\u00e7e aktarma yok.");
         table.put("This build doesn't include the parts that handle %1$s.",
                 "Bu s\u00fcr\u00fcm %1$s ile ilgilenen par\u00e7alar\u0131 i\u00e7ermiyor.");
-    }
-
-    private static void fillTr3(Map<String, String> table) {
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
                 "Bu s\u00fcr\u00fcm %1$s ile ilgileniyor. %2$s i\u00e7in par\u00e7alar eksik.");
         table.put("This phone has no file picker, so there's no way to choose a file here.",

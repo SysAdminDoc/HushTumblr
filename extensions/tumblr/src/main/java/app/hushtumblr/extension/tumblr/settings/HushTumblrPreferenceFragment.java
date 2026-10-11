@@ -261,8 +261,9 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                         + "Ad-Free Browsing. Restart Tumblr to see the change."), SettingsIcons.BLOCK);
         }
 
-        // Tabs, prompts and pop-ups. Each switch here answers one of Tumblr's own feature flags,
-        // which Tumblr reads once a run, so each says a restart shows it.
+        // Tabs, prompts and pop-ups. A switch that answers one of Tumblr's own feature flags says a
+        // restart shows it, since Tumblr reads each flag once a run. Skip review prompts is read each
+        // time the prompt would open, so it needs none.
         if (!Collections.disjoint(build, PatchFamily.INTERFACE_PAGE)) {
             PreferenceCategory ui = category(screen, L10n.t("Interface"));
             patchToggle(ui, context, build, PatchFamily.HIDE_TUMBLR_TV, Settings.HIDE_TUMBLR_TV, L10n.t("Hide Tumblr TV"),
@@ -275,6 +276,9 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             patchToggle(ui, context, build, PatchFamily.HIDE_BLAZE_PROMPTS, Settings.HIDE_BLAZE_PROMPTS,
                     L10n.t("Hide Blaze prompts"), L10n.t("Hides the Blaze buttons, banners and the nudge to promote "
                         + "a post after you share it. Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+            patchToggle(ui, context, build, PatchFamily.SKIP_REVIEW_PROMPTS, Settings.SKIP_REVIEW_PROMPTS,
+                    L10n.t("Skip review prompts"), L10n.t("Stops the pop-up that asks what you think of the Tumblr "
+                        + "app and then asks for a rating or feedback."), SettingsIcons.BLOCK);
         }
 
         if (!Collections.disjoint(build, PatchFamily.PRIVACY_PAGE)) {

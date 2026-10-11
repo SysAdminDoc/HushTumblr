@@ -397,6 +397,45 @@
       "options": []
     },
     {
+      "name": "Skip review prompts",
+      "description": "Stops the pop-up that asks what you think of the Tumblr app and then asks you for a store rating or feedback. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface.",
+      "category": "Interface",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch",
+        "HushTumblr settings"
+      ],
+      "compatiblePackages": {
+        "com.tumblr": [
+          "46.5.0.109"
+        ]
+      },
+      "compatibility": [
+        {
+          "name": "Tumblr",
+          "packageName": "com.tumblr",
+          "description": null,
+          "appIconColor": 6453,
+          "signatures": [
+            "39ac9c821ad2d605e4849f066e8aad3cca27d5e13eb03ad8755be234a2985dfd"
+          ],
+          "targets": [
+            {
+              "version": "46.5.0.109",
+              "experimental": false,
+              "versionCodes": {
+                "ARM64_V8A": 1460500109,
+                "ARMEABI_V7A": 1460500109,
+                "X86": 1460500109,
+                "X86_64": 1460500109
+              }
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
       "name": "Spoof signature for Google sign-in",
       "description": "Helps Google sign-in work in the patched app by naming Tumblr's original signature. It only helps with microG-RE or the XSpoofSignatures module. Email sign-in doesn't need it. It isn't selected by default. Works as soon as you patch it in, with no switch.",
       "category": "Privacy",

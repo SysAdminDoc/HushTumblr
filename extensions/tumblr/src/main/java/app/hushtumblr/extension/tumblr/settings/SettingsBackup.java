@@ -92,6 +92,7 @@ public final class SettingsBackup {
             Settings.HIDE_TUMBLR_TV,
             Settings.HIDE_COMMUNITIES_TAB,
             Settings.HIDE_BLAZE_PROMPTS,
+            Settings.SKIP_REVIEW_PROMPTS,
             Settings.FIX_PUSH_NOTIFICATIONS));
 
     /**

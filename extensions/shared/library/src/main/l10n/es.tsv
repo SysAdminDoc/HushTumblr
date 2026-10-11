@@ -225,3 +225,7 @@ Takes the Communities tab out of the bottom bar and stops Communities tips in th
 # context: the Hide Blaze prompts switch on the Interface page. Blaze is Tumblr's paid post promotion.
 Hide Blaze prompts	Ocultar avisos de Blaze
 Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.	Oculta los botones y banners de Blaze y el aviso para promocionar una publicación después de compartirla. Reinicia Tumblr para ver el cambio.
+# context: the Skip review prompts switch on the Interface page. It stops Tumblr's rate-this-app pop-up.
+# context: the Skip review prompts switch on the Interface page. It stops Tumblr's "What do you think of the Tumblr app?" pop-up.
+Skip review prompts	Omitir solicitudes de reseña
+Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.	Evita la ventana emergente que pregunta qué opinas de la app de Tumblr y luego pide una valoración o comentarios.

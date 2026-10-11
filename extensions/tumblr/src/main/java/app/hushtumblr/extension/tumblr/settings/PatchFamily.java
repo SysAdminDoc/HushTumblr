@@ -65,6 +65,7 @@ public enum PatchFamily {
     HIDE_TUMBLR_TV(FamilyNames.HIDE_TUMBLR_TV, "hideTumblrTv", null, Settings.HIDE_TUMBLR_TV),
     HIDE_COMMUNITIES_TAB(FamilyNames.HIDE_COMMUNITIES_TAB, "hideCommunitiesTab", null, Settings.HIDE_COMMUNITIES_TAB),
     HIDE_BLAZE_PROMPTS(FamilyNames.HIDE_BLAZE_PROMPTS, "hideBlazePrompts", null, Settings.HIDE_BLAZE_PROMPTS),
+    SKIP_REVIEW_PROMPTS(FamilyNames.SKIP_REVIEW_PROMPTS, "skipReviewPrompts", null, Settings.SKIP_REVIEW_PROMPTS),
     FIX_PUSH_NOTIFICATIONS(FamilyNames.FIX_PUSH_NOTIFICATIONS, "fixPushNotifications", null, Settings.FIX_PUSH_NOTIFICATIONS);
 
     /** The patch's name in Morphe Manager. */
@@ -114,7 +115,7 @@ public enum PatchFamily {
     static final Set<PatchFamily> FEED_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_AD_FREE_BANNER, HIDE_ADS));
 
     /** The families the Interface page holds. The page and its home row both read this. */
-    static final Set<PatchFamily> INTERFACE_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_BLAZE_PROMPTS, HIDE_COMMUNITIES_TAB, HIDE_TUMBLR_TV));
+    static final Set<PatchFamily> INTERFACE_PAGE = Collections.unmodifiableSet(EnumSet.of(SKIP_REVIEW_PROMPTS, HIDE_BLAZE_PROMPTS, HIDE_COMMUNITIES_TAB, HIDE_TUMBLR_TV));
 
     /** The families the Privacy page holds. The page and its home row both read this. */
     static final Set<PatchFamily> PRIVACY_PAGE = Collections.unmodifiableSet(EnumSet.of(DISABLE_ANALYTICS,
@@ -129,6 +130,7 @@ public enum PatchFamily {
         TUMBLR_TV_FLAGS(HIDE_TUMBLR_TV, "tumblrTvFlags", "Hide Tumblr TV"),
         COMMUNITIES_TAB_FLAGS(HIDE_COMMUNITIES_TAB, "communitiesTabFlags", "Hide the Communities tab"),
         BLAZE_PROMPT_FLAGS(HIDE_BLAZE_PROMPTS, "blazePromptFlags", "Hide Blaze prompts"),
+        REVIEW_PROMPT(SKIP_REVIEW_PROMPTS, "reviewPrompt", "Skip review prompts"),
         FIREBASE_CERTIFICATE(FIX_PUSH_NOTIFICATIONS, "firebaseCertificate", "Fix push notifications");
 
         public final PatchFamily family;

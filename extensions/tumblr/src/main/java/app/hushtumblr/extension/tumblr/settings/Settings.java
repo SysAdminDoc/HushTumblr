@@ -98,6 +98,13 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_hide_blaze_prompts", FALSE);
 
     /**
+     * Tumblr's pop-up asking you to rate it doesn't open
+     * ({@link app.hushtumblr.extension.tumblr.ui.ReviewPrompts}). Off to start.
+     */
+    public static final BooleanSetting SKIP_REVIEW_PROMPTS =
+            new BooleanSetting("hushtumblr_skip_review_prompts", FALSE);
+
+    /**
      * Once a day, when Tumblr starts, ask api.github.com whether a newer HushTumblr release is
      * out, and say so on the settings screen ({@link ReleaseCheck}). It's the settings entry's own
      * switch rather than a patch's, so every build has it ({@link PatchFamily#ENTRY_SWITCHES}). Off

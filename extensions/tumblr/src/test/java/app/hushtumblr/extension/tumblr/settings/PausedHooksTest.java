@@ -43,6 +43,7 @@ import app.hushtumblr.extension.tumblr.flags.FeatureSwitchesTest;
 import app.hushtumblr.extension.tumblr.notifications.PushNotificationsTest;
 import app.hushtumblr.extension.tumblr.privacy.AdvertisingId;
 import app.hushtumblr.extension.tumblr.timeline.TimelineItems;
+import app.hushtumblr.extension.tumblr.ui.ReviewPrompts;
 import app.hushtumblr.extension.shared.SettingsContextRule;
 import app.hushtumblr.extension.shared.Utils;
 import app.hushtumblr.extension.shared.diagnostics.HookStatus;
@@ -122,6 +123,8 @@ public class PausedHooksTest {
         // The Blaze button in your blog's header answers off.
         probes.put(Settings.HIDE_BLAZE_PROMPTS, Collections.singletonList(
                 () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("BLAZE_DASHBOARD_ENTRYPOINT_IN_USER_BLOG_HEADER"), true)));
+        // Tumblr's rating prompt is skipped.
+        probes.put(Settings.SKIP_REVIEW_PROMPTS, Collections.singletonList(ReviewPrompts::skip));
         // Firebase's sign-up for push notifications names Tumblr's own certificate.
         probes.put(Settings.FIX_PUSH_NOTIFICATIONS, Collections.singletonList(PushNotificationsTest::fixesACertificate));
         return probes;
