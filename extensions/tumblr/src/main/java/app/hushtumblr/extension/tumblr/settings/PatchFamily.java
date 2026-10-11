@@ -88,6 +88,9 @@ public enum PatchFamily {
     HIDE_TEXT_POSTS(FamilyNames.HIDE_TEXT_POSTS, "hideTextPosts", null, Settings.HIDE_TEXT_POSTS),
     HIDE_POSTS_WITH_WORDS(FamilyNames.HIDE_POSTS_WITH_WORDS, "hidePostsWithWords", null, Settings.HIDE_POSTS_WITH_WORDS),
     DARK_BACKGROUND(FamilyNames.DARK_BACKGROUND, "darkBackground", null, Settings.DARK_BACKGROUND),
+    HIDE_EXPLORE_TAB(FamilyNames.HIDE_EXPLORE_TAB, "hideExploreTab", null, Settings.HIDE_EXPLORE_TAB),
+    HIDE_NOTIFICATIONS_TAB(FamilyNames.HIDE_NOTIFICATIONS_TAB, "hideNotificationsTab", null, Settings.HIDE_NOTIFICATIONS_TAB),
+    REORDER_TABS(FamilyNames.REORDER_TABS, "reorderTabs", null, Settings.REORDER_TABS),
     FIX_PUSH_NOTIFICATIONS(FamilyNames.FIX_PUSH_NOTIFICATIONS, "fixPushNotifications", null, Settings.FIX_PUSH_NOTIFICATIONS);
 
     /** The patch's name in Morphe Manager. */
@@ -139,9 +142,9 @@ public enum PatchFamily {
             HIDE_SUGGESTED_COMMUNITIES, HIDE_SUGGESTED_BLOGS, HIDE_AD_FREE_BANNER, HIDE_ADS));
 
     /** The families the Interface page holds. The page and its home row both read this. */
-    static final Set<PatchFamily> INTERFACE_PAGE = Collections.unmodifiableSet(EnumSet.of(DARK_BACKGROUND,
-            HIDE_UNREAD_DOTS, HIDE_TUMBLRMART, TURN_OFF_SCREENSHOT_SHARING, SKIP_REVIEW_PROMPTS, HIDE_BLAZE_PROMPTS,
-            HIDE_COMMUNITIES_TAB, HIDE_TUMBLR_TV));
+    static final Set<PatchFamily> INTERFACE_PAGE = Collections.unmodifiableSet(EnumSet.of(REORDER_TABS,
+            HIDE_NOTIFICATIONS_TAB, HIDE_EXPLORE_TAB, DARK_BACKGROUND, HIDE_UNREAD_DOTS, HIDE_TUMBLRMART,
+            TURN_OFF_SCREENSHOT_SHARING, SKIP_REVIEW_PROMPTS, HIDE_BLAZE_PROMPTS, HIDE_COMMUNITIES_TAB, HIDE_TUMBLR_TV));
 
     /** The families the Posts page holds. The page and its home row both read this. */
     static final Set<PatchFamily> POSTS_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_SHARE_BUTTON,
@@ -185,6 +188,9 @@ public enum PatchFamily {
         TEXT_POSTS(HIDE_TEXT_POSTS, "textPosts", "Hide text posts"),
         POST_WORDS(HIDE_POSTS_WITH_WORDS, "postWords", "Hide posts with these words"),
         THEME_BACKGROUND(DARK_BACKGROUND, "themeBackground", "Dark background color"),
+        EXPLORE_TAB(HIDE_EXPLORE_TAB, "exploreTab", "Hide the Explore tab"),
+        NOTIFICATIONS_TAB(HIDE_NOTIFICATIONS_TAB, "notificationsTab", "Hide the Notifications tab"),
+        TAB_ORDER(REORDER_TABS, "tabOrder", "Reorder the bottom bar"),
         FIREBASE_CERTIFICATE(FIX_PUSH_NOTIFICATIONS, "firebaseCertificate", "Fix push notifications");
 
         public final PatchFamily family;

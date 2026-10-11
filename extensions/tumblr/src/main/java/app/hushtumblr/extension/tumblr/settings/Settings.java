@@ -246,6 +246,28 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_dark_background", FALSE);
 
     /**
+     * The bottom bar doesn't show the Explore tab's button; the tab itself stays in Tumblr's list
+     * ({@link app.hushtumblr.extension.tumblr.ui.BottomBarTabs}). Off to start.
+     */
+    public static final BooleanSetting HIDE_EXPLORE_TAB =
+            new BooleanSetting("hushtumblr_hide_explore_tab", FALSE);
+
+    /**
+     * The bottom bar doesn't show the Notifications tab's button; the tab itself stays in Tumblr's
+     * list ({@link app.hushtumblr.extension.tumblr.ui.BottomBarTabs}). Off to start.
+     */
+    public static final BooleanSetting HIDE_NOTIFICATIONS_TAB =
+            new BooleanSetting("hushtumblr_hide_notifications_tab", FALSE);
+
+    /**
+     * Tumblr's tab list, and so the bottom bar, goes in the order saved in
+     * {@link TextSettings#TAB_ORDER} ({@link app.hushtumblr.extension.tumblr.ui.BottomBarTabs}).
+     * Off to start.
+     */
+    public static final BooleanSetting REORDER_TABS =
+            new BooleanSetting("hushtumblr_reorder_tabs", FALSE);
+
+    /**
      * Once a day, when Tumblr starts, ask api.github.com whether a newer HushTumblr release is
      * out, and say so on the settings screen ({@link ReleaseCheck}). It's the settings entry's own
      * switch rather than a patch's, so every build has it ({@link PatchFamily#ENTRY_SWITCHES}). Off

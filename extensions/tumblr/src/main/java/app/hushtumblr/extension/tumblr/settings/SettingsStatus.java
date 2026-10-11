@@ -91,6 +91,12 @@ public final class SettingsStatus {
     public static boolean postWords() { return false; }
     public static boolean darkBackground() { return false; }
     public static boolean themeBackground() { return false; }
+    public static boolean hideExploreTab() { return false; }
+    public static boolean exploreTab() { return false; }
+    public static boolean hideNotificationsTab() { return false; }
+    public static boolean notificationsTab() { return false; }
+    public static boolean reorderTabs() { return false; }
+    public static boolean tabOrder() { return false; }
     public static boolean fixPushNotifications() { return false; }
     public static boolean firebaseCertificate() { return false; }
 }

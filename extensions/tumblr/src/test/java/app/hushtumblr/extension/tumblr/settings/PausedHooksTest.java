@@ -47,6 +47,7 @@ import app.hushtumblr.extension.tumblr.notifications.PushNotificationsTest;
 import app.hushtumblr.extension.tumblr.privacy.AdvertisingId;
 import app.hushtumblr.extension.tumblr.timeline.TimelineItems;
 import app.hushtumblr.extension.tumblr.ui.BottomBar;
+import app.hushtumblr.extension.tumblr.ui.BottomBarTabsForTests;
 import app.hushtumblr.extension.tumblr.ui.DarkBackgroundForTests;
 import app.hushtumblr.extension.tumblr.ui.PostFooter;
 import app.hushtumblr.extension.tumblr.ui.PostFooterForTests;
@@ -84,6 +85,8 @@ public class PausedHooksTest {
         PauseForTests.resume();
         for (BooleanSetting setting : settingsSwitches()) setting.resetToDefault();
         TextSettings.HIDDEN_WORDS.resetToDefault();
+        TextSettings.TAB_ORDER.resetToDefault();
+        BottomBarTabsForTests.forget();
         PatchFamily.capabilitiesForTests = null;
         PatchFamily.inBuildForTests = null;
         ReleaseCheckForTests.forget();
@@ -182,6 +185,14 @@ public class PausedHooksTest {
         probes.put(Settings.HIDE_POSTS_WITH_WORDS, Collections.singletonList(TimelineItems::aPageLosesItsPostWithAHiddenWord));
         // A theme on the Dark palette gets the patch's background style.
         probes.put(Settings.DARK_BACKGROUND, Collections.singletonList(DarkBackgroundForTests::paintsATheme));
+        // The Explore tab's button goes when the bar is built.
+        probes.put(Settings.HIDE_EXPLORE_TAB, Collections.singletonList(BottomBarTabsForTests::hidesTheExploreTab));
+        // The Notifications tab's button goes when the bar is built.
+        probes.put(Settings.HIDE_NOTIFICATIONS_TAB, Collections.singletonList(BottomBarTabsForTests::hidesTheNotificationsTab));
+        // The tab list puts the saved first tab first. The order is saved here like the words above;
+        // paused, it answers empty and Tumblr's order stays.
+        TextSettings.TAB_ORDER.save(BottomBarTabsForTests.PROBE_ORDER);
+        probes.put(Settings.REORDER_TABS, Collections.singletonList(BottomBarTabsForTests::reordersTheTabs));
         // Firebase's sign-up for push notifications names Tumblr's own certificate.
         probes.put(Settings.FIX_PUSH_NOTIFICATIONS, Collections.singletonList(PushNotificationsTest::fixesACertificate));
         return probes;

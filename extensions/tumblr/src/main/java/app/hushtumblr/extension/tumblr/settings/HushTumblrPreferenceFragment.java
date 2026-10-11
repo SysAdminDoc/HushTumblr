@@ -49,6 +49,7 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListAdapter;
@@ -78,6 +79,7 @@ import app.hushtumblr.extension.shared.settings.preference.ExportDiagnosticRepor
 import app.hushtumblr.extension.shared.settings.preference.ImmediateAction;
 import app.hushtumblr.extension.shared.settings.preference.LogBufferManager;
 import app.hushtumblr.extension.tumblr.timeline.PostRules;
+import app.hushtumblr.extension.tumblr.ui.BottomBarTabs;
 
 /**
  * The preference list, built in code rather than from an XML resource so the bundle adds no
@@ -111,6 +113,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
     static final String SUPPORTED_LINKS = "action_supported_links";
     /** The Words to hide row's key. The list itself is {@link TextSettings#HIDDEN_WORDS}. */
     static final String HIDDEN_WORDS_ROW = "action_hidden_words";
+    static final String TAB_ORDER_ROW = "action_tab_order";
 
     /** Thrown by the next initialize() and then cleared: how a test reaches the recovery page. */
     static volatile RuntimeException failNextInitialization;
@@ -336,6 +339,17 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                     L10n.t("Hide the Communities tab"), L10n.t("Takes the Communities tab out of the bottom bar and "
                         + "stops Communities tips in the post editor. Restart Tumblr to see the change."),
                     SettingsIcons.BLOCK);
+            // The bar is built once a run (BottomBarTabs), so these show after a restart.
+            patchToggle(ui, context, build, PatchFamily.HIDE_EXPLORE_TAB, Settings.HIDE_EXPLORE_TAB,
+                    L10n.t("Hide the Explore tab"), L10n.t("Takes the Explore and search button off the bottom bar. "
+                        + "Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+            patchToggle(ui, context, build, PatchFamily.HIDE_NOTIFICATIONS_TAB, Settings.HIDE_NOTIFICATIONS_TAB,
+                    L10n.t("Hide the Notifications tab"), L10n.t("Takes the Notifications button off the bottom bar. "
+                        + "Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+            patchToggle(ui, context, build, PatchFamily.REORDER_TABS, Settings.REORDER_TABS,
+                    L10n.t("Reorder the bottom bar"), L10n.t("Puts the bottom bar's tabs in the order set below. "
+                        + "Restart Tumblr to see the change."), SettingsIcons.INTERFACE);
+            if (build.contains(PatchFamily.REORDER_TABS)) ui.addPreference(mark(tabOrderRow(context), SettingsIcons.INTERFACE));
             // Read each time Tumblr's unread counts come in (BottomBar), so it needs no restart.
             patchToggle(ui, context, build, PatchFamily.HIDE_UNREAD_DOTS, Settings.HIDE_UNREAD_DOTS,
                     L10n.t("Hide unread dots"), L10n.t("Hides the unread dots and counts on the bottom bar's "
@@ -543,15 +557,17 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
     /**
      * Shows [builder]'s dialog in the screen's colours, and closes it with the page's view. Nothing
      * shows once the view is gone or the activity is finishing: the dialog would come up over a
-     * window that's gone.
+     * window that's gone. Answers the dialog, or null when none showed.
      */
-    private void show(AlertDialog.Builder builder) {
+    @Nullable
+    private AlertDialog show(AlertDialog.Builder builder) {
         Activity activity = getActivity();
-        if (getView() == null || activity == null || activity.isFinishing() || activity.isDestroyed()) return;
+        if (getView() == null || activity == null || activity.isFinishing() || activity.isDestroyed()) return null;
         AlertDialog dialog = builder.show();
         ScreenColors.dialog(dialog);
         shownDialogs.add(dialog);
         dialog.setOnDismissListener(shownDialogs::remove);
+        return dialog;
     }
 
     /** The section headings on the page, in order. */
@@ -737,6 +753,81 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                     row.setSummary(wordsSummary(words));
                 })
                 .setNegativeButton(L10n.t("Cancel"), null));
+    }
+
+    /** The row that opens the tab order list. Its summary names the order chosen. */
+    private Preference tabOrderRow(Context context) {
+        Row row = new Row(context);
+        row.setKey(TAB_ORDER_ROW);
+        row.setTitle(L10n.t("Tab order"));
+        row.setPersistent(false);
+        row.setSummary(tabOrderSummary(TextSettings.TAB_ORDER.savedValue()));
+        row.setOnPreferenceClickListener(p -> {
+            showTabOrder(context, p);
+            return true;
+        });
+        return row;
+    }
+
+    /**
+     * The tabs on the bar in the order chosen. A tap on one moves it a place up and saves the order
+     * at once, keeping the list open, so a tab can be walked to the top. Tumblr's order clears the
+     * choice. The bar is built as Tumblr starts, so it shows after a restart.
+     */
+    private void showTabOrder(Context context, Preference row) {
+        List<String> order = new ArrayList<>(BottomBarTabs.choices(TextSettings.TAB_ORDER.savedValue()));
+        ArrayAdapter<String> labels = new ArrayAdapter<>(context, android.R.layout.simple_list_item_1, tabLabels(order));
+        AlertDialog dialog = show(new AlertDialog.Builder(context)
+                .setTitle(L10n.t("Tap a tab to move it up"))
+                .setAdapter(labels, null)
+                .setNeutralButton(L10n.t("Tumblr's order"), (shown, which) -> {
+                    TextSettings.TAB_ORDER.save("");
+                    row.setSummary(tabOrderSummary(""));
+                })
+                .setPositiveButton(L10n.t("OK"), null));
+        if (dialog == null) return;
+        // A click listener of its own, so a tap moves the tab without closing the list.
+        dialog.getListView().setOnItemClickListener((parent, view, position, id) -> {
+            List<String> moved = BottomBarTabs.movedUp(order, position);
+            order.clear();
+            order.addAll(moved);
+            TextSettings.TAB_ORDER.save(BottomBarTabs.join(order));
+            labels.clear();
+            labels.addAll(tabLabels(order));
+            row.setSummary(tabOrderSummary(TextSettings.TAB_ORDER.savedValue()));
+        });
+    }
+
+    /** What the tab order [saved] does, for its row's summary. */
+    static String tabOrderSummary(String saved) {
+        if (BottomBarTabs.parse(saved).isEmpty()) return L10n.t("The bottom bar keeps Tumblr's order.");
+        List<String> labels = new ArrayList<>();
+        for (String name : BottomBarTabs.choices(saved)) labels.add(L10n.isolate(tabLabel(name)));
+        return L10n.f("Tabs go in this order: %1$s. Restart Tumblr to see the change.", String.join(", ", labels));
+    }
+
+    /** What the tab order list calls the tab named [name] in Tumblr's tab enum. */
+    static String tabLabel(String name) {
+        switch (name) {
+            case "Search":
+                return L10n.t("Explore");
+            case "TumblrTV":
+                return L10n.t("Tumblr TV");
+            case "Communities":
+                return L10n.t("Communities");
+            case "Notifications":
+                return L10n.t("Notifications");
+            case "Account":
+                return L10n.t("Account");
+            default:
+                return L10n.t("Dashboard");
+        }
+    }
+
+    private static List<String> tabLabels(List<String> names) {
+        List<String> labels = new ArrayList<>(names.size());
+        for (String name : names) labels.add(tabLabel(name));
+        return labels;
     }
 
     /** The words row's summary: the saved entries, or how to add the first. */

@@ -443,6 +443,9 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
             case "hushtumblr_hide_text_posts": return L10n.t("Hide text posts");
             case "hushtumblr_hide_posts_with_words": return L10n.t("Hide posts with these words");
             case "hushtumblr_dark_background": return L10n.t("Dark background color");
+            case "hushtumblr_hide_explore_tab": return L10n.t("Hide the Explore tab");
+            case "hushtumblr_hide_notifications_tab": return L10n.t("Hide the Notifications tab");
+            case "hushtumblr_reorder_tabs": return L10n.t("Reorder the bottom bar");
             case "hushtumblr_fix_push_notifications": return L10n.t("Fix push notifications");
             default: throw new IllegalArgumentException("Unlisted backup switch");
         }

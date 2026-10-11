@@ -287,3 +287,20 @@ Looks for: %1$s	Aranan: %1$s
 # context: Dark background color turns the background of Tumblr's Dark Mode palette (Settings > Appearance) black, or a dark color chosen when the app was patched. Use Tumblr's own name for the Dark Mode palette in your language.
 Dark background color	Koyu arka plan rengi
 Makes the Dark Mode palette's background black, or the dark color picked when patching. Restart Tumblr to see the change.	Karanlık Mod paletinin arka planını siyah ya da yama sırasında seçilen koyu renk yapar. Değişikliği görmek için Tumblr'ı yeniden başlat.
+# context: the bottom bar's tabs. Hide the Explore tab and Hide the Notifications tab take one tab's button off the bar; Reorder the bottom bar puts the tabs in an order chosen in a list where a tap moves a tab one place up. Use Tumblr's own names for the tabs in your language.
+Hide the Explore tab	Keşfet sekmesini gizle
+Takes the Explore and search button off the bottom bar. Restart Tumblr to see the change.	Keşfet ve arama düğmesini alt çubuktan kaldırır. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Hide the Notifications tab	Bildirimler sekmesini gizle
+Takes the Notifications button off the bottom bar. Restart Tumblr to see the change.	Bildirimler düğmesini alt çubuktan kaldırır. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Reorder the bottom bar	Alt çubuğu yeniden sırala
+Puts the bottom bar's tabs in the order set below. Restart Tumblr to see the change.	Alt çubuktaki sekmeleri aşağıda seçilen sıraya koyar. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Tab order	Sekme sırası
+Tap a tab to move it up	Yukarı taşımak için bir sekmeye dokun
+Tumblr's order	Tumblr'ın sırası
+The bottom bar keeps Tumblr's order.	Alt çubuk Tumblr'ın sırasını korur.
+Tabs go in this order: %1$s. Restart Tumblr to see the change.	Sekmeler şu sırada olur: %1$s. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Dashboard	Pano
+Explore	Keşfet
+Tumblr TV	Tumblr TV
+Communities	Topluluklar
+Account	Hesap

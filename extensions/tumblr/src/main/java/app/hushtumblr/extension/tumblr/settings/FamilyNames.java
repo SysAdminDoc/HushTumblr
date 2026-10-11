@@ -58,6 +58,9 @@ public final class FamilyNames {
     public static final String HIDE_TEXT_POSTS = "Hide text posts";
     public static final String HIDE_POSTS_WITH_WORDS = "Hide posts with these words";
     public static final String DARK_BACKGROUND = "Dark background color";
+    public static final String HIDE_EXPLORE_TAB = "Hide the Explore tab";
+    public static final String HIDE_NOTIFICATIONS_TAB = "Hide the Notifications tab";
+    public static final String REORDER_TABS = "Reorder the bottom bar";
     public static final String FIX_PUSH_NOTIFICATIONS = "Fix push notifications";
 
     private FamilyNames() {

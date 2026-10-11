@@ -284,3 +284,20 @@ Looks for: %1$s	Procura: %1$s
 # context: Dark background color turns the background of Tumblr's Dark Mode palette (Settings > Appearance) black, or a dark color chosen when the app was patched. Use Tumblr's own name for the Dark Mode palette in your language.
 Dark background color	Cor de fundo escura
 Makes the Dark Mode palette's background black, or the dark color picked when patching. Restart Tumblr to see the change.	Deixa o fundo da paleta Modo escuro preto, ou na cor escura escolhida ao aplicar o patch. Reinicie o Tumblr para ver a mudança.
+# context: the bottom bar's tabs. Hide the Explore tab and Hide the Notifications tab take one tab's button off the bar; Reorder the bottom bar puts the tabs in an order chosen in a list where a tap moves a tab one place up. Use Tumblr's own names for the tabs in your language.
+Hide the Explore tab	Ocultar a aba Explorar
+Takes the Explore and search button off the bottom bar. Restart Tumblr to see the change.	Tira o botão de Explorar e busca da barra de baixo. Reinicie o Tumblr para ver a mudança.
+Hide the Notifications tab	Ocultar a aba Notificações
+Takes the Notifications button off the bottom bar. Restart Tumblr to see the change.	Tira o botão de Notificações da barra de baixo. Reinicie o Tumblr para ver a mudança.
+Reorder the bottom bar	Reordenar a barra de baixo
+Puts the bottom bar's tabs in the order set below. Restart Tumblr to see the change.	Coloca as abas da barra de baixo na ordem escolhida abaixo. Reinicie o Tumblr para ver a mudança.
+Tab order	Ordem das abas
+Tap a tab to move it up	Toque em uma aba para subi-la
+Tumblr's order	Ordem do Tumblr
+The bottom bar keeps Tumblr's order.	A barra de baixo mantém a ordem do Tumblr.
+Tabs go in this order: %1$s. Restart Tumblr to see the change.	As abas ficam nesta ordem: %1$s. Reinicie o Tumblr para ver a mudança.
+Dashboard	Painel
+Explore	Explorar
+Tumblr TV	Tumblr TV
+Communities	Comunidades
+Account	Conta

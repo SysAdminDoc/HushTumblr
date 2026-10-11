@@ -118,6 +118,9 @@ public class HushTumblrPreferenceFragmentTest {
         ROW_TITLES.put(PatchFamily.HIDE_TEXT_POSTS, "Hide text posts");
         ROW_TITLES.put(PatchFamily.HIDE_POSTS_WITH_WORDS, "Hide posts with these words");
         ROW_TITLES.put(PatchFamily.DARK_BACKGROUND, "Dark background color");
+        ROW_TITLES.put(PatchFamily.HIDE_EXPLORE_TAB, "Hide the Explore tab");
+        ROW_TITLES.put(PatchFamily.HIDE_NOTIFICATIONS_TAB, "Hide the Notifications tab");
+        ROW_TITLES.put(PatchFamily.REORDER_TABS, "Reorder the bottom bar");
         ROW_TITLES.put(PatchFamily.FIX_PUSH_NOTIFICATIONS, "Fix push notifications");
     }
 

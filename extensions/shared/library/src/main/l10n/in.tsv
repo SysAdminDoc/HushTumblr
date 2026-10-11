@@ -287,3 +287,20 @@ Looks for: %1$s	Mencari: %1$s
 # context: Dark background color turns the background of Tumblr's Dark Mode palette (Settings > Appearance) black, or a dark color chosen when the app was patched. Use Tumblr's own name for the Dark Mode palette in your language.
 Dark background color	Warna latar gelap
 Makes the Dark Mode palette's background black, or the dark color picked when patching. Restart Tumblr to see the change.	Membuat latar palet Mode Gelap menjadi hitam, atau warna gelap yang dipilih saat menambal. Mulai ulang Tumblr untuk melihat perubahannya.
+# context: the bottom bar's tabs. Hide the Explore tab and Hide the Notifications tab take one tab's button off the bar; Reorder the bottom bar puts the tabs in an order chosen in a list where a tap moves a tab one place up. Use Tumblr's own names for the tabs in your language.
+Hide the Explore tab	Sembunyikan tab Jelajahi
+Takes the Explore and search button off the bottom bar. Restart Tumblr to see the change.	Menghapus tombol Jelajahi dan pencarian dari bilah bawah. Mulai ulang Tumblr untuk melihat perubahannya.
+Hide the Notifications tab	Sembunyikan tab Notifikasi
+Takes the Notifications button off the bottom bar. Restart Tumblr to see the change.	Menghapus tombol Notifikasi dari bilah bawah. Mulai ulang Tumblr untuk melihat perubahannya.
+Reorder the bottom bar	Atur ulang bilah bawah
+Puts the bottom bar's tabs in the order set below. Restart Tumblr to see the change.	Menyusun tab di bilah bawah sesuai urutan yang diatur di bawah. Mulai ulang Tumblr untuk melihat perubahannya.
+Tab order	Urutan tab
+Tap a tab to move it up	Ketuk tab untuk memindahkannya ke atas
+Tumblr's order	Urutan Tumblr
+The bottom bar keeps Tumblr's order.	Bilah bawah tetap memakai urutan Tumblr.
+Tabs go in this order: %1$s. Restart Tumblr to see the change.	Tab disusun dengan urutan ini: %1$s. Mulai ulang Tumblr untuk melihat perubahannya.
+Dashboard	Dasbor
+Explore	Jelajahi
+Tumblr TV	Tumblr TV
+Communities	Komunitas
+Account	Akun

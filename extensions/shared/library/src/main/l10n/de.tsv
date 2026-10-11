@@ -287,3 +287,20 @@ Looks for: %1$s	Sucht nach: %1$s
 # context: Dark background color turns the background of Tumblr's Dark Mode palette (Settings > Appearance) black, or a dark color chosen when the app was patched. Use Tumblr's own name for the Dark Mode palette in your language.
 Dark background color	Dunkle Hintergrundfarbe
 Makes the Dark Mode palette's background black, or the dark color picked when patching. Restart Tumblr to see the change.	Macht den Hintergrund der Palette Dunkelmodus schwarz oder zu der dunklen Farbe, die beim Patchen gewählt wurde. Starte Tumblr neu, um die Änderung zu sehen.
+# context: the bottom bar's tabs. Hide the Explore tab and Hide the Notifications tab take one tab's button off the bar; Reorder the bottom bar puts the tabs in an order chosen in a list where a tap moves a tab one place up. Use Tumblr's own names for the tabs in your language.
+Hide the Explore tab	Entdecken-Tab ausblenden
+Takes the Explore and search button off the bottom bar. Restart Tumblr to see the change.	Entfernt die Schaltfläche für Entdecken und Suche aus der unteren Leiste. Starte Tumblr neu, um die Änderung zu sehen.
+Hide the Notifications tab	Benachrichtigungen-Tab ausblenden
+Takes the Notifications button off the bottom bar. Restart Tumblr to see the change.	Entfernt die Schaltfläche Benachrichtigungen aus der unteren Leiste. Starte Tumblr neu, um die Änderung zu sehen.
+Reorder the bottom bar	Untere Leiste neu ordnen
+Puts the bottom bar's tabs in the order set below. Restart Tumblr to see the change.	Ordnet die Tabs der unteren Leiste in der unten gewählten Reihenfolge an. Starte Tumblr neu, um die Änderung zu sehen.
+Tab order	Tab-Reihenfolge
+Tap a tab to move it up	Tippe auf einen Tab, um ihn nach oben zu schieben
+Tumblr's order	Reihenfolge von Tumblr
+The bottom bar keeps Tumblr's order.	Die untere Leiste behält die Reihenfolge von Tumblr.
+Tabs go in this order: %1$s. Restart Tumblr to see the change.	Die Tabs kommen in dieser Reihenfolge: %1$s. Starte Tumblr neu, um die Änderung zu sehen.
+Dashboard	Dashboard
+Explore	Entdecken
+Tumblr TV	Tumblr TV
+Communities	Communitys
+Account	Konto

@@ -21,4 +21,11 @@ public final class TextSettings {
      * ({@link app.hushtumblr.extension.tumblr.timeline.PostRules}). Read as each page loads.
      */
     public static final StringSetting HIDDEN_WORDS = new StringSetting("hushtumblr_hidden_words", "");
+
+    /**
+     * The bottom bar's tabs by their names in Tumblr's tab enum, comma separated, first tab first
+     * ({@link app.hushtumblr.extension.tumblr.ui.BottomBarTabs}). Empty keeps Tumblr's order. Read
+     * once a run, when Tumblr builds its tab list.
+     */
+    public static final StringSetting TAB_ORDER = new StringSetting("hushtumblr_tab_order", "");
 }

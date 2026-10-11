@@ -265,6 +265,9 @@ public class SettingsBackupTest {
                 Settings.HIDE_TEXT_POSTS,
                 Settings.HIDE_POSTS_WITH_WORDS,
                 Settings.DARK_BACKGROUND,
+                Settings.HIDE_EXPLORE_TAB,
+                Settings.HIDE_NOTIFICATIONS_TAB,
+                Settings.REORDER_TABS,
                 Settings.FIX_PUSH_NOTIFICATIONS),
                 SettingsBackup.ALLOWLIST);
     }
