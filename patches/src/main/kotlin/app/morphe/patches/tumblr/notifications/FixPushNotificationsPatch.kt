@@ -76,8 +76,8 @@ internal const val FIREBASE_INSTALLATIONS_HOST = "firebaseinstallations.googleap
 val fixPushNotificationsPatch = bytecodePatch(
     name = PATCH,
     description = "Lets the patched app sign up for push notifications. Firebase can refuse a patched Tumblr whose " +
-        "request doesn't name Tumblr's original signature, so this sends that signature's fingerprint and changes " +
-        "nothing else. On by default. Turn it off in Tumblr settings > HushTumblr > More settings > Notifications.",
+        "request doesn't name Tumblr's original signature, so this sends its fingerprint. On by default. Turn it " +
+        "off in Tumblr settings > HushTumblr > More settings > Notifications.",
     default = true,
 ) {
     category("Notifications")
