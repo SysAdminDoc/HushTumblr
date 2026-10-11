@@ -56,4 +56,7 @@ public enum FakeFeature {
     BLAZE_NUDGE_AFTER_POST,
     SHOW_BLAZE_SETTINGS_BANNER,
     TUMBLR_BLAZE_LANDING_PAGE_BANNER,
+
+    // Turn off screenshot sharing
+    SCREENSHOT_INTERCEPTION,
 }

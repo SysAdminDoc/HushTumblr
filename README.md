@@ -47,7 +47,7 @@ Each of these has to be checked against Tumblr itself before it's described as a
 
 ## Patches
 
-There are 12 patches so far, all for Tumblr 46.5.0.109. None of them has been built or tried on a phone yet.
+There are 13 patches so far, all for Tumblr 46.5.0.109. None of them has been built or tried on a phone yet.
 
 | Patch | What it does |
 |---|---|
@@ -63,6 +63,7 @@ There are 12 patches so far, all for Tumblr 46.5.0.109. None of them has been bu
 | `Remove ad tracking permissions` | Removes Google's advertising ID permission and Android's Privacy Sandbox ad services from Tumblr, so it can't use them. Google Play services then answers with zeros. Works as soon as you patch it in, with no switch. |
 | `Skip review prompts` | Stops the pop-up that asks what you think of the Tumblr app and then asks you for a store rating or feedback. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `Spoof signature for Google sign-in` | Helps Google sign-in work in the patched app by naming Tumblr's original signature. It only helps with microG-RE or the XSpoofSignatures module. Email sign-in doesn't need it. It isn't selected by default. Works as soon as you patch it in, with no switch. |
+| `Turn off screenshot sharing` | Stops Tumblr watching for screenshots, so taking one doesn't bring up its offer to save the post as an image. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 
 Morphe Manager selects every patch but Spoof signature for Google sign-in by default. Hide ads, Disable analytics, Hide advertising ID and Fix push notifications start with their switches on, and every other switch starts off. Remove ad tracking permissions and the signature patch have no switch. Their manifest changes, and the Firebase and Google part of Disable analytics, stay until you patch again without them. The settings patch is required by the others.
 

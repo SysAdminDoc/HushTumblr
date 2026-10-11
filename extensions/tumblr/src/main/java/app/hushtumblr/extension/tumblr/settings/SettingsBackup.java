@@ -93,6 +93,7 @@ public final class SettingsBackup {
             Settings.HIDE_COMMUNITIES_TAB,
             Settings.HIDE_BLAZE_PROMPTS,
             Settings.SKIP_REVIEW_PROMPTS,
+            Settings.TURN_OFF_SCREENSHOT_SHARING,
             Settings.FIX_PUSH_NOTIFICATIONS));
 
     /**

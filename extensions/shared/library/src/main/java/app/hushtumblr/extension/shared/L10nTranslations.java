@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(424);
+        Map<String, String> table = new HashMap<>(428);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -369,6 +369,8 @@ public final class L10nTranslations {
                 "Signatur f\u00fcr Google-Anmeldung vort\u00e4uschen");
         table.put("Stays in while paused",
                 "Bleibt w\u00e4hrend der Pause aktiv");
+        table.put("Stops Tumblr watching for screenshots and offering to save the post as an image. Restart Tumblr to see the change.",
+                "Tumblr achtet nicht mehr auf Screenshots und bietet nicht mehr an, den Beitrag als Bild zu speichern. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
         table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
                 "Beendet Tumblrs eigenes Tracking und die Werbemessung, sobald Tumblr neu startet. Die Datenerfassung von Firebase und Google Analytics bleibt aus, bis du ohne diesen Patch neu patchst.");
         table.put("Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.",
@@ -423,11 +425,11 @@ public final class L10nTranslations {
                 "Die Einstellungsdatei wurde gespeichert, liest sich aber nicht so zur\u00fcck, wie sie geschrieben wurde. Speichere sie noch einmal als neue Datei.");
         table.put("There's no diagnostic data to clear.",
                 "Es gibt keine Diagnosedaten zum L\u00f6schen.");
-        table.put("There's no diagnostic data to put back.",
-                "Es gibt keine Diagnosedaten zum Wiederherstellen.");
     }
 
     private static void fillDe3(Map<String, String> table) {
+        table.put("There's no diagnostic data to put back.",
+                "Es gibt keine Diagnosedaten zum Wiederherstellen.");
         table.put("There's no import to undo.",
                 "Es gibt keinen Import zum R\u00fcckg\u00e4ngigmachen.");
         table.put("This build doesn't include the parts that handle %1$s.",
@@ -460,6 +462,8 @@ public final class L10nTranslations {
                 "Tumblrs eigene Einstellungen");
         table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
                 "Die Webadressen von Tumblr sind in den Android-Einstellungen f\u00fcr diese App ausgew\u00e4hlt, deshalb \u00f6ffnen sich ihre Links hier.");
+        table.put("Turn off screenshot sharing",
+                "Screenshot-Teilen ausschalten");
         table.put("Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.",
                 "Schaltet beim n\u00e4chsten Start von Tumblr jeden HushTumblr-Schalter au\u00dfer der Debug-Protokollierung aus. Was du beim Patchen gew\u00e4hlt hast, bleibt, und deine Auswahl bleibt gespeichert.");
         table.put("Undo",
@@ -495,7 +499,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(424);
+        Map<String, String> table = new HashMap<>(428);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -814,6 +818,8 @@ public final class L10nTranslations {
                 "Falsear la firma para iniciar sesi\u00f3n con Google");
         table.put("Stays in while paused",
                 "Se mantiene durante la pausa");
+        table.put("Stops Tumblr watching for screenshots and offering to save the post as an image. Restart Tumblr to see the change.",
+                "Tumblr deja de vigilar las capturas de pantalla y de ofrecer guardar la publicaci\u00f3n como imagen. Reinicia Tumblr para ver el cambio.");
         table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
                 "Detiene el seguimiento propio de Tumblr y la medici\u00f3n de anuncios cuando se reinicia. La recopilaci\u00f3n de Firebase y Google Analytics sigue desactivada hasta que vuelvas a parchear sin \u00e9l.");
         table.put("Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.",
@@ -868,11 +874,11 @@ public final class L10nTranslations {
                 "El archivo de configuraci\u00f3n se guard\u00f3, pero al volver a leerlo no coincide con lo que se escribi\u00f3. Gu\u00e1rdalo de nuevo como un archivo nuevo.");
         table.put("There's no diagnostic data to clear.",
                 "No hay datos de diagn\u00f3stico que borrar.");
-        table.put("There's no diagnostic data to put back.",
-                "No hay datos de diagn\u00f3stico que restaurar.");
     }
 
     private static void fillEs3(Map<String, String> table) {
+        table.put("There's no diagnostic data to put back.",
+                "No hay datos de diagn\u00f3stico que restaurar.");
         table.put("There's no import to undo.",
                 "No hay ninguna importaci\u00f3n que deshacer.");
         table.put("This build doesn't include the parts that handle %1$s.",
@@ -905,6 +911,8 @@ public final class L10nTranslations {
                 "Configuraci\u00f3n propia de Tumblr");
         table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
                 "Las direcciones web de Tumblr est\u00e1n seleccionadas para esta app en los ajustes de Android, as\u00ed que sus enlaces se abren aqu\u00ed.");
+        table.put("Turn off screenshot sharing",
+                "Desactivar compartir capturas de pantalla");
         table.put("Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.",
                 "Desactiva todos los interruptores de HushTumblr, salvo el Registro de depuraci\u00f3n, la pr\u00f3xima vez que se abra Tumblr. Lo que elegiste al parchear se mantiene y tus preferencias quedan guardadas.");
         table.put("Undo",
@@ -940,7 +948,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(424);
+        Map<String, String> table = new HashMap<>(428);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -1259,6 +1267,8 @@ public final class L10nTranslations {
                 "Palsukan tanda tangan untuk login Google");
         table.put("Stays in while paused",
                 "Tetap aktif saat dijeda");
+        table.put("Stops Tumblr watching for screenshots and offering to save the post as an image. Restart Tumblr to see the change.",
+                "Tumblr berhenti memantau tangkapan layar dan menawarkan untuk menyimpan postingan sebagai gambar. Mulai ulang Tumblr untuk melihat perubahannya.");
         table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
                 "Menghentikan pelacakan dan pengukuran iklan milik Tumblr setelah dimulai ulang. Pengumpulan data Firebase dan Google Analytics tetap mati sampai kamu menambal ulang tanpanya.");
         table.put("Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.",
@@ -1313,11 +1323,11 @@ public final class L10nTranslations {
                 "File pengaturan sudah disimpan, tetapi isinya saat dibaca kembali tidak sama dengan yang ditulis. Simpan lagi sebagai file baru.");
         table.put("There's no diagnostic data to clear.",
                 "Tidak ada data diagnostik yang dapat dihapus.");
-        table.put("There's no diagnostic data to put back.",
-                "Tidak ada data diagnostik yang dapat dikembalikan.");
     }
 
     private static void fillIn3(Map<String, String> table) {
+        table.put("There's no diagnostic data to put back.",
+                "Tidak ada data diagnostik yang dapat dikembalikan.");
         table.put("There's no import to undo.",
                 "Tidak ada impor untuk diurungkan.");
         table.put("This build doesn't include the parts that handle %1$s.",
@@ -1350,6 +1360,8 @@ public final class L10nTranslations {
                 "Pengaturan Tumblr sendiri");
         table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
                 "Alamat web Tumblr dipilih untuk aplikasi ini di pengaturan Android, jadi tautannya terbuka di sini.");
+        table.put("Turn off screenshot sharing",
+                "Matikan berbagi tangkapan layar");
         table.put("Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.",
                 "Mematikan semua sakelar HushTumblr kecuali Pencatatan debug saat Tumblr dibuka berikutnya. Yang Anda pilih saat menambal tetap berlaku, dan pilihan Anda tersimpan.");
         table.put("Undo",
@@ -1385,7 +1397,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(424);
+        Map<String, String> table = new HashMap<>(428);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -1704,6 +1716,8 @@ public final class L10nTranslations {
                 "Falsificar assinatura para login com Google");
         table.put("Stays in while paused",
                 "O que continua ativo na pausa");
+        table.put("Stops Tumblr watching for screenshots and offering to save the post as an image. Restart Tumblr to see the change.",
+                "O Tumblr para de observar capturas de tela e de oferecer salvar o post como imagem. Reinicie o Tumblr para ver a mudan\u00e7a.");
         table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
                 "Para o rastreamento pr\u00f3prio do Tumblr e a medi\u00e7\u00e3o de an\u00fancios depois que ele reinicia. A coleta do Firebase e do Google Analytics continua desligada at\u00e9 voc\u00ea aplicar o patch de novo sem ele.");
         table.put("Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.",
@@ -1758,11 +1772,11 @@ public final class L10nTranslations {
                 "O arquivo de configura\u00e7\u00f5es foi salvo, mas ao ser lido de volta n\u00e3o corresponde ao que foi gravado. Salve de novo como um arquivo novo.");
         table.put("There's no diagnostic data to clear.",
                 "N\u00e3o h\u00e1 dados de diagn\u00f3stico para limpar.");
-        table.put("There's no diagnostic data to put back.",
-                "N\u00e3o h\u00e1 dados de diagn\u00f3stico para restaurar.");
     }
 
     private static void fillPt_rBR3(Map<String, String> table) {
+        table.put("There's no diagnostic data to put back.",
+                "N\u00e3o h\u00e1 dados de diagn\u00f3stico para restaurar.");
         table.put("There's no import to undo.",
                 "N\u00e3o h\u00e1 importa\u00e7\u00e3o para desfazer.");
         table.put("This build doesn't include the parts that handle %1$s.",
@@ -1795,6 +1809,8 @@ public final class L10nTranslations {
                 "Configura\u00e7\u00f5es do pr\u00f3prio Tumblr");
         table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
                 "Os endere\u00e7os web do Tumblr est\u00e3o selecionados para este app nas configura\u00e7\u00f5es do Android, ent\u00e3o os links deles abrem aqui.");
+        table.put("Turn off screenshot sharing",
+                "Desativar compartilhamento de capturas de tela");
         table.put("Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.",
                 "Desliga todas as op\u00e7\u00f5es do HushTumblr, menos o Registro de depura\u00e7\u00e3o, na pr\u00f3xima vez que o Tumblr abrir. O que voc\u00ea escolheu ao aplicar os patches continua, e suas escolhas ficam salvas.");
         table.put("Undo",
@@ -1830,7 +1846,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(424);
+        Map<String, String> table = new HashMap<>(428);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -2149,6 +2165,8 @@ public final class L10nTranslations {
                 "Google ile oturum a\u00e7ma i\u00e7in imzay\u0131 taklit et");
         table.put("Stays in while paused",
                 "Duraklat\u0131lsa da devrede kal\u0131r");
+        table.put("Stops Tumblr watching for screenshots and offering to save the post as an image. Restart Tumblr to see the change.",
+                "Tumblr ekran g\u00f6r\u00fcnt\u00fclerini izlemeyi ve g\u00f6nderiyi resim olarak kaydetmeyi \u00f6nermeyi b\u0131rak\u0131r. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
         table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
                 "Tumblr yeniden ba\u015flad\u0131ktan sonra kendi izlemesini ve reklam \u00f6l\u00e7\u00fcm\u00fcn\u00fc durdurur. Firebase ve Google Analytics veri toplama, bu yama olmadan yeniden yamalayana kadar kapal\u0131 kal\u0131r.");
         table.put("Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.",
@@ -2203,11 +2221,11 @@ public final class L10nTranslations {
                 "Ayar dosyas\u0131 kaydedildi, ancak geri okundu\u011funda yaz\u0131lanla ayn\u0131 de\u011fil. Yeni bir dosya olarak tekrar kaydet.");
         table.put("There's no diagnostic data to clear.",
                 "Temizlenecek tan\u0131lama verisi yok.");
-        table.put("There's no diagnostic data to put back.",
-                "Geri getirilecek tan\u0131lama verisi yok.");
     }
 
     private static void fillTr3(Map<String, String> table) {
+        table.put("There's no diagnostic data to put back.",
+                "Geri getirilecek tan\u0131lama verisi yok.");
         table.put("There's no import to undo.",
                 "Geri al\u0131nacak i\u00e7e aktarma yok.");
         table.put("This build doesn't include the parts that handle %1$s.",
@@ -2240,6 +2258,8 @@ public final class L10nTranslations {
                 "Tumblr'\u0131n kendi ayarlar\u0131");
         table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
                 "Tumblr'\u0131n web adresleri Android ayarlar\u0131nda bu uygulama i\u00e7in se\u00e7ili, bu y\u00fczden ba\u011flant\u0131lar\u0131 burada a\u00e7\u0131l\u0131r.");
+        table.put("Turn off screenshot sharing",
+                "Ekran g\u00f6r\u00fcnt\u00fcs\u00fc payla\u015f\u0131m\u0131n\u0131 kapat");
         table.put("Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.",
                 "Tumblr bir sonraki a\u00e7\u0131l\u0131\u015f\u0131nda Hata ay\u0131klama g\u00fcnl\u00fc\u011f\u00fc d\u0131\u015f\u0131ndaki t\u00fcm HushTumblr anahtarlar\u0131n\u0131 kapat\u0131r. Yamalarken se\u00e7tiklerin kal\u0131r ve tercihlerin kay\u0131tl\u0131 kal\u0131r.");
         table.put("Undo",

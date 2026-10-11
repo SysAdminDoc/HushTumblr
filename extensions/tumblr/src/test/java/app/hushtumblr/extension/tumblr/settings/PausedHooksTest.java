@@ -125,6 +125,9 @@ public class PausedHooksTest {
                 () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("BLAZE_DASHBOARD_ENTRYPOINT_IN_USER_BLOG_HEADER"), true)));
         // Tumblr's rating prompt is skipped.
         probes.put(Settings.SKIP_REVIEW_PROMPTS, Collections.singletonList(ReviewPrompts::skip));
+        // Tumblr's screenshot watcher answers off.
+        probes.put(Settings.TURN_OFF_SCREENSHOT_SHARING, Collections.singletonList(
+                () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("SCREENSHOT_INTERCEPTION"), true)));
         // Firebase's sign-up for push notifications names Tumblr's own certificate.
         probes.put(Settings.FIX_PUSH_NOTIFICATIONS, Collections.singletonList(PushNotificationsTest::fixesACertificate));
         return probes;

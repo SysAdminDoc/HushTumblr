@@ -105,6 +105,13 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_skip_review_prompts", FALSE);
 
     /**
+     * Tumblr stops watching for screenshots and offering to save the post as an image
+     * ({@link app.hushtumblr.extension.tumblr.flags.FeatureSwitches}). Off to start.
+     */
+    public static final BooleanSetting TURN_OFF_SCREENSHOT_SHARING =
+            new BooleanSetting("hushtumblr_turn_off_screenshot_sharing", FALSE);
+
+    /**
      * Once a day, when Tumblr starts, ask api.github.com whether a newer HushTumblr release is
      * out, and say so on the settings screen ({@link ReleaseCheck}). It's the settings entry's own
      * switch rather than a patch's, so every build has it ({@link PatchFamily#ENTRY_SWITCHES}). Off

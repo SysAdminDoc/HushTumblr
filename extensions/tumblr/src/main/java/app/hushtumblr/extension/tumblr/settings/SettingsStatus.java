@@ -50,6 +50,8 @@ public final class SettingsStatus {
     public static boolean blazePromptFlags() { return false; }
     public static boolean skipReviewPrompts() { return false; }
     public static boolean reviewPrompt() { return false; }
+    public static boolean turnOffScreenshotSharing() { return false; }
+    public static boolean screenshotSharingFlags() { return false; }
     public static boolean fixPushNotifications() { return false; }
     public static boolean firebaseCertificate() { return false; }
 }

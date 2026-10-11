@@ -229,3 +229,6 @@ Hides the Blaze buttons, banners and the nudge to promote a post after you share
 # context: the Skip review prompts switch on the Interface page. It stops Tumblr's "What do you think of the Tumblr app?" pop-up.
 Skip review prompts	Değerlendirme isteklerini atla
 Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.	Tumblr uygulaması hakkında ne düşündüğünü soran ve ardından puan ya da geri bildirim isteyen açılır pencereyi durdurur.
+# context: the Turn off screenshot sharing switch on the Interface page. Tumblr watches for screenshots and offers to save the post as an image.
+Turn off screenshot sharing	Ekran görüntüsü paylaşımını kapat
+Stops Tumblr watching for screenshots and offering to save the post as an image. Restart Tumblr to see the change.	Tumblr ekran görüntülerini izlemeyi ve gönderiyi resim olarak kaydetmeyi önermeyi bırakır. Değişikliği görmek için Tumblr'ı yeniden başlat.

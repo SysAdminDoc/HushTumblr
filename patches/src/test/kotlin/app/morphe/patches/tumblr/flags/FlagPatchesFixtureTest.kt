@@ -11,13 +11,14 @@ import app.morphe.FixtureTests
 import app.morphe.Fixtures
 import app.morphe.PatchContexts
 import app.morphe.patcher.patch.BytecodePatch
+import app.morphe.patches.tumblr.ads.hideAdFreeBannerPatch
 import app.morphe.patches.tumblr.lookup.strings
 import app.morphe.patches.tumblr.misc.extension.SETTINGS_STATUS
 import app.morphe.patches.tumblr.privacy.disableAnalyticsPatch
-import app.morphe.patches.tumblr.ads.hideAdFreeBannerPatch
-import app.morphe.patches.tumblr.ui.hideTumblrTvPatch
-import app.morphe.patches.tumblr.ui.hideCommunitiesTabPatch
 import app.morphe.patches.tumblr.ui.hideBlazePromptsPatch
+import app.morphe.patches.tumblr.ui.hideCommunitiesTabPatch
+import app.morphe.patches.tumblr.ui.hideTumblrTvPatch
+import app.morphe.patches.tumblr.ui.turnOffScreenshotSharingPatch
 import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -50,6 +51,10 @@ class FlagPatchesFixtureTest {
     @Test
     fun `Hide Blaze prompts claims flags Tumblr has and turns its switch on`() =
         check(hideBlazePromptsPatch, "hideBlazePrompts", "blazePromptFlags", "BLAZE_DASHBOARD_ENTRYPOINT_IN_USER_BLOG_HEADER", "BLAZE_DASHBOARD_ENTRYPOINT_NEAR_PREMIUM", "BLAZE_NUDGE_AFTER_POST", "SHOW_BLAZE_SETTINGS_BANNER", "TUMBLR_BLAZE_LANDING_PAGE_BANNER")
+
+    @Test
+    fun `Turn off screenshot sharing claims a flag Tumblr has and turns its switch on`() =
+        check(turnOffScreenshotSharingPatch, "turnOffScreenshotSharing", "screenshotSharingFlags", "SCREENSHOT_INTERCEPTION")
 
     /**
      * Applies [patch] to the extension and checks it flips the [status] and [capability] stubs, after

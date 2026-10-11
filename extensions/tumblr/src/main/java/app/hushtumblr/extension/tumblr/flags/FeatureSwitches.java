@@ -83,6 +83,11 @@ public final class FeatureSwitches {
                 "BLAZE_DASHBOARD_ENTRYPOINT_IN_USER_BLOG_HEADER",
                 "BLAZE_DASHBOARD_ENTRYPOINT_NEAR_PREMIUM", "BLAZE_NUDGE_AFTER_POST",
                 "SHOW_BLAZE_SETTINGS_BANNER", "TUMBLR_BLAZE_LANDING_PAGE_BANNER");
+        // Screenshots: Tumblr watches for one in its screens, then opens its share sheet, which
+        // offers to save the post as an image. The sign-up, the watcher and the callback all read
+        // this one flag.
+        claim(claims, "TURN_OFF_SCREENSHOT_SHARING", FamilyNames.TURN_OFF_SCREENSHOT_SHARING,
+                "SCREENSHOT_INTERCEPTION");
         return Collections.unmodifiableMap(claims);
     }
 

@@ -276,6 +276,10 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             patchToggle(ui, context, build, PatchFamily.HIDE_BLAZE_PROMPTS, Settings.HIDE_BLAZE_PROMPTS,
                     L10n.t("Hide Blaze prompts"), L10n.t("Hides the Blaze buttons, banners and the nudge to promote "
                         + "a post after you share it. Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+            patchToggle(ui, context, build, PatchFamily.TURN_OFF_SCREENSHOT_SHARING,
+                    Settings.TURN_OFF_SCREENSHOT_SHARING, L10n.t("Turn off screenshot sharing"),
+                    L10n.t("Stops Tumblr watching for screenshots and offering to save the post as an image. "
+                        + "Restart Tumblr to see the change."), SettingsIcons.BLOCK);
             patchToggle(ui, context, build, PatchFamily.SKIP_REVIEW_PROMPTS, Settings.SKIP_REVIEW_PROMPTS,
                     L10n.t("Skip review prompts"), L10n.t("Stops the pop-up that asks what you think of the Tumblr "
                         + "app and then asks for a rating or feedback."), SettingsIcons.BLOCK);
