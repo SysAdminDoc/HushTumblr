@@ -61,6 +61,7 @@ public enum PatchFamily {
     /** Signature spoofing metadata added to the manifest when patching: no switch either. */
     SPOOF_SIGNATURE(FamilyNames.SPOOF_SIGNATURE, "spoofSignature",
             "Tumblr's original signature is added to the app"),
+    HIDE_AD_FREE_BANNER(FamilyNames.HIDE_AD_FREE_BANNER, "hideAdFreeBanner", null, Settings.HIDE_AD_FREE_BANNER),
     FIX_PUSH_NOTIFICATIONS(FamilyNames.FIX_PUSH_NOTIFICATIONS, "fixPushNotifications", null, Settings.FIX_PUSH_NOTIFICATIONS);
 
     /** The patch's name in Morphe Manager. */
@@ -107,7 +108,7 @@ public enum PatchFamily {
     static volatile Set<Capability> capabilitiesForTests;
 
     /** The families the Feed page holds. The page and its home row both read this. */
-    static final Set<PatchFamily> FEED_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_ADS));
+    static final Set<PatchFamily> FEED_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_AD_FREE_BANNER, HIDE_ADS));
 
     /** The families the Privacy page holds. The page and its home row both read this. */
     static final Set<PatchFamily> PRIVACY_PAGE = Collections.unmodifiableSet(EnumSet.of(DISABLE_ANALYTICS,
@@ -118,6 +119,7 @@ public enum PatchFamily {
         TIMELINE_ADS(HIDE_ADS, "timelineAds", "Hide ads"),
         ADVERTISING_ID(HIDE_ADVERTISING_ID, "advertisingId", "Hide advertising ID"),
         ANALYTICS_FLAGS(DISABLE_ANALYTICS, "analyticsFlags", "Disable analytics"),
+        AD_FREE_BANNER_FLAGS(HIDE_AD_FREE_BANNER, "adFreeBannerFlags", "Hide the ad-free banner"),
         FIREBASE_CERTIFICATE(FIX_PUSH_NOTIFICATIONS, "firebaseCertificate", "Fix push notifications");
 
         public final PatchFamily family;

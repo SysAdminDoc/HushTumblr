@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(402);
+        Map<String, String> table = new HashMap<>(406);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -206,6 +206,10 @@ public final class L10nTranslations {
                 "Werbung ausblenden");
         table.put("Hide advertising ID",
                 "Werbe-ID verbergen");
+        table.put("Hide the ad-free banner",
+                "Werbefrei-Banner ausblenden");
+        table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
+                "Blendet das Banner im Dashboard aus, das dich bittet, f\u00fcr werbefreies Surfen zu bezahlen. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
                 "HushTumblr %1$s ist erschienen. Aktualisiere es im Morphe Manager.");
         table.put("HushTumblr %1$s on Tumblr %2$s",
@@ -298,13 +302,13 @@ public final class L10nTranslations {
                 "Lies die HushTumblr-Versionshinweise auf GitHub. Hier wird nichts heruntergeladen.");
         table.put("Reading the settings file",
                 "Einstellungsdatei wird gelesen");
+    }
+
+    private static void fillDe2(Map<String, String> table) {
         table.put("Record patch activity and show errors for a bug report. Leave off during normal use.",
                 "Zeichnet Patch-Aktivit\u00e4t auf und zeigt Fehler f\u00fcr einen Fehlerbericht. Im Alltag ausgeschaltet lassen.");
         table.put("Release notes",
                 "Versionshinweise");
-    }
-
-    private static void fillDe2(Map<String, String> table) {
         table.put("Remove ad tracking permissions",
                 "Werbe-Tracking-Berechtigungen entfernen");
         table.put("Restore the switches from before the last import. Editing a switch or restarting Tumblr ends Undo.",
@@ -421,13 +425,13 @@ public final class L10nTranslations {
                 "Tumblr kann die Werbe-ID-Berechtigung von Google und die Werbedienste von Android nicht mehr nutzen. Das wurde beim Patchen festgelegt. Patche erneut ohne diesen Patch, um sie zur\u00fcckzubekommen.");
         table.put("Tumblr crashed or froze within a minute of starting three times in a row, so HushTumblr paused itself.",
                 "Tumblr ist dreimal hintereinander innerhalb einer Minute nach dem Start abgest\u00fcrzt oder h\u00e4ngen geblieben, deshalb hat sich HushTumblr selbst pausiert.");
+    }
+
+    private static void fillDe3(Map<String, String> table) {
         table.put("Tumblr data export help",
                 "Tumblr-Hilfe zum Datenexport");
         table.put("Tumblr password help",
                 "Tumblr-Hilfe zum Passwort");
-    }
-
-    private static void fillDe3(Map<String, String> table) {
         table.put("Tumblr's access to the ad ID and Android's ad services is removed",
                 "Tumblrs Zugriff auf die Werbe-ID und die Werbedienste von Android ist entfernt");
         table.put("Tumblr's data export is separate from Export settings. Tumblr's help page explains how to request your personal data from the account you're already using.",
@@ -473,7 +477,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(402);
+        Map<String, String> table = new HashMap<>(406);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -629,6 +633,10 @@ public final class L10nTranslations {
                 "Ocultar anuncios");
         table.put("Hide advertising ID",
                 "Ocultar el ID de publicidad");
+        table.put("Hide the ad-free banner",
+                "Ocultar el banner sin anuncios");
+        table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
+                "Oculta el banner del panel que te pide pagar por navegar sin anuncios. Reinicia Tumblr para ver el cambio.");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
                 "Ya sali\u00f3 HushTumblr %1$s. Actual\u00edzalo en Morphe Manager.");
         table.put("HushTumblr %1$s on Tumblr %2$s",
@@ -721,13 +729,13 @@ public final class L10nTranslations {
                 "Lee las notas de las versiones de HushTumblr en GitHub. Aqu\u00ed no se descarga nada.");
         table.put("Reading the settings file",
                 "Leyendo el archivo de configuraci\u00f3n");
+    }
+
+    private static void fillEs2(Map<String, String> table) {
         table.put("Record patch activity and show errors for a bug report. Leave off during normal use.",
                 "Registra la actividad de los parches y muestra errores para un informe. D\u00e9jalo desactivado en el uso normal.");
         table.put("Release notes",
                 "Notas de la versi\u00f3n");
-    }
-
-    private static void fillEs2(Map<String, String> table) {
         table.put("Remove ad tracking permissions",
                 "Quitar permisos de seguimiento publicitario");
         table.put("Restore the switches from before the last import. Editing a switch or restarting Tumblr ends Undo.",
@@ -844,13 +852,13 @@ public final class L10nTranslations {
                 "Tumblr ya no puede usar el permiso de ID de publicidad de Google ni los servicios de anuncios de Android. Esto se defini\u00f3 al parchear. Vuelve a parchear sin \u00e9l para recuperarlos.");
         table.put("Tumblr crashed or froze within a minute of starting three times in a row, so HushTumblr paused itself.",
                 "Tres veces seguidas, Tumblr fall\u00f3 o se congel\u00f3 durante el primer minuto tras iniciarse, as\u00ed que HushTumblr se paus\u00f3 solo.");
+    }
+
+    private static void fillEs3(Map<String, String> table) {
         table.put("Tumblr data export help",
                 "Ayuda de Tumblr para exportar datos");
         table.put("Tumblr password help",
                 "Ayuda de Tumblr con la contrase\u00f1a");
-    }
-
-    private static void fillEs3(Map<String, String> table) {
         table.put("Tumblr's access to the ad ID and Android's ad services is removed",
                 "el acceso de Tumblr al ID de publicidad y a los servicios de publicidad de Android est\u00e1 eliminado");
         table.put("Tumblr's data export is separate from Export settings. Tumblr's help page explains how to request your personal data from the account you're already using.",
@@ -896,7 +904,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(402);
+        Map<String, String> table = new HashMap<>(406);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -1052,6 +1060,10 @@ public final class L10nTranslations {
                 "Sembunyikan iklan");
         table.put("Hide advertising ID",
                 "Sembunyikan ID iklan");
+        table.put("Hide the ad-free banner",
+                "Sembunyikan banner bebas iklan");
+        table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
+                "Menyembunyikan banner di dasbor yang memintamu membayar untuk menjelajah tanpa iklan. Mulai ulang Tumblr untuk melihat perubahannya.");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
                 "HushTumblr %1$s sudah dirilis. Perbarui di Morphe Manager.");
         table.put("HushTumblr %1$s on Tumblr %2$s",
@@ -1144,13 +1156,13 @@ public final class L10nTranslations {
                 "Baca rilis HushTumblr di GitHub. Tidak ada yang diunduh di sini.");
         table.put("Reading the settings file",
                 "Membaca file pengaturan");
+    }
+
+    private static void fillIn2(Map<String, String> table) {
         table.put("Record patch activity and show errors for a bug report. Leave off during normal use.",
                 "Catat aktivitas patch dan tampilkan kesalahan untuk laporan bug. Matikan saat penggunaan biasa.");
         table.put("Release notes",
                 "Catatan rilis");
-    }
-
-    private static void fillIn2(Map<String, String> table) {
         table.put("Remove ad tracking permissions",
                 "Hapus izin pelacakan iklan");
         table.put("Restore the switches from before the last import. Editing a switch or restarting Tumblr ends Undo.",
@@ -1267,13 +1279,13 @@ public final class L10nTranslations {
                 "Tumblr tidak lagi bisa memakai izin ID iklan Google atau layanan iklan Android. Ini diatur saat Anda menambal. Tambal ulang tanpanya untuk mengembalikannya.");
         table.put("Tumblr crashed or froze within a minute of starting three times in a row, so HushTumblr paused itself.",
                 "Tumblr berhenti mendadak atau macet dalam satu menit setelah dibuka, tiga kali berturut-turut, jadi HushTumblr menjeda dirinya sendiri.");
+    }
+
+    private static void fillIn3(Map<String, String> table) {
         table.put("Tumblr data export help",
                 "Bantuan ekspor data Tumblr");
         table.put("Tumblr password help",
                 "Bantuan kata sandi Tumblr");
-    }
-
-    private static void fillIn3(Map<String, String> table) {
         table.put("Tumblr's access to the ad ID and Android's ad services is removed",
                 "akses Tumblr ke ID iklan dan layanan iklan Android dihapus");
         table.put("Tumblr's data export is separate from Export settings. Tumblr's help page explains how to request your personal data from the account you're already using.",
@@ -1319,7 +1331,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(402);
+        Map<String, String> table = new HashMap<>(406);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -1475,6 +1487,10 @@ public final class L10nTranslations {
                 "Ocultar an\u00fancios");
         table.put("Hide advertising ID",
                 "Ocultar ID de publicidade");
+        table.put("Hide the ad-free banner",
+                "Ocultar o banner sem an\u00fancios");
+        table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
+                "Esconde o banner do painel que pede para voc\u00ea pagar pela navega\u00e7\u00e3o sem an\u00fancios. Reinicie o Tumblr para ver a mudan\u00e7a.");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
                 "O HushTumblr %1$s est\u00e1 dispon\u00edvel. Atualize-o pelo Morphe Manager.");
         table.put("HushTumblr %1$s on Tumblr %2$s",
@@ -1567,13 +1583,13 @@ public final class L10nTranslations {
                 "Leia as vers\u00f5es do HushTumblr no GitHub. Nada \u00e9 baixado aqui.");
         table.put("Reading the settings file",
                 "Lendo o arquivo de configura\u00e7\u00f5es");
+    }
+
+    private static void fillPt_rBR2(Map<String, String> table) {
         table.put("Record patch activity and show errors for a bug report. Leave off during normal use.",
                 "Registra a atividade dos patches e mostra os erros para um relat\u00f3rio de problema. Mantenha desativado durante o uso normal.");
         table.put("Release notes",
                 "Notas da vers\u00e3o");
-    }
-
-    private static void fillPt_rBR2(Map<String, String> table) {
         table.put("Remove ad tracking permissions",
                 "Remover permiss\u00f5es de rastreamento de an\u00fancios");
         table.put("Restore the switches from before the last import. Editing a switch or restarting Tumblr ends Undo.",
@@ -1690,13 +1706,13 @@ public final class L10nTranslations {
                 "O Tumblr n\u00e3o pode mais usar a permiss\u00e3o de ID de publicidade do Google nem os servi\u00e7os de an\u00fancios do Android. Isso foi definido ao aplicar os patches. Aplique de novo sem ele para recuper\u00e1-los.");
         table.put("Tumblr crashed or froze within a minute of starting three times in a row, so HushTumblr paused itself.",
                 "O Tumblr fechou com erro ou travou no primeiro minuto ap\u00f3s iniciar, tr\u00eas vezes seguidas, ent\u00e3o o HushTumblr foi pausado automaticamente.");
+    }
+
+    private static void fillPt_rBR3(Map<String, String> table) {
         table.put("Tumblr data export help",
                 "Ajuda do Tumblr para exportar dados");
         table.put("Tumblr password help",
                 "Ajuda do Tumblr com a senha");
-    }
-
-    private static void fillPt_rBR3(Map<String, String> table) {
         table.put("Tumblr's access to the ad ID and Android's ad services is removed",
                 "o acesso do Tumblr ao ID de publicidade e aos servi\u00e7os de an\u00fancios do Android foi removido");
         table.put("Tumblr's data export is separate from Export settings. Tumblr's help page explains how to request your personal data from the account you're already using.",
@@ -1742,7 +1758,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(402);
+        Map<String, String> table = new HashMap<>(406);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -1898,6 +1914,10 @@ public final class L10nTranslations {
                 "Reklamlar\u0131 gizle");
         table.put("Hide advertising ID",
                 "Reklam kimli\u011fini gizle");
+        table.put("Hide the ad-free banner",
+                "Reklams\u0131z gezinme banner'\u0131n\u0131 gizle");
+        table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
+                "Panoda reklams\u0131z gezinme i\u00e7in \u00f6deme yapman\u0131 isteyen banner'\u0131 gizler. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
                 "HushTumblr %1$s \u00e7\u0131kt\u0131. Morphe Manager'da g\u00fcncelle.");
         table.put("HushTumblr %1$s on Tumblr %2$s",
@@ -1990,13 +2010,13 @@ public final class L10nTranslations {
                 "HushTumblr s\u00fcr\u00fcmlerini GitHub'da oku. Burada hi\u00e7bir \u015fey indirilmez.");
         table.put("Reading the settings file",
                 "Ayar dosyas\u0131 okunuyor");
+    }
+
+    private static void fillTr2(Map<String, String> table) {
         table.put("Record patch activity and show errors for a bug report. Leave off during normal use.",
                 "Hata raporu i\u00e7in yama etkinli\u011fini kaydeder ve hatalar\u0131 g\u00f6sterir. Normal kullan\u0131mda kapal\u0131 b\u0131rak\u0131n.");
         table.put("Release notes",
                 "S\u00fcr\u00fcm notlar\u0131");
-    }
-
-    private static void fillTr2(Map<String, String> table) {
         table.put("Remove ad tracking permissions",
                 "Reklam izleme izinlerini kald\u0131r");
         table.put("Restore the switches from before the last import. Editing a switch or restarting Tumblr ends Undo.",
@@ -2113,13 +2133,13 @@ public final class L10nTranslations {
                 "Tumblr art\u0131k Google'\u0131n reklam kimli\u011fi iznini veya Android'in reklam hizmetlerini kullanamaz. Bu, yamalarken ayarland\u0131. Geri getirmek i\u00e7in bu yama olmadan yeniden yamala.");
         table.put("Tumblr crashed or froze within a minute of starting three times in a row, so HushTumblr paused itself.",
                 "Tumblr a\u00e7\u0131ld\u0131ktan sonraki bir dakika i\u00e7inde \u00fcst \u00fcste \u00fc\u00e7 kez \u00e7\u00f6kt\u00fc veya dondu, bu y\u00fczden HushTumblr kendini duraklatt\u0131.");
+    }
+
+    private static void fillTr3(Map<String, String> table) {
         table.put("Tumblr data export help",
                 "Tumblr veri d\u0131\u015fa aktar\u0131m yard\u0131m\u0131");
         table.put("Tumblr password help",
                 "Tumblr parola yard\u0131m\u0131");
-    }
-
-    private static void fillTr3(Map<String, String> table) {
         table.put("Tumblr's access to the ad ID and Android's ad services is removed",
                 "Tumblr'\u0131n reklam kimli\u011fine ve Android reklam hizmetlerine eri\u015fimi kald\u0131r\u0131ld\u0131");
         table.put("Tumblr's data export is separate from Export settings. Tumblr's help page explains how to request your personal data from the account you're already using.",

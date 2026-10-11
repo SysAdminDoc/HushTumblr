@@ -47,7 +47,7 @@ Each of these has to be checked against Tumblr itself before it's described as a
 
 ## Patches
 
-There are 7 patches so far, all for Tumblr 46.5.0.109. None of them has been built or tried on a phone yet.
+There are 8 patches so far, all for Tumblr 46.5.0.109. None of them has been built or tried on a phone yet.
 
 | Patch | What it does |
 |---|---|
@@ -55,11 +55,12 @@ There are 7 patches so far, all for Tumblr 46.5.0.109. None of them has been bui
 | `Fix push notifications` | Lets the patched app sign up for push notifications. Firebase can refuse a patched Tumblr whose request doesn't name Tumblr's original signature, so this sends that signature's fingerprint and changes nothing else. On by default. Turn it off in Tumblr settings > HushTumblr > More settings > Notifications. |
 | `Hide ads` | Takes ads and paid Blaze posts out of your dashboard and other feeds, and stops Tumblr asking its ad networks for more. On by default. Turn it off in Tumblr settings > HushTumblr > Feed. |
 | `Hide advertising ID` | Tumblr and the ad companies inside it see an empty advertising ID with ad tracking limited, as if you'd deleted your ad ID in Android. On by default. Turn it off in Tumblr settings > HushTumblr > Privacy. |
+| `Hide the ad-free banner` | Hides the banner on your dashboard that asks you to pay for Ad-Free Browsing. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
 | `HushTumblr settings` | Adds a HushTumblr page where you turn features on or off, pause HushTumblr, back up your settings and read the licenses. Open it from Tumblr's Settings or by long-pressing the Tumblr icon. Works as soon as you patch it in, with no switch. |
 | `Remove ad tracking permissions` | Removes Google's advertising ID permission and Android's Privacy Sandbox ad services from Tumblr, so it can't use them. Google Play services then answers with zeros. Works as soon as you patch it in, with no switch. |
 | `Spoof signature for Google sign-in` | Helps Google sign-in work in the patched app by naming Tumblr's original signature. It only helps with microG-RE or the XSpoofSignatures module. Email sign-in doesn't need it. It isn't selected by default. Works as soon as you patch it in, with no switch. |
 
-Morphe Manager selects every patch but Spoof signature for Google sign-in by default. Hide ads, Disable analytics, Hide advertising ID and Fix push notifications start with their switches on. Remove ad tracking permissions and the signature patch have no switch. Their manifest changes, and the Firebase and Google part of Disable analytics, stay until you patch again without them. The settings patch is required by the others.
+Morphe Manager selects every patch but Spoof signature for Google sign-in by default. Hide ads, Disable analytics, Hide advertising ID and Fix push notifications start with their switches on, and every other switch starts off. Remove ad tracking permissions and the signature patch have no switch. Their manifest changes, and the Firebase and Google part of Disable analytics, stay until you patch again without them. The settings patch is required by the others.
 
 Switches change the runtime hooks without patching again. Pause makes those hooks follow Tumblr's original path. HushTumblr settings opens from the HushTumblr row at the end of Tumblr's own Settings screen. The long-press shortcut on the Tumblr icon and Additional settings in the app, on Tumblr's App info page, open it too.
 

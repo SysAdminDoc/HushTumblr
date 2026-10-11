@@ -38,4 +38,7 @@ public enum FakeFeature {
     SEND_NETWORK_USAGE_DATA,
     MOBILE_PERFORMANCE_LOGGING,
     SUPPLY_LOGGING,
+
+    // Hide the ad-free banner
+    AD_FREE_CTA_BANNER,
 }

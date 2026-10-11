@@ -256,6 +256,9 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             patchToggle(feed, context, build, PatchFamily.HIDE_ADS, Settings.HIDE_ADS, L10n.t("Hide ads"),
                     L10n.t("Takes ads and paid Blaze posts out of your dashboard and other feeds. Ad requests stop "
                         + "after Tumblr restarts."), SettingsIcons.BLOCK);
+            patchToggle(feed, context, build, PatchFamily.HIDE_AD_FREE_BANNER, Settings.HIDE_AD_FREE_BANNER,
+                    L10n.t("Hide the ad-free banner"), L10n.t("Hides the dashboard banner that asks you to pay for "
+                        + "Ad-Free Browsing. Restart Tumblr to see the change."), SettingsIcons.BLOCK);
         }
 
         if (!Collections.disjoint(build, PatchFamily.PRIVACY_PAGE)) {

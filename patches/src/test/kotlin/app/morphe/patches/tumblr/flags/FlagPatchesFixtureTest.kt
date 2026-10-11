@@ -14,6 +14,7 @@ import app.morphe.patcher.patch.BytecodePatch
 import app.morphe.patches.tumblr.lookup.strings
 import app.morphe.patches.tumblr.misc.extension.SETTINGS_STATUS
 import app.morphe.patches.tumblr.privacy.disableAnalyticsPatch
+import app.morphe.patches.tumblr.ads.hideAdFreeBannerPatch
 import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -30,6 +31,10 @@ class FlagPatchesFixtureTest {
     @Test
     fun `Disable analytics claims tracking flags Tumblr has and turns its switch on`() =
         check(disableAnalyticsPatch, "disableAnalytics", "analyticsFlags", "LIVERAMP_ATS", "ENABLE_OM_SDK", "MOAT_VIDEO_AD_BEACONING", "LITTLE_SISTER_MOAT_LOGGING", "SEND_FEATURE_EXPOSED_ANALYTICS", "SEND_NETWORK_USAGE_DATA", "MOBILE_PERFORMANCE_LOGGING", "SUPPLY_LOGGING")
+
+    @Test
+    fun `Hide the ad-free banner claims a flag Tumblr has and turns its switch on`() =
+        check(hideAdFreeBannerPatch, "hideAdFreeBanner", "adFreeBannerFlags", "AD_FREE_CTA_BANNER")
 
     /**
      * Applies [patch] to the extension and checks it flips the [status] and [capability] stubs, after

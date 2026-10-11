@@ -88,6 +88,7 @@ public final class SettingsBackup {
             Settings.HIDE_ADS,
             Settings.HIDE_ADVERTISING_ID,
             Settings.DISABLE_ANALYTICS,
+            Settings.HIDE_AD_FREE_BANNER,
             Settings.FIX_PUSH_NOTIFICATIONS));
 
     /**

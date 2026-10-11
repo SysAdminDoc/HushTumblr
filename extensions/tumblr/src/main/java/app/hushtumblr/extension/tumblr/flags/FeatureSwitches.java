@@ -65,6 +65,9 @@ public final class FeatureSwitches {
                 "LIVERAMP_ATS", "ENABLE_OM_SDK", "MOAT_VIDEO_AD_BEACONING",
                 "LITTLE_SISTER_MOAT_LOGGING", "SEND_FEATURE_EXPOSED_ANALYTICS",
                 "SEND_NETWORK_USAGE_DATA", "MOBILE_PERFORMANCE_LOGGING", "SUPPLY_LOGGING");
+        // The banner selling Ad-Free Browsing that Tumblr's tabbed dashboard shows.
+        claim(claims, "HIDE_AD_FREE_BANNER", FamilyNames.HIDE_AD_FREE_BANNER,
+                "AD_FREE_CTA_BANNER");
         return Collections.unmodifiableMap(claims);
     }
 

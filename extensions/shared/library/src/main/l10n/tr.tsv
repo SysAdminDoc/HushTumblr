@@ -212,3 +212,6 @@ Hide ads	Reklamları gizle
 Takes ads and paid Blaze posts out of your dashboard and other feeds. Ad requests stop after Tumblr restarts.	Reklamları ve ücretli Blaze gönderilerini panondan ve diğer akışlardan kaldırır. Reklam istekleri Tumblr yeniden başladıktan sonra durur.
 # context: the Disable analytics switch on the Privacy page.
 Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.	Tumblr yeniden başladıktan sonra kendi izlemesini ve reklam ölçümünü durdurur. Firebase ve Google Analytics veri toplama, bu yama olmadan yeniden yamalayana kadar kapalı kalır.
+# context: the Hide the ad-free banner switch on the Feed page.
+Hide the ad-free banner	Reklamsız gezinme banner'ını gizle
+Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.	Panoda reklamsız gezinme için ödeme yapmanı isteyen banner'ı gizler. Değişikliği görmek için Tumblr'ı yeniden başlat.

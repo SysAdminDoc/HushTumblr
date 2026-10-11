@@ -212,3 +212,6 @@ Hide ads	Werbung ausblenden
 Takes ads and paid Blaze posts out of your dashboard and other feeds. Ad requests stop after Tumblr restarts.	Entfernt Werbung und bezahlte Blaze-Beiträge aus deinem Dashboard und anderen Feeds. Werbeanfragen enden, sobald Tumblr neu gestartet wurde.
 # context: the Disable analytics switch on the Privacy page.
 Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.	Beendet Tumblrs eigenes Tracking und die Werbemessung, sobald Tumblr neu startet. Die Datenerfassung von Firebase und Google Analytics bleibt aus, bis du ohne diesen Patch neu patchst.
+# context: the Hide the ad-free banner switch on the Feed page.
+Hide the ad-free banner	Werbefrei-Banner ausblenden
+Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.	Blendet das Banner im Dashboard aus, das dich bittet, für werbefreies Surfen zu bezahlen. Starte Tumblr neu, um die Änderung zu sehen.

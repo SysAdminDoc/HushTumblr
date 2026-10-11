@@ -110,6 +110,9 @@ public class PausedHooksTest {
         // Tumblr's own tracking flags answer off.
         probes.put(Settings.DISABLE_ANALYTICS, Collections.singletonList(
                 () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("LIVERAMP_ATS"), true)));
+        // The dashboard's Ad-Free Browsing banner flag answers off.
+        probes.put(Settings.HIDE_AD_FREE_BANNER, Collections.singletonList(
+                () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("AD_FREE_CTA_BANNER"), true)));
         // Firebase's sign-up for push notifications names Tumblr's own certificate.
         probes.put(Settings.FIX_PUSH_NOTIFICATIONS, Collections.singletonList(PushNotificationsTest::fixesACertificate));
         return probes;

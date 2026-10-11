@@ -212,3 +212,6 @@ Hide ads	Sembunyikan iklan
 Takes ads and paid Blaze posts out of your dashboard and other feeds. Ad requests stop after Tumblr restarts.	Menghapus iklan dan postingan Blaze berbayar dari dasbor dan feed lainnya. Permintaan iklan berhenti setelah Tumblr dimulai ulang.
 # context: the Disable analytics switch on the Privacy page.
 Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.	Menghentikan pelacakan dan pengukuran iklan milik Tumblr setelah dimulai ulang. Pengumpulan data Firebase dan Google Analytics tetap mati sampai kamu menambal ulang tanpanya.
+# context: the Hide the ad-free banner switch on the Feed page.
+Hide the ad-free banner	Sembunyikan banner bebas iklan
+Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.	Menyembunyikan banner di dasbor yang memintamu membayar untuk menjelajah tanpa iklan. Mulai ulang Tumblr untuk melihat perubahannya.

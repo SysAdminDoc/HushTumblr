@@ -93,6 +93,7 @@ public class HushTumblrPreferenceFragmentTest {
         ROW_TITLES.put(PatchFamily.HIDE_ADVERTISING_ID, "Hide advertising ID");
         ROW_TITLES.put(PatchFamily.REMOVE_AD_TRACKING_PERMISSIONS, "Remove ad tracking permissions");
         ROW_TITLES.put(PatchFamily.SPOOF_SIGNATURE, "Spoof signature for Google sign-in");
+        ROW_TITLES.put(PatchFamily.HIDE_AD_FREE_BANNER, "Hide the ad-free banner");
         ROW_TITLES.put(PatchFamily.FIX_PUSH_NOTIFICATIONS, "Fix push notifications");
     }
 
