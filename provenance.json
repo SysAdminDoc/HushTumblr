@@ -161,7 +161,10 @@
         "extensions/tumblr/src/main/java/app/hushtumblr/extension/tumblr/timeline/**",
         "patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/**",
         "extensions/tumblr/src/main/java/app/hushtumblr/extension/tumblr/ui/**",
-        "patches/src/main/kotlin/app/morphe/patches/tumblr/ui/**"
+        "patches/src/main/kotlin/app/morphe/patches/tumblr/ui/**",
+        "extensions/tumblr/src/main/java/app/hushtumblr/extension/tumblr/flags/**",
+        "patches/src/main/kotlin/app/morphe/patches/tumblr/flags/**",
+        "patches/src/main/kotlin/app/morphe/patches/tumblr/lookup/**"
       ],
       "origin": "original",
       "upstream": "https://github.com/SysAdminDoc/HushTumblr",
