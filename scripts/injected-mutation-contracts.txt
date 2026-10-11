@@ -1,0 +1,39 @@
+# Call sites a patched Tumblr must have, checked across every dex of the APK by DexDiff.java.
+#   single-call <method reference> in <caller method name>
+#   first-call <method reference> on <class>
+#   first-call <method reference> on-type-named <type name>
+#   first-call <method reference> outside <package prefix>
+#   start-call <method reference> [in [static|instance] <(parameters)return, * for any run>] holding <string> [<string> ...]
+#   no-call <method reference> outside <package prefix>
+#   next-call <method reference> after <method reference> [in [static|instance] <shape>] holding <string> [<string> ...]
+#   sole-call <method reference> replacing <method reference> [in [static|instance] <shape>] holding <string> [<string> ...]
+#   once-call <method reference> [in [static|instance] <shape>] holding <string> [<string> ...]
+# A start-call, next-call, sole-call or once-call rule picks its method by every string it names
+# and its shape, and exactly one of Tumblr's methods may answer that; name as much as the patch
+# itself finds the method by. scripts/test-injected-registers.ps1 builds bad fixtures for every
+# rule here, and fails on a rule it has none for.
+# The settings patch sends each of these ShortcutManager calls to SettingsEntry, which makes the
+# real call and puts the HushTumblr shortcut back in front after it. One left in Tumblr's own code
+# could rank Tumblr's shortcuts ahead again and push the HushTumblr one out of the long-press
+# menu. A build whose own code makes one of
+# these calls fails the rule for it, so each new Tumblr version is checked against them.
+no-call Landroid/content/pm/ShortcutManager;->pushDynamicShortcut(Landroid/content/pm/ShortcutInfo;)V outside Lapp/hushtumblr/extension/
+no-call Landroid/content/pm/ShortcutManager;->addDynamicShortcuts(Ljava/util/List;)Z outside Lapp/hushtumblr/extension/
+no-call Landroid/content/pm/ShortcutManager;->setDynamicShortcuts(Ljava/util/List;)Z outside Lapp/hushtumblr/extension/
+no-call Landroid/content/pm/ShortcutManager;->updateShortcuts(Ljava/util/List;)Z outside Lapp/hushtumblr/extension/
+no-call Landroid/content/pm/ShortcutManager;->removeAllDynamicShortcuts()V outside Lapp/hushtumblr/extension/
+
+# family|installed flag|selected patch name|capability flags
+# mutation|capability flags|clean-target selector|selector-specific hook descriptors and anchors
+# The clean APK supplies the callers. Final flags do not excuse missing, duplicated or misplaced calls.
+# An empty capability column is a family that changes no bytecode (a manifest-only patch): only its
+# installed flag is checked against the selected patches.
+family|disableAnalytics|Disable analytics|
+family|hideAdvertisingId|Hide advertising ID|advertisingId
+family|removeAdTrackingPermissions|Remove ad tracking permissions|
+family|spoofSignature|Spoof signature for Google sign-in|
+family|fixPushNotifications|Fix push notifications|firebaseCertificate
+
+mutation|settings|settings|Lcom/tumblr/App;|Lcom/tumblr/ui/activity/JumpoffActivity;|Lapp/hushtumblr/extension/tumblr/settings/SettingsEntry;
+mutation|advertisingId|answers|Lcom/google/android/gms/ads/identifier/AdvertisingIdClient$Info;->getId()Ljava/lang/String;|Lapp/hushtumblr/extension/tumblr/privacy/AdvertisingId;->id(Ljava/lang/String;)Ljava/lang/String;|Lcom/google/android/gms/ads/identifier/AdvertisingIdClient$Info;->isLimitAdTrackingEnabled()Z|Lapp/hushtumblr/extension/tumblr/privacy/AdvertisingId;->limitTracking(Z)Z
+mutation|firebaseCertificate|firebaseCertificate|Lapp/hushtumblr/extension/tumblr/notifications/PushNotifications;->certificateHeader(Ljava/net/URLConnection;Ljava/lang/String;)Ljava/lang/String;

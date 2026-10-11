@@ -3,8 +3,8 @@
     Exercise the release and gate scripts: patch target and report, receipts, release facts,
     pre-push routing, the changelog, d8 and Java resolution, split bundles and the shared helpers.
 .DESCRIPTION
-    Ported from Hushfeed's suite by way of Hushfacebook and held to Pinterest's facts: the declared
-    build at its pinned version code, Pinterest's signer, and .xapk or .apkm split bundles. The
+    Ported from Hushfeed's suite by way of Hushfacebook and held to Tumblr's facts: the declared
+    build at its pinned version code, Tumblr's signer, and .xapk or .apkm split bundles. The
     pre-push hook runs it for changes under scripts/, and for README.md,
     patches-list.json or patches/build.gradle.kts. A missing suite stops the push.
 #>
@@ -47,34 +47,34 @@ function New-NotFoundAnswer {
 
 # --- patch-target.ps1 ------------------------------------------------------------------------
 #
-# Pinterest ships a build a week, so the catalog declares the build the bundle was last proved on
+# Tumblr ships new builds often, so the catalog declares the build the bundle was last proved on
 # and can keep the one before it. They come back newest first, by number and not by text, and every
 # patch has to declare the same builds: a build only some patches declare is one the bundle can't
 # fully patch, and the release scripts would take it for a declared target.
 $catalog = Get-Content -LiteralPath (Join-Path $Root 'patches-list.json') -Raw | ConvertFrom-Json
 $target = Get-PatchTarget -PatchList $catalog
-Assert-True ($target.PackageName -eq 'com.pinterest') 'The catalog package was not resolved.'
+Assert-True ($target.PackageName -eq 'com.tumblr') 'The catalog package was not resolved.'
 Assert-True (@($target.PackageVersions).Count -ge 1 -and $target.PackageVersion -eq $target.PackageVersions[0]) `
-    "The catalog's declared Pinterest builds were not read: $($target.PackageVersions -join ', ')"
+    "The catalog's declared Tumblr builds were not read: $($target.PackageVersions -join ', ')"
 foreach ($patch in @($catalog.patches)) {
-    Assert-True (((@($patch.compatiblePackages.'com.pinterest') | Sort-Object) -join ',') -eq
+    Assert-True (((@($patch.compatiblePackages.'com.tumblr') | Sort-Object) -join ',') -eq
         ((@($target.PackageVersions) | Sort-Object) -join ',')) `
-        "$($patch.name) declares other Pinterest builds than the rest of the catalog."
+        "$($patch.name) declares other Tumblr builds than the rest of the catalog."
 }
-# And the version code each build is pinned to. One Pinterest version can come as several arm64
+# And the version code each build is pinned to. One Tumblr version can come as several arm64
 # builds, each with its own dex, so a name alone doesn't say which of them the patches were proved
 # on. In the Facebook sibling a receipt counted another 580 build (vc 475019283 beside the declared
 # 475019344) as an unforced run of the declared one.
 foreach ($version in @($target.PackageVersions)) {
-    $pinned = @($catalog.patches[0].compatibility | Where-Object { $_.packageName -eq 'com.pinterest' } |
+    $pinned = @($catalog.patches[0].compatibility | Where-Object { $_.packageName -eq 'com.tumblr' } |
         ForEach-Object { @($_.targets) } | Where-Object { $_.version -eq $version } |
         ForEach-Object { $_.versionCodes.PSObject.Properties } | ForEach-Object { [string]$_.Value })
     Assert-True ($pinned.Count -gt 0 -and (@($target.PackageVersionCodes[$version]) -join ',') -eq (($pinned | Sort-Object -Unique) -join ',')) `
-        "The version codes the catalog pins to Pinterest $version were not read: $(@($target.PackageVersionCodes[$version]) -join ', ')"
+        "The version codes the catalog pins to Tumblr $version were not read: $(@($target.PackageVersionCodes[$version]) -join ', ')"
     Assert-True (Test-DeclaredBuild -Target $target -VersionName $version -VersionCode $pinned[0]) `
-        "Pinterest $version at its pinned code $($pinned[0]) was not taken for a declared build."
+        "Tumblr $version at its pinned code $($pinned[0]) was not taken for a declared build."
     Assert-True (-not (Test-DeclaredBuild -Target $target -VersionName $version -VersionCode "$([long]$pinned[0] - 61)")) `
-        "Another build of Pinterest $version, version code $([long]$pinned[0] - 61), was taken for the declared one."
+        "Another build of Tumblr $version, version code $([long]$pinned[0] - 61), was taken for the declared one."
 }
 Assert-True (-not (Test-DeclaredBuild -Target $target -VersionName '1.0.0' -VersionCode '1')) 'An undeclared version was taken for a declared build.'
 
@@ -90,7 +90,7 @@ Assert-True (($three.PackageVersions -join ',') -eq '449.0.0.54.82,448.0.0.54.85
     $three.PackageVersion -eq '449.0.0.54.82') `
     "Declared builds were not ordered newest first by number: $($three.PackageVersions -join ', ')"
 
-# Every part of the version, as a number. Pinterest's have five and [version] takes four, so the fifth
+# Every part of the version, as a number. Some apps' have five and [version] takes four, so the fifth
 # was dropped and builds apart only there sorted as equals, the older one first in both shells.
 $fifthPart = [pscustomobject]@{
     patches = @([pscustomobject]@{ name = 'hotfixes'
@@ -130,14 +130,14 @@ Assert-Throws { Get-PatchTarget -PatchList ([pscustomobject]@{ patches = @((New-
 Assert-True ((Test-DeclaredBuild -Target $three -VersionName '99.1.0.0.1' -VersionCode '12345') -and
     @($three.PackageVersionCodes['99.1.0.0.1']).Count -eq 0) 'A build declared without a version code was not matched by its name.'
 
-# Pinterest's own signer, on every patch. Morphe Manager refuses an APK whose signer the patch
+# Tumblr's own signer, on every patch. Morphe Manager refuses an APK whose signer the patch
 # doesn't list.
-$pinterestSigners = @('341d6881b1ecf38361fbf8c8fbae0aa516b45375c39ef5e78b161869acc1bcfa')
+$tumblrSigners = @('39ac9c821ad2d605e4849f066e8aad3cca27d5e13eb03ad8755be234a2985dfd')
 foreach ($patch in @($catalog.patches)) {
-    $declaredSigners = @($patch.compatibility | Where-Object { $_.packageName -eq 'com.pinterest' } |
+    $declaredSigners = @($patch.compatibility | Where-Object { $_.packageName -eq 'com.tumblr' } |
         ForEach-Object { @($_.signatures) } | Sort-Object -Unique)
-    Assert-True (($declaredSigners -join ',') -eq ($pinterestSigners -join ',')) `
-        "$($patch.name) declares Pinterest signers $($declaredSigners -join ', '), not Pinterest's own."
+    Assert-True (($declaredSigners -join ',') -eq ($tumblrSigners -join ',')) `
+        "$($patch.name) declares Tumblr signers $($declaredSigners -join ', '), not Tumblr's own."
 }
 
 $allNames = @($catalog.patches | ForEach-Object { $_.name })
@@ -381,11 +381,11 @@ foreach ($invalid in @('', '0', '-1', 'Future', '2147483648')) {
 Assert-Throws {
     ConvertFrom-ManifestXmlTree -Lines ($manifestLines + @('      E: uses-sdk (line=90)')) -Source 'duplicate-sdk'
 } '*More than one uses-sdk*' 'An ambiguous binary minimum SDK was accepted.'
-foreach ($pair in @(@(21, 29), @(29, 29), @(36, 36))) {
+foreach ($pair in @(@(21, 26), @(26, 26), @(36, 36))) {
     $floor = Test-PatchedMinSdk -StockMinSdk $pair[0] -PatchedMinSdk $pair[1]
     Assert-True $floor.Valid "A correct binary floor $($pair -join ' -> ') was refused: $($floor.Reason)"
 }
-foreach ($pair in @(@(21, 28), @(36, 29), @(21, 30), @($null, 29), @(21, $null), @('21', 29), @(21, 29.5))) {
+foreach ($pair in @(@(21, 25), @(36, 26), @(21, 27), @($null, 26), @(21, $null), @('21', 26), @(21, 26.5))) {
     $floor = Test-PatchedMinSdk -StockMinSdk $pair[0] -PatchedMinSdk $pair[1]
     Assert-True (-not $floor.Valid) "An invalid binary floor $($pair -join ' -> ') was accepted."
 }
@@ -434,7 +434,7 @@ Assert-True (@(ConvertTo-ManifestDeltaEntries -Delta $unchanged).Count -eq 0) `
     'An unchanged manifest produced a delta.'
 
 # The checked-in allowlist approves one change and nothing else: HushTumblr settings exports an
-# alias of Pinterest's launcher activity for Android's App info page.
+# alias of Tumblr's launcher activity for Android's App info page.
 $settingsTemplates = @(Read-ManifestDeltaAllowlist -Path (Join-Path $PSScriptRoot 'manifest-delta-allowlist.txt') `
     -SelectedPatchNames @('HushTumblr settings') | Where-Object { $_ })
 $checkedInAllowlist = @($settingsTemplates | Where-Object { $_ -like 'exported-added *' })
@@ -549,7 +549,7 @@ try {
     Assert-True ($manifestFacts.patcherVersion -eq '1.12.0') 'The bundle patcher stamp was not read.'
 
     # Two declared builds, the way a catalog declares the newest release and the one before it
-    # when Pinterest moves on, each pinned to its version code, and a run of each.
+    # when Tumblr moves on, each pinned to its version code, and a run of each.
     $declaredBuilds = @('46.7.3', '46.6.1')
     $declaredCodes = @{ '46.7.3' = [string[]]@('2024607030'); '46.6.1' = [string[]]@('2024606010') }
     $template = [ordered]@{
@@ -570,7 +570,7 @@ try {
                 forced = $false }
             patches = @([ordered]@{ name = 'Alpha'; applied = $true; reason = $null },
                         [ordered]@{ name = 'Beta'; applied = $true; reason = $null })
-            sdk = [ordered]@{ stockMinSdk = 21; patchedMinSdk = 29 }
+            sdk = [ordered]@{ stockMinSdk = 21; patchedMinSdk = 26 }
             manifestDelta = [ordered]@{ permissionsAdded = @(); permissionsRemoved = @()
                 exportedComponentsAdded = @(); exportedComponentsRemoved = @() }
         }, [ordered]@{
@@ -624,11 +624,11 @@ try {
         'a target with no binary SDK facts'      = { param($r) $r.targets[0].PSObject.Properties.Remove('sdk') }
         'a target with no stock minimum'        = { param($r) $r.targets[0].sdk.PSObject.Properties.Remove('stockMinSdk') }
         'a target with no patched minimum'      = { param($r) $r.targets[0].sdk.PSObject.Properties.Remove('patchedMinSdk') }
-        'a string SDK minimum'                  = { param($r) $r.targets[0].sdk.patchedMinSdk = '29' }
-        'a fractional SDK minimum'              = { param($r) $r.targets[0].sdk.patchedMinSdk = 29.5 }
-        'a minimum below API 29'                = { param($r) $r.targets[0].sdk.patchedMinSdk = 28 }
-        'a lowered higher stock minimum'        = { param($r) $r.targets[1].sdk.patchedMinSdk = 29 }
-        'an unnecessarily raised stock minimum' = { param($r) $r.targets[0].sdk.patchedMinSdk = 30 }
+        'a string SDK minimum'                  = { param($r) $r.targets[0].sdk.patchedMinSdk = '26' }
+        'a fractional SDK minimum'              = { param($r) $r.targets[0].sdk.patchedMinSdk = 26.5 }
+        'a minimum below API 26'                = { param($r) $r.targets[0].sdk.patchedMinSdk = 25 }
+        'a lowered higher stock minimum'        = { param($r) $r.targets[1].sdk.patchedMinSdk = 26 }
+        'an unnecessarily raised stock minimum' = { param($r) $r.targets[0].sdk.patchedMinSdk = 27 }
         'fewer verdicts than patches'           = { param($r) $r.targets[0].patches = @($r.targets[0].patches[0]) }
         'a patch the catalog does not list'     = { param($r) $r.targets[0].patches[1].name = 'Gamma' }
         'the same patch reported twice'         = { param($r) $r.targets[0].patches[1].name = 'Alpha' }
@@ -828,10 +828,10 @@ try {
                 Change = { param($t) $t.manifestDelta.exportedComponentsAdded = @($t.manifestDelta.exportedComponentsAdded) + 'activity-alias:app.hushtumblr.extension.tumblr.settings.Other' } },
             @{ Name = 'another permission dropped'; Entry = 'permission-removed android.permission.CAMERA'
                 Change = { param($t) $t.manifestDelta.permissionsRemoved = @($t.manifestDelta.permissionsRemoved) + 'android.permission.CAMERA' } },
-            @{ Name = 'a component exported'; Entry = 'exported-added service:com.pinterest.push.PushService'
-                Change = { param($t) $t.manifestDelta.exportedComponentsAdded = @($t.manifestDelta.exportedComponentsAdded) + 'service:com.pinterest.push.PushService' } },
-            @{ Name = 'a component no longer exported'; Entry = 'exported-removed activity:com.pinterest.activity.PinterestActivity'
-                Change = { param($t) $t.manifestDelta.exportedComponentsRemoved = @('activity:com.pinterest.activity.PinterestActivity') } })) {
+            @{ Name = 'a component exported'; Entry = 'exported-added service:com.tumblr.push.fcm.TumblrFirebaseMessagingService'
+                Change = { param($t) $t.manifestDelta.exportedComponentsAdded = @($t.manifestDelta.exportedComponentsAdded) + 'service:com.tumblr.push.fcm.TumblrFirebaseMessagingService' } },
+            @{ Name = 'a component no longer exported'; Entry = 'exported-removed activity:com.tumblr.ui.activity.JumpoffActivity'
+                Change = { param($t) $t.manifestDelta.exportedComponentsRemoved = @('activity:com.tumblr.ui.activity.JumpoffActivity') } })) {
         $receipt = New-TestReceipt -Mutate { param($r) & $withApproved $r; & $other.Change $r.targets[1] }
         $result = Test-TestReceipt -Receipt $receipt -Approved $checkedInAllowlist
         Assert-True (-not $result.Valid) "With the settings alias approved, $($other.Name) was accepted."
@@ -1544,7 +1544,7 @@ Write-Host '[scripts] advisory gate contracts passed'
 # fixtures then start from what that release writes: an index with the catalog's version, patch
 # count and newest build at its pinned code, the Manager floor and the release asset's address; the
 # README's sentence naming the latest release and its Morphe add-source link; and a dated CHANGELOG
-# heading with one bullet Morphe Manager scopes to Pinterest. Everything else is this checkout's own
+# heading with one bullet Morphe Manager scopes to Tumblr. Everything else is this checkout's own
 # text. Once the index is committed, the three are copied like every other release file and have
 # to carry those facts themselves.
 $rootIndexPath = Join-Path $Root 'patches-bundle.json'
@@ -1556,12 +1556,12 @@ $seedFloor = (Read-CatalogToolchain -Source 'this checkout''s catalog' `
 $seedCode = @($seedTarget.PackageVersionCodes[$seedTarget.PackageVersion])[0]
 $seedIndexText = ([ordered]@{
         created_at = '2026-09-29T00:00:00'
-        description = ("HushTumblr v$seedVersion targets Pinterest $($seedTarget.PackageVersion) ($($seedTarget.PackageName)).`n`n" +
+        description = ("HushTumblr v$seedVersion targets Tumblr $($seedTarget.PackageVersion) ($($seedTarget.PackageName)).`n`n" +
             "There are $(@($catalog.patches).Count) patches in all.`n`n" +
             "Validation: 100 runtime tests passed locally. All 50 patch tests passed too. All $(@($catalog.patches).Count) " +
-            "patches applied to Pinterest $($seedTarget.PackageVersion); resource and injected-code checks passed.`n`n" +
-            "Needs Morphe Manager $seedFloor or newer. Patch the arm64-v8a bundle of Pinterest $($seedTarget.PackageVersion), " +
-            "build $seedCode. The .mpp is a patch bundle, not a Pinterest APK. Keep the manager's existing signing key when updating.")
+            "patches applied to Tumblr $($seedTarget.PackageVersion); resource and injected-code checks passed.`n`n" +
+            "Needs Morphe Manager $seedFloor or newer. Patch the arm64-v8a bundle of Tumblr $($seedTarget.PackageVersion), " +
+            "build $seedCode. The .mpp is a patch bundle, not a Tumblr APK. Keep the manager's existing signing key when updating.")
         download_url = "https://github.com/SysAdminDoc/HushTumblr/releases/download/v$seedVersion/patches-$seedVersion.mpp"
         signature_download_url = ''
         version = $seedVersion
@@ -1581,8 +1581,8 @@ function Get-ReleaseFileText([string]$Relative) {
         }
         'CHANGELOG.md' {
             ([regex]'(?m)^## ').Replace([System.IO.File]::ReadAllText((Join-Path $Root 'CHANGELOG.md')),
-                ("## $seedVersion (2026-09-29)`n`n* **Pinterest:** The first release, $(@($catalog.patches).Count) patches " +
-                    "for Pinterest $($seedTarget.PackageVersion).`n`n## "), 1)
+                ("## $seedVersion (2026-09-29)`n`n* **Tumblr:** The first release, $(@($catalog.patches).Count) patches " +
+                    "for Tumblr $($seedTarget.PackageVersion).`n`n## "), 1)
         }
     }
 }
@@ -1635,12 +1635,12 @@ try {
     # tree is not a release tree then, and holding it to the lagging index failed the control
     # for a reason that had nothing to do with the check (2026-09-17, 0.40.0 being prepared over
     # the 0.39.0 index). The copied index is written up to the catalog it sits beside, its
-    # version strings, its patch count and the Pinterest build it names, so every case below
+    # version strings, its patch count and the Tumblr build it names, so every case below
     # still moves exactly one fact and is judged on the strict path.
     # A release hold is the same lag with the version standing still: patches join the catalog
     # while the index keeps the published count (2026-09-23, 93 against 0.58.0's 91), so the count
     # is synced even when the version already matches.
-    # The build moves the same way. Pinterest ships weekly, the catalog takes the new build before
+    # The build moves the same way. Tumblr ships often, the catalog takes the new build before
     # the release that publishes it, and the index keeps naming the build it was released on
     # until then. Syncing only the version and the count left the description on the old build,
     # so the control failed on every tree the gate accepted in that window (2026-09-25 review).
@@ -1666,7 +1666,7 @@ try {
         # The build the description names first is the one the check reads as the published
         # target, so that is the one moved to the catalog's newest, everywhere it appears.
         $fixtureBuild = (Get-PatchTarget -PatchList $fixtureCatalog).PackageVersion
-        $indexBuild = [regex]::Match([string]$index.description, 'Pinterest\s+(\d+(?:\.\d+)+)')
+        $indexBuild = [regex]::Match([string]$index.description, 'Tumblr\s+(\d+(?:\.\d+)+)')
         if ($indexBuild.Success -and $indexBuild.Groups[1].Value -ne $fixtureBuild) {
             $synced = $synced -replace ('(?<![\d.])' + [regex]::Escape($indexBuild.Groups[1].Value) + '(?!\d)'), $fixtureBuild
         }
@@ -1676,14 +1676,14 @@ try {
 
     # The bug form names the published version and build, which the synced index above now names
     # too. The build moved there without the form until 2026-10-10, so the control failed through
-    # the whole 14.39.0 hold for a reason none of its cases were about.
+    # the whole 46.5.0.109 hold for a reason none of its cases were about.
     function Sync-FixtureBugForm {
         $fixtureVersion = ((Get-Content -LiteralPath (Join-Path $factsRoot 'gradle.properties')) `
             -match '^version\s*=' | Select-Object -First 1) -replace '^version\s*=\s*', ''
         $fixtureBuild = (Get-PatchTarget -PatchList (Get-Content -LiteralPath (Join-Path $factsRoot 'patches-list.json') -Raw |
             ConvertFrom-Json)).PackageVersion
         $text = Get-Content -LiteralPath (Join-Path $factsRoot $bugFormRelative) -Raw
-        $synced = $text -replace '(placeholder:[ \t]*HushTumblr )\S+ on Pinterest \S+', "`${1}$fixtureVersion on Pinterest $fixtureBuild"
+        $synced = $text -replace '(placeholder:[ \t]*HushTumblr )\S+ on Tumblr \S+', "`${1}$fixtureVersion on Tumblr $fixtureBuild"
         if ($synced -ceq $text) { return }
         Set-FactsFile $bugFormRelative { param($unused) $synced }
     }
@@ -1726,8 +1726,8 @@ try {
     $catalogVersion = ((Get-Content -LiteralPath (Join-Path $factsRoot 'gradle.properties')) `
         -match '^version\s*=' | Select-Object -First 1) -replace '^version\s*=\s*', ''
 
-    # The windows the sync above exists for, built the way CONTRIBUTING's "When Pinterest updates"
-    # builds them: the catalog and the README move to a newer Pinterest build while the index
+    # The windows the sync above exists for, built the way a move to a new Tumblr build makes
+    # them: the catalog and the README move to a newer Tumblr build while the index
     # still describes the last release. Prepared, the version is bumped and the CHANGELOG has
     # its entry; held, the version stays. The gate's own lenient run accepts both, and the
     # control built from the same tree has to as well, or every script push in that window stops.
@@ -1746,7 +1746,7 @@ try {
             }
             Set-FactsFile 'CHANGELOG.md' {
                 param($text) ([regex]'(?m)^## ').Replace($text,
-                    "## $nextVersion (2026-09-26)`n`n* **Pinterest:** Moves the patches to Pinterest $movedBuild.`n`n## ", 1)
+                    "## $nextVersion (2026-09-26)`n`n* **Tumblr:** Moves the patches to Tumblr $movedBuild.`n`n## ", 1)
             }
             # The badge moves with the source; the sentence naming the latest release waits for it.
             Set-FactsFile 'README.md' {
@@ -1777,7 +1777,7 @@ try {
         # asks a reporter on that release for a build they don't have.
         $windowForm = Get-Content -LiteralPath (Join-Path $factsRoot $bugFormRelative) -Raw
         Set-FactsFile $bugFormRelative {
-            param($text) $text -replace '(placeholder:[ \t]*HushTumblr \S+ on Pinterest )\S+', "`${1}$movedBuild"
+            param($text) $text -replace '(placeholder:[ \t]*HushTumblr \S+ on Tumblr )\S+', "`${1}$movedBuild"
         }
         Assert-Throws { & $factsScript -Root $factsRoot -SkipDescriptionTestCount -AllowPublishedIndexLag -SkipUrlCheck 6> $null } `
             '*bug report form version placeholder*' "The gate accepted a $window bug form naming the catalog's build instead of the published one."
@@ -1803,7 +1803,7 @@ try {
         Assert-True ($LASTEXITCODE -eq 0 -or $null -eq $LASTEXITCODE) `
             "The release facts check refused the $window tree the gate accepts."
         $syncedDescription = [string](Get-Content -LiteralPath (Join-Path $factsRoot 'patches-bundle.json') -Raw | ConvertFrom-Json).description
-        Assert-True ($syncedDescription -match "Pinterest $([regex]::Escape($movedBuild))(?!\d)" -and
+        Assert-True ($syncedDescription -match "Tumblr $([regex]::Escape($movedBuild))(?!\d)" -and
             $syncedDescription -notmatch [regex]::Escape($newestBuild)) `
             "The $window index was not synced to the catalog's build: $syncedDescription"
         foreach ($name in @('gradle.properties', 'patches-list.json', 'README.md', 'CHANGELOG.md',
@@ -1828,9 +1828,9 @@ try {
             Sync-FixtureIndex
             $syncedDescription = [string](Get-Content -LiteralPath (Join-Path $factsRoot 'patches-bundle.json') -Raw | ConvertFrom-Json).description
             Assert-True ($syncedDescription -match "\bv0\.10\.2\b" -and
-                $syncedDescription -match "Pinterest $([regex]::Escape($newestBuild))(?!\d)" -and
-                $syncedDescription -notmatch 'Pinterest (?:583|0\.10)\.') `
-                "Syncing an index at 0.10.1 that describes Pinterest $describedBuild to 0.10.2 did not move it to the catalog's build: $syncedDescription"
+                $syncedDescription -match "Tumblr $([regex]::Escape($newestBuild))(?!\d)" -and
+                $syncedDescription -notmatch 'Tumblr (?:583|0\.10)\.') `
+                "Syncing an index at 0.10.1 that describes Tumblr $describedBuild to 0.10.2 did not move it to the catalog's build: $syncedDescription"
         } finally {
             Reset-FactsFile 'gradle.properties'
             Reset-FactsFile 'patches-bundle.json'
@@ -1879,7 +1879,7 @@ try {
     Reset-FactsFile 'patches-bundle.json'
 
     # Read one way, all at once: every "N patches" the description says has to be one count and
-    # every "Pinterest <build>" one build. The lag check read the first of each and the equality
+    # every "Tumblr <build>" one build. The lag check read the first of each and the equality
     # check any, so a description quoting the catalog's count once and a stale one elsewhere, or
     # naming another build beside the target, passed the equality check. On both paths now.
     $indexCount = [regex]::Match([string](Get-Content -LiteralPath (Join-Path $factsRoot 'patches-bundle.json') -Raw |
@@ -1889,14 +1889,14 @@ try {
     $factsTarget = (Get-PatchTarget -PatchList (Get-Content -LiteralPath (Join-Path $factsRoot 'patches-list.json') -Raw |
         ConvertFrom-Json)).PackageVersion
     Assert-True ([regex]::Matches((Get-Content -LiteralPath (Join-Path $factsRoot 'patches-bundle.json') -Raw),
-            "Pinterest $([regex]::Escape($factsTarget))(?!\d)").Count -ge 2) `
-        "The copied description names Pinterest $factsTarget once, so the other-build case would prove nothing."
+            "Tumblr $([regex]::Escape($factsTarget))(?!\d)").Count -ge 2) `
+        "The copied description names Tumblr $factsTarget once, so the other-build case would prove nothing."
     foreach ($case in @(
             @{ Name = 'a stale count beside the catalog''s'; Pattern = "*names 97 and $indexCount patches, and it has to name one count*"
                 Edit = { param($text) ([regex]'(?<!\d)\d+ patches\b').Replace($text, '97 patches', 1) } },
-            @{ Name = 'another build beside the target'; Pattern = "*names Pinterest $factsTarget and Pinterest 9.9.9.9.9, and it has to name one build*"
-                Edit = { param($text) $at = $text.LastIndexOf("Pinterest $factsTarget")
-                    $text.Substring(0, $at) + 'Pinterest 9.9.9.9.9' + $text.Substring($at + "Pinterest $factsTarget".Length) } })) {
+            @{ Name = 'another build beside the target'; Pattern = "*names Tumblr $factsTarget and Tumblr 9.9.9.9.9, and it has to name one build*"
+                Edit = { param($text) $at = $text.LastIndexOf("Tumblr $factsTarget")
+                    $text.Substring(0, $at) + 'Tumblr 9.9.9.9.9' + $text.Substring($at + "Tumblr $factsTarget".Length) } })) {
         Set-FactsFile 'patches-bundle.json' $case.Edit
         try {
             Assert-Throws { Invoke-Facts } $case.Pattern "An index description naming $($case.Name) was accepted."
@@ -2011,29 +2011,29 @@ try {
     # The bug form's placeholders, which sat three releases behind the target on Hushfeed before
     # anything read them. One for the version line, one for the manager line.
     Set-FactsFile $bugFormRelative {
-        param($text) $text -replace '(placeholder:\s*HushTumblr \S+ on Pinterest )\S+', '${1}46.2.3'
+        param($text) $text -replace '(placeholder:\s*HushTumblr \S+ on Tumblr )\S+', '${1}46.2.3'
     }
     Assert-Throws { Invoke-Facts } '*bug report form version placeholder*' `
-        'A bug report form naming an old Pinterest build was accepted.'
+        'A bug report form naming an old Tumblr build was accepted.'
     Reset-FactsFile $bugFormRelative
-    # A hold: the catalog has moved to a newer Pinterest build while the index keeps the version
+    # A hold: the catalog has moved to a newer Tumblr build while the index keeps the version
     # and the build it was released on. A reporter then runs the published release on that older
     # build, so under the gate's lag allowance the form names the index's build, and a form that
     # already names the catalog's build is refused.
     $catalogBuild = (Get-PatchTarget -PatchList (Get-Content -LiteralPath (Join-Path $factsRoot 'patches-list.json') -Raw |
         ConvertFrom-Json)).PackageVersion
-    $heldBuild = '14.0.0'
+    $heldBuild = '46.0.0.100'
     Set-FactsFile 'patches-bundle.json' {
         param($text) $text -replace ('(?<![\d.])' + [regex]::Escape($catalogBuild) + '(?!\d)'), $heldBuild
     }
     Set-FactsFile $bugFormRelative {
-        param($text) $text -replace '(placeholder:[ \t]*HushTumblr \S+ on Pinterest )\S+', "`${1}$heldBuild"
+        param($text) $text -replace '(placeholder:[ \t]*HushTumblr \S+ on Tumblr )\S+', "`${1}$heldBuild"
     }
     try { Invoke-Facts -AllowLag } catch {
         throw "A held index with the bug form on its own build was refused: $($_.Exception.Message)"
     }
     Set-FactsFile $bugFormRelative {
-        param($text) $text -replace '(placeholder:[ \t]*HushTumblr \S+ on Pinterest )\S+', "`${1}$catalogBuild"
+        param($text) $text -replace '(placeholder:[ \t]*HushTumblr \S+ on Tumblr )\S+', "`${1}$catalogBuild"
     }
     Assert-Throws { Invoke-Facts -AllowLag } '*bug report form version placeholder*' `
         'A bug report form naming the catalog''s unreleased build while the index lags was accepted.'
@@ -2278,7 +2278,7 @@ try {
     $routingTarget = Get-PatchTarget -PatchList $catalog
     foreach ($version in $routingTarget.PackageVersions) {
         foreach ($code in @($routingTarget.PackageVersionCodes[$version])) {
-            Set-Content -LiteralPath (Join-Path $routingFixtures "pinterest-$version-$code.apk") `
+            Set-Content -LiteralPath (Join-Path $routingFixtures "tumblr-$version-$code.apk") `
                 -Value 'vendor APK stand-in' -Encoding ASCII
         }
     }
@@ -2470,7 +2470,7 @@ try {
         }
     }
 
-    # The catalog is held to Pinterest's signer, the builds every patch declares and the internal
+    # The catalog is held to Tumblr's signer, the builds every patch declares and the internal
     # dependencies the release scripts expect, and only the contract tests read it for those. A
     # push of the catalog alone ran the release facts and never them.
     Invoke-Hook -Paths @('patches-list.json')
@@ -2636,12 +2636,12 @@ try {
         # underline, not a conflict, and passes.
         Assert-Throws { Push-ListingChange {
                 Set-Content -LiteralPath (Join-Path $listingRepo 'CHANGELOG.md') -Encoding ASCII -Value @(
-                    '## Unreleased', '', '<<<<<<< HEAD', '* **Pinterest:** one side.', '||||||| base', '=======',
-                    '* **Pinterest:** the other side.', '>>>>>>> 0123abc (the other side)') } } `
+                    '## Unreleased', '', '<<<<<<< HEAD', '* **Tumblr:** one side.', '||||||| base', '=======',
+                    '* **Tumblr:** the other side.', '>>>>>>> 0123abc (the other side)') } } `
             '*unresolved merge conflict*CHANGELOG.md:3:<<<<<<< HEAD*' 'A push carrying an unresolved merge conflict went out.'
         $ran = Push-ListingChange {
             Set-Content -LiteralPath (Join-Path $listingRepo 'CHANGELOG.md') -Encoding ASCII -Value @(
-                '## Unreleased', '', '* **Pinterest:** one side.', '* **Pinterest:** the other side.')
+                '## Unreleased', '', '* **Tumblr:** one side.', '* **Tumblr:** the other side.')
             New-Item -ItemType Directory -Path (Join-Path $listingRepo 'docs') -Force | Out-Null
             Set-Content -LiteralPath (Join-Path $listingRepo 'docs/heading.md') -Encoding ASCII -Value @('A heading', '=======', '', 'Text.')
         }
@@ -3051,7 +3051,7 @@ try {
             $env:HUSHTUMBLR_DESKTOP_JAR = $passStub
             $env:HUSHTUMBLR_APPLY_RECORDS = $releaseStore
             $declaredHere = @(foreach ($version in $routingTarget.PackageVersions) {
-                    foreach ($code in @($routingTarget.PackageVersionCodes[$version])) { Join-Path $routingFixtures "pinterest-$version-$code.apk" }
+                    foreach ($code in @($routingTarget.PackageVersionCodes[$version])) { Join-Path $routingFixtures "tumblr-$version-$code.apk" }
                 })
             Assert-True ($declaredHere.Count -gt 0) 'The routing fixture folder holds no declared build to patch.'
 
@@ -3560,12 +3560,12 @@ A sentence about the release.
 
 ### Settings
 
-* **Pinterest:** one change.
-* **Pinterest:** another change.
+* **Tumblr:** one change.
+* **Tumblr:** another change.
 
 ### On the video
 
-* **Pinterest:** a third.
+* **Tumblr:** a third.
 
 ## 0.41.0
 
@@ -3583,9 +3583,9 @@ $undated = Test-ChangelogManagerEntry -Current ($readable -replace '## 0\.42\.0 
 Assert-True (-not $undated.Valid) 'An undated heading, which Manager skips, was accepted.'
 Assert-True ($undated.Reason -like '*no date*') "The undated heading was refused for the wrong reason: $($undated.Reason)"
 
-$unscoped = Test-ChangelogManagerEntry -Current ($readable -replace '\* \*\*Pinterest:\*\* another', '* another') `
+$unscoped = Test-ChangelogManagerEntry -Current ($readable -replace '\* \*\*Tumblr:\*\* another', '* another') `
     -ExpectedVersion '0.42.0'
-Assert-True (-not $unscoped.Valid) 'A bullet Manager does not scope to Pinterest was accepted.'
+Assert-True (-not $unscoped.Valid) 'A bullet Manager does not scope to Tumblr was accepted.'
 Assert-True ($unscoped.Reason -like 'Line 12 *') "The unscoped bullet was refused for the wrong reason: $($unscoped.Reason)"
 
 $wrapped = Test-ChangelogManagerEntry -Current ($readable -replace 'one change\.', "one`n  change.") `
@@ -3596,22 +3596,22 @@ Assert-True ($wrapped.Reason -like '*continues the bullet*') "The wrapped bullet
 $noBullets = Test-ChangelogManagerEntry -Current "## 0.42.0 (2026-09-20)`n`nOnly prose.`n" -ExpectedVersion '0.42.0'
 Assert-True (-not $noBullets.Valid) 'An entry with no scoped bullet, which gets no update badge, was accepted.'
 
-$otherScope = Test-ChangelogManagerEntry -Current ($readable -replace '\*\*Pinterest:\*\* a third', '**Instagram:** a third') `
+$otherScope = Test-ChangelogManagerEntry -Current ($readable -replace '\*\*Tumblr:\*\* a third', '**Instagram:** a third') `
     -ExpectedVersion '0.42.0'
 Assert-True (-not $otherScope.Valid) 'A bullet scoped to another app was accepted.'
 
 # A development-only change is written "* **Tooling:** ...", and a release made from the entries
 # under Unreleased carries them. Manager shows a line only to the app it's scoped to, so it shows
-# these to nobody, which is what they're for: allowed, and not counted as Pinterest changes. The
+# these to nobody, which is what they're for: allowed, and not counted as Tumblr changes. The
 # release check refused every one, so a release had to drop them or relabel them for users.
-$withTooling = Test-ChangelogManagerEntry -Current ($readable -replace '(\* \*\*Pinterest:\*\* a third\.)',
+$withTooling = Test-ChangelogManagerEntry -Current ($readable -replace '(\* \*\*Tumblr:\*\* a third\.)',
     "`$1`n* **Tooling:** a development-only change.") -ExpectedVersion '0.42.0'
 Assert-True ($withTooling.Valid -and $withTooling.Bullets -eq 3) `
     "A Tooling bullet in the released entry was refused or counted: $($withTooling.Reason), $($withTooling.Bullets) bullets"
 $toolingOnly = Test-ChangelogManagerEntry -Current "## 0.42.0 (2026-09-20)`n`n* **Tooling:** only this.`n" -ExpectedVersion '0.42.0'
-Assert-True (-not $toolingOnly.Valid -and $toolingOnly.Reason -like '*no "* **Pinterest:** " bullet*') `
+Assert-True (-not $toolingOnly.Valid -and $toolingOnly.Reason -like '*no "* **Tumblr:** " bullet*') `
     "An entry with Tooling bullets alone, which gets no update badge, was not refused for that: $($toolingOnly.Reason)"
-$wrappedTooling = Test-ChangelogManagerEntry -Current ($readable -replace '(\* \*\*Pinterest:\*\* a third\.)',
+$wrappedTooling = Test-ChangelogManagerEntry -Current ($readable -replace '(\* \*\*Tumblr:\*\* a third\.)',
     "`$1`n* **Tooling:** a development-only`n  change.") -ExpectedVersion '0.42.0'
 Assert-True ($wrappedTooling.Reason -like '*continues the bullet*') `
     "A wrapped Tooling bullet was not held to one line like the others: $($wrappedTooling.Reason)"
@@ -3759,9 +3759,9 @@ try {
     Assert-True ((Resolve-DesktopCli -Root $repoRoot) -eq $newer) `
         'HUSHTUMBLR_DESKTOP_JAR was not read.'
 
-    # Split bundles. Pinterest comes as an .xapk or an .apkm, and aapt2, apksigner and the resource
+    # Split bundles. Tumblr comes as an .xapk or an .apkm, and aapt2, apksigner and the resource
     # check each read one APK: the base, whose manifest and resource table describe the app. A
-    # split is often the larger file (Pinterest's arm64 split outweighs its base), so the base is found
+    # split is often the larger file, so the base is found
     # by name first: base.apk, then the file an .xapk's manifest.json names, and by size only when
     # nothing names it, among the files that aren't config or split_ APKs before all of them.
     Add-Type -AssemblyName System.IO.Compression
@@ -3785,9 +3785,9 @@ try {
     Assert-True (Test-SamePath (Get-BaseApk -Apk $plainApk -Destination (Join-Path $commonRoot 'never.apk')) $plainApk) `
         'A plain APK was copied or replaced instead of being read as it is.'
 
-    $apkm = Join-Path $commonRoot 'pinterest.apkm'
+    $apkm = Join-Path $commonRoot 'tumblr.apkm'
     $apkmEntries = [ordered]@{
-        'info.json' = '{"versioncode":"14398020"}'
+        'info.json' = '{"versioncode":"1460500109"}'
         'base.apk' = 'base'
         'split_config.arm64_v8a.apk' = ('native code ' * 64)
     }
@@ -3804,7 +3804,7 @@ try {
     Push-Location -LiteralPath $commonRoot
     try {
         [Environment]::CurrentDirectory = [System.IO.Path]::GetTempPath()
-        $relativeOut = Get-BaseApk -Apk 'pinterest.apkm' -Destination 'out\relative-base.apk'
+        $relativeOut = Get-BaseApk -Apk 'tumblr.apkm' -Destination 'out\relative-base.apk'
         Assert-True ((Test-SamePath $relativeOut (Join-Path $commonRoot 'out\relative-base.apk')) -and
             (Get-Content -LiteralPath (Join-Path $commonRoot 'out\relative-base.apk') -Raw) -eq 'base') `
             'A relative bundle path was read against the process directory instead of the current location.'
@@ -3824,46 +3824,46 @@ try {
         (Get-Content -LiteralPath $xapkOut -Raw).StartsWith('app ')) `
         'A bundle with no base.apk did not fall back to its largest APK.'
 
-    # APKPure's layout of a split Pinterest build: the base named for the package, the arm64 split
+    # APKPure's layout of a split Tumblr build: the base named for the package, the arm64 split
     # larger than it, and a manifest.json whose split_apks name the base by id. Size alone took the
-    # split. (Pinterest's own build ships as a single universal APK; a split layout is another
-    # distributor's, and Get-BaseApk has to read either.)
-    $pinterestXapk = Join-Path $commonRoot 'pinterest.xapk'
-    New-TestBundleArchive -Path $pinterestXapk -Entries ([ordered]@{
-        'com.pinterest.apk' = 'pinterest base'
+    # split. (APKMirror's Tumblr is an .apkm and APKPure's an .xapk, and Get-BaseApk has to read
+    # either.)
+    $tumblrXapk = Join-Path $commonRoot 'tumblr.xapk'
+    New-TestBundleArchive -Path $tumblrXapk -Entries ([ordered]@{
+        'com.tumblr.apk' = 'tumblr base'
         'icon.png' = 'icon'
         'config.arm64_v8a.apk' = ('native code ' * 64)
         'config.mdpi.apk' = 'densities'
-        'manifest.json' = ('{"xapk_version":2,"package_name":"com.pinterest","split_apks":[' +
-            '{"file":"com.pinterest.apk","id":"base"},{"file":"config.arm64_v8a.apk","id":"config.arm64_v8a"},' +
+        'manifest.json' = ('{"xapk_version":2,"package_name":"com.tumblr","split_apks":[' +
+            '{"file":"com.tumblr.apk","id":"base"},{"file":"config.arm64_v8a.apk","id":"config.arm64_v8a"},' +
             '{"file":"config.mdpi.apk","id":"config.mdpi"}]}')
     })
-    $pinterestOut = Join-Path $commonRoot 'out/pinterest-base.apk'
-    Assert-True ((Test-SamePath (Get-BaseApk -Apk $pinterestXapk -Destination $pinterestOut) $pinterestOut) -and
-        (Get-Content -LiteralPath $pinterestOut -Raw) -eq 'pinterest base') `
+    $tumblrOut = Join-Path $commonRoot 'out/tumblr-base.apk'
+    Assert-True ((Test-SamePath (Get-BaseApk -Apk $tumblrXapk -Destination $tumblrOut) $tumblrOut) -and
+        (Get-Content -LiteralPath $tumblrOut -Raw) -eq 'tumblr base') `
         'The base an .xapk manifest names was not taken over the larger arm64 split beside it.'
     # Without split_apks, the manifest's package name still names the base.
     $packageOnlyXapk = Join-Path $commonRoot 'package-only.xapk'
     New-TestBundleArchive -Path $packageOnlyXapk -Entries ([ordered]@{
         'config.arm64_v8a.apk' = ('native code ' * 64)
         'other.apk' = ('other ' * 32)
-        'com.pinterest.apk' = 'pinterest base'
-        'manifest.json' = '{"package_name":"com.pinterest"}'
+        'com.tumblr.apk' = 'tumblr base'
+        'manifest.json' = '{"package_name":"com.tumblr"}'
     })
     $packageOnlyOut = Join-Path $commonRoot 'out/package-only-base.apk'
     Assert-True ((Test-SamePath (Get-BaseApk -Apk $packageOnlyXapk -Destination $packageOnlyOut) $packageOnlyOut) -and
-        (Get-Content -LiteralPath $packageOnlyOut -Raw) -eq 'pinterest base') `
+        (Get-Content -LiteralPath $packageOnlyOut -Raw) -eq 'tumblr base') `
         'The base an .xapk manifest names by its package was not taken over larger APKs.'
     # With nothing naming the base, a larger config split still loses to the app's own APK.
     $unnamedSplitXapk = Join-Path $commonRoot 'unnamed-split.xapk'
     New-TestBundleArchive -Path $unnamedSplitXapk -Entries ([ordered]@{
         'config.arm64_v8a.apk' = ('native code ' * 64)
         'split_feature.apk' = ('feature ' * 48)
-        'com.pinterest.apk' = 'pinterest base'
+        'com.tumblr.apk' = 'tumblr base'
     })
     $unnamedSplitOut = Join-Path $commonRoot 'out/unnamed-split-base.apk'
     Assert-True ((Test-SamePath (Get-BaseApk -Apk $unnamedSplitXapk -Destination $unnamedSplitOut) $unnamedSplitOut) -and
-        (Get-Content -LiteralPath $unnamedSplitOut -Raw) -eq 'pinterest base') `
+        (Get-Content -LiteralPath $unnamedSplitOut -Raw) -eq 'tumblr base') `
         'A bundle naming no base took a larger config or split_ APK for it.'
     # And a bundle of splits alone hands back its largest, as before.
     $splitsOnly = Join-Path $commonRoot 'splits-only.xapk'
@@ -4204,12 +4204,12 @@ try {
     # The cases below need a declared build older than the newest, one a receipt can leave out.
     # When this checkout's catalog declares a single build, the fixture's copy declares the one
     # before it too, on every patch at a version code of its own, the way the catalog keeps the
-    # previous build when Pinterest moves on.
+    # previous build when Tumblr moves on.
     $releaseCatalogPath = Join-Path $releaseRepo 'patches-list.json'
     $releaseCatalogCopy = Get-Content -LiteralPath $releaseCatalogPath -Raw | ConvertFrom-Json
     $copiedTarget = Get-PatchTarget -PatchList $releaseCatalogCopy
     if (@($copiedTarget.PackageVersions).Count -lt 2) {
-        $previousBuild = '14.37.0'
+        $previousBuild = '46.3.0.110'
         foreach ($patch in @($releaseCatalogCopy.patches)) {
             $patch.compatiblePackages.($copiedTarget.PackageName) = @(@($patch.compatiblePackages.($copiedTarget.PackageName)) + $previousBuild)
             foreach ($compatibility in @($patch.compatibility | Where-Object { $_.packageName -eq $copiedTarget.PackageName })) {
@@ -4259,7 +4259,7 @@ try {
     }
     $releaseIndexText = $releaseIndexText -replace
         '(?<!\d)\d+ patches\b', "$releasePatchCountForIndex patches"
-    $describedBuild = [regex]::Match([string]$releaseIndex.description, 'Pinterest\s+(\d+(?:\.\d+)+)')
+    $describedBuild = [regex]::Match([string]$releaseIndex.description, 'Tumblr\s+(\d+(?:\.\d+)+)')
     if ($describedBuild.Success -and $describedBuild.Groups[1].Value -ne $releaseTargetForIndex.PackageVersion) {
         $releaseIndexText = $releaseIndexText -replace
             ('(?<![\d.])' + [regex]::Escape($describedBuild.Groups[1].Value) + '(?!\d)'),
@@ -4271,9 +4271,9 @@ try {
     $releaseBugFormPath = Join-Path $releaseRepo '.github/ISSUE_TEMPLATE/bug_report.yml'
     $releaseBugFormText = Get-Content -LiteralPath $releaseBugFormPath -Raw
     $releaseBugFormText = $releaseBugFormText -replace
-        '(placeholder:\s*HushTumblr )\S+( on Pinterest)', "`${1}$releaseVersionForIndex`${2}"
+        '(placeholder:\s*HushTumblr )\S+( on Tumblr)', "`${1}$releaseVersionForIndex`${2}"
     $releaseBugFormText = $releaseBugFormText -replace
-        '(placeholder:\s*HushTumblr \S+ on Pinterest )\d+(?:\.\d+)+',
+        '(placeholder:\s*HushTumblr \S+ on Tumblr )\d+(?:\.\d+)+',
         "`${1}$($releaseTargetForIndex.PackageVersion)"
     Set-Content -LiteralPath $releaseBugFormPath -Encoding UTF8 -NoNewline -Value $releaseBugFormText
     # And the README's version badge and the sentence naming the latest release, which the release
@@ -4322,7 +4322,7 @@ try {
     $androidExported = '          A: http://schemas.android.com/apk/res/android:exported(0x01010010)=true'
     function Get-FixtureManifest([string]$Build, [string]$Code, [switch]$WithSplit, [switch]$Patched,
             [string]$Package = $releaseTarget.PackageName, [int]$MinSdk = 21) {
-        $binaryMinSdk = if ($Patched) { [Math]::Max($MinSdk, 29) } else { $MinSdk }
+        $binaryMinSdk = if ($Patched) { [Math]::Max($MinSdk, 26) } else { $MinSdk }
         $lines = @(
             'N: android=http://schemas.android.com/apk/res/android (line=1)',
             '  E: manifest (line=1)',
@@ -4333,24 +4333,13 @@ try {
             "        A: http://schemas.android.com/apk/res/android:minSdkVersion(0x0101020c)=$binaryMinSdk",
             '      E: uses-permission (line=10)',
             "        A: $androidName`"android.permission.INTERNET`" (Raw: `"android.permission.INTERNET`")")
-        # Pinterest asks for the ad ID and Android's ad services, which Remove ad tracking
+        # Tumblr asks for the ad ID and Android's ad services, which Remove ad tracking
         # permissions takes out with the application's ad services property.
         $adTracking = $releaseNames -ccontains 'Remove ad tracking permissions'
         if ($adTracking -and -not $Patched) {
             foreach ($permission in @('com.google.android.gms.permission.AD_ID',
                     'android.permission.ACCESS_ADSERVICES_AD_ID', 'android.permission.ACCESS_ADSERVICES_ATTRIBUTION')) {
                 $lines += @('      E: uses-permission (line=11)', "        A: $androidName`"$permission`" (Raw: `"$permission`")")
-            }
-        }
-        if ($Patched -and $releaseNames -ccontains 'Open links in your browser') {
-            $lines += '      E: queries (line=12)'
-            foreach ($scheme in @('http', 'https')) {
-                $lines += @('        E: intent (line=13)', '          E: action (line=14)',
-                    "            A: $androidName`"android.intent.action.VIEW`" (Raw: `"android.intent.action.VIEW`")",
-                    '          E: category (line=15)',
-                    "            A: $androidName`"android.intent.category.BROWSABLE`" (Raw: `"android.intent.category.BROWSABLE`")",
-                    '          E: data (line=16)',
-                    "            A: http://schemas.android.com/apk/res/android:scheme(0x01010027)=`"$scheme`" (Raw: `"$scheme`")")
             }
         }
         $lines += '      E: application (line=20)'
@@ -4366,11 +4355,11 @@ try {
             }
         }
         $lines += @('        E: activity (line=21)',
-            "          A: $androidName`"com.pinterest.activity.PinterestActivity`" (Raw: `"com.pinterest.activity.PinterestActivity`")",
+            "          A: $androidName`"com.tumblr.ui.activity.JumpoffActivity`" (Raw: `"com.tumblr.ui.activity.JumpoffActivity`")",
             $androidExported)
         if ($WithSplit) {
             $lines += @('        E: activity (line=40)',
-                "          A: $androidName`"com.pinterest.split.FeatureActivity`" (Raw: `"com.pinterest.split.FeatureActivity`")",
+                "          A: $androidName`"com.tumblr.split.FeatureActivity`" (Raw: `"com.tumblr.split.FeatureActivity`")",
                 $androidExported)
         }
         if ($Patched -and $releaseNames -ccontains 'Disable analytics') {
@@ -4398,7 +4387,7 @@ try {
             $lines += @('        E: activity-alias (line=60)',
                 "          A: $androidName`"app.hushtumblr.extension.tumblr.settings.OpenSettings`" (Raw: `"app.hushtumblr.extension.tumblr.settings.OpenSettings`")",
                 $androidExported,
-                '          A: http://schemas.android.com/apk/res/android:targetActivity(0x01010202)="com.pinterest.activity.PinterestActivity" (Raw: "com.pinterest.activity.PinterestActivity")',
+                '          A: http://schemas.android.com/apk/res/android:targetActivity(0x01010202)="com.tumblr.ui.activity.JumpoffActivity" (Raw: "com.tumblr.ui.activity.JumpoffActivity")',
                 '          E: intent-filter (line=61)', '            E: action (line=62)',
                 "              A: $androidName`"android.intent.action.APPLICATION_PREFERENCES`" (Raw: `"android.intent.action.APPLICATION_PREFERENCES`")",
                 '            E: category (line=63)',
@@ -4434,11 +4423,11 @@ try {
             $patchedFacts = ConvertFrom-ManifestXmlTree -Source 'receipt patched fixture' -Lines (
                 (Get-FixtureManifest -Build $Builds[$i] -Code $code -Patched) -split '\r?\n')
             $targetHere = [ordered]@{
-                source        = [ordered]@{ file = "pinterest-$($Builds[$i])-arm64-v8a.apk"
+                source        = [ordered]@{ file = "tumblr-$($Builds[$i])-arm64-v8a.apk"
                     package = $releaseTarget.PackageName; versionName = $Builds[$i]; versionCode = $code
                     sha256 = ([string]'ABCDEF'[$i % 6] * 64); forced = $false }
                 patches       = @($releaseNames | ForEach-Object { [ordered]@{ name = $_; applied = $true; reason = $null } })
-                sdk           = [ordered]@{ stockMinSdk = 21; patchedMinSdk = 29 }
+                sdk           = [ordered]@{ stockMinSdk = 21; patchedMinSdk = 26 }
                 manifestDelta = $approvedDelta
             }
             if ($Schema -ge 4) {
@@ -4510,14 +4499,14 @@ try {
     # that answers -version, plays MergeSplits.java (the merged APK, and a note beside it naming
     # the bundle it came from), and does what the desktop CLI leaves behind for each input (the
     # result report and the patched APK), and an aapt2 that prints the manifest lines written for
-    # each APK. One .xapk per declared build, laid out the way APKPure lays out Pinterest, and a
+    # each APK. One .xapk per declared build, laid out the way APKPure lays out Tumblr, and a
     # bundle stamped with the commit's time where
     # buildAndroid leaves it, carrying the classes.dex the published asset check at the end of
     # this section looks for. The merge carries a component the base APK's manifest lacks, so a
     # delta taken against the base instead of the merge records it as the patches' own, and the
     # allowlist, which approves only the settings alias, refuses the receipt. The JDK also plays
     # ResourceTableCheck.java, keeping a copy of the stock APK it was handed, and DexDiff.java, and
-    # an apksigner beside aapt2 names Pinterest's signer, so verify-all-patches.ps1 runs on the
+    # an apksigner beside aapt2 names Tumblr's signer, so verify-all-patches.ps1 runs on the
     # same stand-ins.
     $tools = Join-Path $releaseRoot 'tools'
     $fixtures = Join-Path $releaseRoot 'fixtures'
@@ -4647,7 +4636,7 @@ try {
         'if exist "%APK%.xmltree" (type "%APK%.xmltree") else (type "%APK%")',
         'exit /b %errorlevel%') -join "`r`n") + "`r`n"), [System.Text.Encoding]::ASCII)
     Set-Content -LiteralPath $stubJar -Value 'not a jar' -Encoding ASCII
-    # The receipt builder and verify-all-patches.ps1 both hold the clean fixture to Pinterest's signer.
+    # The receipt builder and verify-all-patches.ps1 both hold the clean fixture to Tumblr's signer.
     $releaseSigner = @($releaseCatalog.patches | ForEach-Object { $_.compatibility } |
         Where-Object { $_.packageName -eq $releaseTarget.PackageName } | ForEach-Object { $_.signatures } |
         Sort-Object -Unique | Select-Object -First 1)
@@ -4689,13 +4678,13 @@ try {
     foreach ($build in @($newerBuild) + @($releaseTarget.PackageVersions)) {
         $stockMinSdk = if ($build -eq $newerBuild) { 36 } else { 21 }
         $versionCode = if ($build -eq $newerBuild) { 512008382 } else { [long]@($releaseTarget.PackageVersionCodes[$build])[0] }
-        $apkm = Join-Path $fixtures "pinterest-$build-$versionCode.xapk"
+        $apkm = Join-Path $fixtures "tumblr-$build-$versionCode.xapk"
         New-TestBundleArchive -Path $apkm -Entries ([ordered]@{
-            'com.pinterest.apk' = Get-FixtureManifest -Build $build -Code "$versionCode" -MinSdk $stockMinSdk
+            'com.tumblr.apk' = Get-FixtureManifest -Build $build -Code "$versionCode" -MinSdk $stockMinSdk
             'icon.png' = 'icon'
             'config.arm64_v8a.apk' = ('native code ' * 64)
-            'manifest.json' = ("{`"package_name`":`"com.pinterest`",`"version_code`":`"$versionCode`",`"split_apks`":[" +
-                '{"file":"com.pinterest.apk","id":"base"},{"file":"config.arm64_v8a.apk","id":"config.arm64_v8a"}]}') })
+            'manifest.json' = ("{`"package_name`":`"com.tumblr`",`"version_code`":`"$versionCode`",`"split_apks`":[" +
+                '{"file":"com.tumblr.apk","id":"base"},{"file":"config.arm64_v8a.apk","id":"config.arm64_v8a"}]}') })
         Set-Content -LiteralPath "$apkm.merged.txt" -Encoding ASCII -NoNewline `
             -Value (Get-FixtureManifest -Build $build -Code "$versionCode" -WithSplit -MinSdk $stockMinSdk)
         Set-Content -LiteralPath "$apkm.patched.txt" -Encoding ASCII -NoNewline `
@@ -4710,12 +4699,12 @@ try {
             packageVersion = $build } | ConvertTo-Json -Depth 6)
         $fixturePaths[$build] = $apkm
     }
-    # And another build of the oldest declared version, as one Pinterest release can come as several
+    # And another build of the oldest declared version, as one Tumblr release can come as several
     # arm64 builds: the declared name at a code the catalog doesn't pin, as an APKMirror .apkm. Only
     # its base manifest, since every script has to refuse it before anything is merged or patched.
     $variantBuild = @($releaseTarget.PackageVersions)[-1]
     $variantCode = [long]@($releaseTarget.PackageVersionCodes[$variantBuild])[0] - 61
-    $variantApkm = Join-Path $fixtures "pinterest-$variantBuild-variant-arm64-v8a.apkm"
+    $variantApkm = Join-Path $fixtures "tumblr-$variantBuild-variant-arm64-v8a.apkm"
     New-TestBundleArchive -Path $variantApkm -Entries ([ordered]@{
         'info.json' = "{`"versioncode`":`"$variantCode`"}"
         'base.apk' = Get-FixtureManifest -Build $variantBuild -Code "$variantCode" })
@@ -4802,7 +4791,7 @@ try {
             "The receipt does not record every patch applied to $label."
         $stockMinSdk = if ($label -eq $newerBuild) { 36 } else { 21 }
         Assert-True ($builtTarget.sdk.stockMinSdk -eq $stockMinSdk -and
-                $builtTarget.sdk.patchedMinSdk -eq [Math]::Max($stockMinSdk, 29)) `
+                $builtTarget.sdk.patchedMinSdk -eq [Math]::Max($stockMinSdk, 26)) `
             "The receipt does not record the binary SDK floor measured for $label."
         # The alias, the collection switches and the ad declarations are the patches' changes. The
         # split's activity the merge brings in is the merge's.
@@ -4844,11 +4833,11 @@ try {
     Assert-True ($said -like "*$builtProved*") "The release check did not accept the receipt the builder wrote: $said"
 
     # The builder must read and reject a wrong binary minimum, not merely write SDK facts that
-    # agree with themselves. Both sides of API 29 and a higher stock floor are exercised.
+    # agree with themselves. Both sides of API 26 and a higher stock floor are exercised.
     foreach ($wrongSdk in @(
-            @{ Build = $releaseTarget.PackageVersion; Stock = 21; Patched = 28; Expected = 29 },
-            @{ Build = $releaseTarget.PackageVersion; Stock = 21; Patched = 30; Expected = 29 },
-            @{ Build = $newerBuild; Stock = 36; Patched = 29; Expected = 36 })) {
+            @{ Build = $releaseTarget.PackageVersion; Stock = 21; Patched = 25; Expected = 26 },
+            @{ Build = $releaseTarget.PackageVersion; Stock = 21; Patched = 27; Expected = 26 },
+            @{ Build = $newerBuild; Stock = 36; Patched = 26; Expected = 36 })) {
         $manifestPath = "$($fixturePaths[$wrongSdk.Build]).patched.txt"
         $manifestBytes = [System.IO.File]::ReadAllBytes($manifestPath)
         try {
@@ -4864,8 +4853,8 @@ try {
     }
 
     # A patched fixture whose injected code fails the structural check, or calls a class or member
-    # the build lacks, stops the run with no receipt. 0.0.3 shipped a System share sheet call into
-    # a class from another Pinterest build because the builder read only the CLI's verdicts.
+    # the build lacks, stops the run with no receipt. HushPinterest 0.0.3 shipped a System share sheet
+    # call into a class from another Pinterest build because the builder read only the CLI's verdicts.
     $builtReceiptBeforeChecks = [System.IO.File]::ReadAllBytes($releaseReceipt)
     foreach ($broken in @(
             @{ Flag = 'dexdiff-fails.txt'; Pattern = '*failed its structural or host reference checks (exit 1)*' },
@@ -4890,8 +4879,8 @@ try {
     # patches anything. base.apk is not what the CLI patches, so there's no receipt to fall back to.
     $builtReceiptBeforeMerge = [System.IO.File]::ReadAllBytes($releaseReceipt)
     $brokenMerges = @(
-        @{ Flag = 'merge-fails.txt'; Pattern = '*Could not merge pinterest-*.xapk into one APK (exit 9)*could not read the bundle*' },
-        @{ Flag = 'merge-writes-nothing.txt'; Pattern = '*The merge of pinterest-*.xapk wrote no APK at *stock-merged.apk*' })
+        @{ Flag = 'merge-fails.txt'; Pattern = '*Could not merge tumblr-*.xapk into one APK (exit 9)*could not read the bundle*' },
+        @{ Flag = 'merge-writes-nothing.txt'; Pattern = '*The merge of tumblr-*.xapk wrote no APK at *stock-merged.apk*' })
     foreach ($broken in $brokenMerges) {
         $flag = Join-Path $tools $broken.Flag
         Set-Content -LiteralPath $flag -Value 'on' -Encoding ASCII
@@ -4910,7 +4899,7 @@ try {
     }
 
     # verify-all-patches.ps1 on the same stand-ins, with the apksigner beside aapt2 that names
-    # Pinterest's signer. Once the CLI stopped leaving its merge behind (1.17.0) it held the
+    # Tumblr's signer. Once the CLI stopped leaving its merge behind (1.17.0) it held the
     # patched table to base.apk, so the resources a split bundle's other slices carry were never
     # compared. It merges first now:
     # the CLI is handed the merge, the resource check's stock side is that merge, and a bundle that
@@ -4945,10 +4934,10 @@ try {
             "$(@(Get-Content -LiteralPath $javaLog) -join '; ')")
     Assert-True ((Get-Content -LiteralPath $resourceStock -Raw) -ceq (Get-Content -LiteralPath "$newestFixture.merged.txt" -Raw)) `
         'The resource check was not handed the merge as its stock side.'
-    Assert-True ($said -like '*binary minSdk: 21 -> 29 (max(stock, 29))*') `
-        "The verification run did not check the binary API 29 floor: $said"
+    Assert-True ($said -like '*binary minSdk: 21 -> 26 (max(stock, 26))*') `
+        "The verification run did not check the binary API 26 floor: $said"
     $higher = Invoke-VerifyAll -Apk $fixturePaths[$newerBuild] -Force
-    Assert-True ($higher -like '*binary minSdk: 36 -> 36 (max(stock, 29))*' -and
+    Assert-True ($higher -like '*binary minSdk: 36 -> 36 (max(stock, 26))*' -and
             $higher -like '*success: every requested patch applied*') `
         "The verification run did not preserve a higher stock SDK floor: $higher"
     foreach ($wrongSdk in @(
@@ -4981,7 +4970,7 @@ try {
             Remove-Item -LiteralPath $flag -Force -ErrorAction SilentlyContinue
         }
     }
-    $plainFixture = Join-Path $fixtures "pinterest-$($releaseTarget.PackageVersion)-arm64-v8a.apk"
+    $plainFixture = Join-Path $fixtures "tumblr-$($releaseTarget.PackageVersion)-arm64-v8a.apk"
     $newestCode = [regex]::Match((Get-Content -LiteralPath "$newestFixture.merged.txt" -Raw),
         'versionCode\(0x0101021b\)=(\d+)').Groups[1].Value
     Set-Content -LiteralPath $plainFixture -Encoding ASCII -NoNewline `
@@ -5125,7 +5114,7 @@ try {
 
     # The newest build alone, or beside the undeclared one, is not enough for a receipt: the older
     # declared build has no run. The builder says so before it patches anything. It used to patch
-    # every fixture first, which for Pinterest unpacks gigabytes, and then refuse its own receipt.
+    # every fixture first, which unpacks a whole Tumblr build each time, and then refuse its own receipt.
     foreach ($partial in @(@($releaseTarget.PackageVersion), @($releaseTarget.PackageVersion, $newerBuild))) {
         Assert-Throws { Invoke-ReceiptBuilder -Fixtures @($partial | ForEach-Object { $fixturePaths[$_] }) } `
             "*No fixture is the declared $($releaseTarget.PackageName) $($unproved -join ', ')*Nothing was patched*" `
@@ -5419,11 +5408,11 @@ try {
         'patch-for-device.ps1 took another build of a declared version.'
     Assert-True (-not (Test-Path -LiteralPath $javaLog)) 'patch-for-device.ps1 started the CLI on another build of a declared version.'
 
-    # Another app's bundle, at a version the catalog declares for Pinterest. Neither script may
+    # Another app's bundle, at a version the catalog declares for Tumblr. Neither script may
     # hand it to the CLI: each refuses it by name before anything
     # is patched. The builder gets it beside the newest declared build, so every declared build has
     # a fixture and only the package check stands in the way.
-    $otherPackage = 'com.example.notpinterest'
+    $otherPackage = 'com.example.nottumblr'
     $otherApkm = Join-Path $fixtures "other-app-$($unproved[0])-arm64-v8a.apkm"
     New-TestBundleArchive -Path $otherApkm -Entries ([ordered]@{
         'info.json' = "{`"versioncode`":`"$versionCode`"}"
@@ -5584,7 +5573,7 @@ try {
         }
         function gh {
             $global:LASTEXITCODE = 0
-            "HushTumblr v${indexVersionHere}: $($releaseNames.Count) patches for Pinterest $($releaseTarget.PackageVersion)."
+            "HushTumblr v${indexVersionHere}: $($releaseNames.Count) patches for Tumblr $($releaseTarget.PackageVersion)."
         }
     }
     function Invoke-IndexPushCheck([hashtable]$Arguments) {
@@ -5633,8 +5622,8 @@ try {
                 "SHA256SUMS.txt lists, and it describes patches-$indexVersionHere.mpp, payloads and all*") -and
             $said -like "*OSV has no advisory for the libraries patches-$indexVersionHere.cdx.json lists: gson 2.14.0*") `
             "The index push did not hold the hosted SBOM to the receipt, or did not ask OSV about it: $said"
-        Assert-True ($said -like '*the Pinterest source census is 0 day(s) old*every index lists HushTumblr or has its submission*') `
-            "The index push was not held to the Pinterest source census: $said"
+        Assert-True ($said -like '*the Tumblr source census is 0 day(s) old*every index lists HushTumblr or has its submission*') `
+            "The index push was not held to the Tumblr source census: $said"
         # The receipt the release hosts, held to SHA256SUMS.txt and to the receipt checked here.
         Assert-True ($said -like "*the hosted release-receipt-$releaseVersionHere.json is the receipt checked here, as SHA256SUMS.txt lists it*") `
             "The index push did not hold the hosted receipt to the one it checked: $said"
@@ -5673,7 +5662,7 @@ try {
         try {
             Save-ReleaseLedger -AgeDays 14
             $said = Invoke-IndexPushCheck $publishedRun
-            Assert-True ($said -like '*the Pinterest source census is 14 day(s) old*') `
+            Assert-True ($said -like '*the Tumblr source census is 14 day(s) old*') `
                 "A release on a census 14 days old did not say so: $said"
             Save-ReleaseLedger -AgeDays 15
             Assert-Throws { Invoke-IndexPushCheck $publishedRun } '*source census*the census is 15 days old*audit-tumblr-sources.ps1*' `
@@ -6015,7 +6004,7 @@ try {
     Edit-ReleaseFile 'patches-list.json' { param($text) $text.Replace('"v' + $releaseVersionHere + '"', '"v' + $laterVersion + '"') }
     Edit-ReleaseFile 'CHANGELOG.md' {
         param($text) ([regex]'(?m)^## ').Replace($text,
-            "## $laterVersion (2026-09-26)`n`n* **Pinterest:** Needs Morphe Manager $laterFloor or newer.`n`n## ", 1)
+            "## $laterVersion (2026-09-26)`n`n* **Tumblr:** Needs Morphe Manager $laterFloor or newer.`n`n## ", 1)
     }
     Edit-ReleaseFile 'gradle/libs.versions.toml' {
         param($text) $text -replace '(?m)^(\s*manager-floor\s*=\s*")[^"]+', "`${1}$laterFloor"

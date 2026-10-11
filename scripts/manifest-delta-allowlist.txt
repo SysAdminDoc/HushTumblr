@@ -1,0 +1,41 @@
+# Exact compiled declaration templates, grouped by the named patch that needs them.
+# Readers select requested patch names plus named dependencies. Nothing else may change.
+# JSON uses canonical attribute and child order. Duplicate declarations remain significant.
+#
+# Settings adds an exported alias for Android's App info page. Its target and filter are fixed.
+[HushTumblr settings]
+exported-added activity-alias:app.hushtumblr.extension.tumblr.settings.OpenSettings
+component-added {"tag":"activity-alias","attributes":{"android:exported":"true","android:name":"app.hushtumblr.extension.tumblr.settings.OpenSettings","android:targetActivity":"com.tumblr.ui.activity.JumpoffActivity"},"children":[]}
+filter-added {"owner":"activity-alias:app.hushtumblr.extension.tumblr.settings.OpenSettings","declaration":{"tag":"intent-filter","attributes":{},"children":[{"tag":"action","attributes":{"android:name":"android.intent.action.APPLICATION_PREFERENCES"},"children":[]},{"tag":"category","attributes":{"android:name":"android.intent.category.DEFAULT"},"children":[]}]}}
+
+# Only these application metadata entries change: Firebase Analytics, Crashlytics and Performance
+# collection, Google Analytics' ad ID collection, and Google's four default consent signals. Each
+# is added, or an existing entry keeps its other attributes and children, gets the value shown,
+# and loses android:resource.
+# FCM, Firebase Installations, auth declarations and all other metadata stay exactly as compiled.
+[Disable analytics]
+metadata-added {"owner":"application","declaration":{"tag":"meta-data","attributes":{"android:name":"firebase_analytics_collection_deactivated","android:value":"true"},"children":[]}}
+metadata-added {"owner":"application","declaration":{"tag":"meta-data","attributes":{"android:name":"firebase_crashlytics_collection_enabled","android:value":"false"},"children":[]}}
+metadata-added {"owner":"application","declaration":{"tag":"meta-data","attributes":{"android:name":"firebase_performance_collection_deactivated","android:value":"true"},"children":[]}}
+metadata-added {"owner":"application","declaration":{"tag":"meta-data","attributes":{"android:name":"google_analytics_adid_collection_enabled","android:value":"false"},"children":[]}}
+metadata-added {"owner":"application","declaration":{"tag":"meta-data","attributes":{"android:name":"google_analytics_default_allow_analytics_storage","android:value":"false"},"children":[]}}
+metadata-added {"owner":"application","declaration":{"tag":"meta-data","attributes":{"android:name":"google_analytics_default_allow_ad_storage","android:value":"false"},"children":[]}}
+metadata-added {"owner":"application","declaration":{"tag":"meta-data","attributes":{"android:name":"google_analytics_default_allow_ad_user_data","android:value":"false"},"children":[]}}
+metadata-added {"owner":"application","declaration":{"tag":"meta-data","attributes":{"android:name":"google_analytics_default_allow_ad_personalization_signals","android:value":"false"},"children":[]}}
+
+# Google's advertising ID permission and the Privacy Sandbox ad services permissions are dropped,
+# and the application loses only its android.adservices.AD_SERVICES_CONFIG property. The
+# application's compiled declaration differs between builds, so the property is approved by name:
+# its removal changes that one application declaration and nothing else, other properties included.
+[Remove ad tracking permissions]
+permission-removed com.google.android.gms.permission.AD_ID
+permission-removed android.permission.ACCESS_ADSERVICES_AD_ID
+permission-removed android.permission.ACCESS_ADSERVICES_ATTRIBUTION
+component-removed {"owner":"application","declaration":{"tag":"property","attributes":{"android:name":"android.adservices.AD_SERVICES_CONFIG"},"children":[]}}
+
+# Two application metadata entries are added, naming Tumblr's own signing certificate for
+# signature spoofing: its SHA-1 for microG-RE and the whole DER certificate in hex for modules such
+# as XSpoofSignatures. No permission is added or requested, FAKE_PACKAGE_SIGNATURE included.
+[Spoof signature for Google sign-in]
+metadata-added {"owner":"application","declaration":{"tag":"meta-data","attributes":{"android:name":"app.revanced.android.gms.SPOOFED_PACKAGE_SIGNATURE","android:value":"cd177dd4057daf3af7eca430825ee7dc08ad56fa"},"children":[]}}
+metadata-added {"owner":"application","declaration":{"tag":"meta-data","attributes":{"android:name":"fake-signature","android:value":"30820237308201a0a00302010202044c660dcf300d06092a864886f70d01010505003060310b3009060355040613025553310b3009060355040813024e593111300f060355040713084e657720596f726b310f300d060355040a130654756d626c72310f300d060355040b130654756d626c72310f300d0603550403130654756d626c72301e170d3130303831343033333032335a170d3335303830383033333032335a3060310b3009060355040613025553310b3009060355040813024e593111300f060355040713084e657720596f726b310f300d060355040a130654756d626c72310f300d060355040b130654756d626c72310f300d0603550403130654756d626c7230819f300d06092a864886f70d010101050003818d0030818902818100d2968907237096d0f83cfe7dcd69b95bab0fb2afc3ec8df55206298397a639bcc5239b0cc1105ec4e3b9cafa15fe0531d2c2204c97426d53596c9c2764fff6e878587e54b97c1fa55b36c2a3e41a6d0d613bd5a554412708d684c83369125ae83fcfccb6b16ec2a0ea0d1cf25e25af391fc6eea2583738827eae6dfe65a47e1b0203010001300d06092a864886f70d01010505000381810067e6f972410ac9b86d1ebb496bd0441b695f26923482851c3def545b39b3869f56c1d99ba7ff3881b98dc0d6477ee9411e3ddbb5350bfef88e1b80d284572a25e7bc140164c801548a86fb22d87affe89a480d26673e231563eb95583f20d569f77786a8b876edd042c8343e567d95ae1dacfca59d231e5da3d5b140ad4969ea"},"children":[]}}

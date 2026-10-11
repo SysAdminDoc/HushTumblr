@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "note": "Public sources reviewed for com.tumblr, with pinned commits, licenses and dispositions. scripts/tumblr-sources.ps1 validates schema version 1, scripts/audit-tumblr-sources.ps1 reports changes, and a local release needs a census from the last 14 days. No census has run yet, so the census date, the index listings and the entries are empty until the first audit fills them in. A first look on 2026-10-11 found Tumblr patches in ReVanced (gitlab.com/ReVanced/revanced-patches, no pinned version) and in arandomhooman/hoomans-morphe-patches (GPL-3.0, Tumblr 45.8.0.110 only), with copies of the latter in RookieEnough/De-ReVanced and chirag127/morphe-patches. The official Morphe bundle and ReVanced Extended have nothing for Tumblr. None of their code is in HushTumblr.",
+  "census": {
+    "checkedAt": null,
+    "skipped": []
+  },
+  "self": {
+    "repository": "https://github.com/SysAdminDoc/HushTumblr"
+  },
+  "officialBundle": {
+    "repository": "https://github.com/MorpheApp/morphe-patches",
+    "branch": "main",
+    "list": "patches-list.json",
+    "packages": []
+  },
+  "indexes": [
+    {
+      "id": "morphe-directory",
+      "name": "Morphe community directory",
+      "url": "https://morphe-patches.software",
+      "hushtumblr": {
+        "status": "not-listed",
+        "checked": null
+      }
+    },
+    {
+      "id": "awesome-morphe",
+      "name": "Awesome Morphe",
+      "url": "https://github.com/nvbangg/awesome-morphe",
+      "hushtumblr": {
+        "status": "not-listed",
+        "checked": null
+      }
+    },
+    {
+      "id": "morphe-patch-tracker",
+      "name": "Morphe Patch Tracker",
+      "url": "https://drnx64.github.io/morphe-track-patches/",
+      "hushtumblr": {
+        "status": "not-listed",
+        "checked": null
+      }
+    },
+    {
+      "id": "jman-bundles",
+      "name": "Jman's ReVanced Patch Bundles",
+      "url": "https://github.com/Jman-Github/ReVanced-Patch-Bundles",
+      "hushtumblr": {
+        "status": "not-listed",
+        "checked": null
+      }
+    },
+    {
+      "id": "morphe-archive",
+      "name": "Morphe Archive",
+      "url": "https://rushiforai.github.io/morphe-archive/",
+      "hushtumblr": {
+        "status": "not-listed",
+        "checked": null
+      }
+    }
+  ],
+  "entries": [],
+  "outOfScope": []
+}

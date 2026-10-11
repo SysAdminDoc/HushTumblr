@@ -90,7 +90,7 @@ function Assert-PatchFixtures {
     $configured = $env:HUSHTUMBLR_FIXTURE_DIR
     if ([string]::IsNullOrWhiteSpace($configured)) {
         throw ('Patch verification requires HUSHTUMBLR_FIXTURE_DIR. Set it to the folder ' +
-            'holding every declared vendor Pinterest APK, then push again. Run unit-only tests ' +
+            'holding every declared vendor Tumblr APK, then push again. Run unit-only tests ' +
             'directly with Gradle when the fixtures are unavailable.')
     }
     $directory = [IO.Path]::GetFullPath($configured)
@@ -107,7 +107,7 @@ function Assert-PatchFixtures {
     }
     . $helper
     $target = Get-PatchTarget -PatchList (Get-Content -LiteralPath $catalogPath -Raw | ConvertFrom-Json)
-    if ($target.PackageName -cne 'com.pinterest') {
+    if ($target.PackageName -cne 'com.tumblr') {
         throw ("Patch verification has no retained fixture naming rule for $($target.PackageName). " +
             'Update the fixture tests and this gate together before declaring another package.')
     }
@@ -123,7 +123,7 @@ function Assert-PatchFixtures {
             if ($code -notmatch '^\d+$') {
                 throw "patches-list.json declares the invalid version code $code for $($target.PackageName) $version. Correct it, then push again."
             }
-            $name = "pinterest-$version-$code.apk"
+            $name = "tumblr-$version-$code.apk"
             $file = Join-Path $directory $name
             if (-not (Test-Path -LiteralPath $file -PathType Leaf) -or (Get-Item -LiteralPath $file).Length -eq 0) {
                 $missing += $name
@@ -136,7 +136,7 @@ function Assert-PatchFixtures {
         throw ("HUSHTUMBLR_FIXTURE_DIR is missing retained $($target.PackageName) build(s): " +
             ($missing -join ', ') + ". Restore those vendor APKs in $directory, then push again.")
     }
-    Write-Step "$count declared Pinterest fixture(s) found"
+    Write-Step "$count declared Tumblr fixture(s) found"
     # For a release push, which patches each of them (Invoke-ReleaseFixtureApply).
     $script:declaredFixtureFiles = $declared
     return $directory
@@ -660,7 +660,7 @@ try {
     }).Count -gt 0
     # The source ledger's rules read NOTICE, provenance.json and the catalog's declared builds, and
     # hold docs/sources.md to the ledger, so a push of any of them runs the ledger's suite too.
-    $pinterestSourcePaths = @(
+    $tumblrSourcePaths = @(
         'NOTICE',
         'docs/sources.md',
         'patches-list.json',
@@ -672,7 +672,7 @@ try {
         'sources/tumblr-sources.json'
     )
     $touchesTumblrSources = @($paths | Where-Object {
-        $_ -in $pinterestSourcePaths
+        $_ -in $tumblrSourcePaths
     }).Count -gt 0
     $touchesRelease = @($paths | Where-Object {
         $_ -eq 'patches-bundle.json' -or $_ -eq 'patches-list.json' -or
@@ -786,8 +786,8 @@ try {
             'The fingerprint ranking calibration did not pass.')
     }
     if ($touchesTumblrSources) {
-        $suites += , @('scripts/test-tumblr-sources.ps1', 'the Pinterest source ledger or what it reads changed, running its rules',
-            'The Pinterest source ledger does not keep its rules.')
+        $suites += , @('scripts/test-tumblr-sources.ps1', 'the Tumblr source ledger or what it reads changed, running its rules',
+            'The Tumblr source ledger does not keep its rules.')
     }
     if ($suites.Count -gt 0) {
         $scriptsLock = $null
