@@ -283,7 +283,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                         + "posts from blogs you don't follow yet."), SettingsIcons.BLOCK);
         }
 
-        // Tabs, prompts and pop-ups. A switch that answers one of Tumblr's own feature flags says a
+        // Tabs, buttons, prompts and pop-ups. A switch that answers one of Tumblr's own feature flags says a
         // restart shows it, since Tumblr reads each flag once a run. Skip review prompts is read each
         // time the prompt would open, so it needs none.
         if (!Collections.disjoint(build, PatchFamily.INTERFACE_PAGE)) {
@@ -298,6 +298,11 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             patchToggle(ui, context, build, PatchFamily.HIDE_BLAZE_PROMPTS, Settings.HIDE_BLAZE_PROMPTS,
                     L10n.t("Hide Blaze prompts"), L10n.t("Hides the Blaze buttons, banners and the nudge to promote "
                         + "a post after you share it. Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+            // Not flag-backed, but the TumblrMart button is only placed when its screen is made.
+            patchToggle(ui, context, build, PatchFamily.HIDE_TUMBLRMART, Settings.HIDE_TUMBLRMART,
+                    L10n.t("Hide the diamond and TumblrMart"), L10n.t("Hides the Premium diamond and the TumblrMart "
+                        + "button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the "
+                        + "change."), SettingsIcons.BLOCK);
             patchToggle(ui, context, build, PatchFamily.TURN_OFF_SCREENSHOT_SHARING,
                     Settings.TURN_OFF_SCREENSHOT_SHARING, L10n.t("Turn off screenshot sharing"),
                     L10n.t("Stops Tumblr watching for screenshots and offering to save the post as an image. "

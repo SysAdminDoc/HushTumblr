@@ -248,3 +248,8 @@ Hide hashtags	Sembunyikan tagar
 Hide the Follow button	Sembunyikan tombol Ikuti
 Takes the Follow button out of the header of posts from blogs you don't follow yet.	Menghapus tombol Ikuti dari bagian atas postingan dari blog yang belum kamu ikuti.
 Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.	Menghapus tag di bagian bawah postingan di dasbor dan feed lainnya, dan tetap menampilkan tautan sumber.
+# context: the switch for Tumblr's Premium diamond and TumblrMart button on the Interface page. TumblrMart and Premium are Tumblr's names; keep them. The last two are parts named in "This build handles %1$s."
+Hide the diamond and TumblrMart	Sembunyikan berlian dan TumblrMart
+Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.	Menyembunyikan berlian Premium dan tombol TumblrMart di bagian atas dasbor, Jelajahi, dan notifikasi. Mulai ulang Tumblr untuk melihat perubahannya.
+the Premium diamond	berlian Premium
+TumblrMart buttons	tombol TumblrMart

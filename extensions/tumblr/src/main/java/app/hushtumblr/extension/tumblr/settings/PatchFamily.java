@@ -75,6 +75,7 @@ public enum PatchFamily {
     HIDE_WATCH_IT_ROWS(FamilyNames.HIDE_WATCH_IT_ROWS, "hideWatchItRows", null, Settings.HIDE_WATCH_IT_ROWS),
     HIDE_HASHTAGS(FamilyNames.HIDE_HASHTAGS, "hideHashtags", null, Settings.HIDE_HASHTAGS),
     HIDE_FOLLOW_BUTTON(FamilyNames.HIDE_FOLLOW_BUTTON, "hideFollowButton", null, Settings.HIDE_FOLLOW_BUTTON),
+    HIDE_TUMBLRMART(FamilyNames.HIDE_TUMBLRMART, "hideTumblrMart", null, Settings.HIDE_TUMBLRMART),
     FIX_PUSH_NOTIFICATIONS(FamilyNames.FIX_PUSH_NOTIFICATIONS, "fixPushNotifications", null, Settings.FIX_PUSH_NOTIFICATIONS);
 
     /** The patch's name in Morphe Manager. */
@@ -125,7 +126,7 @@ public enum PatchFamily {
             HIDE_WATCH_IT_ROWS, HIDE_SUGGESTED_COMMUNITIES, HIDE_SUGGESTED_BLOGS, HIDE_AD_FREE_BANNER, HIDE_ADS));
 
     /** The families the Interface page holds. The page and its home row both read this. */
-    static final Set<PatchFamily> INTERFACE_PAGE = Collections.unmodifiableSet(EnumSet.of(
+    static final Set<PatchFamily> INTERFACE_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_TUMBLRMART,
             TURN_OFF_SCREENSHOT_SHARING, SKIP_REVIEW_PROMPTS, HIDE_BLAZE_PROMPTS, HIDE_COMMUNITIES_TAB, HIDE_TUMBLR_TV));
 
     /** The families the Posts page holds. The page and its home row both read this. */
@@ -154,6 +155,9 @@ public enum PatchFamily {
         WATCH_IT_ROWS(HIDE_WATCH_IT_ROWS, "watchItRows", "Hide Watch it rows"),
         POST_TAGS(HIDE_HASHTAGS, "postTags", "Hide hashtags"),
         FOLLOW_BUTTON(HIDE_FOLLOW_BUTTON, "followButton", "Hide the Follow button"),
+        // Two hooks, so the coverage line names each part rather than the patch.
+        PREMIUM_DIAMOND(HIDE_TUMBLRMART, "premiumDiamond", "the Premium diamond"),
+        TUMBLRMART_BUTTONS(HIDE_TUMBLRMART, "tumblrMartButtons", "TumblrMart buttons"),
         FIREBASE_CERTIFICATE(FIX_PUSH_NOTIFICATIONS, "firebaseCertificate", "Fix push notifications");
 
         public final PatchFamily family;

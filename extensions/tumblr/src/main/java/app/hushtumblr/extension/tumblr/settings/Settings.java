@@ -154,6 +154,13 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_hide_follow_button", FALSE);
 
     /**
+     * The Premium diamond and the TumblrMart button stay out of Tumblr's top bars
+     * ({@link app.hushtumblr.extension.tumblr.ui.StoreButtons}). Off to start.
+     */
+    public static final BooleanSetting HIDE_TUMBLRMART =
+            new BooleanSetting("hushtumblr_hide_tumblrmart", FALSE);
+
+    /**
      * Once a day, when Tumblr starts, ask api.github.com whether a newer HushTumblr release is
      * out, and say so on the settings screen ({@link ReleaseCheck}). It's the settings entry's own
      * switch rather than a patch's, so every build has it ({@link PatchFamily#ENTRY_SWITCHES}). Off

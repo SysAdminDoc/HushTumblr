@@ -248,3 +248,8 @@ Hide hashtags	Ocultar hashtags
 Hide the Follow button	Ocultar el botón Seguir
 Takes the Follow button out of the header of posts from blogs you don't follow yet.	Quita el botón Seguir de la cabecera de las publicaciones de blogs que aún no sigues.
 Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.	Quita las etiquetas de la parte de abajo de las publicaciones en tu panel y otros feeds, y deja el enlace a la fuente.
+# context: the switch for Tumblr's Premium diamond and TumblrMart button on the Interface page. TumblrMart and Premium are Tumblr's names; keep them. The last two are parts named in "This build handles %1$s."
+Hide the diamond and TumblrMart	Ocultar el diamante y TumblrMart
+Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.	Oculta el diamante de Premium y el botón de TumblrMart en la parte de arriba de tu panel, Explorar y notificaciones. Reinicia Tumblr para ver el cambio.
+the Premium diamond	el diamante de Premium
+TumblrMart buttons	los botones de TumblrMart

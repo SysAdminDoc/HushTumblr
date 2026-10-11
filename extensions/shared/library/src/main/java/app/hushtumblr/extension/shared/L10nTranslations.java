@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(454);
+        Map<String, String> table = new HashMap<>(462);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -226,8 +226,12 @@ public final class L10nTranslations {
                 "Folgen-Button ausblenden");
         table.put("Hide the ad-free banner",
                 "Werbefrei-Banner ausblenden");
+        table.put("Hide the diamond and TumblrMart",
+                "Diamant und TumblrMart ausblenden");
         table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.",
                 "Blendet die Blaze-Schaltfl\u00e4chen, -Banner und den Hinweis aus, einen Beitrag nach dem Teilen zu bewerben. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
+        table.put("Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.",
+                "Blendet den Premium-Diamanten und den TumblrMart-Button oben in deinem Dashboard, in Entdecken und in den Mitteilungen aus. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
         table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
                 "Blendet das Banner im Dashboard aus, das dich bittet, f\u00fcr werbefreies Surfen zu bezahlen. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
@@ -298,13 +302,13 @@ public final class L10nTranslations {
                 "Pr\u00fcft einmal am Tag beim Start von Tumblr auf GitHub, ob es ein neueres HushTumblr gibt, und sagt es dir oben in diesen Einstellungen. Es wird nichts heruntergeladen.");
         table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
                 "Nur einige Webadressen von Tumblr sind f\u00fcr diese App ausgew\u00e4hlt, und Links zu den \u00fcbrigen \u00f6ffnen sich woanders. Tippe, um sie in den Android-Einstellungen auszuw\u00e4hlen.");
+    }
+
+    private static void fillDe2(Map<String, String> table) {
         table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
                 "\u00d6ffne Tumblrs Einstellungen \u00fcber das Zahnrad im Konto-Tab. HushTumblr \u00e4ndert keine davon.");
         table.put("Open link settings",
                 "Linkeinstellungen \u00f6ffnen");
-    }
-
-    private static void fillDe2(Map<String, String> table) {
         table.put("Open the installation steps on GitHub.",
                 "\u00d6ffne die Installationsanleitung auf GitHub.");
         table.put("Opening supported links is off for this app in Android's settings. Tap to turn it on.",
@@ -421,13 +425,13 @@ public final class L10nTranslations {
                 "Diese Datei ist kein lesbarer Text, sie wurde also wom\u00f6glich bei der \u00dcbertragung besch\u00e4digt. Es wurde nichts ge\u00e4ndert.");
         table.put("That file lists a setting twice, so there's no telling which value to use. Nothing was changed.",
                 "Diese Datei f\u00fchrt eine Einstellung zweimal auf, daher ist unklar, welcher Wert gilt. Es wurde nichts ge\u00e4ndert.");
+    }
+
+    private static void fillDe3(Map<String, String> table) {
         table.put("That isn't a HushTumblr settings file. Nothing was changed.",
                 "Das ist keine HushTumblr-Einstellungsdatei. Es wurde nichts ge\u00e4ndert.");
         table.put("That settings file holds a value HushTumblr can't read. Nothing was changed.",
                 "Diese Einstellungsdatei enth\u00e4lt einen Wert, den HushTumblr nicht lesen kann. Es wurde nichts ge\u00e4ndert.");
-    }
-
-    private static void fillDe3(Map<String, String> table) {
         table.put("That settings file is damaged or only partly downloaded. Nothing was changed.",
                 "Diese Einstellungsdatei ist besch\u00e4digt oder nur teilweise heruntergeladen. Es wurde nichts ge\u00e4ndert.");
         table.put("That settings file was written by a newer HushTumblr than this one. Nothing was changed.",
@@ -488,6 +492,8 @@ public final class L10nTranslations {
                 "Tumblrs eigene Einstellungen");
         table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
                 "Die Webadressen von Tumblr sind in den Android-Einstellungen f\u00fcr diese App ausgew\u00e4hlt, deshalb \u00f6ffnen sich ihre Links hier.");
+        table.put("TumblrMart buttons",
+                "TumblrMart-Buttons");
         table.put("Turn off screenshot sharing",
                 "Screenshot-Teilen ausschalten");
         table.put("Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.",
@@ -522,10 +528,12 @@ public final class L10nTranslations {
                 "Deine Schalter entsprechen bereits dieser Datei, es \u00e4ndert sich also nichts.");
         table.put("Your switches are working.",
                 "Deine Schalter sind aktiv.");
+        table.put("the Premium diamond",
+                "den Premium-Diamanten");
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(454);
+        Map<String, String> table = new HashMap<>(462);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -701,8 +709,12 @@ public final class L10nTranslations {
                 "Ocultar el bot\u00f3n Seguir");
         table.put("Hide the ad-free banner",
                 "Ocultar el banner sin anuncios");
+        table.put("Hide the diamond and TumblrMart",
+                "Ocultar el diamante y TumblrMart");
         table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.",
                 "Oculta los botones y banners de Blaze y el aviso para promocionar una publicaci\u00f3n despu\u00e9s de compartirla. Reinicia Tumblr para ver el cambio.");
+        table.put("Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.",
+                "Oculta el diamante de Premium y el bot\u00f3n de TumblrMart en la parte de arriba de tu panel, Explorar y notificaciones. Reinicia Tumblr para ver el cambio.");
         table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
                 "Oculta el banner del panel que te pide pagar por navegar sin anuncios. Reinicia Tumblr para ver el cambio.");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
@@ -773,13 +785,13 @@ public final class L10nTranslations {
                 "Una vez al d\u00eda, al abrir Tumblr, busca en GitHub un HushTumblr m\u00e1s nuevo y te avisa arriba en estos ajustes. No se descarga nada.");
         table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
                 "Solo algunas direcciones web de Tumblr est\u00e1n seleccionadas para esta app, y los enlaces a las dem\u00e1s se abren en otro sitio. Toca para seleccionarlas en los ajustes de Android.");
+    }
+
+    private static void fillEs2(Map<String, String> table) {
         table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
                 "Abre la configuraci\u00f3n de Tumblr desde el engranaje de tu pesta\u00f1a de cuenta. HushTumblr no cambia ninguna de estas opciones.");
         table.put("Open link settings",
                 "Abrir ajustes de enlaces");
-    }
-
-    private static void fillEs2(Map<String, String> table) {
         table.put("Open the installation steps on GitHub.",
                 "Abre los pasos de instalaci\u00f3n en GitHub.");
         table.put("Opening supported links is off for this app in Android's settings. Tap to turn it on.",
@@ -896,13 +908,13 @@ public final class L10nTranslations {
                 "Ese archivo no es texto legible, as\u00ed que puede haberse da\u00f1ado por el camino. No se cambi\u00f3 nada.");
         table.put("That file lists a setting twice, so there's no telling which value to use. Nothing was changed.",
                 "Ese archivo incluye un ajuste dos veces, as\u00ed que no se sabe qu\u00e9 valor usar. No se cambi\u00f3 nada.");
+    }
+
+    private static void fillEs3(Map<String, String> table) {
         table.put("That isn't a HushTumblr settings file. Nothing was changed.",
                 "Eso no es un archivo de configuraci\u00f3n de HushTumblr. No se cambi\u00f3 nada.");
         table.put("That settings file holds a value HushTumblr can't read. Nothing was changed.",
                 "Ese archivo de configuraci\u00f3n contiene un valor que HushTumblr no puede leer. No se cambi\u00f3 nada.");
-    }
-
-    private static void fillEs3(Map<String, String> table) {
         table.put("That settings file is damaged or only partly downloaded. Nothing was changed.",
                 "Ese archivo de configuraci\u00f3n est\u00e1 da\u00f1ado o solo se descarg\u00f3 en parte. No se cambi\u00f3 nada.");
         table.put("That settings file was written by a newer HushTumblr than this one. Nothing was changed.",
@@ -963,6 +975,8 @@ public final class L10nTranslations {
                 "Configuraci\u00f3n propia de Tumblr");
         table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
                 "Las direcciones web de Tumblr est\u00e1n seleccionadas para esta app en los ajustes de Android, as\u00ed que sus enlaces se abren aqu\u00ed.");
+        table.put("TumblrMart buttons",
+                "los botones de TumblrMart");
         table.put("Turn off screenshot sharing",
                 "Desactivar compartir capturas de pantalla");
         table.put("Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.",
@@ -997,10 +1011,12 @@ public final class L10nTranslations {
                 "Tus interruptores ya coinciden con ese archivo, as\u00ed que no cambiar\u00e1 nada.");
         table.put("Your switches are working.",
                 "Tus interruptores est\u00e1n funcionando.");
+        table.put("the Premium diamond",
+                "el diamante de Premium");
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(454);
+        Map<String, String> table = new HashMap<>(462);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -1176,8 +1192,12 @@ public final class L10nTranslations {
                 "Sembunyikan tombol Ikuti");
         table.put("Hide the ad-free banner",
                 "Sembunyikan banner bebas iklan");
+        table.put("Hide the diamond and TumblrMart",
+                "Sembunyikan berlian dan TumblrMart");
         table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.",
                 "Menyembunyikan tombol dan banner Blaze serta ajakan untuk mempromosikan postingan setelah kamu membagikannya. Mulai ulang Tumblr untuk melihat perubahannya.");
+        table.put("Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.",
+                "Menyembunyikan berlian Premium dan tombol TumblrMart di bagian atas dasbor, Jelajahi, dan notifikasi. Mulai ulang Tumblr untuk melihat perubahannya.");
         table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
                 "Menyembunyikan banner di dasbor yang memintamu membayar untuk menjelajah tanpa iklan. Mulai ulang Tumblr untuk melihat perubahannya.");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
@@ -1248,13 +1268,13 @@ public final class L10nTranslations {
                 "Sekali sehari, saat Tumblr dibuka, memeriksa GitHub untuk HushTumblr yang lebih baru dan memberi tahu Anda di bagian atas setelan ini. Tidak ada yang diunduh.");
         table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
                 "Hanya sebagian alamat web Tumblr yang dipilih untuk aplikasi ini, dan tautan ke alamat lainnya terbuka di tempat lain. Ketuk untuk memilihnya di pengaturan Android.");
+    }
+
+    private static void fillIn2(Map<String, String> table) {
         table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
                 "Buka pengaturan Tumblr dari ikon roda gigi di tab akun. HushTumblr tidak mengubah satu pun pengaturan ini.");
         table.put("Open link settings",
                 "Buka pengaturan tautan");
-    }
-
-    private static void fillIn2(Map<String, String> table) {
         table.put("Open the installation steps on GitHub.",
                 "Buka langkah pemasangan di GitHub.");
         table.put("Opening supported links is off for this app in Android's settings. Tap to turn it on.",
@@ -1371,13 +1391,13 @@ public final class L10nTranslations {
                 "File itu bukan teks yang dapat dibaca, jadi mungkin rusak saat ditransfer. Tidak ada yang diubah.");
         table.put("That file lists a setting twice, so there's no telling which value to use. Nothing was changed.",
                 "File itu mencantumkan satu pengaturan dua kali, jadi tidak jelas nilai mana yang harus dipakai. Tidak ada yang diubah.");
+    }
+
+    private static void fillIn3(Map<String, String> table) {
         table.put("That isn't a HushTumblr settings file. Nothing was changed.",
                 "Itu bukan file pengaturan HushTumblr. Tidak ada yang diubah.");
         table.put("That settings file holds a value HushTumblr can't read. Nothing was changed.",
                 "File pengaturan itu memuat nilai yang tidak dapat dibaca HushTumblr. Tidak ada yang diubah.");
-    }
-
-    private static void fillIn3(Map<String, String> table) {
         table.put("That settings file is damaged or only partly downloaded. Nothing was changed.",
                 "File pengaturan itu rusak atau hanya terunduh sebagian. Tidak ada yang diubah.");
         table.put("That settings file was written by a newer HushTumblr than this one. Nothing was changed.",
@@ -1438,6 +1458,8 @@ public final class L10nTranslations {
                 "Pengaturan Tumblr sendiri");
         table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
                 "Alamat web Tumblr dipilih untuk aplikasi ini di pengaturan Android, jadi tautannya terbuka di sini.");
+        table.put("TumblrMart buttons",
+                "tombol TumblrMart");
         table.put("Turn off screenshot sharing",
                 "Matikan berbagi tangkapan layar");
         table.put("Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.",
@@ -1472,10 +1494,12 @@ public final class L10nTranslations {
                 "Sakelar Anda sudah sesuai dengan file itu, jadi tidak ada yang akan berubah.");
         table.put("Your switches are working.",
                 "Sakelar Anda aktif.");
+        table.put("the Premium diamond",
+                "berlian Premium");
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(454);
+        Map<String, String> table = new HashMap<>(462);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -1651,8 +1675,12 @@ public final class L10nTranslations {
                 "Ocultar o bot\u00e3o Seguir");
         table.put("Hide the ad-free banner",
                 "Ocultar o banner sem an\u00fancios");
+        table.put("Hide the diamond and TumblrMart",
+                "Ocultar o diamante e a TumblrMart");
         table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.",
                 "Esconde os bot\u00f5es e banners do Blaze e o aviso para promover um post depois que voc\u00ea o compartilha. Reinicie o Tumblr para ver a mudan\u00e7a.");
+        table.put("Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.",
+                "Oculta o diamante do Premium e o bot\u00e3o da TumblrMart no topo do seu painel, do Explorar e das notifica\u00e7\u00f5es. Reinicie o Tumblr para ver a mudan\u00e7a.");
         table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
                 "Esconde o banner do painel que pede para voc\u00ea pagar pela navega\u00e7\u00e3o sem an\u00fancios. Reinicie o Tumblr para ver a mudan\u00e7a.");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
@@ -1723,13 +1751,13 @@ public final class L10nTranslations {
                 "Uma vez por dia, quando o Tumblr abre, procura no GitHub um HushTumblr mais novo e avisa voc\u00ea no topo destas configura\u00e7\u00f5es. Nada \u00e9 baixado.");
         table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
                 "S\u00f3 alguns endere\u00e7os web do Tumblr est\u00e3o selecionados para este app, e os links para os outros abrem em outro lugar. Toque para selecion\u00e1-los nas configura\u00e7\u00f5es do Android.");
+    }
+
+    private static void fillPt_rBR2(Map<String, String> table) {
         table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
                 "Abra as configura\u00e7\u00f5es do Tumblr pela engrenagem na sua aba de conta. O HushTumblr n\u00e3o muda nenhuma delas.");
         table.put("Open link settings",
                 "Abrir configura\u00e7\u00f5es de links");
-    }
-
-    private static void fillPt_rBR2(Map<String, String> table) {
         table.put("Open the installation steps on GitHub.",
                 "Abra as etapas de instala\u00e7\u00e3o no GitHub.");
         table.put("Opening supported links is off for this app in Android's settings. Tap to turn it on.",
@@ -1846,13 +1874,13 @@ public final class L10nTranslations {
                 "Esse arquivo n\u00e3o cont\u00e9m texto leg\u00edvel, ent\u00e3o pode ter sido corrompido durante o processo. Nada foi alterado.");
         table.put("That file lists a setting twice, so there's no telling which value to use. Nothing was changed.",
                 "Esse arquivo cont\u00e9m uma configura\u00e7\u00e3o duplicada, ent\u00e3o n\u00e3o \u00e9 poss\u00edvel saber qual valor usar. Nada foi alterado.");
+    }
+
+    private static void fillPt_rBR3(Map<String, String> table) {
         table.put("That isn't a HushTumblr settings file. Nothing was changed.",
                 "Isso n\u00e3o \u00e9 um arquivo de configura\u00e7\u00f5es do HushTumblr. Nada foi alterado.");
         table.put("That settings file holds a value HushTumblr can't read. Nothing was changed.",
                 "Esse arquivo de configura\u00e7\u00f5es tem um valor que o HushTumblr n\u00e3o consegue ler. Nada foi alterado.");
-    }
-
-    private static void fillPt_rBR3(Map<String, String> table) {
         table.put("That settings file is damaged or only partly downloaded. Nothing was changed.",
                 "Esse arquivo de configura\u00e7\u00f5es est\u00e1 corrompido ou foi baixado apenas parcialmente. Nada foi alterado.");
         table.put("That settings file was written by a newer HushTumblr than this one. Nothing was changed.",
@@ -1913,6 +1941,8 @@ public final class L10nTranslations {
                 "Configura\u00e7\u00f5es do pr\u00f3prio Tumblr");
         table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
                 "Os endere\u00e7os web do Tumblr est\u00e3o selecionados para este app nas configura\u00e7\u00f5es do Android, ent\u00e3o os links deles abrem aqui.");
+        table.put("TumblrMart buttons",
+                "os bot\u00f5es da TumblrMart");
         table.put("Turn off screenshot sharing",
                 "Desativar compartilhamento de capturas de tela");
         table.put("Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.",
@@ -1947,10 +1977,12 @@ public final class L10nTranslations {
                 "Suas op\u00e7\u00f5es j\u00e1 correspondem \u00e0s desse arquivo, ent\u00e3o nada ser\u00e1 alterado.");
         table.put("Your switches are working.",
                 "Suas op\u00e7\u00f5es est\u00e3o funcionando.");
+        table.put("the Premium diamond",
+                "o diamante do Premium");
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(454);
+        Map<String, String> table = new HashMap<>(462);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -2126,8 +2158,12 @@ public final class L10nTranslations {
                 "Takip et d\u00fc\u011fmesini gizle");
         table.put("Hide the ad-free banner",
                 "Reklams\u0131z gezinme banner'\u0131n\u0131 gizle");
+        table.put("Hide the diamond and TumblrMart",
+                "Elmas ve TumblrMart'\u0131 gizle");
         table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.",
                 "Blaze d\u00fc\u011fmelerini, banner'lar\u0131n\u0131 ve bir g\u00f6nderiyi payla\u015ft\u0131ktan sonra tan\u0131tman\u0131 \u00f6neren uyar\u0131y\u0131 gizler. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
+        table.put("Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.",
+                "Panonun, Ke\u015ffet'in ve bildirimlerin \u00fcst\u00fcndeki Premium elmas\u0131n\u0131 ve TumblrMart d\u00fc\u011fmesini gizler. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
         table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
                 "Panoda reklams\u0131z gezinme i\u00e7in \u00f6deme yapman\u0131 isteyen banner'\u0131 gizler. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
@@ -2198,13 +2234,13 @@ public final class L10nTranslations {
                 "G\u00fcnde bir kez, Tumblr a\u00e7\u0131l\u0131rken GitHub'da daha yeni bir HushTumblr olup olmad\u0131\u011f\u0131na bakar ve bunu bu ayarlar\u0131n en \u00fcst\u00fcnde s\u00f6yler. Hi\u00e7bir \u015fey indirilmez.");
         table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
                 "Tumblr'\u0131n web adreslerinden yaln\u0131zca baz\u0131lar\u0131 bu uygulama i\u00e7in se\u00e7ili ve di\u011ferlerinin ba\u011flant\u0131lar\u0131 ba\u015fka yerde a\u00e7\u0131l\u0131r. Android ayarlar\u0131nda se\u00e7mek i\u00e7in dokunun.");
+    }
+
+    private static void fillTr2(Map<String, String> table) {
         table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
                 "Tumblr ayarlar\u0131n\u0131 hesap sekmenizdeki di\u015fli simgesinden a\u00e7\u0131n. HushTumblr bunlar\u0131n hi\u00e7birini de\u011fi\u015ftirmez.");
         table.put("Open link settings",
                 "Ba\u011flant\u0131 ayarlar\u0131n\u0131 a\u00e7");
-    }
-
-    private static void fillTr2(Map<String, String> table) {
         table.put("Open the installation steps on GitHub.",
                 "GitHub'daki kurulum ad\u0131mlar\u0131n\u0131 a\u00e7.");
         table.put("Opening supported links is off for this app in Android's settings. Tap to turn it on.",
@@ -2321,13 +2357,13 @@ public final class L10nTranslations {
                 "Bu dosya okunabilir bir metin de\u011fil, aktar\u0131m s\u0131ras\u0131nda hasar g\u00f6rm\u00fc\u015f olabilir. Hi\u00e7bir \u015fey de\u011fi\u015ftirilmedi.");
         table.put("That file lists a setting twice, so there's no telling which value to use. Nothing was changed.",
                 "Bu dosyada bir ayar iki kez ge\u00e7iyor, bu y\u00fczden hangi de\u011ferin kullan\u0131laca\u011f\u0131 belli de\u011fil. Hi\u00e7bir \u015fey de\u011fi\u015ftirilmedi.");
+    }
+
+    private static void fillTr3(Map<String, String> table) {
         table.put("That isn't a HushTumblr settings file. Nothing was changed.",
                 "Bu bir HushTumblr ayar dosyas\u0131 de\u011fil. Hi\u00e7bir \u015fey de\u011fi\u015ftirilmedi.");
         table.put("That settings file holds a value HushTumblr can't read. Nothing was changed.",
                 "Bu ayar dosyas\u0131nda HushTumblr'\u0131n okuyamad\u0131\u011f\u0131 bir de\u011fer var. Hi\u00e7bir \u015fey de\u011fi\u015ftirilmedi.");
-    }
-
-    private static void fillTr3(Map<String, String> table) {
         table.put("That settings file is damaged or only partly downloaded. Nothing was changed.",
                 "Bu ayar dosyas\u0131 hasarl\u0131 ya da yaln\u0131zca bir k\u0131sm\u0131 indirilmi\u015f. Hi\u00e7bir \u015fey de\u011fi\u015ftirilmedi.");
         table.put("That settings file was written by a newer HushTumblr than this one. Nothing was changed.",
@@ -2388,6 +2424,8 @@ public final class L10nTranslations {
                 "Tumblr'\u0131n kendi ayarlar\u0131");
         table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
                 "Tumblr'\u0131n web adresleri Android ayarlar\u0131nda bu uygulama i\u00e7in se\u00e7ili, bu y\u00fczden ba\u011flant\u0131lar\u0131 burada a\u00e7\u0131l\u0131r.");
+        table.put("TumblrMart buttons",
+                "TumblrMart d\u00fc\u011fmeleri");
         table.put("Turn off screenshot sharing",
                 "Ekran g\u00f6r\u00fcnt\u00fcs\u00fc payla\u015f\u0131m\u0131n\u0131 kapat");
         table.put("Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.",
@@ -2422,5 +2460,7 @@ public final class L10nTranslations {
                 "Anahtarlar\u0131n zaten o dosyayla ayn\u0131, bu y\u00fczden hi\u00e7bir \u015fey de\u011fi\u015fmeyecek.");
         table.put("Your switches are working.",
                 "Anahtarlar\u0131n \u00e7al\u0131\u015f\u0131yor.");
+        table.put("the Premium diamond",
+                "Premium elmas\u0131");
     }
 }
