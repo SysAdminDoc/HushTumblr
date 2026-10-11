@@ -133,8 +133,9 @@ public enum PatchFamily {
     static volatile Set<Capability> capabilitiesForTests;
 
     /** The families the Feed page holds. The page and its home row both read this. */
-    static final Set<PatchFamily> FEED_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_POSTS_WITH_WORDS, HIDE_TEXT_POSTS, HIDE_PHOTO_POSTS, HIDE_VIDEO_POSTS, HIDE_REBLOGS, 
-            HIDE_WATCH_IT_ROWS, HIDE_SUGGESTED_COMMUNITIES, HIDE_SUGGESTED_BLOGS, HIDE_AD_FREE_BANNER, HIDE_ADS));
+    static final Set<PatchFamily> FEED_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_POSTS_WITH_WORDS,
+            HIDE_TEXT_POSTS, HIDE_PHOTO_POSTS, HIDE_VIDEO_POSTS, HIDE_REBLOGS, HIDE_WATCH_IT_ROWS,
+            HIDE_SUGGESTED_COMMUNITIES, HIDE_SUGGESTED_BLOGS, HIDE_AD_FREE_BANNER, HIDE_ADS));
 
     /** The families the Interface page holds. The page and its home row both read this. */
     static final Set<PatchFamily> INTERFACE_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_UNREAD_DOTS,
