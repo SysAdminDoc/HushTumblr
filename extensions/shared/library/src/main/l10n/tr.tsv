@@ -264,3 +264,6 @@ Hide the comment button	Yorum düğmesini gizle
 Takes the comment button out of the footer under posts. Restart Tumblr to see the change.	Gönderilerin altındaki yorum düğmesini kaldırır. Değişikliği görmek için Tumblr'ı yeniden başlat.
 Hide the share button	Paylaş düğmesini gizle
 Takes the share button out of the footer under posts. Restart Tumblr to see the change.	Gönderilerin altındaki paylaş düğmesini kaldırır. Değişikliği görmek için Tumblr'ı yeniden başlat.
+# context: the bottom bar's unread badges, the small dots and numbers on the Dashboard, Communities and Notifications tabs. Use Tumblr's own names for the tabs in your language.
+Hide unread dots	Okunmadı noktalarını gizle
+Hides the unread dots and counts on the bottom bar's Dashboard, Communities and Notifications tabs.	Alt çubuktaki Pano, Topluluklar ve Bildirimler sekmelerindeki okunmadı noktalarını ve sayılarını gizler.

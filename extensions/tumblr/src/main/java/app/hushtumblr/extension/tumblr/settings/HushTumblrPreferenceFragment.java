@@ -312,6 +312,10 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                     L10n.t("Hide the Communities tab"), L10n.t("Takes the Communities tab out of the bottom bar and "
                         + "stops Communities tips in the post editor. Restart Tumblr to see the change."),
                     SettingsIcons.BLOCK);
+            // Read each time Tumblr's unread counts come in (BottomBar), so it needs no restart.
+            patchToggle(ui, context, build, PatchFamily.HIDE_UNREAD_DOTS, Settings.HIDE_UNREAD_DOTS,
+                    L10n.t("Hide unread dots"), L10n.t("Hides the unread dots and counts on the bottom bar's "
+                        + "Dashboard, Communities and Notifications tabs."), SettingsIcons.BLOCK);
             patchToggle(ui, context, build, PatchFamily.HIDE_BLAZE_PROMPTS, Settings.HIDE_BLAZE_PROMPTS,
                     L10n.t("Hide Blaze prompts"), L10n.t("Hides the Blaze buttons, banners and the nudge to promote "
                         + "a post after you share it. Restart Tumblr to see the change."), SettingsIcons.BLOCK);

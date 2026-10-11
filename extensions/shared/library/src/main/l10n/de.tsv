@@ -264,3 +264,6 @@ Hide the comment button	Kommentar-Button ausblenden
 Takes the comment button out of the footer under posts. Restart Tumblr to see the change.	Nimmt den Kommentar-Button aus der Leiste unter Beiträgen. Starte Tumblr neu, um die Änderung zu sehen.
 Hide the share button	Teilen-Button ausblenden
 Takes the share button out of the footer under posts. Restart Tumblr to see the change.	Nimmt den Teilen-Button aus der Leiste unter Beiträgen. Starte Tumblr neu, um die Änderung zu sehen.
+# context: the bottom bar's unread badges, the small dots and numbers on the Dashboard, Communities and Notifications tabs. Use Tumblr's own names for the tabs in your language.
+Hide unread dots	Ungelesen-Punkte ausblenden
+Hides the unread dots and counts on the bottom bar's Dashboard, Communities and Notifications tabs.	Blendet die Ungelesen-Punkte und Zahlen auf den Tabs Dashboard, Communitys und Benachrichtigungen in der unteren Leiste aus.

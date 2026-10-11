@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(482);
+        Map<String, String> table = new HashMap<>(486);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -239,12 +239,16 @@ public final class L10nTranslations {
                 "Reblog-Button ausblenden");
         table.put("Hide the share button",
                 "Teilen-Button ausblenden");
+        table.put("Hide unread dots",
+                "Ungelesen-Punkte ausblenden");
         table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.",
                 "Blendet die Blaze-Schaltfl\u00e4chen, -Banner und den Hinweis aus, einen Beitrag nach dem Teilen zu bewerben. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
         table.put("Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.",
                 "Blendet den Premium-Diamanten und den TumblrMart-Button oben in deinem Dashboard, in Entdecken und in den Mitteilungen aus. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
         table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
                 "Blendet das Banner im Dashboard aus, das dich bittet, f\u00fcr werbefreies Surfen zu bezahlen. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
+        table.put("Hides the unread dots and counts on the bottom bar's Dashboard, Communities and Notifications tabs.",
+                "Blendet die Ungelesen-Punkte und Zahlen auf den Tabs Dashboard, Communitys und Benachrichtigungen in der unteren Leiste aus.");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
                 "HushTumblr %1$s ist erschienen. Aktualisiere es im Morphe Manager.");
         table.put("HushTumblr %1$s on Tumblr %2$s",
@@ -299,13 +303,13 @@ public final class L10nTranslations {
                 "Keine App auf diesem Handy kann den Link \u00f6ffnen. Die Adresse ist %1$s.");
         table.put("No matching settings",
                 "Keine passenden Einstellungen");
+    }
+
+    private static void fillDe2(Map<String, String> table) {
         table.put("None of Tumblr's web addresses are selected for this app, so their links open elsewhere. Tap to select them in Android's settings.",
                 "Keine Webadresse von Tumblr ist f\u00fcr diese App ausgew\u00e4hlt, deshalb \u00f6ffnen sich ihre Links woanders. Tippe, um sie in den Android-Einstellungen auszuw\u00e4hlen.");
         table.put("Notifications",
                 "Benachrichtigungen");
-    }
-
-    private static void fillDe2(Map<String, String> table) {
         table.put("OK",
                 "OK");
         table.put("Off",
@@ -422,13 +426,13 @@ public final class L10nTranslations {
                 "Entfernt den Tumblr-TV-Tab aus der unteren Leiste und verhindert, dass dich die Registrierung dorthin schickt. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
         table.put("Takes the blogs Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.",
                 "Entfernt die Blogs, denen du laut Tumblr folgen sollst, samt ihren \u00dcberschriften aus deinem Dashboard und anderen Feeds.");
+    }
+
+    private static void fillDe3(Map<String, String> table) {
         table.put("Takes the comment button out of the footer under posts. Restart Tumblr to see the change.",
                 "Nimmt den Kommentar-Button aus der Leiste unter Beitr\u00e4gen. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
         table.put("Takes the communities Tumblr suggests you join, and their headings, out of your dashboard and other feeds.",
                 "Entfernt die Communitys, denen du laut Tumblr beitreten sollst, samt ihren \u00dcberschriften aus deinem Dashboard und anderen Feeds.");
-    }
-
-    private static void fillDe3(Map<String, String> table) {
         table.put("Takes the like button out of the footer under posts. Restart Tumblr to see the change.",
                 "Nimmt den Like-Button aus der Leiste unter Beitr\u00e4gen. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
         table.put("Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.",
@@ -545,19 +549,19 @@ public final class L10nTranslations {
                 "Deine Auswahl ist gespeichert, aber dieser Build enth\u00e4lt den Patch daf\u00fcr nicht.");
         table.put("Your choices are saved. Tap Resume, then restart Tumblr.",
                 "Deine Auswahl bleibt gespeichert. Tippe auf Fortsetzen und starte Tumblr dann neu.");
+    }
+
+    private static void fillDe4(Map<String, String> table) {
         table.put("Your switches already match that file, so nothing will change.",
                 "Deine Schalter entsprechen bereits dieser Datei, es \u00e4ndert sich also nichts.");
         table.put("Your switches are working.",
                 "Deine Schalter sind aktiv.");
-    }
-
-    private static void fillDe4(Map<String, String> table) {
         table.put("the Premium diamond",
                 "den Premium-Diamanten");
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(482);
+        Map<String, String> table = new HashMap<>(486);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -746,12 +750,16 @@ public final class L10nTranslations {
                 "Ocultar el bot\u00f3n de reblogueo");
         table.put("Hide the share button",
                 "Ocultar el bot\u00f3n Compartir");
+        table.put("Hide unread dots",
+                "Ocultar los puntos de no le\u00eddos");
         table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.",
                 "Oculta los botones y banners de Blaze y el aviso para promocionar una publicaci\u00f3n despu\u00e9s de compartirla. Reinicia Tumblr para ver el cambio.");
         table.put("Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.",
                 "Oculta el diamante de Premium y el bot\u00f3n de TumblrMart en la parte de arriba de tu panel, Explorar y notificaciones. Reinicia Tumblr para ver el cambio.");
         table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
                 "Oculta el banner del panel que te pide pagar por navegar sin anuncios. Reinicia Tumblr para ver el cambio.");
+        table.put("Hides the unread dots and counts on the bottom bar's Dashboard, Communities and Notifications tabs.",
+                "Oculta los puntos y n\u00fameros de no le\u00eddos en las pesta\u00f1as Panel, Comunidades y Notificaciones de la barra inferior.");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
                 "Ya sali\u00f3 HushTumblr %1$s. Actual\u00edzalo en Morphe Manager.");
         table.put("HushTumblr %1$s on Tumblr %2$s",
@@ -806,13 +814,13 @@ public final class L10nTranslations {
                 "Ninguna app de este tel\u00e9fono puede abrir el enlace. La direcci\u00f3n es %1$s.");
         table.put("No matching settings",
                 "No hay ajustes coincidentes");
+    }
+
+    private static void fillEs2(Map<String, String> table) {
         table.put("None of Tumblr's web addresses are selected for this app, so their links open elsewhere. Tap to select them in Android's settings.",
                 "Ninguna direcci\u00f3n web de Tumblr est\u00e1 seleccionada para esta app, as\u00ed que sus enlaces se abren en otro sitio. Toca para seleccionarlas en los ajustes de Android.");
         table.put("Notifications",
                 "Notificaciones");
-    }
-
-    private static void fillEs2(Map<String, String> table) {
         table.put("OK",
                 "Aceptar");
         table.put("Off",
@@ -929,13 +937,13 @@ public final class L10nTranslations {
                 "Quita la pesta\u00f1a de Tumblr TV de la barra inferior y evita que el registro te lleve all\u00ed. Reinicia Tumblr para ver el cambio.");
         table.put("Takes the blogs Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.",
                 "Quita los blogs que Tumblr te sugiere seguir, y sus encabezados, de tu panel y otros feeds.");
+    }
+
+    private static void fillEs3(Map<String, String> table) {
         table.put("Takes the comment button out of the footer under posts. Restart Tumblr to see the change.",
                 "Quita el bot\u00f3n de comentarios del pie de las publicaciones. Reinicia Tumblr para ver el cambio.");
         table.put("Takes the communities Tumblr suggests you join, and their headings, out of your dashboard and other feeds.",
                 "Quita las comunidades a las que Tumblr te sugiere unirte, y sus encabezados, de tu panel y otros feeds.");
-    }
-
-    private static void fillEs3(Map<String, String> table) {
         table.put("Takes the like button out of the footer under posts. Restart Tumblr to see the change.",
                 "Quita el bot\u00f3n Me gusta del pie de las publicaciones. Reinicia Tumblr para ver el cambio.");
         table.put("Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.",
@@ -1052,19 +1060,19 @@ public final class L10nTranslations {
                 "Tu elecci\u00f3n est\u00e1 guardada, pero esta versi\u00f3n no incluye el parche para ella.");
         table.put("Your choices are saved. Tap Resume, then restart Tumblr.",
                 "Tus preferencias est\u00e1n guardadas. Toca Reanudar y luego reinicia Tumblr.");
+    }
+
+    private static void fillEs4(Map<String, String> table) {
         table.put("Your switches already match that file, so nothing will change.",
                 "Tus interruptores ya coinciden con ese archivo, as\u00ed que no cambiar\u00e1 nada.");
         table.put("Your switches are working.",
                 "Tus interruptores est\u00e1n funcionando.");
-    }
-
-    private static void fillEs4(Map<String, String> table) {
         table.put("the Premium diamond",
                 "el diamante de Premium");
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(482);
+        Map<String, String> table = new HashMap<>(486);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -1253,12 +1261,16 @@ public final class L10nTranslations {
                 "Sembunyikan tombol reblog");
         table.put("Hide the share button",
                 "Sembunyikan tombol bagikan");
+        table.put("Hide unread dots",
+                "Sembunyikan titik belum dibaca");
         table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.",
                 "Menyembunyikan tombol dan banner Blaze serta ajakan untuk mempromosikan postingan setelah kamu membagikannya. Mulai ulang Tumblr untuk melihat perubahannya.");
         table.put("Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.",
                 "Menyembunyikan berlian Premium dan tombol TumblrMart di bagian atas dasbor, Jelajahi, dan notifikasi. Mulai ulang Tumblr untuk melihat perubahannya.");
         table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
                 "Menyembunyikan banner di dasbor yang memintamu membayar untuk menjelajah tanpa iklan. Mulai ulang Tumblr untuk melihat perubahannya.");
+        table.put("Hides the unread dots and counts on the bottom bar's Dashboard, Communities and Notifications tabs.",
+                "Menyembunyikan titik dan angka belum dibaca di tab Dasbor, Komunitas, dan Notifikasi pada bilah bawah.");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
                 "HushTumblr %1$s sudah dirilis. Perbarui di Morphe Manager.");
         table.put("HushTumblr %1$s on Tumblr %2$s",
@@ -1313,13 +1325,13 @@ public final class L10nTranslations {
                 "Tidak ada aplikasi di ponsel ini yang dapat membuka tautan ini. Alamatnya %1$s.");
         table.put("No matching settings",
                 "Tidak ada pengaturan yang cocok");
+    }
+
+    private static void fillIn2(Map<String, String> table) {
         table.put("None of Tumblr's web addresses are selected for this app, so their links open elsewhere. Tap to select them in Android's settings.",
                 "Tidak ada alamat web Tumblr yang dipilih untuk aplikasi ini, jadi tautannya terbuka di tempat lain. Ketuk untuk memilihnya di pengaturan Android.");
         table.put("Notifications",
                 "Notifikasi");
-    }
-
-    private static void fillIn2(Map<String, String> table) {
         table.put("OK",
                 "Oke");
         table.put("Off",
@@ -1436,13 +1448,13 @@ public final class L10nTranslations {
                 "Menghapus tab Tumblr TV dari bilah bawah dan mencegah pendaftaran mengarahkanmu ke sana. Mulai ulang Tumblr untuk melihat perubahannya.");
         table.put("Takes the blogs Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.",
                 "Menghapus blog yang disarankan Tumblr untuk kamu ikuti, beserta judulnya, dari dasbor dan feed lainnya.");
+    }
+
+    private static void fillIn3(Map<String, String> table) {
         table.put("Takes the comment button out of the footer under posts. Restart Tumblr to see the change.",
                 "Menghapus tombol komentar dari bagian bawah postingan. Mulai ulang Tumblr untuk melihat perubahannya.");
         table.put("Takes the communities Tumblr suggests you join, and their headings, out of your dashboard and other feeds.",
                 "Menghapus komunitas yang disarankan Tumblr untuk kamu ikuti, beserta judulnya, dari dasbor dan feed lainnya.");
-    }
-
-    private static void fillIn3(Map<String, String> table) {
         table.put("Takes the like button out of the footer under posts. Restart Tumblr to see the change.",
                 "Menghapus tombol suka dari bagian bawah postingan. Mulai ulang Tumblr untuk melihat perubahannya.");
         table.put("Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.",
@@ -1559,19 +1571,19 @@ public final class L10nTranslations {
                 "Pilihan Anda tersimpan, tetapi build ini tidak menyertakan patch-nya.");
         table.put("Your choices are saved. Tap Resume, then restart Tumblr.",
                 "Pilihan Anda tersimpan. Ketuk Lanjutkan, lalu mulai ulang Tumblr.");
+    }
+
+    private static void fillIn4(Map<String, String> table) {
         table.put("Your switches already match that file, so nothing will change.",
                 "Sakelar Anda sudah sesuai dengan file itu, jadi tidak ada yang akan berubah.");
         table.put("Your switches are working.",
                 "Sakelar Anda aktif.");
-    }
-
-    private static void fillIn4(Map<String, String> table) {
         table.put("the Premium diamond",
                 "berlian Premium");
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(482);
+        Map<String, String> table = new HashMap<>(486);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -1760,12 +1772,16 @@ public final class L10nTranslations {
                 "Ocultar o bot\u00e3o de reblogue");
         table.put("Hide the share button",
                 "Ocultar o bot\u00e3o de compartilhar");
+        table.put("Hide unread dots",
+                "Ocultar os pontos de n\u00e3o lidos");
         table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.",
                 "Esconde os bot\u00f5es e banners do Blaze e o aviso para promover um post depois que voc\u00ea o compartilha. Reinicie o Tumblr para ver a mudan\u00e7a.");
         table.put("Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.",
                 "Oculta o diamante do Premium e o bot\u00e3o da TumblrMart no topo do seu painel, do Explorar e das notifica\u00e7\u00f5es. Reinicie o Tumblr para ver a mudan\u00e7a.");
         table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
                 "Esconde o banner do painel que pede para voc\u00ea pagar pela navega\u00e7\u00e3o sem an\u00fancios. Reinicie o Tumblr para ver a mudan\u00e7a.");
+        table.put("Hides the unread dots and counts on the bottom bar's Dashboard, Communities and Notifications tabs.",
+                "Esconde os pontos e n\u00fameros de n\u00e3o lidos nas abas Painel, Comunidades e Notifica\u00e7\u00f5es da barra de baixo.");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
                 "O HushTumblr %1$s est\u00e1 dispon\u00edvel. Atualize-o pelo Morphe Manager.");
         table.put("HushTumblr %1$s on Tumblr %2$s",
@@ -1820,13 +1836,13 @@ public final class L10nTranslations {
                 "Nenhum aplicativo neste dispositivo consegue abrir o link. O endere\u00e7o \u00e9 %1$s.");
         table.put("No matching settings",
                 "Nenhuma configura\u00e7\u00e3o encontrada");
+    }
+
+    private static void fillPt_rBR2(Map<String, String> table) {
         table.put("None of Tumblr's web addresses are selected for this app, so their links open elsewhere. Tap to select them in Android's settings.",
                 "Nenhum endere\u00e7o web do Tumblr est\u00e1 selecionado para este app, ent\u00e3o os links deles abrem em outro lugar. Toque para selecion\u00e1-los nas configura\u00e7\u00f5es do Android.");
         table.put("Notifications",
                 "Notifica\u00e7\u00f5es");
-    }
-
-    private static void fillPt_rBR2(Map<String, String> table) {
         table.put("OK",
                 "OK");
         table.put("Off",
@@ -1943,13 +1959,13 @@ public final class L10nTranslations {
                 "Tira a aba do Tumblr TV da barra inferior e impede que o cadastro mande voc\u00ea para l\u00e1. Reinicie o Tumblr para ver a mudan\u00e7a.");
         table.put("Takes the blogs Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.",
                 "Tira do seu painel e de outros feeds os blogs que o Tumblr sugere que voc\u00ea siga, junto com os t\u00edtulos deles.");
+    }
+
+    private static void fillPt_rBR3(Map<String, String> table) {
         table.put("Takes the comment button out of the footer under posts. Restart Tumblr to see the change.",
                 "Tira o bot\u00e3o de comentar do rodap\u00e9 dos posts. Reinicie o Tumblr para ver a mudan\u00e7a.");
         table.put("Takes the communities Tumblr suggests you join, and their headings, out of your dashboard and other feeds.",
                 "Tira do seu painel e de outros feeds as comunidades em que o Tumblr sugere que voc\u00ea entre, junto com os t\u00edtulos delas.");
-    }
-
-    private static void fillPt_rBR3(Map<String, String> table) {
         table.put("Takes the like button out of the footer under posts. Restart Tumblr to see the change.",
                 "Tira o bot\u00e3o de curtir do rodap\u00e9 dos posts. Reinicie o Tumblr para ver a mudan\u00e7a.");
         table.put("Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.",
@@ -2066,19 +2082,19 @@ public final class L10nTranslations {
                 "Sua escolha est\u00e1 salva, mas esta vers\u00e3o n\u00e3o inclui o patch para ela.");
         table.put("Your choices are saved. Tap Resume, then restart Tumblr.",
                 "Suas escolhas est\u00e3o salvas. Toque em Retomar e depois reinicie o Tumblr.");
+    }
+
+    private static void fillPt_rBR4(Map<String, String> table) {
         table.put("Your switches already match that file, so nothing will change.",
                 "Suas op\u00e7\u00f5es j\u00e1 correspondem \u00e0s desse arquivo, ent\u00e3o nada ser\u00e1 alterado.");
         table.put("Your switches are working.",
                 "Suas op\u00e7\u00f5es est\u00e3o funcionando.");
-    }
-
-    private static void fillPt_rBR4(Map<String, String> table) {
         table.put("the Premium diamond",
                 "o diamante do Premium");
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(482);
+        Map<String, String> table = new HashMap<>(486);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -2267,12 +2283,16 @@ public final class L10nTranslations {
                 "RB d\u00fc\u011fmesini gizle");
         table.put("Hide the share button",
                 "Payla\u015f d\u00fc\u011fmesini gizle");
+        table.put("Hide unread dots",
+                "Okunmad\u0131 noktalar\u0131n\u0131 gizle");
         table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.",
                 "Blaze d\u00fc\u011fmelerini, banner'lar\u0131n\u0131 ve bir g\u00f6nderiyi payla\u015ft\u0131ktan sonra tan\u0131tman\u0131 \u00f6neren uyar\u0131y\u0131 gizler. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
         table.put("Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.",
                 "Panonun, Ke\u015ffet'in ve bildirimlerin \u00fcst\u00fcndeki Premium elmas\u0131n\u0131 ve TumblrMart d\u00fc\u011fmesini gizler. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
         table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
                 "Panoda reklams\u0131z gezinme i\u00e7in \u00f6deme yapman\u0131 isteyen banner'\u0131 gizler. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
+        table.put("Hides the unread dots and counts on the bottom bar's Dashboard, Communities and Notifications tabs.",
+                "Alt \u00e7ubuktaki Pano, Topluluklar ve Bildirimler sekmelerindeki okunmad\u0131 noktalar\u0131n\u0131 ve say\u0131lar\u0131n\u0131 gizler.");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
                 "HushTumblr %1$s \u00e7\u0131kt\u0131. Morphe Manager'da g\u00fcncelle.");
         table.put("HushTumblr %1$s on Tumblr %2$s",
@@ -2327,13 +2347,13 @@ public final class L10nTranslations {
                 "Bu telefondaki hi\u00e7bir uygulama ba\u011flant\u0131y\u0131 a\u00e7am\u0131yor. Adres: %1$s.");
         table.put("No matching settings",
                 "E\u015fle\u015fen ayar yok");
+    }
+
+    private static void fillTr2(Map<String, String> table) {
         table.put("None of Tumblr's web addresses are selected for this app, so their links open elsewhere. Tap to select them in Android's settings.",
                 "Tumblr'\u0131n web adreslerinden hi\u00e7biri bu uygulama i\u00e7in se\u00e7ili de\u011fil, bu y\u00fczden ba\u011flant\u0131lar\u0131 ba\u015fka yerde a\u00e7\u0131l\u0131r. Android ayarlar\u0131nda se\u00e7mek i\u00e7in dokunun.");
         table.put("Notifications",
                 "Bildirimler");
-    }
-
-    private static void fillTr2(Map<String, String> table) {
         table.put("OK",
                 "Tamam");
         table.put("Off",
@@ -2450,13 +2470,13 @@ public final class L10nTranslations {
                 "Tumblr TV sekmesini alt \u00e7ubuktan kald\u0131r\u0131r ve kay\u0131t olduktan sonra seni oraya g\u00f6ndermesini engeller. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
         table.put("Takes the blogs Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.",
                 "Tumblr'\u0131n takip etmeni \u00f6nerdi\u011fi bloglar\u0131 ve ba\u015fl\u0131klar\u0131n\u0131 panondan ve di\u011fer ak\u0131\u015flardan kald\u0131r\u0131r.");
+    }
+
+    private static void fillTr3(Map<String, String> table) {
         table.put("Takes the comment button out of the footer under posts. Restart Tumblr to see the change.",
                 "G\u00f6nderilerin alt\u0131ndaki yorum d\u00fc\u011fmesini kald\u0131r\u0131r. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
         table.put("Takes the communities Tumblr suggests you join, and their headings, out of your dashboard and other feeds.",
                 "Tumblr'\u0131n kat\u0131lman\u0131 \u00f6nerdi\u011fi topluluklar\u0131 ve ba\u015fl\u0131klar\u0131n\u0131 panondan ve di\u011fer ak\u0131\u015flardan kald\u0131r\u0131r.");
-    }
-
-    private static void fillTr3(Map<String, String> table) {
         table.put("Takes the like button out of the footer under posts. Restart Tumblr to see the change.",
                 "G\u00f6nderilerin alt\u0131ndaki be\u011fen d\u00fc\u011fmesini kald\u0131r\u0131r. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
         table.put("Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.",
@@ -2573,13 +2593,13 @@ public final class L10nTranslations {
                 "Se\u00e7imin kaydedildi ama bu s\u00fcr\u00fcm onun yamas\u0131n\u0131 i\u00e7ermiyor.");
         table.put("Your choices are saved. Tap Resume, then restart Tumblr.",
                 "Tercihleriniz kay\u0131tl\u0131. Devam et'e dokunun, sonra Tumblr'\u0131 yeniden ba\u015flat\u0131n.");
+    }
+
+    private static void fillTr4(Map<String, String> table) {
         table.put("Your switches already match that file, so nothing will change.",
                 "Anahtarlar\u0131n zaten o dosyayla ayn\u0131, bu y\u00fczden hi\u00e7bir \u015fey de\u011fi\u015fmeyecek.");
         table.put("Your switches are working.",
                 "Anahtarlar\u0131n \u00e7al\u0131\u015f\u0131yor.");
-    }
-
-    private static void fillTr4(Map<String, String> table) {
         table.put("the Premium diamond",
                 "Premium elmas\u0131");
     }

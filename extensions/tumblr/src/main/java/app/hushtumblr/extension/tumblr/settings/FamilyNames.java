@@ -51,6 +51,7 @@ public final class FamilyNames {
     public static final String HIDE_REBLOG_BUTTON = "Hide the reblog button";
     public static final String HIDE_COMMENT_BUTTON = "Hide the comment button";
     public static final String HIDE_SHARE_BUTTON = "Hide the share button";
+    public static final String HIDE_UNREAD_DOTS = "Hide unread dots";
     public static final String FIX_PUSH_NOTIFICATIONS = "Fix push notifications";
 
     private FamilyNames() {

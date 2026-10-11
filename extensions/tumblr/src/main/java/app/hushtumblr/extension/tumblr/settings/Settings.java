@@ -196,6 +196,13 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_hide_share_button", FALSE);
 
     /**
+     * The bottom bar doesn't show its unread dots and counts
+     * ({@link app.hushtumblr.extension.tumblr.ui.BottomBar}). Off to start.
+     */
+    public static final BooleanSetting HIDE_UNREAD_DOTS =
+            new BooleanSetting("hushtumblr_hide_unread_dots", FALSE);
+
+    /**
      * Once a day, when Tumblr starts, ask api.github.com whether a newer HushTumblr release is
      * out, and say so on the settings screen ({@link ReleaseCheck}). It's the settings entry's own
      * switch rather than a patch's, so every build has it ({@link PatchFamily#ENTRY_SWITCHES}). Off

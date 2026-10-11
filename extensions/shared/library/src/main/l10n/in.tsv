@@ -264,3 +264,6 @@ Hide the comment button	Sembunyikan tombol komentar
 Takes the comment button out of the footer under posts. Restart Tumblr to see the change.	Menghapus tombol komentar dari bagian bawah postingan. Mulai ulang Tumblr untuk melihat perubahannya.
 Hide the share button	Sembunyikan tombol bagikan
 Takes the share button out of the footer under posts. Restart Tumblr to see the change.	Menghapus tombol bagikan dari bagian bawah postingan. Mulai ulang Tumblr untuk melihat perubahannya.
+# context: the bottom bar's unread badges, the small dots and numbers on the Dashboard, Communities and Notifications tabs. Use Tumblr's own names for the tabs in your language.
+Hide unread dots	Sembunyikan titik belum dibaca
+Hides the unread dots and counts on the bottom bar's Dashboard, Communities and Notifications tabs.	Menyembunyikan titik dan angka belum dibaca di tab Dasbor, Komunitas, dan Notifikasi pada bilah bawah.

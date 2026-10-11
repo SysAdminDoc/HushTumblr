@@ -258,6 +258,7 @@ public class SettingsBackupTest {
                 Settings.HIDE_REBLOG_BUTTON,
                 Settings.HIDE_COMMENT_BUTTON,
                 Settings.HIDE_SHARE_BUTTON,
+                Settings.HIDE_UNREAD_DOTS,
                 Settings.FIX_PUSH_NOTIFICATIONS),
                 SettingsBackup.ALLOWLIST);
     }

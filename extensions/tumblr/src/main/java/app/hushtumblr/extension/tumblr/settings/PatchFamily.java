@@ -81,6 +81,7 @@ public enum PatchFamily {
     HIDE_REBLOG_BUTTON(FamilyNames.HIDE_REBLOG_BUTTON, "hideReblogButton", null, Settings.HIDE_REBLOG_BUTTON),
     HIDE_COMMENT_BUTTON(FamilyNames.HIDE_COMMENT_BUTTON, "hideCommentButton", null, Settings.HIDE_COMMENT_BUTTON),
     HIDE_SHARE_BUTTON(FamilyNames.HIDE_SHARE_BUTTON, "hideShareButton", null, Settings.HIDE_SHARE_BUTTON),
+    HIDE_UNREAD_DOTS(FamilyNames.HIDE_UNREAD_DOTS, "hideUnreadDots", null, Settings.HIDE_UNREAD_DOTS),
     FIX_PUSH_NOTIFICATIONS(FamilyNames.FIX_PUSH_NOTIFICATIONS, "fixPushNotifications", null, Settings.FIX_PUSH_NOTIFICATIONS);
 
     /** The patch's name in Morphe Manager. */
@@ -131,8 +132,9 @@ public enum PatchFamily {
             HIDE_WATCH_IT_ROWS, HIDE_SUGGESTED_COMMUNITIES, HIDE_SUGGESTED_BLOGS, HIDE_AD_FREE_BANNER, HIDE_ADS));
 
     /** The families the Interface page holds. The page and its home row both read this. */
-    static final Set<PatchFamily> INTERFACE_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_TUMBLRMART,
-            TURN_OFF_SCREENSHOT_SHARING, SKIP_REVIEW_PROMPTS, HIDE_BLAZE_PROMPTS, HIDE_COMMUNITIES_TAB, HIDE_TUMBLR_TV));
+    static final Set<PatchFamily> INTERFACE_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_UNREAD_DOTS,
+            HIDE_TUMBLRMART, TURN_OFF_SCREENSHOT_SHARING, SKIP_REVIEW_PROMPTS, HIDE_BLAZE_PROMPTS, HIDE_COMMUNITIES_TAB,
+            HIDE_TUMBLR_TV));
 
     /** The families the Posts page holds. The page and its home row both read this. */
     static final Set<PatchFamily> POSTS_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_SHARE_BUTTON,
@@ -169,6 +171,7 @@ public enum PatchFamily {
         REBLOG_BUTTON(HIDE_REBLOG_BUTTON, "reblogButton", "Hide the reblog button"),
         COMMENT_BUTTON(HIDE_COMMENT_BUTTON, "commentButton", "Hide the comment button"),
         SHARE_BUTTON(HIDE_SHARE_BUTTON, "shareButton", "Hide the share button"),
+        UNREAD_DOTS(HIDE_UNREAD_DOTS, "unreadDots", "Hide unread dots"),
         FIREBASE_CERTIFICATE(FIX_PUSH_NOTIFICATIONS, "firebaseCertificate", "Fix push notifications");
 
         public final PatchFamily family;

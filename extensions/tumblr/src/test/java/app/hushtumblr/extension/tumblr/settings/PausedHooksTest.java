@@ -19,11 +19,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import android.widget.TextView;
+
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 import java.lang.reflect.Field;
@@ -43,6 +46,7 @@ import app.hushtumblr.extension.tumblr.flags.FeatureSwitchesTest;
 import app.hushtumblr.extension.tumblr.notifications.PushNotificationsTest;
 import app.hushtumblr.extension.tumblr.privacy.AdvertisingId;
 import app.hushtumblr.extension.tumblr.timeline.TimelineItems;
+import app.hushtumblr.extension.tumblr.ui.BottomBar;
 import app.hushtumblr.extension.tumblr.ui.PostFooter;
 import app.hushtumblr.extension.tumblr.ui.PostFooterForTests;
 import app.hushtumblr.extension.tumblr.ui.PostParts;
@@ -159,6 +163,9 @@ public class PausedHooksTest {
                 Collections.singletonList(() -> PostFooterForTests.askedAfresh(PostFooter::hideCommentButton)));
         probes.put(Settings.HIDE_SHARE_BUTTON,
                 Collections.singletonList(() -> PostFooterForTests.askedAfresh(PostFooter::hideShareButton)));
+        // The bottom bar gets no unread badge to pop in.
+        probes.put(Settings.HIDE_UNREAD_DOTS, Collections.singletonList(
+                () -> BottomBar.unreadBadge(new TextView(RuntimeEnvironment.getApplication())) == null));
         // Firebase's sign-up for push notifications names Tumblr's own certificate.
         probes.put(Settings.FIX_PUSH_NOTIFICATIONS, Collections.singletonList(PushNotificationsTest::fixesACertificate));
         return probes;
