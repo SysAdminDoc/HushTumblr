@@ -40,10 +40,48 @@ public final class TimelineItems {
         }, false);
     }
 
+    /**
+     * A carousel holding [children]. The filter reads a carousel's items through a stub the patch
+     * writes, so this also has the filter read them from here.
+     */
+    public static TimelineObject carousel(TimelineObjectType type, TimelineObject... children) {
+        TimelineFilter.carouselItemsForTests = payload -> ((Carousel) payload).children;
+        return new TimelineObject(new Carousel(type, Arrays.asList(children)), false);
+    }
+
     /** PausedHooksTest's probe for Hide ads: true when a page with an ad comes back without it. */
     public static boolean aPageLosesItsAd() {
-        List<Object> page = Arrays.asList(post(), of(TimelineObjectType.GEMINI_AD), post());
+        return aPageLoses(TimelineObjectType.GEMINI_AD);
+    }
+
+    /** PausedHooksTest's probe for Hide suggested blogs. */
+    public static boolean aPageLosesItsBlogCard() {
+        return aPageLoses(TimelineObjectType.BLOG_CARD);
+    }
+
+    /** PausedHooksTest's probe for Hide suggested communities. */
+    public static boolean aPageLosesItsCommunityCard() {
+        return aPageLoses(TimelineObjectType.COMMUNITY_CARD);
+    }
+
+    /** PausedHooksTest's probe for Hide Watch it rows. */
+    public static boolean aPageLosesItsWatchItRow() {
+        return aPageLoses(TimelineObjectType.VIDEO_HUBS_ROW);
+    }
+
+    /** True when a page with an item of [type] between two posts comes back without it. */
+    private static boolean aPageLoses(TimelineObjectType type) {
+        List<Object> page = Arrays.asList(post(), of(type), post());
         return TimelineFilter.filter(page).size() == 2;
+    }
+
+    private static final class Carousel extends Item {
+        final List<TimelineObject> children;
+
+        Carousel(TimelineObjectType type, List<TimelineObject> children) {
+            super(type);
+            this.children = children;
+        }
     }
 
     private static class Item implements Timelineable {

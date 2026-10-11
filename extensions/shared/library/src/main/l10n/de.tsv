@@ -235,3 +235,10 @@ Stops Tumblr watching for screenshots and offering to save the post as an image.
 # context: the Disable update prompts switch on the Updates page. Tumblr asks Google Play for a newer version and opens Play's update prompt.
 Disable update prompts	Update-Aufforderungen deaktivieren
 Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt. Restart Tumblr to see the change.	Tumblr fragt Google Play nicht mehr nach einer neueren Version und zeigt die Update-Aufforderung von Play nicht mehr an. Starte Tumblr neu, um die Änderung zu sehen.
+# context: the three suggestion card switches on the Feed page. Watch it is the name of Tumblr TV's rows in the dashboard; keep it in English.
+Hide suggested blogs	Vorgeschlagene Blogs ausblenden
+Takes the blogs Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.	Entfernt die Blogs, denen du laut Tumblr folgen sollst, samt ihren Überschriften aus deinem Dashboard und anderen Feeds.
+Hide suggested communities	Vorgeschlagene Communitys ausblenden
+Takes the communities Tumblr suggests you join, and their headings, out of your dashboard and other feeds.	Entfernt die Communitys, denen du laut Tumblr beitreten sollst, samt ihren Überschriften aus deinem Dashboard und anderen Feeds.
+Hide Watch it rows	Watch-it-Reihen ausblenden
+Takes Tumblr TV's Watch it rows and video hub cards, and their headings, out of your dashboard and other feeds.	Entfernt die Watch-it-Reihen und Video-Hub-Karten von Tumblr TV samt ihren Überschriften aus deinem Dashboard und anderen Feeds.

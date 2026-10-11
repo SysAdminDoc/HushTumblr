@@ -14,9 +14,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
 import app.hushtumblr.extension.shared.Utils;
 import app.hushtumblr.extension.shared.diagnostics.HookStatus;
+import app.hushtumblr.extension.shared.settings.BooleanSetting;
 import app.hushtumblr.extension.tumblr.settings.FamilyNames;
 import app.hushtumblr.extension.tumblr.settings.PatchFamily;
 import app.hushtumblr.extension.tumblr.settings.Settings;
@@ -32,13 +34,21 @@ import app.hushtumblr.extension.tumblr.settings.Settings;
  * through untouched.
  *
  * <p>The rumblr model keeps its names, so the item's kind and its Sponsored label are read by name.
- * Anything that can't be read is kept: a filter that guesses could take a post out.
+ * A carousel's own items are the one renamed getter, read through {@link #carouselItems}. Anything
+ * that can't be read is kept: a filter that guesses could take a post out.
+ *
+ * <p>Suggestion cards often come after a {@code TITLE} item carrying their heading ("Check out these
+ * blogs"). A heading goes with the item right after it, and one that ends a page goes too while a
+ * card switch is on, since its card may be the first item of the next page.
  */
 public final class TimelineFilter {
     private TimelineFilter() {}
 
     static final String TIMELINE_OBJECT = "com.tumblr.rumblr.model.TimelineObject";
     static final String TIMELINEABLE = "com.tumblr.rumblr.model.Timelineable";
+
+    /** The kind of a heading item, whose text the server sends. */
+    static final String TITLE = "TITLE";
 
     /**
      * The kinds of item that are an ad or a paid placement whatever else they carry, by the constant
@@ -50,6 +60,26 @@ public final class TimelineFilter {
             "CLIENT_SIDE_AD", "CLIENT_SIDE_MEDIATION", "DISPLAY_IO_INTERSCROLLER_AD", "GOOGLE_NATIVE",
             "BLAZED_POST")));
 
+    /** Blogs Tumblr suggests you follow, as cards, rows and the small cards of a carousel. */
+    static final Set<String> BLOG_TYPES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "BLOG_CARD", "COMPACT_BLOG_CARD", "BLOG_ROW", "TINY_BLOG_CAROUSEL_CARD")));
+
+    /**
+     * Communities Tumblr suggests you join. A community's own header card isn't here: it heads that
+     * community's page.
+     */
+    static final Set<String> COMMUNITY_TYPES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "COMMUNITY_CARD", "COMMUNITY_ROW")));
+
+    /** Tumblr TV's "Watch it" rows and the video hub cards in them. */
+    static final Set<String> WATCH_IT_TYPES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "VIDEO_HUB_CARD", "VIDEO_HUB_FEATURED", "VIDEO_HUB_FEATURED_BORDERED", "VIDEO_HUBS_CONTAINER",
+            "VIDEO_HUBS_ROW")));
+
+    /** Containers that hold other items. Each is judged by its first item. */
+    static final Set<String> CAROUSEL_TYPES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "CAROUSEL", "AVATAR_CAROUSEL")));
+
     /** Tumblr's model methods, found the first time an item is read. */
     @Nullable
     private static volatile Model model;
@@ -57,6 +87,10 @@ public final class TimelineFilter {
     /** The item class whose methods couldn't be found, so each page doesn't look again. */
     @Nullable
     private static volatile Class<?> unreadable;
+
+    /** Stands in for the patched {@link #carouselItems} in a test. Null in the app. */
+    @Nullable
+    static volatile Function<Object, List<?>> carouselItemsForTests;
 
     /**
      * Injected at the start of both list constructors, on their list parameter. Returns the same list
@@ -71,16 +105,26 @@ public final class TimelineFilter {
         try {
             int size = items.size();
             String[] removedBy = new String[size];
+            boolean[] heading = new boolean[size];
             boolean any = false;
             for (int i = 0; i < size; i++) {
                 removedBy[i] = rules.removes(items.get(i));
                 any |= removedBy[i] != null;
             }
+            // From the end, so a run of headings all go with the item after the last of them.
+            for (int i = size - 1; i >= 0; i--) {
+                if (removedBy[i] != null) continue;
+                String with = i + 1 < size ? removedBy[i + 1] : rules.cardOwner();
+                if (with == null || !isTitle(items.get(i), rules.owner())) continue;
+                removedBy[i] = with;
+                heading[i] = true;
+                any = true;
+            }
             if (!any) return items;
             List<Object> kept = new ArrayList<>(size);
             for (int i = 0; i < size; i++) {
                 if (removedBy[i] == null) kept.add(items.get(i));
-                else HookStatus.counted(removedBy[i], removal(removedBy[i]));
+                else HookStatus.counted(removedBy[i], heading[i] ? "heading removed" : removal(removedBy[i]));
             }
             return kept;
         } catch (Throwable failure) {
@@ -91,43 +135,83 @@ public final class TimelineFilter {
 
     /** What a removal by [family] is counted as. English, for the report. */
     static String removal(String family) {
-        return "ad removed";
+        return FamilyNames.HIDE_ADS.equals(family) ? "ad removed" : "card removed";
     }
 
     /** Which switches take items out of this page, read once a page. */
     static final class Rules {
         final boolean ads;
+        final boolean blogs;
+        final boolean communities;
+        final boolean watchIt;
 
-        private Rules(boolean ads) {
+        private Rules(boolean ads, boolean blogs, boolean communities, boolean watchIt) {
             this.ads = ads;
+            this.blogs = blogs;
+            this.communities = communities;
+            this.watchIt = watchIt;
         }
 
         /** The switches on now, or null when none is. Never throws. */
         @Nullable
         static Rules now() {
-            boolean ads = false;
+            String reading = FamilyNames.HIDE_ADS;
             try {
                 // Each family's patch marks its timeline capability once the hook is in.
-                if (PatchFamily.Capability.TIMELINE_ADS.installed()) {
-                    HookStatus.invoked(FamilyNames.HIDE_ADS);
-                    ads = Settings.HIDE_ADS.get();
-                }
+                boolean ads = on(PatchFamily.Capability.TIMELINE_ADS, reading, Settings.HIDE_ADS);
+                reading = FamilyNames.HIDE_SUGGESTED_BLOGS;
+                boolean blogs = on(PatchFamily.Capability.SUGGESTED_BLOG_CARDS, reading, Settings.HIDE_SUGGESTED_BLOGS);
+                reading = FamilyNames.HIDE_SUGGESTED_COMMUNITIES;
+                boolean communities = on(PatchFamily.Capability.SUGGESTED_COMMUNITY_CARDS, reading,
+                        Settings.HIDE_SUGGESTED_COMMUNITIES);
+                reading = FamilyNames.HIDE_WATCH_IT_ROWS;
+                boolean watchIt = on(PatchFamily.Capability.WATCH_IT_ROWS, reading, Settings.HIDE_WATCH_IT_ROWS);
+                return ads || blogs || communities || watchIt ? new Rules(ads, blogs, communities, watchIt) : null;
             } catch (Throwable failure) {
-                HookStatus.threw(FamilyNames.HIDE_ADS, "switch read", failure);
+                HookStatus.threw(reading, "switch read", failure);
                 return null;
             }
-            return ads ? new Rules(true) : null;
         }
 
-        /** The family a failure is reported under. */
+        /** Whether [capability]'s hook is in and [family]'s switch is on. */
+        private static boolean on(PatchFamily.Capability capability, String family, BooleanSetting setting) {
+            if (!capability.installed()) return false;
+            HookStatus.invoked(family);
+            return setting.get();
+        }
+
+        /** The family a failure is reported under: the first switch that's on. */
         String owner() {
-            return FamilyNames.HIDE_ADS;
+            if (ads) return FamilyNames.HIDE_ADS;
+            String card = cardOwner();
+            return card != null ? card : FamilyNames.HIDE_ADS;
+        }
+
+        /** The first card switch that's on, or null when none is. */
+        @Nullable
+        String cardOwner() {
+            if (blogs) return FamilyNames.HIDE_SUGGESTED_BLOGS;
+            if (communities) return FamilyNames.HIDE_SUGGESTED_COMMUNITIES;
+            if (watchIt) return FamilyNames.HIDE_WATCH_IT_ROWS;
+            return null;
         }
 
         /** The patch name of the first switch that takes [item] out, or null to keep it. */
         @Nullable
         String removes(Object item) {
-            return ads && isAd(item) ? FamilyNames.HIDE_ADS : null;
+            if (ads && isAd(item)) return FamilyNames.HIDE_ADS;
+            String card = cardOwner();
+            return card == null ? null : cardFamily(item, this, card);
+        }
+
+        /** The patch name whose switch is on and whose cards include [kind], or null. */
+        @Nullable
+        String family(@Nullable String kind) {
+            if (kind == null) return null;
+            if (blogs && BLOG_TYPES.contains(kind)) return FamilyNames.HIDE_SUGGESTED_BLOGS;
+            if (communities && COMMUNITY_TYPES.contains(kind)) return FamilyNames.HIDE_SUGGESTED_COMMUNITIES;
+            if (watchIt && WATCH_IT_TYPES.contains(kind)) return FamilyNames.HIDE_WATCH_IT_ROWS;
+            return null;
         }
     }
 
@@ -144,6 +228,60 @@ public final class TimelineFilter {
             HookStatus.threw(FamilyNames.HIDE_ADS, "timeline item", failure);
             return false;
         }
+    }
+
+    /**
+     * The patch name of the card switch that takes [item] out, or null to keep it. A carousel goes
+     * by its first item, and its own heading goes with it. One that can't be read is kept, and the
+     * failure is recorded under [owner].
+     */
+    @Nullable
+    static String cardFamily(Object item, Rules rules, String owner) {
+        Model found = modelFor(item, owner);
+        if (found == null) return null;
+        try {
+            Object payload = found.data.invoke(item);
+            String kind = found.kindOf(payload);
+            if (kind != null && CAROUSEL_TYPES.contains(kind)) {
+                List<?> children = readCarousel(payload);
+                if (children == null || children.isEmpty()) return null;
+                Object first = children.get(0);
+                if (modelFor(first, owner) == null) return null;
+                kind = found.typeOf(first);
+            }
+            return rules.family(kind);
+        } catch (Throwable failure) {
+            HookStatus.threw(owner, "timeline item", failure);
+            return null;
+        }
+    }
+
+    /** True when [item] is a heading. One that can't be read isn't, and the failure goes to [owner]. */
+    static boolean isTitle(Object item, String owner) {
+        Model found = modelFor(item, owner);
+        if (found == null) return false;
+        try {
+            return TITLE.equals(found.typeOf(item));
+        } catch (Throwable failure) {
+            HookStatus.threw(owner, "timeline item", failure);
+            return false;
+        }
+    }
+
+    @Nullable
+    private static List<?> readCarousel(Object carousel) {
+        Function<Object, List<?>> forTests = carouselItemsForTests;
+        return forTests != null ? forTests.apply(carousel) : carouselItems(carousel);
+    }
+
+    /**
+     * A carousel's items, each a timeline object. A stub: the timeline card patches write its body
+     * to call Tumblr's {@code Carousel} getter, whose name changes with every build. Here it answers
+     * null, which keeps every carousel.
+     */
+    @Nullable
+    static List<?> carouselItems(Object carousel) {
+        return null;
     }
 
     /**
@@ -194,7 +332,12 @@ public final class TimelineFilter {
         /** The constant name of [item]'s kind, such as POST or GEMINI_AD, or null when it has none. */
         @Nullable
         String typeOf(Object item) throws ReflectiveOperationException {
-            Object payload = data.invoke(item);
+            return kindOf(data.invoke(item));
+        }
+
+        /** The constant name of the kind of an item's [payload], or null when it has none. */
+        @Nullable
+        String kindOf(@Nullable Object payload) throws ReflectiveOperationException {
             Object type = payload == null ? null : kind.invoke(payload);
             return type instanceof Enum ? ((Enum<?>) type).name() : null;
         }

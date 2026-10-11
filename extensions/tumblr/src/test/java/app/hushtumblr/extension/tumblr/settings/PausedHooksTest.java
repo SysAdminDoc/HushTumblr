@@ -131,6 +131,12 @@ public class PausedHooksTest {
         // Tumblr's in-app update check answers off.
         probes.put(Settings.DISABLE_UPDATE_PROMPTS, Collections.singletonList(
                 () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("IN_APP_UPDATE"), true)));
+        // A page with a suggested blog card comes back without it.
+        probes.put(Settings.HIDE_SUGGESTED_BLOGS, Collections.singletonList(TimelineItems::aPageLosesItsBlogCard));
+        // A page with a suggested community card comes back without it.
+        probes.put(Settings.HIDE_SUGGESTED_COMMUNITIES, Collections.singletonList(TimelineItems::aPageLosesItsCommunityCard));
+        // A page with a Watch it row comes back without it.
+        probes.put(Settings.HIDE_WATCH_IT_ROWS, Collections.singletonList(TimelineItems::aPageLosesItsWatchItRow));
         // Firebase's sign-up for push notifications names Tumblr's own certificate.
         probes.put(Settings.FIX_PUSH_NOTIFICATIONS, Collections.singletonList(PushNotificationsTest::fixesACertificate));
         return probes;

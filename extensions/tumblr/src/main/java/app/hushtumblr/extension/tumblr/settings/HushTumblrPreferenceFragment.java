@@ -259,6 +259,17 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             patchToggle(feed, context, build, PatchFamily.HIDE_AD_FREE_BANNER, Settings.HIDE_AD_FREE_BANNER,
                     L10n.t("Hide the ad-free banner"), L10n.t("Hides the dashboard banner that asks you to pay for "
                         + "Ad-Free Browsing. Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+            // The card switches act on each page as it loads (TimelineFilter), so they need no restart.
+            patchToggle(feed, context, build, PatchFamily.HIDE_SUGGESTED_BLOGS, Settings.HIDE_SUGGESTED_BLOGS,
+                    L10n.t("Hide suggested blogs"), L10n.t("Takes the blogs Tumblr suggests you follow, and their "
+                        + "headings, out of your dashboard and other feeds."), SettingsIcons.BLOCK);
+            patchToggle(feed, context, build, PatchFamily.HIDE_SUGGESTED_COMMUNITIES,
+                    Settings.HIDE_SUGGESTED_COMMUNITIES, L10n.t("Hide suggested communities"),
+                    L10n.t("Takes the communities Tumblr suggests you join, and their headings, out of your "
+                        + "dashboard and other feeds."), SettingsIcons.BLOCK);
+            patchToggle(feed, context, build, PatchFamily.HIDE_WATCH_IT_ROWS, Settings.HIDE_WATCH_IT_ROWS,
+                    L10n.t("Hide Watch it rows"), L10n.t("Takes Tumblr TV's Watch it rows and video hub cards, and "
+                        + "their headings, out of your dashboard and other feeds."), SettingsIcons.BLOCK);
         }
 
         // Tabs, prompts and pop-ups. A switch that answers one of Tumblr's own feature flags says a

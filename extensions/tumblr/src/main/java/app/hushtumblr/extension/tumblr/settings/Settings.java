@@ -119,6 +119,27 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_disable_update_prompts", FALSE);
 
     /**
+     * The "Check out these blogs" cards and carousels, and their headings, come out of each page
+     * ({@link app.hushtumblr.extension.tumblr.timeline.TimelineFilter}). Off to start.
+     */
+    public static final BooleanSetting HIDE_SUGGESTED_BLOGS =
+            new BooleanSetting("hushtumblr_hide_suggested_blogs", FALSE);
+
+    /**
+     * The "Check out these communities" cards and carousels, and their headings, come out of each
+     * page ({@link app.hushtumblr.extension.tumblr.timeline.TimelineFilter}). Off to start.
+     */
+    public static final BooleanSetting HIDE_SUGGESTED_COMMUNITIES =
+            new BooleanSetting("hushtumblr_hide_suggested_communities", FALSE);
+
+    /**
+     * Tumblr TV's "Watch it" rows and video hub cards, and their headings, come out of each page
+     * ({@link app.hushtumblr.extension.tumblr.timeline.TimelineFilter}). Off to start.
+     */
+    public static final BooleanSetting HIDE_WATCH_IT_ROWS =
+            new BooleanSetting("hushtumblr_hide_watch_it_rows", FALSE);
+
+    /**
      * Once a day, when Tumblr starts, ask api.github.com whether a newer HushTumblr release is
      * out, and say so on the settings screen ({@link ReleaseCheck}). It's the settings entry's own
      * switch rather than a patch's, so every build has it ({@link PatchFamily#ENTRY_SWITCHES}). Off

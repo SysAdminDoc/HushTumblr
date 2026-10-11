@@ -54,6 +54,12 @@ public final class SettingsStatus {
     public static boolean screenshotSharingFlags() { return false; }
     public static boolean disableUpdatePrompts() { return false; }
     public static boolean updatePromptFlags() { return false; }
+    public static boolean hideSuggestedBlogs() { return false; }
+    public static boolean suggestedBlogCards() { return false; }
+    public static boolean hideSuggestedCommunities() { return false; }
+    public static boolean suggestedCommunityCards() { return false; }
+    public static boolean hideWatchItRows() { return false; }
+    public static boolean watchItRows() { return false; }
     public static boolean fixPushNotifications() { return false; }
     public static boolean firebaseCertificate() { return false; }
 }

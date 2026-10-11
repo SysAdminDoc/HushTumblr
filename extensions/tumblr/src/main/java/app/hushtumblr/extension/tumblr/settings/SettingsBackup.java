@@ -95,6 +95,9 @@ public final class SettingsBackup {
             Settings.SKIP_REVIEW_PROMPTS,
             Settings.TURN_OFF_SCREENSHOT_SHARING,
             Settings.DISABLE_UPDATE_PROMPTS,
+            Settings.HIDE_SUGGESTED_BLOGS,
+            Settings.HIDE_SUGGESTED_COMMUNITIES,
+            Settings.HIDE_WATCH_IT_ROWS,
             Settings.FIX_PUSH_NOTIFICATIONS));
 
     /**

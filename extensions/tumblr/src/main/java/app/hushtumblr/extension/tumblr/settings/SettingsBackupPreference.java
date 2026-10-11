@@ -425,6 +425,9 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
             case "hushtumblr_skip_review_prompts": return L10n.t("Skip review prompts");
             case "hushtumblr_turn_off_screenshot_sharing": return L10n.t("Turn off screenshot sharing");
             case "hushtumblr_disable_update_prompts": return L10n.t("Disable update prompts");
+            case "hushtumblr_hide_suggested_blogs": return L10n.t("Hide suggested blogs");
+            case "hushtumblr_hide_suggested_communities": return L10n.t("Hide suggested communities");
+            case "hushtumblr_hide_watch_it_rows": return L10n.t("Hide Watch it rows");
             case "hushtumblr_fix_push_notifications": return L10n.t("Fix push notifications");
             default: throw new IllegalArgumentException("Unlisted backup switch");
         }

@@ -69,6 +69,10 @@ public enum PatchFamily {
     TURN_OFF_SCREENSHOT_SHARING(FamilyNames.TURN_OFF_SCREENSHOT_SHARING, "turnOffScreenshotSharing", null,
             Settings.TURN_OFF_SCREENSHOT_SHARING),
     DISABLE_UPDATE_PROMPTS(FamilyNames.DISABLE_UPDATE_PROMPTS, "disableUpdatePrompts", null, Settings.DISABLE_UPDATE_PROMPTS),
+    HIDE_SUGGESTED_BLOGS(FamilyNames.HIDE_SUGGESTED_BLOGS, "hideSuggestedBlogs", null, Settings.HIDE_SUGGESTED_BLOGS),
+    HIDE_SUGGESTED_COMMUNITIES(FamilyNames.HIDE_SUGGESTED_COMMUNITIES, "hideSuggestedCommunities", null,
+            Settings.HIDE_SUGGESTED_COMMUNITIES),
+    HIDE_WATCH_IT_ROWS(FamilyNames.HIDE_WATCH_IT_ROWS, "hideWatchItRows", null, Settings.HIDE_WATCH_IT_ROWS),
     FIX_PUSH_NOTIFICATIONS(FamilyNames.FIX_PUSH_NOTIFICATIONS, "fixPushNotifications", null, Settings.FIX_PUSH_NOTIFICATIONS);
 
     /** The patch's name in Morphe Manager. */
@@ -115,7 +119,8 @@ public enum PatchFamily {
     static volatile Set<Capability> capabilitiesForTests;
 
     /** The families the Feed page holds. The page and its home row both read this. */
-    static final Set<PatchFamily> FEED_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_AD_FREE_BANNER, HIDE_ADS));
+    static final Set<PatchFamily> FEED_PAGE = Collections.unmodifiableSet(EnumSet.of(
+            HIDE_WATCH_IT_ROWS, HIDE_SUGGESTED_COMMUNITIES, HIDE_SUGGESTED_BLOGS, HIDE_AD_FREE_BANNER, HIDE_ADS));
 
     /** The families the Interface page holds. The page and its home row both read this. */
     static final Set<PatchFamily> INTERFACE_PAGE = Collections.unmodifiableSet(EnumSet.of(
@@ -137,6 +142,10 @@ public enum PatchFamily {
         REVIEW_PROMPT(SKIP_REVIEW_PROMPTS, "reviewPrompt", "Skip review prompts"),
         SCREENSHOT_SHARING_FLAGS(TURN_OFF_SCREENSHOT_SHARING, "screenshotSharingFlags", "Turn off screenshot sharing"),
         UPDATE_PROMPT_FLAGS(DISABLE_UPDATE_PROMPTS, "updatePromptFlags", "Disable update prompts"),
+        SUGGESTED_BLOG_CARDS(HIDE_SUGGESTED_BLOGS, "suggestedBlogCards", "Hide suggested blogs"),
+        SUGGESTED_COMMUNITY_CARDS(HIDE_SUGGESTED_COMMUNITIES, "suggestedCommunityCards",
+                "Hide suggested communities"),
+        WATCH_IT_ROWS(HIDE_WATCH_IT_ROWS, "watchItRows", "Hide Watch it rows"),
         FIREBASE_CERTIFICATE(FIX_PUSH_NOTIFICATIONS, "firebaseCertificate", "Fix push notifications");
 
         public final PatchFamily family;
