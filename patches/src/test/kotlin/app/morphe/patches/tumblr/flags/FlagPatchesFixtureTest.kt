@@ -17,6 +17,7 @@ import app.morphe.patches.tumblr.privacy.disableAnalyticsPatch
 import app.morphe.patches.tumblr.ads.hideAdFreeBannerPatch
 import app.morphe.patches.tumblr.ui.hideTumblrTvPatch
 import app.morphe.patches.tumblr.ui.hideCommunitiesTabPatch
+import app.morphe.patches.tumblr.ui.hideBlazePromptsPatch
 import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -45,6 +46,10 @@ class FlagPatchesFixtureTest {
     @Test
     fun `Hide the Communities tab claims flags Tumblr has and turns its switch on`() =
         check(hideCommunitiesTabPatch, "hideCommunitiesTab", "communitiesTabFlags", "COMMUNITIES_TAB_BAR_ITEM", "COMMUNITIES_TOOLTIPS")
+
+    @Test
+    fun `Hide Blaze prompts claims flags Tumblr has and turns its switch on`() =
+        check(hideBlazePromptsPatch, "hideBlazePrompts", "blazePromptFlags", "BLAZE_DASHBOARD_ENTRYPOINT_IN_USER_BLOG_HEADER", "BLAZE_DASHBOARD_ENTRYPOINT_NEAR_PREMIUM", "BLAZE_NUDGE_AFTER_POST", "SHOW_BLAZE_SETTINGS_BANNER", "TUMBLR_BLAZE_LANDING_PAGE_BANNER")
 
     /**
      * Applies [patch] to the extension and checks it flips the [status] and [capability] stubs, after

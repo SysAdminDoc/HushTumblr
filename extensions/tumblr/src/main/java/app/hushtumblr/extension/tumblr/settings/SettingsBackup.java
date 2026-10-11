@@ -91,6 +91,7 @@ public final class SettingsBackup {
             Settings.HIDE_AD_FREE_BANNER,
             Settings.HIDE_TUMBLR_TV,
             Settings.HIDE_COMMUNITIES_TAB,
+            Settings.HIDE_BLAZE_PROMPTS,
             Settings.FIX_PUSH_NOTIFICATIONS));
 
     /**

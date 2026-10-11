@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(416);
+        Map<String, String> table = new HashMap<>(420);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -202,6 +202,8 @@ public final class L10nTranslations {
                 "GitHub hat etwas geschickt, das HushTumblr nicht lesen konnte. Versuche es sp\u00e4ter noch einmal.");
         table.put("Go straight to one group of settings. Back returns to where you were.",
                 "Direkt zu einer Gruppe von Einstellungen. Zur\u00fcck bringt dich dorthin, wo du warst.");
+        table.put("Hide Blaze prompts",
+                "Blaze-Hinweise ausblenden");
         table.put("Hide Tumblr TV",
                 "Tumblr TV ausblenden");
         table.put("Hide ads",
@@ -212,6 +214,8 @@ public final class L10nTranslations {
                 "Communities-Tab ausblenden");
         table.put("Hide the ad-free banner",
                 "Werbefrei-Banner ausblenden");
+        table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.",
+                "Blendet die Blaze-Schaltfl\u00e4chen, -Banner und den Hinweis aus, einen Beitrag nach dem Teilen zu bewerben. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
         table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
                 "Blendet das Banner im Dashboard aus, das dich bittet, f\u00fcr werbefreies Surfen zu bezahlen. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
@@ -298,13 +302,13 @@ public final class L10nTranslations {
                 "HushTumblr pausieren");
         table.put("Pause, backup and diagnostics",
                 "Pause, Sicherung und Diagnose");
+    }
+
+    private static void fillDe2(Map<String, String> table) {
         table.put("Pick the patches in Morphe Manager when you patch the app. The switches here only control patches that are in your build. Changing a switch doesn't add or remove a patch. Pause keeps your saved choices, but anything set while patching stays in the app.",
                 "W\u00e4hle die Patches in Morphe Manager aus, wenn du die App patchst. Die Schalter hier steuern nur Patches, die in deinem Build enthalten sind. Ein Schalter f\u00fcgt keinen Patch hinzu und entfernt keinen. Pause beh\u00e4lt deine gespeicherte Auswahl, aber alles, was beim Patchen festgelegt wurde, bleibt in der App.");
         table.put("Privacy",
                 "Datenschutz");
-    }
-
-    private static void fillDe2(Map<String, String> table) {
         table.put("Push alerts",
                 "Push-Hinweise");
         table.put("Read HushTumblr releases on GitHub. Nothing is downloaded here.",
@@ -421,13 +425,13 @@ public final class L10nTranslations {
                 "Es gibt keinen Import zum R\u00fcckg\u00e4ngigmachen.");
         table.put("This build doesn't include the parts that handle %1$s.",
                 "Dieser Build enth\u00e4lt die Teile nicht, die %1$s behandeln.");
+    }
+
+    private static void fillDe3(Map<String, String> table) {
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
                 "Dieser Build behandelt %1$s. Es fehlen die Teile f\u00fcr %2$s.");
         table.put("This phone has no file picker, so there's no way to choose a file here.",
                 "Dieses Handy hat keine Dateiauswahl, hier l\u00e4sst sich also keine Datei w\u00e4hlen.");
-    }
-
-    private static void fillDe3(Map<String, String> table) {
         table.put("Try a different word or clear the search.",
                 "Versuch ein anderes Wort oder l\u00f6sche die Suche.");
         table.put("Try again, or go back to Tumblr.",
@@ -487,7 +491,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(416);
+        Map<String, String> table = new HashMap<>(420);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -639,6 +643,8 @@ public final class L10nTranslations {
                 "GitHub devolvi\u00f3 algo que HushTumblr no pudo leer. Int\u00e9ntalo de nuevo m\u00e1s tarde.");
         table.put("Go straight to one group of settings. Back returns to where you were.",
                 "Ve directo a un grupo de ajustes. Atr\u00e1s te devuelve a donde estabas.");
+        table.put("Hide Blaze prompts",
+                "Ocultar avisos de Blaze");
         table.put("Hide Tumblr TV",
                 "Ocultar Tumblr TV");
         table.put("Hide ads",
@@ -649,6 +655,8 @@ public final class L10nTranslations {
                 "Ocultar la pesta\u00f1a Comunidades");
         table.put("Hide the ad-free banner",
                 "Ocultar el banner sin anuncios");
+        table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.",
+                "Oculta los botones y banners de Blaze y el aviso para promocionar una publicaci\u00f3n despu\u00e9s de compartirla. Reinicia Tumblr para ver el cambio.");
         table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
                 "Oculta el banner del panel que te pide pagar por navegar sin anuncios. Reinicia Tumblr para ver el cambio.");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
@@ -735,13 +743,13 @@ public final class L10nTranslations {
                 "Pausar HushTumblr");
         table.put("Pause, backup and diagnostics",
                 "Pausa, copia de seguridad y diagn\u00f3stico");
+    }
+
+    private static void fillEs2(Map<String, String> table) {
         table.put("Pick the patches in Morphe Manager when you patch the app. The switches here only control patches that are in your build. Changing a switch doesn't add or remove a patch. Pause keeps your saved choices, but anything set while patching stays in the app.",
                 "Elige los parches en Morphe Manager cuando parchees la app. Los interruptores de aqu\u00ed solo controlan los parches que est\u00e1n en tu versi\u00f3n. Cambiar un interruptor no a\u00f1ade ni quita ning\u00fan parche. Pausa conserva tus elecciones guardadas, pero lo que se defini\u00f3 al parchear se queda en la app.");
         table.put("Privacy",
                 "Privacidad");
-    }
-
-    private static void fillEs2(Map<String, String> table) {
         table.put("Push alerts",
                 "Alertas push");
         table.put("Read HushTumblr releases on GitHub. Nothing is downloaded here.",
@@ -858,13 +866,13 @@ public final class L10nTranslations {
                 "No hay ninguna importaci\u00f3n que deshacer.");
         table.put("This build doesn't include the parts that handle %1$s.",
                 "Esta versi\u00f3n no incluye las partes que se encargan de %1$s.");
+    }
+
+    private static void fillEs3(Map<String, String> table) {
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
                 "Esta versi\u00f3n se encarga de %1$s. Faltan las partes para %2$s.");
         table.put("This phone has no file picker, so there's no way to choose a file here.",
                 "Este tel\u00e9fono no tiene selector de archivos, as\u00ed que aqu\u00ed no hay forma de elegir un archivo.");
-    }
-
-    private static void fillEs3(Map<String, String> table) {
         table.put("Try a different word or clear the search.",
                 "Prueba otra palabra o borra la b\u00fasqueda.");
         table.put("Try again, or go back to Tumblr.",
@@ -924,7 +932,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(416);
+        Map<String, String> table = new HashMap<>(420);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -1076,6 +1084,8 @@ public final class L10nTranslations {
                 "GitHub mengirim sesuatu yang tidak bisa dibaca HushTumblr. Coba lagi nanti.");
         table.put("Go straight to one group of settings. Back returns to where you were.",
                 "Langsung ke satu kelompok setelan. Kembali membawamu ke tempat semula.");
+        table.put("Hide Blaze prompts",
+                "Sembunyikan ajakan Blaze");
         table.put("Hide Tumblr TV",
                 "Sembunyikan Tumblr TV");
         table.put("Hide ads",
@@ -1086,6 +1096,8 @@ public final class L10nTranslations {
                 "Sembunyikan tab Komunitas");
         table.put("Hide the ad-free banner",
                 "Sembunyikan banner bebas iklan");
+        table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.",
+                "Menyembunyikan tombol dan banner Blaze serta ajakan untuk mempromosikan postingan setelah kamu membagikannya. Mulai ulang Tumblr untuk melihat perubahannya.");
         table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
                 "Menyembunyikan banner di dasbor yang memintamu membayar untuk menjelajah tanpa iklan. Mulai ulang Tumblr untuk melihat perubahannya.");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
@@ -1172,13 +1184,13 @@ public final class L10nTranslations {
                 "Jeda HushTumblr");
         table.put("Pause, backup and diagnostics",
                 "Jeda, cadangan, dan diagnostik");
+    }
+
+    private static void fillIn2(Map<String, String> table) {
         table.put("Pick the patches in Morphe Manager when you patch the app. The switches here only control patches that are in your build. Changing a switch doesn't add or remove a patch. Pause keeps your saved choices, but anything set while patching stays in the app.",
                 "Pilih patch di Morphe Manager saat Anda menambal aplikasi. Sakelar di sini hanya mengatur patch yang ada di build Anda. Mengubah sakelar tidak menambah atau menghapus patch. Jeda menyimpan pilihan Anda, tetapi apa pun yang diatur saat menambal tetap ada di aplikasi.");
         table.put("Privacy",
                 "Privasi");
-    }
-
-    private static void fillIn2(Map<String, String> table) {
         table.put("Push alerts",
                 "Peringatan push");
         table.put("Read HushTumblr releases on GitHub. Nothing is downloaded here.",
@@ -1295,13 +1307,13 @@ public final class L10nTranslations {
                 "Tidak ada impor untuk diurungkan.");
         table.put("This build doesn't include the parts that handle %1$s.",
                 "Build ini tidak menyertakan bagian yang menangani %1$s.");
+    }
+
+    private static void fillIn3(Map<String, String> table) {
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
                 "Build ini menangani %1$s. Bagian untuk %2$s tidak ada.");
         table.put("This phone has no file picker, so there's no way to choose a file here.",
                 "Ponsel ini tidak memiliki pemilih file, jadi file tidak dapat dipilih di sini.");
-    }
-
-    private static void fillIn3(Map<String, String> table) {
         table.put("Try a different word or clear the search.",
                 "Coba kata lain atau hapus pencarian.");
         table.put("Try again, or go back to Tumblr.",
@@ -1361,7 +1373,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(416);
+        Map<String, String> table = new HashMap<>(420);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -1513,6 +1525,8 @@ public final class L10nTranslations {
                 "O GitHub enviou algo que o HushTumblr n\u00e3o conseguiu ler. Tente de novo mais tarde.");
         table.put("Go straight to one group of settings. Back returns to where you were.",
                 "V\u00e1 diretamente para um grupo de configura\u00e7\u00f5es. Voltar leva voc\u00ea de volta ao ponto em que estava.");
+        table.put("Hide Blaze prompts",
+                "Ocultar avisos do Blaze");
         table.put("Hide Tumblr TV",
                 "Ocultar o Tumblr TV");
         table.put("Hide ads",
@@ -1523,6 +1537,8 @@ public final class L10nTranslations {
                 "Ocultar a aba Comunidades");
         table.put("Hide the ad-free banner",
                 "Ocultar o banner sem an\u00fancios");
+        table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.",
+                "Esconde os bot\u00f5es e banners do Blaze e o aviso para promover um post depois que voc\u00ea o compartilha. Reinicie o Tumblr para ver a mudan\u00e7a.");
         table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
                 "Esconde o banner do painel que pede para voc\u00ea pagar pela navega\u00e7\u00e3o sem an\u00fancios. Reinicie o Tumblr para ver a mudan\u00e7a.");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
@@ -1609,13 +1625,13 @@ public final class L10nTranslations {
                 "Pausar o HushTumblr");
         table.put("Pause, backup and diagnostics",
                 "Pausa, backup e diagn\u00f3stico");
+    }
+
+    private static void fillPt_rBR2(Map<String, String> table) {
         table.put("Pick the patches in Morphe Manager when you patch the app. The switches here only control patches that are in your build. Changing a switch doesn't add or remove a patch. Pause keeps your saved choices, but anything set while patching stays in the app.",
                 "Escolha os patches no Morphe Manager ao aplicar os patches ao app. As op\u00e7\u00f5es daqui s\u00f3 controlam os patches que est\u00e3o na sua vers\u00e3o. Mudar uma op\u00e7\u00e3o n\u00e3o adiciona nem remove patches. Pausar mant\u00e9m suas escolhas salvas, mas o que foi definido ao aplicar os patches continua no app.");
         table.put("Privacy",
                 "Privacidade");
-    }
-
-    private static void fillPt_rBR2(Map<String, String> table) {
         table.put("Push alerts",
                 "Alertas push");
         table.put("Read HushTumblr releases on GitHub. Nothing is downloaded here.",
@@ -1732,13 +1748,13 @@ public final class L10nTranslations {
                 "N\u00e3o h\u00e1 importa\u00e7\u00e3o para desfazer.");
         table.put("This build doesn't include the parts that handle %1$s.",
                 "Esta vers\u00e3o n\u00e3o inclui as partes que cuidam de %1$s.");
+    }
+
+    private static void fillPt_rBR3(Map<String, String> table) {
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
                 "Esta vers\u00e3o cuida de %1$s. Faltam as partes para %2$s.");
         table.put("This phone has no file picker, so there's no way to choose a file here.",
                 "Este dispositivo n\u00e3o tem seletor de arquivos, ent\u00e3o n\u00e3o \u00e9 poss\u00edvel escolher um arquivo aqui.");
-    }
-
-    private static void fillPt_rBR3(Map<String, String> table) {
         table.put("Try a different word or clear the search.",
                 "Tente outra palavra ou limpe a busca.");
         table.put("Try again, or go back to Tumblr.",
@@ -1798,7 +1814,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(416);
+        Map<String, String> table = new HashMap<>(420);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -1950,6 +1966,8 @@ public final class L10nTranslations {
                 "GitHub, HushTumblr'\u0131n okuyamad\u0131\u011f\u0131 bir yan\u0131t g\u00f6nderdi. Daha sonra tekrar dene.");
         table.put("Go straight to one group of settings. Back returns to where you were.",
                 "Do\u011frudan bir ayar grubuna git. Geri, bulundu\u011fun yere d\u00f6nd\u00fcr\u00fcr.");
+        table.put("Hide Blaze prompts",
+                "Blaze \u00f6nerilerini gizle");
         table.put("Hide Tumblr TV",
                 "Tumblr TV'yi gizle");
         table.put("Hide ads",
@@ -1960,6 +1978,8 @@ public final class L10nTranslations {
                 "Topluluklar sekmesini gizle");
         table.put("Hide the ad-free banner",
                 "Reklams\u0131z gezinme banner'\u0131n\u0131 gizle");
+        table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.",
+                "Blaze d\u00fc\u011fmelerini, banner'lar\u0131n\u0131 ve bir g\u00f6nderiyi payla\u015ft\u0131ktan sonra tan\u0131tman\u0131 \u00f6neren uyar\u0131y\u0131 gizler. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
         table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
                 "Panoda reklams\u0131z gezinme i\u00e7in \u00f6deme yapman\u0131 isteyen banner'\u0131 gizler. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
@@ -2046,13 +2066,13 @@ public final class L10nTranslations {
                 "HushTumblr'\u0131 duraklat");
         table.put("Pause, backup and diagnostics",
                 "Duraklatma, yedekleme ve tan\u0131lama");
+    }
+
+    private static void fillTr2(Map<String, String> table) {
         table.put("Pick the patches in Morphe Manager when you patch the app. The switches here only control patches that are in your build. Changing a switch doesn't add or remove a patch. Pause keeps your saved choices, but anything set while patching stays in the app.",
                 "Uygulamay\u0131 yamalarken yamalar\u0131 Morphe Manager'da se\u00e7. Buradaki anahtarlar yaln\u0131zca s\u00fcr\u00fcm\u00fcnde bulunan yamalar\u0131 kontrol eder. Bir anahtar\u0131 de\u011fi\u015ftirmek yama eklemez veya kald\u0131rmaz. Duraklat kay\u0131tl\u0131 se\u00e7imlerini korur, ama yamalarken ayarlanan her \u015fey uygulamada kal\u0131r.");
         table.put("Privacy",
                 "Gizlilik");
-    }
-
-    private static void fillTr2(Map<String, String> table) {
         table.put("Push alerts",
                 "Anl\u0131k uyar\u0131lar");
         table.put("Read HushTumblr releases on GitHub. Nothing is downloaded here.",
@@ -2169,13 +2189,13 @@ public final class L10nTranslations {
                 "Geri al\u0131nacak i\u00e7e aktarma yok.");
         table.put("This build doesn't include the parts that handle %1$s.",
                 "Bu s\u00fcr\u00fcm %1$s ile ilgilenen par\u00e7alar\u0131 i\u00e7ermiyor.");
+    }
+
+    private static void fillTr3(Map<String, String> table) {
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
                 "Bu s\u00fcr\u00fcm %1$s ile ilgileniyor. %2$s i\u00e7in par\u00e7alar eksik.");
         table.put("This phone has no file picker, so there's no way to choose a file here.",
                 "Bu telefonda dosya se\u00e7ici yok, bu y\u00fczden burada dosya se\u00e7menin bir yolu yok.");
-    }
-
-    private static void fillTr3(Map<String, String> table) {
         table.put("Try a different word or clear the search.",
                 "Ba\u015fka bir kelime deneyin veya aramay\u0131 temizleyin.");
         table.put("Try again, or go back to Tumblr.",

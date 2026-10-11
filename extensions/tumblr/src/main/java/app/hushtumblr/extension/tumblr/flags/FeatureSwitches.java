@@ -76,6 +76,13 @@ public final class FeatureSwitches {
         // in the post editor (CanvasActivity).
         claim(claims, "HIDE_COMMUNITIES_TAB", FamilyNames.HIDE_COMMUNITIES_TAB,
                 "COMMUNITIES_TAB_BAR_ITEM", "COMMUNITIES_TOOLTIPS");
+        // Blaze, paying Tumblr to promote a post: the entry points in your blog's header and on the
+        // dashboard and notifications, the nudge after you post, and the settings and landing page
+        // banners. The landing page banner has no reader in 46.5.0.109.
+        claim(claims, "HIDE_BLAZE_PROMPTS", FamilyNames.HIDE_BLAZE_PROMPTS,
+                "BLAZE_DASHBOARD_ENTRYPOINT_IN_USER_BLOG_HEADER",
+                "BLAZE_DASHBOARD_ENTRYPOINT_NEAR_PREMIUM", "BLAZE_NUDGE_AFTER_POST",
+                "SHOW_BLAZE_SETTINGS_BANNER", "TUMBLR_BLAZE_LANDING_PAGE_BANNER");
         return Collections.unmodifiableMap(claims);
     }
 

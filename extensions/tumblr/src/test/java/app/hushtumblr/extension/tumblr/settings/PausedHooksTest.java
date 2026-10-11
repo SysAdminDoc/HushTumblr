@@ -119,6 +119,9 @@ public class PausedHooksTest {
         // The Communities tab's flag answers off.
         probes.put(Settings.HIDE_COMMUNITIES_TAB, Collections.singletonList(
                 () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("COMMUNITIES_TAB_BAR_ITEM"), true)));
+        // The Blaze button in your blog's header answers off.
+        probes.put(Settings.HIDE_BLAZE_PROMPTS, Collections.singletonList(
+                () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("BLAZE_DASHBOARD_ENTRYPOINT_IN_USER_BLOG_HEADER"), true)));
         // Firebase's sign-up for push notifications names Tumblr's own certificate.
         probes.put(Settings.FIX_PUSH_NOTIFICATIONS, Collections.singletonList(PushNotificationsTest::fixesACertificate));
         return probes;

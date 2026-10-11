@@ -46,6 +46,8 @@ public final class SettingsStatus {
     public static boolean tumblrTvFlags() { return false; }
     public static boolean hideCommunitiesTab() { return false; }
     public static boolean communitiesTabFlags() { return false; }
+    public static boolean hideBlazePrompts() { return false; }
+    public static boolean blazePromptFlags() { return false; }
     public static boolean fixPushNotifications() { return false; }
     public static boolean firebaseCertificate() { return false; }
 }

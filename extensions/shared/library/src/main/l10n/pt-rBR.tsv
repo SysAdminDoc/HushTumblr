@@ -219,3 +219,6 @@ Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending yo
 # context: the Hide the Communities tab switch on the Interface page. Communities is Tumblr's name for its group spaces.
 Hide the Communities tab	Ocultar a aba Comunidades
 Takes the Communities tab out of the bottom bar and stops Communities tips in the post editor. Restart Tumblr to see the change.	Tira a aba Comunidades da barra inferior e para as dicas sobre comunidades no editor de posts. Reinicie o Tumblr para ver a mudança.
+# context: the Hide Blaze prompts switch on the Interface page. Blaze is Tumblr's paid post promotion.
+Hide Blaze prompts	Ocultar avisos do Blaze
+Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.	Esconde os botões e banners do Blaze e o aviso para promover um post depois que você o compartilha. Reinicie o Tumblr para ver a mudança.
