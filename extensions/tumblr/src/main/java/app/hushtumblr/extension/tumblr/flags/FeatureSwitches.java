@@ -14,6 +14,7 @@ import java.util.TreeSet;
 import app.hushtumblr.extension.shared.Utils;
 import app.hushtumblr.extension.shared.diagnostics.HookStatus;
 import app.hushtumblr.extension.shared.settings.BooleanSetting;
+import app.hushtumblr.extension.tumblr.settings.FamilyNames;
 import app.hushtumblr.extension.tumblr.settings.PatchFamily;
 
 /**
@@ -49,6 +50,13 @@ public final class FeatureSwitches {
 
     private static Map<String, Claim> claims() {
         Map<String, Claim> claims = new HashMap<>();
+        // Tumblr's own requests to its ad networks, and the pop-up and full-screen ads the timeline
+        // filter can't see. Ads the server puts in a page come whatever these say.
+        claim(claims, "HIDE_ADS", FamilyNames.HIDE_ADS,
+                "MAKE_ADX_REQUESTS", "MAKE_APS_AD_REQUESTS", "MAKE_DISPLAY_IO_REQUEST",
+                "MAKE_DISPLAY_IO_INTERSCROLLER_REQUEST", "MAKE_FAN_REQUESTS", "MAKE_NIMBUS_CLIENT_AD_REQUESTS",
+                "GOOGLE_BANNER_ADS", "GOOGLE_NATIVE_ADS", "GOOGLE_REWARDED_ADS", "SMART_BANNER_ADS",
+                "RENDER_NIMBUS_ADS", "RENDER_VUNGLE_ADS", "RENDER_DISPLAY_IO_INTERSCROLLER_S2S_ADS");
         return Collections.unmodifiableMap(claims);
     }
 

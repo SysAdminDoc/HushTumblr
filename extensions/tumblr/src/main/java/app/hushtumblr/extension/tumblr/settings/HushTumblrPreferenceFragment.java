@@ -251,6 +251,13 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
 
         // Every row carries an icon, so all pages share one text edge. A switch that stops something
         // Tumblr does takes the stop sign.
+        if (!Collections.disjoint(build, PatchFamily.FEED_PAGE)) {
+            PreferenceCategory feed = category(screen, L10n.t("Feed"));
+            patchToggle(feed, context, build, PatchFamily.HIDE_ADS, Settings.HIDE_ADS, L10n.t("Hide ads"),
+                    L10n.t("Takes ads and paid Blaze posts out of your dashboard and other feeds. Ad requests stop "
+                        + "after Tumblr restarts."), SettingsIcons.BLOCK);
+        }
+
         if (!Collections.disjoint(build, PatchFamily.PRIVACY_PAGE)) {
             PreferenceCategory privacy = category(screen, L10n.t("Privacy"));
             // A patch-time fact with no switch: an explanation, so it takes the info mark.

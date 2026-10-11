@@ -415,6 +415,7 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
 
     static String switchName(BooleanSetting setting) {
         switch (setting.key) {
+            case "hushtumblr_hide_ads": return L10n.t("Hide ads");
             case "hushtumblr_hide_ad_id": return L10n.t("Hide advertising ID");
             case "hushtumblr_fix_push_notifications": return L10n.t("Fix push notifications");
             default: throw new IllegalArgumentException("Unlisted backup switch");

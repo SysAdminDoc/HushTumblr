@@ -88,6 +88,7 @@ public class HushTumblrPreferenceFragmentTest {
     @Before
     public void initializeRowTitlesAfterTheContextIsReady() {
         ROW_TITLES.clear();
+        ROW_TITLES.put(PatchFamily.HIDE_ADS, "Hide ads");
         ROW_TITLES.put(PatchFamily.DISABLE_ANALYTICS, "Disable analytics");
         ROW_TITLES.put(PatchFamily.HIDE_ADVERTISING_ID, "Hide advertising ID");
         ROW_TITLES.put(PatchFamily.REMOVE_AD_TRACKING_PERMISSIONS, "Remove ad tracking permissions");
@@ -196,6 +197,7 @@ public class HushTumblrPreferenceFragmentTest {
 
                 List<String> sections = sections(page);
                 List<String> expected = new ArrayList<>();
+                if (!Collections.disjoint(build, PatchFamily.FEED_PAGE)) expected.add("Feed");
                 if (!Collections.disjoint(build, PatchFamily.PRIVACY_PAGE)) expected.add("Privacy");
                 expected.addAll(EVERY_BUILD);
                 // Its one switch is the page, so it comes with the patch, right after Links.
@@ -224,6 +226,10 @@ public class HushTumblrPreferenceFragmentTest {
             // notifications at all without the second one.
             assertTrue(((SwitchPreference) page.findPreference(Settings.HIDE_ADVERTISING_ID.key)).isChecked());
             assertTrue(((SwitchPreference) page.findPreference(Settings.FIX_PUSH_NOTIFICATIONS.key)).isChecked());
+            assertEquals("Hide ads", String.valueOf(page.findPreference(Settings.HIDE_ADS.key).getTitle()));
+            assertEquals("Takes ads and paid Blaze posts out of your dashboard and other feeds. Ad requests stop "
+                + "after Tumblr restarts.", String.valueOf(page.findPreference(Settings.HIDE_ADS.key).getSummary()));
+            assertTrue(((SwitchPreference) page.findPreference(Settings.HIDE_ADS.key)).isChecked());
             List<Preference> rows = new ArrayList<>();
             collect(page.getPreferenceScreen(), rows);
             for (Preference row : rows) {

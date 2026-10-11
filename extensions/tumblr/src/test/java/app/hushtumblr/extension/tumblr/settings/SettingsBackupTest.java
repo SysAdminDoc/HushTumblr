@@ -236,7 +236,7 @@ public class SettingsBackupTest {
         }
         assertEquals("a setting in Settings isn't a switch, and a settings file has no format for it",
                 Collections.emptyList(), notSwitches);
-        assertEquals(Arrays.asList(Settings.HIDE_ADVERTISING_ID, Settings.FIX_PUSH_NOTIFICATIONS),
+        assertEquals(Arrays.asList(Settings.HIDE_ADS, Settings.HIDE_ADVERTISING_ID, Settings.FIX_PUSH_NOTIFICATIONS),
                 SettingsBackup.ALLOWLIST);
     }
 

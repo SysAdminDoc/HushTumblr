@@ -38,8 +38,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import app.hushtumblr.extension.tumblr.flags.FeatureSwitches;
+import app.hushtumblr.extension.tumblr.flags.FeatureSwitchesTest;
 import app.hushtumblr.extension.tumblr.notifications.PushNotificationsTest;
 import app.hushtumblr.extension.tumblr.privacy.AdvertisingId;
+import app.hushtumblr.extension.tumblr.timeline.TimelineItems;
 import app.hushtumblr.extension.shared.SettingsContextRule;
 import app.hushtumblr.extension.shared.Utils;
 import app.hushtumblr.extension.shared.diagnostics.HookStatus;
@@ -96,6 +99,10 @@ public class PausedHooksTest {
         PatchFamily.capabilitiesForTests = EnumSet.allOf(PatchFamily.Capability.class);
         PatchFamily.inBuildForTests = EnumSet.allOf(PatchFamily.class);
         Map<BooleanSetting, List<Probe>> probes = new LinkedHashMap<>();
+        // A page with an ad comes back without it, and Tumblr's own ad requests are turned off.
+        probes.put(Settings.HIDE_ADS, Arrays.asList(
+                TimelineItems::aPageLosesItsAd,
+                () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("MAKE_ADX_REQUESTS"), true)));
         // Both getters of Google's advertising ID info answer as if the ID were deleted.
         probes.put(Settings.HIDE_ADVERTISING_ID, Arrays.asList(
                 () -> !"real".equals(AdvertisingId.id("real")),

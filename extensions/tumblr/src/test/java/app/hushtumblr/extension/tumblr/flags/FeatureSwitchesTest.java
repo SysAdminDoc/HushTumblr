@@ -18,11 +18,14 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 
 import app.hushtumblr.extension.shared.SettingsContextRule;
 import app.hushtumblr.extension.shared.diagnostics.HookStatus;
+import app.hushtumblr.extension.shared.settings.BooleanSetting;
 import app.hushtumblr.extension.tumblr.settings.PatchFamily;
+import app.hushtumblr.extension.tumblr.settings.PatchFamilyForTests;
 
 /**
  * The table behind the feature hook. What each family's switch does to its flags, paused and
@@ -68,6 +71,34 @@ public class FeatureSwitchesTest {
             }
             if (!family.patchName.equals(claim.patchName)) wrong.add(flag + ": " + claim.patchName + " isn't " + family.patchName);
             if (family.switches.isEmpty()) wrong.add(flag + ": " + family.patchName + " has no switch to turn it off with");
+        }
+        assertEquals(new ArrayList<String>(), wrong);
+    }
+
+    /**
+     * Each claimed flag answers off while its family's switch is on, and Tumblr's own answer while
+     * it's off, while the family isn't in the build, and whenever Tumblr's answer is already off.
+     */
+    @Test
+    public void everyClaimedFlagFollowsItsFamilysSwitch() {
+        List<String> wrong = new ArrayList<>();
+        try {
+            PatchFamilyForTests.inBuild(EnumSet.allOf(PatchFamily.class));
+            for (String flag : FeatureSwitches.claimedFlags()) {
+                PatchFamily family = PatchFamily.valueOf(FeatureSwitches.claimOn(flag).family);
+                for (BooleanSetting setting : family.switches) setting.save(true);
+                if (FeatureSwitches.isEnabled(flag(flag), true)) wrong.add(flag + " stayed on with its switch on");
+                if (FeatureSwitches.isEnabled(flag(flag), false)) wrong.add(flag + " turned on");
+                for (BooleanSetting setting : family.switches) setting.save(false);
+                if (!FeatureSwitches.isEnabled(flag(flag), true)) wrong.add(flag + " went off with its switch off");
+                for (BooleanSetting setting : family.switches) setting.save(true);
+                PatchFamilyForTests.inBuild(EnumSet.complementOf(EnumSet.of(family)));
+                if (!FeatureSwitches.isEnabled(flag(flag), true)) wrong.add(flag + " went off without its patch");
+                PatchFamilyForTests.inBuild(EnumSet.allOf(PatchFamily.class));
+                for (BooleanSetting setting : family.switches) setting.resetToDefault();
+            }
+        } finally {
+            PatchFamilyForTests.inBuild(null);
         }
         assertEquals(new ArrayList<String>(), wrong);
     }

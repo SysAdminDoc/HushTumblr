@@ -207,3 +207,7 @@ Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't cha
 Push alerts	Push-Hinweise
 Tumblr and the ad companies inside it see an empty advertising ID with ad tracking limited, as if you deleted your ad ID in Android settings.	Tumblr und die Werbefirmen darin sehen eine leere Werbe-ID mit eingeschränktem Werbe-Tracking, so als hättest du deine Werbe-ID in den Android-Einstellungen gelöscht.
 Use the email on your Tumblr account and a Tumblr password. Google sign-in may not work, because this patched app is signed with a different key. Push notifications haven't been tested.	Nutze die E-Mail-Adresse deines Tumblr-Kontos und ein Tumblr-Passwort. Die Google-Anmeldung funktioniert vielleicht nicht, weil diese gepatchte App mit einem anderen Schlüssel signiert ist. Push-Benachrichtigungen wurden nicht getestet.
+# context: the Feed page and its Hide ads switch.
+Feed	Feed
+Hide ads	Werbung ausblenden
+Takes ads and paid Blaze posts out of your dashboard and other feeds. Ad requests stop after Tumblr restarts.	Entfernt Werbung und bezahlte Blaze-Beiträge aus deinem Dashboard und anderen Feeds. Werbeanfragen enden, sobald Tumblr neu gestartet wurde.

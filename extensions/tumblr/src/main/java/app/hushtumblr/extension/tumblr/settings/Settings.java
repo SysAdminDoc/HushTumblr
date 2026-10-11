@@ -27,9 +27,9 @@ import app.hushtumblr.extension.shared.settings.BooleanSetting;
 /**
  * The switches behind the hooks that ask before they act.
  *
- * <p>A switch's default is the second argument of its {@link BooleanSetting}. Hide advertising ID
- * and Fix push notifications keep their switches on: both patches are in Morphe Manager's default
- * selection, and a patched build gets no push notifications without the second one. A patch added
+ * <p>A switch's default is the second argument of its {@link BooleanSetting}. Hide ads, Hide
+ * advertising ID and Fix push notifications keep their switches on: they're what most people patch
+ * for, and a patched build gets no push notifications without the last one. A patch added
  * later joins the default selection with its switches off, so a build patched with the defaults
  * acts like Tumblr until one is turned on. While HushTumblr is paused, safe mode included
  * ({@link app.hushtumblr.extension.shared.settings.HushTumblrPause}), a switch answers off unless
@@ -38,6 +38,14 @@ import app.hushtumblr.extension.shared.settings.BooleanSetting;
  */
 @SuppressWarnings("unused")
 public class Settings extends BaseSettings {
+    /**
+     * Ads and paid Blaze posts leave each page of posts Tumblr loads, and Tumblr's own requests to
+     * its ad networks are turned off ({@link app.hushtumblr.extension.tumblr.timeline.TimelineFilter},
+     * {@link app.hushtumblr.extension.tumblr.flags.FeatureSwitches}). On to start, like the patch.
+     */
+    public static final BooleanSetting HIDE_ADS =
+            new BooleanSetting("hushtumblr_hide_ads", TRUE);
+
     /**
      * Google's advertising ID getters answer an empty ID with ad tracking limited
      * ({@link app.hushtumblr.extension.tumblr.privacy.AdvertisingId}).

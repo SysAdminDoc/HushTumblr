@@ -32,6 +32,8 @@ public final class SettingsStatus {
     private SettingsStatus() {
     }
 
+    public static boolean hideAds() { return false; }
+    public static boolean timelineAds() { return false; }
     public static boolean disableAnalytics() { return false; }
     public static boolean hideAdvertisingId() { return false; }
     public static boolean advertisingId() { return false; }

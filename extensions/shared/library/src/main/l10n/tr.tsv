@@ -207,3 +207,7 @@ Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't cha
 Push alerts	Anlık uyarılar
 Tumblr and the ad companies inside it see an empty advertising ID with ad tracking limited, as if you deleted your ad ID in Android settings.	Tumblr ve içindeki reklam şirketleri, reklam takibi sınırlı olarak boş bir reklam kimliği görür. Reklam kimliğini Android ayarlarından silmişsin gibi olur.
 Use the email on your Tumblr account and a Tumblr password. Google sign-in may not work, because this patched app is signed with a different key. Push notifications haven't been tested.	Tumblr hesabındaki e-postayı ve bir Tumblr parolasını kullan. Bu yamalı uygulama farklı bir anahtarla imzalandığı için Google ile giriş çalışmayabilir. Anlık bildirimler test edilmedi.
+# context: the Feed page and its Hide ads switch.
+Feed	Akış
+Hide ads	Reklamları gizle
+Takes ads and paid Blaze posts out of your dashboard and other feeds. Ad requests stop after Tumblr restarts.	Reklamları ve ücretli Blaze gönderilerini panondan ve diğer akışlardan kaldırır. Reklam istekleri Tumblr yeniden başladıktan sonra durur.

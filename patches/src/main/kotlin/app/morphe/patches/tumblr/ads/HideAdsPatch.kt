@@ -1,0 +1,40 @@
+/*
+ * Copyright 2026 HushTumblr contributors
+ * https://github.com/SysAdminDoc/HushTumblr
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+package app.morphe.patches.tumblr.ads
+
+import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patches.shared.compat.AppCompatibilities
+import app.morphe.patches.tumblr.flags.featureSwitchHookPatch
+import app.morphe.patches.tumblr.misc.extension.enableCapability
+import app.morphe.patches.tumblr.misc.extension.enableStatus
+import app.morphe.patches.tumblr.misc.extension.requireStatusMethod
+import app.morphe.patches.tumblr.misc.extension.tumblrExtensionPatch
+import app.morphe.patches.tumblr.misc.settings.settingsPatch
+import app.morphe.patches.tumblr.timeline.timelineListHookPatch
+
+/**
+ * Turns on the extension's ad rule. The timeline hook takes each ad item, Blaze post and sponsored
+ * post out of a page before Tumblr shows it, and the feature switch hook answers false for the
+ * flags that make Tumblr ask its ad networks for ads (the rule's flag list is in `FeatureSwitches`).
+ */
+@Suppress("unused")
+val hideAdsPatch = bytecodePatch(
+    name = "Hide ads",
+    description = "Takes ads and paid Blaze posts out of your dashboard and other feeds, and stops Tumblr asking" +
+        " its ad networks for more. On by default. Turn it off in Tumblr settings > HushTumblr > Feed.",
+    default = true,
+) {
+    category("Ads")
+    dependsOn(settingsPatch, tumblrExtensionPatch, timelineListHookPatch, featureSwitchHookPatch)
+    compatibleWith(*AppCompatibilities.tumblr())
+
+    execute {
+        requireStatusMethod("hideAds")
+        requireStatusMethod("timelineAds")
+        enableCapability("timelineAds")
+        enableStatus("hideAds")
+    }
+}

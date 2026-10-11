@@ -28,6 +28,7 @@ package app.hushtumblr.extension.tumblr.settings;
  * there would load the settings with no context to read them from.
  */
 public final class FamilyNames {
+    public static final String HIDE_ADS = "Hide ads";
     public static final String DISABLE_ANALYTICS = "Disable analytics";
     public static final String HIDE_ADVERTISING_ID = "Hide advertising ID";
     public static final String REMOVE_AD_TRACKING_PERMISSIONS = "Remove ad tracking permissions";

@@ -8,6 +8,7 @@
 * **Tumblr:** Patch descriptions now point at Tumblr settings > HushTumblr for each switch.
 * **Tumblr:** The patches now declare all four ABIs Tumblr's 46.5.0.109 bundle carries (arm64-v8a, armeabi-v7a, x86 and x86_64), so Morphe Manager offers them on 32-bit phones and x86 emulators too, not just 64-bit ARM.
 * **Tumblr:** A shared hook on Tumblr's feature check lets a HushTumblr switch turn one of Tumblr's own features off. It has no switch of its own, and what it changes shows after Tumblr restarts, since Tumblr keeps each answer until then.
+* **Tumblr:** New Hide ads patch, on by default. It takes ad cards, paid Blaze posts and sponsored posts out of your dashboard, blog pages, likes and search before Tumblr shows them, and turns off Tumblr's switches for asking its ad networks for ads once Tumblr restarts. The switch is on the new Feed page in HushTumblr settings.
 * **Tumblr:** Fix push notifications hands Firebase Tumblr's original certificate fingerprint in its request builder, and Hide advertising ID answers Tumblr's ad ID lookups with an empty ID.
 * **Tooling:** The Pinterest-only patches, their settings and their checks are gone. The build, the settings framework, diagnostics, pause and backup stay.
 * **Tooling:** Every package, setting key, environment variable and script now uses the HushTumblr and Tumblr names, the fixtures and stand-in builds are Tumblr's, and the patched minimum Android version is API 26.

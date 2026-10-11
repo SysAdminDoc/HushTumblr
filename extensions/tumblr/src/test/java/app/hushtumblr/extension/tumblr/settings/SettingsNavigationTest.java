@@ -96,11 +96,12 @@ public class SettingsNavigationTest {
     @Test @Config(sdk = {29, 30, 33, 36})
     public void homeAndEveryCategoryAreReachableWithoutRemovingTheModel() {
         assertNotNull(page.navigation);
-        // Status, Browse settings, the Privacy category, More settings and Support HushTumblr.
-        assertEquals(5, list().getCount());
-        // Privacy, Links, Notifications, Tumblr's own settings, Updates, Pause, backup and
+        // Status, Browse settings, the Feed and Privacy categories, More settings and Support
+        // HushTumblr.
+        assertEquals(6, list().getCount());
+        // Feed, Privacy, Links, Notifications, Tumblr's own settings, Updates, Pause, backup and
         // diagnostics, and About.
-        assertEquals(7, page.sections().size());
+        assertEquals(8, page.sections().size());
         int total = page.getPreferenceScreen().getRootAdapter().getCount();
         for (Preference section : page.sections()) {
             assertTrue(page.navigation.open(section));
@@ -110,7 +111,7 @@ public class SettingsNavigationTest {
             assertTrue(page.navigation.back());
             while (page.navigation.back()) { }
         }
-        assertEquals(5, list().getCount());
+        assertEquals(6, list().getCount());
     }
 
     @Test public void theHomePageEndsWithSupportWhichOpensKoFi() {
@@ -539,7 +540,7 @@ public class SettingsNavigationTest {
         assertEquals("No matching settings", ((Preference) list().getItemAtPosition(0)).getTitle());
         assertTrue(page.navigation.back());
         assertEquals("", search.getText().toString());
-        assertEquals(5, list().getCount());
+        assertEquals(6, list().getCount());
     }
 
     @Test public void switchRowsNameWhatTheyChangeAndWhenItApplies() {
@@ -716,14 +717,14 @@ public class SettingsNavigationTest {
         page.navigation.open(page.findPreference(Settings.HIDE_ADVERTISING_ID.key));
         SettingsL10nTest.backOf(dialog).performClick();
         assertTrue(dialog.getDialog().isShowing());
-        assertEquals(5, list().getCount());
+        assertEquals(6, list().getCount());
         page.navigation.navigate("About");
         dialog.getDialog().onBackPressed();
         // More settings: Links, Notifications, Tumblr's own settings, Updates, Pause, backup and diagnostics,
         // and About.
         assertEquals(6, list().getCount());
         dialog.getDialog().onBackPressed();
-        assertEquals(5, list().getCount());
+        assertEquals(6, list().getCount());
         dialog.getDialog().onBackPressed();
         ShadowLooper.idleMainLooper();
         assertFalse(controller.get().isFinishing());

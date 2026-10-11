@@ -85,6 +85,7 @@ public final class SettingsBackup {
      * until someone decides it belongs here, and SettingsBackupTest fails until they do.
      */
     static final List<BooleanSetting> ALLOWLIST = Collections.unmodifiableList(Arrays.asList(
+            Settings.HIDE_ADS,
             Settings.HIDE_ADVERTISING_ID,
             Settings.FIX_PUSH_NOTIFICATIONS));
 

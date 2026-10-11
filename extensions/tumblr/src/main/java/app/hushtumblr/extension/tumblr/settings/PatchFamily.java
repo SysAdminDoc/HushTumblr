@@ -47,6 +47,7 @@ import app.hushtumblr.extension.shared.settings.preference.LogBufferManager;
  * name the patch uses to switch that method on.
  */
 public enum PatchFamily {
+    HIDE_ADS(FamilyNames.HIDE_ADS, "hideAds", null, Settings.HIDE_ADS),
     /** Analytics switches written into the manifest when patching: no switch, so Pause can't reach it. */
     DISABLE_ANALYTICS(FamilyNames.DISABLE_ANALYTICS, "disableAnalytics",
             "Firebase and Google Analytics collection is turned off"),
@@ -102,12 +103,16 @@ public enum PatchFamily {
     @Nullable
     static volatile Set<Capability> capabilitiesForTests;
 
+    /** The families the Feed page holds. The page and its home row both read this. */
+    static final Set<PatchFamily> FEED_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_ADS));
+
     /** The families the Privacy page holds. The page and its home row both read this. */
     static final Set<PatchFamily> PRIVACY_PAGE = Collections.unmodifiableSet(EnumSet.of(DISABLE_ANALYTICS,
             HIDE_ADVERTISING_ID, REMOVE_AD_TRACKING_PERMISSIONS, SPOOF_SIGNATURE));
 
     /** Each independent hook, its owning family and the flag set only after it was inserted. */
     public enum Capability {
+        TIMELINE_ADS(HIDE_ADS, "timelineAds", "Hide ads"),
         ADVERTISING_ID(HIDE_ADVERTISING_ID, "advertisingId", "Hide advertising ID"),
         FIREBASE_CERTIFICATE(FIX_PUSH_NOTIFICATIONS, "firebaseCertificate", "Fix push notifications");
 

@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(396);
+        Map<String, String> table = new HashMap<>(402);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -184,6 +184,8 @@ public final class L10nTranslations {
     private static void fillDe1(Map<String, String> table) {
         table.put("Export settings saves HushTumblr's switches. It doesn't include your Tumblr account, posts, downloaded files or Morphe Manager's signing key. Keep the settings file and a backup of Manager's signing key somewhere you can find them.",
                 "Einstellungen exportieren sichert die Schalter von HushTumblr. Dein Tumblr-Konto, Beitr\u00e4ge, heruntergeladene Dateien und der Signaturschl\u00fcssel von Morphe Manager sind nicht enthalten. Bewahre die Einstellungsdatei und eine Sicherung des Signaturschl\u00fcssels von Manager an einem Ort auf, den du wiederfindest.");
+        table.put("Feed",
+                "Feed");
         table.put("Finding them",
                 "So findest du sie");
         table.put("Firebase and Google Analytics collection is turned off",
@@ -202,6 +204,8 @@ public final class L10nTranslations {
                 "GitHub hat etwas geschickt, das HushTumblr nicht lesen konnte. Versuche es sp\u00e4ter noch einmal.");
         table.put("Go straight to one group of settings. Back returns to where you were.",
                 "Direkt zu einer Gruppe von Einstellungen. Zur\u00fcck bringt dich dorthin, wo du warst.");
+        table.put("Hide ads",
+                "Werbung ausblenden");
         table.put("Hide advertising ID",
                 "Werbe-ID verbergen");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
@@ -298,13 +302,13 @@ public final class L10nTranslations {
                 "Einstellungsdatei wird gelesen");
         table.put("Record patch activity and show errors for a bug report. Leave off during normal use.",
                 "Zeichnet Patch-Aktivit\u00e4t auf und zeigt Fehler f\u00fcr einen Fehlerbericht. Im Alltag ausgeschaltet lassen.");
+    }
+
+    private static void fillDe2(Map<String, String> table) {
         table.put("Release notes",
                 "Versionshinweise");
         table.put("Remove ad tracking permissions",
                 "Werbe-Tracking-Berechtigungen entfernen");
-    }
-
-    private static void fillDe2(Map<String, String> table) {
         table.put("Restore the switches from before the last import. Editing a switch or restarting Tumblr ends Undo.",
                 "Stellt die Schalter vor dem letzten Import wieder her. Das \u00c4ndern eines Schalters oder ein Neustart von Tumblr beendet diese M\u00f6glichkeit.");
         table.put("Resume",
@@ -355,6 +359,8 @@ public final class L10nTranslations {
                 "HushTumblr unterst\u00fctzen");
         table.put("Supported links",
                 "Unterst\u00fctzte Links");
+        table.put("Takes ads and paid Blaze posts out of your dashboard and other feeds. Ad requests stop after Tumblr restarts.",
+                "Entfernt Werbung und bezahlte Blaze-Beitr\u00e4ge aus deinem Dashboard und anderen Feeds. Werbeanfragen enden, sobald Tumblr neu gestartet wurde.");
         table.put("Tap to turn it back on.",
                 "Zum Wiedereinschalten tippen.");
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
@@ -419,15 +425,15 @@ public final class L10nTranslations {
                 "Tumblr-Hilfe zum Datenexport");
         table.put("Tumblr password help",
                 "Tumblr-Hilfe zum Passwort");
+    }
+
+    private static void fillDe3(Map<String, String> table) {
         table.put("Tumblr's access to the ad ID and Android's ad services is removed",
                 "Tumblrs Zugriff auf die Werbe-ID und die Werbedienste von Android ist entfernt");
         table.put("Tumblr's data export is separate from Export settings. Tumblr's help page explains how to request your personal data from the account you're already using.",
                 "Der Datenexport von Tumblr ist unabh\u00e4ngig von \u201eEinstellungen exportieren\u201c. Die Hilfeseite von Tumblr erkl\u00e4rt, wie du deine pers\u00f6nlichen Daten f\u00fcr das Konto anfordern kannst, das du bereits verwendest.");
         table.put("Tumblr's original signature is added to the app",
                 "Die originale Signatur von Tumblr wurde der App hinzugef\u00fcgt");
-    }
-
-    private static void fillDe3(Map<String, String> table) {
         table.put("Tumblr's own settings",
                 "Tumblrs eigene Einstellungen");
         table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
@@ -467,7 +473,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(396);
+        Map<String, String> table = new HashMap<>(402);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -601,6 +607,8 @@ public final class L10nTranslations {
     private static void fillEs1(Map<String, String> table) {
         table.put("Export settings saves HushTumblr's switches. It doesn't include your Tumblr account, posts, downloaded files or Morphe Manager's signing key. Keep the settings file and a backup of Manager's signing key somewhere you can find them.",
                 "Exportar ajustes guarda los interruptores de HushTumblr. No incluye tu cuenta de Tumblr, tus publicaciones, los archivos descargados ni la clave de firma de Morphe Manager. Guarda el archivo de ajustes y una copia de la clave de firma de Manager en un lugar donde puedas encontrarlos.");
+        table.put("Feed",
+                "Feed");
         table.put("Finding them",
                 "D\u00f3nde encontrarlas");
         table.put("Firebase and Google Analytics collection is turned off",
@@ -619,6 +627,8 @@ public final class L10nTranslations {
                 "GitHub devolvi\u00f3 algo que HushTumblr no pudo leer. Int\u00e9ntalo de nuevo m\u00e1s tarde.");
         table.put("Go straight to one group of settings. Back returns to where you were.",
                 "Ve directo a un grupo de ajustes. Atr\u00e1s te devuelve a donde estabas.");
+        table.put("Hide ads",
+                "Ocultar anuncios");
         table.put("Hide advertising ID",
                 "Ocultar el ID de publicidad");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
@@ -715,13 +725,13 @@ public final class L10nTranslations {
                 "Leyendo el archivo de configuraci\u00f3n");
         table.put("Record patch activity and show errors for a bug report. Leave off during normal use.",
                 "Registra la actividad de los parches y muestra errores para un informe. D\u00e9jalo desactivado en el uso normal.");
+    }
+
+    private static void fillEs2(Map<String, String> table) {
         table.put("Release notes",
                 "Notas de la versi\u00f3n");
         table.put("Remove ad tracking permissions",
                 "Quitar permisos de seguimiento publicitario");
-    }
-
-    private static void fillEs2(Map<String, String> table) {
         table.put("Restore the switches from before the last import. Editing a switch or restarting Tumblr ends Undo.",
                 "Restaura los ajustes anteriores a la \u00faltima importaci\u00f3n. Cambiar un ajuste o reiniciar Tumblr termina la opci\u00f3n de deshacer.");
         table.put("Resume",
@@ -772,6 +782,8 @@ public final class L10nTranslations {
                 "Apoya HushTumblr");
         table.put("Supported links",
                 "Enlaces compatibles");
+        table.put("Takes ads and paid Blaze posts out of your dashboard and other feeds. Ad requests stop after Tumblr restarts.",
+                "Quita los anuncios y las publicaciones pagadas con Blaze de tu panel y de otros feeds. Las solicitudes de anuncios se detienen cuando Tumblr se reinicia.");
         table.put("Tap to turn it back on.",
                 "Toca para volver a activarlo.");
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
@@ -836,15 +848,15 @@ public final class L10nTranslations {
                 "Ayuda de Tumblr para exportar datos");
         table.put("Tumblr password help",
                 "Ayuda de Tumblr con la contrase\u00f1a");
+    }
+
+    private static void fillEs3(Map<String, String> table) {
         table.put("Tumblr's access to the ad ID and Android's ad services is removed",
                 "el acceso de Tumblr al ID de publicidad y a los servicios de publicidad de Android est\u00e1 eliminado");
         table.put("Tumblr's data export is separate from Export settings. Tumblr's help page explains how to request your personal data from the account you're already using.",
                 "La exportaci\u00f3n de datos de Tumblr es independiente de Exportar ajustes. La p\u00e1gina de ayuda de Tumblr explica c\u00f3mo solicitar tus datos personales de la cuenta que ya utilizas.");
         table.put("Tumblr's original signature is added to the app",
                 "La firma original de Tumblr se a\u00f1adi\u00f3 a la app");
-    }
-
-    private static void fillEs3(Map<String, String> table) {
         table.put("Tumblr's own settings",
                 "Configuraci\u00f3n propia de Tumblr");
         table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
@@ -884,7 +896,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(396);
+        Map<String, String> table = new HashMap<>(402);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -1018,6 +1030,8 @@ public final class L10nTranslations {
     private static void fillIn1(Map<String, String> table) {
         table.put("Export settings saves HushTumblr's switches. It doesn't include your Tumblr account, posts, downloaded files or Morphe Manager's signing key. Keep the settings file and a backup of Manager's signing key somewhere you can find them.",
                 "Ekspor pengaturan menyimpan sakelar HushTumblr. Akun Tumblr, postingan, file unduhan, dan kunci penandatanganan Morphe Manager tidak ikut. Simpan file pengaturan dan cadangan kunci penandatanganan Manager di tempat yang mudah Anda temukan.");
+        table.put("Feed",
+                "Feed");
         table.put("Finding them",
                 "Cara menemukannya");
         table.put("Firebase and Google Analytics collection is turned off",
@@ -1036,6 +1050,8 @@ public final class L10nTranslations {
                 "GitHub mengirim sesuatu yang tidak bisa dibaca HushTumblr. Coba lagi nanti.");
         table.put("Go straight to one group of settings. Back returns to where you were.",
                 "Langsung ke satu kelompok setelan. Kembali membawamu ke tempat semula.");
+        table.put("Hide ads",
+                "Sembunyikan iklan");
         table.put("Hide advertising ID",
                 "Sembunyikan ID iklan");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
@@ -1132,13 +1148,13 @@ public final class L10nTranslations {
                 "Membaca file pengaturan");
         table.put("Record patch activity and show errors for a bug report. Leave off during normal use.",
                 "Catat aktivitas patch dan tampilkan kesalahan untuk laporan bug. Matikan saat penggunaan biasa.");
+    }
+
+    private static void fillIn2(Map<String, String> table) {
         table.put("Release notes",
                 "Catatan rilis");
         table.put("Remove ad tracking permissions",
                 "Hapus izin pelacakan iklan");
-    }
-
-    private static void fillIn2(Map<String, String> table) {
         table.put("Restore the switches from before the last import. Editing a switch or restarting Tumblr ends Undo.",
                 "Pulihkan sakelar sebelum impor terakhir. Mengubah sakelar atau memulai ulang Tumblr mengakhiri Urungkan.");
         table.put("Resume",
@@ -1189,6 +1205,8 @@ public final class L10nTranslations {
                 "Dukung HushTumblr");
         table.put("Supported links",
                 "Tautan yang didukung");
+        table.put("Takes ads and paid Blaze posts out of your dashboard and other feeds. Ad requests stop after Tumblr restarts.",
+                "Menghapus iklan dan postingan Blaze berbayar dari dasbor dan feed lainnya. Permintaan iklan berhenti setelah Tumblr dimulai ulang.");
         table.put("Tap to turn it back on.",
                 "Ketuk untuk mengaktifkan HushTumblr lagi.");
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
@@ -1253,15 +1271,15 @@ public final class L10nTranslations {
                 "Bantuan ekspor data Tumblr");
         table.put("Tumblr password help",
                 "Bantuan kata sandi Tumblr");
+    }
+
+    private static void fillIn3(Map<String, String> table) {
         table.put("Tumblr's access to the ad ID and Android's ad services is removed",
                 "akses Tumblr ke ID iklan dan layanan iklan Android dihapus");
         table.put("Tumblr's data export is separate from Export settings. Tumblr's help page explains how to request your personal data from the account you're already using.",
                 "Ekspor data Tumblr terpisah dari Ekspor pengaturan. Halaman bantuan Tumblr menjelaskan cara meminta data pribadi dari akun yang sudah Anda gunakan.");
         table.put("Tumblr's original signature is added to the app",
                 "Tanda tangan asli Tumblr ditambahkan ke aplikasi");
-    }
-
-    private static void fillIn3(Map<String, String> table) {
         table.put("Tumblr's own settings",
                 "Pengaturan Tumblr sendiri");
         table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
@@ -1301,7 +1319,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(396);
+        Map<String, String> table = new HashMap<>(402);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -1435,6 +1453,8 @@ public final class L10nTranslations {
     private static void fillPt_rBR1(Map<String, String> table) {
         table.put("Export settings saves HushTumblr's switches. It doesn't include your Tumblr account, posts, downloaded files or Morphe Manager's signing key. Keep the settings file and a backup of Manager's signing key somewhere you can find them.",
                 "Exportar configura\u00e7\u00f5es salva as op\u00e7\u00f5es do HushTumblr. N\u00e3o inclui sua conta do Tumblr, seus posts, os arquivos baixados nem a chave de assinatura do Morphe Manager. Guarde o arquivo de configura\u00e7\u00f5es e um backup da chave de assinatura do Manager em um lugar onde voc\u00ea os encontre.");
+        table.put("Feed",
+                "Feed");
         table.put("Finding them",
                 "Como encontrar");
         table.put("Firebase and Google Analytics collection is turned off",
@@ -1453,6 +1473,8 @@ public final class L10nTranslations {
                 "O GitHub enviou algo que o HushTumblr n\u00e3o conseguiu ler. Tente de novo mais tarde.");
         table.put("Go straight to one group of settings. Back returns to where you were.",
                 "V\u00e1 diretamente para um grupo de configura\u00e7\u00f5es. Voltar leva voc\u00ea de volta ao ponto em que estava.");
+        table.put("Hide ads",
+                "Ocultar an\u00fancios");
         table.put("Hide advertising ID",
                 "Ocultar ID de publicidade");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
@@ -1549,13 +1571,13 @@ public final class L10nTranslations {
                 "Lendo o arquivo de configura\u00e7\u00f5es");
         table.put("Record patch activity and show errors for a bug report. Leave off during normal use.",
                 "Registra a atividade dos patches e mostra os erros para um relat\u00f3rio de problema. Mantenha desativado durante o uso normal.");
+    }
+
+    private static void fillPt_rBR2(Map<String, String> table) {
         table.put("Release notes",
                 "Notas da vers\u00e3o");
         table.put("Remove ad tracking permissions",
                 "Remover permiss\u00f5es de rastreamento de an\u00fancios");
-    }
-
-    private static void fillPt_rBR2(Map<String, String> table) {
         table.put("Restore the switches from before the last import. Editing a switch or restarting Tumblr ends Undo.",
                 "Restaure os ajustes anteriores \u00e0 \u00faltima importa\u00e7\u00e3o. Alterar um ajuste ou reiniciar o Tumblr encerra a op\u00e7\u00e3o de desfazer.");
         table.put("Resume",
@@ -1606,6 +1628,8 @@ public final class L10nTranslations {
                 "Apoie o HushTumblr");
         table.put("Supported links",
                 "Links compat\u00edveis");
+        table.put("Takes ads and paid Blaze posts out of your dashboard and other feeds. Ad requests stop after Tumblr restarts.",
+                "Tira an\u00fancios e posts pagos com Blaze do seu painel e de outros feeds. Os pedidos de an\u00fancios param depois que o Tumblr reinicia.");
         table.put("Tap to turn it back on.",
                 "Toque para reativar.");
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
@@ -1670,15 +1694,15 @@ public final class L10nTranslations {
                 "Ajuda do Tumblr para exportar dados");
         table.put("Tumblr password help",
                 "Ajuda do Tumblr com a senha");
+    }
+
+    private static void fillPt_rBR3(Map<String, String> table) {
         table.put("Tumblr's access to the ad ID and Android's ad services is removed",
                 "o acesso do Tumblr ao ID de publicidade e aos servi\u00e7os de an\u00fancios do Android foi removido");
         table.put("Tumblr's data export is separate from Export settings. Tumblr's help page explains how to request your personal data from the account you're already using.",
                 "A exporta\u00e7\u00e3o de dados do Tumblr \u00e9 separada de Exportar configura\u00e7\u00f5es. A p\u00e1gina de ajuda do Tumblr explica como solicitar seus dados pessoais da conta que voc\u00ea j\u00e1 usa.");
         table.put("Tumblr's original signature is added to the app",
                 "A assinatura original do Tumblr foi adicionada ao app");
-    }
-
-    private static void fillPt_rBR3(Map<String, String> table) {
         table.put("Tumblr's own settings",
                 "Configura\u00e7\u00f5es do pr\u00f3prio Tumblr");
         table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
@@ -1718,7 +1742,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(396);
+        Map<String, String> table = new HashMap<>(402);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -1852,6 +1876,8 @@ public final class L10nTranslations {
     private static void fillTr1(Map<String, String> table) {
         table.put("Export settings saves HushTumblr's switches. It doesn't include your Tumblr account, posts, downloaded files or Morphe Manager's signing key. Keep the settings file and a backup of Manager's signing key somewhere you can find them.",
                 "Ayarlar\u0131 d\u0131\u015fa aktar, HushTumblr'\u0131n anahtarlar\u0131n\u0131 kaydeder. Tumblr hesab\u0131n, g\u00f6nderilerin, indirilen dosyalar ve Morphe Manager'\u0131n imza anahtar\u0131 dahil de\u011fildir. Ayar dosyas\u0131n\u0131 ve Manager'\u0131n imza anahtar\u0131n\u0131n yede\u011fini bulabilece\u011fin bir yerde sakla.");
+        table.put("Feed",
+                "Ak\u0131\u015f");
         table.put("Finding them",
                 "Nerede bulunur");
         table.put("Firebase and Google Analytics collection is turned off",
@@ -1870,6 +1896,8 @@ public final class L10nTranslations {
                 "GitHub, HushTumblr'\u0131n okuyamad\u0131\u011f\u0131 bir yan\u0131t g\u00f6nderdi. Daha sonra tekrar dene.");
         table.put("Go straight to one group of settings. Back returns to where you were.",
                 "Do\u011frudan bir ayar grubuna git. Geri, bulundu\u011fun yere d\u00f6nd\u00fcr\u00fcr.");
+        table.put("Hide ads",
+                "Reklamlar\u0131 gizle");
         table.put("Hide advertising ID",
                 "Reklam kimli\u011fini gizle");
         table.put("HushTumblr %1$s is out. Update it in Morphe Manager.",
@@ -1966,13 +1994,13 @@ public final class L10nTranslations {
                 "Ayar dosyas\u0131 okunuyor");
         table.put("Record patch activity and show errors for a bug report. Leave off during normal use.",
                 "Hata raporu i\u00e7in yama etkinli\u011fini kaydeder ve hatalar\u0131 g\u00f6sterir. Normal kullan\u0131mda kapal\u0131 b\u0131rak\u0131n.");
+    }
+
+    private static void fillTr2(Map<String, String> table) {
         table.put("Release notes",
                 "S\u00fcr\u00fcm notlar\u0131");
         table.put("Remove ad tracking permissions",
                 "Reklam izleme izinlerini kald\u0131r");
-    }
-
-    private static void fillTr2(Map<String, String> table) {
         table.put("Restore the switches from before the last import. Editing a switch or restarting Tumblr ends Undo.",
                 "Son i\u00e7e aktarmadan \u00f6nceki anahtarlar\u0131 geri y\u00fckleyin. Bir anahtar\u0131 d\u00fczenlemek veya Tumblr'\u0131 yeniden ba\u015flatmak geri almay\u0131 sona erdirir.");
         table.put("Resume",
@@ -2023,6 +2051,8 @@ public final class L10nTranslations {
                 "HushTumblr'\u0131 destekle");
         table.put("Supported links",
                 "Desteklenen ba\u011flant\u0131lar");
+        table.put("Takes ads and paid Blaze posts out of your dashboard and other feeds. Ad requests stop after Tumblr restarts.",
+                "Reklamlar\u0131 ve \u00fccretli Blaze g\u00f6nderilerini panondan ve di\u011fer ak\u0131\u015flardan kald\u0131r\u0131r. Reklam istekleri Tumblr yeniden ba\u015flad\u0131ktan sonra durur.");
         table.put("Tap to turn it back on.",
                 "Yeniden a\u00e7mak i\u00e7in dokun.");
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
@@ -2087,15 +2117,15 @@ public final class L10nTranslations {
                 "Tumblr veri d\u0131\u015fa aktar\u0131m yard\u0131m\u0131");
         table.put("Tumblr password help",
                 "Tumblr parola yard\u0131m\u0131");
+    }
+
+    private static void fillTr3(Map<String, String> table) {
         table.put("Tumblr's access to the ad ID and Android's ad services is removed",
                 "Tumblr'\u0131n reklam kimli\u011fine ve Android reklam hizmetlerine eri\u015fimi kald\u0131r\u0131ld\u0131");
         table.put("Tumblr's data export is separate from Export settings. Tumblr's help page explains how to request your personal data from the account you're already using.",
                 "Tumblr'\u0131n veri d\u0131\u015fa aktar\u0131m\u0131, Ayarlar\u0131 d\u0131\u015fa aktar i\u015fleminden ayr\u0131d\u0131r. Tumblr'\u0131n yard\u0131m sayfas\u0131, zaten kulland\u0131\u011f\u0131n\u0131z hesaptan ki\u015fisel verilerinizi nas\u0131l talep edece\u011finizi a\u00e7\u0131klar.");
         table.put("Tumblr's original signature is added to the app",
                 "Tumblr'\u0131n orijinal imzas\u0131 uygulamaya eklendi");
-    }
-
-    private static void fillTr3(Map<String, String> table) {
         table.put("Tumblr's own settings",
                 "Tumblr'\u0131n kendi ayarlar\u0131");
         table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",

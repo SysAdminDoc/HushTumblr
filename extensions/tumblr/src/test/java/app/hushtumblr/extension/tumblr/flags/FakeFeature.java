@@ -13,4 +13,19 @@ package app.hushtumblr.extension.tumblr.flags;
 public enum FakeFeature {
     /** A flag no family claims. */
     UNCLAIMED_FLAG,
+
+    // Hide ads
+    MAKE_ADX_REQUESTS,
+    MAKE_APS_AD_REQUESTS,
+    MAKE_DISPLAY_IO_REQUEST,
+    MAKE_DISPLAY_IO_INTERSCROLLER_REQUEST,
+    MAKE_FAN_REQUESTS,
+    MAKE_NIMBUS_CLIENT_AD_REQUESTS,
+    GOOGLE_BANNER_ADS,
+    GOOGLE_NATIVE_ADS,
+    GOOGLE_REWARDED_ADS,
+    SMART_BANNER_ADS,
+    RENDER_NIMBUS_ADS,
+    RENDER_VUNGLE_ADS,
+    RENDER_DISPLAY_IO_INTERSCROLLER_S2S_ADS,
 }
