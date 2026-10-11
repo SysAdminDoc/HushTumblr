@@ -149,7 +149,8 @@ internal fun BytecodePatchContext.resolveSettingsHub(): SettingsHubPlan {
     val iconType = constructor.parameterTypes[2].toString()
     requireShape(WHAT, builderBody.any { it.opcode == Opcode.INVOKE_DIRECT && it.methodRef()?.sameAs(constructor) == true },
         "the row list never calls the row constructor it would add the HushTumblr row with")
-    val titleGetter = rowClass.methods.filter { !it.isStatic() && it.hasShape(emptyList(), "I") }
+    // The row is a data class, so its hashCode()I has the title getter's shape too.
+    val titleGetter = rowClass.methods.filter { !it.isStatic() && it.name != "hashCode" && it.hasShape(emptyList(), "I") }
         .only(WHAT, "the row's title getter")
     val kindGetter = rowClass.methods.filter { !it.isStatic() && it.hasShape(emptyList(), kindType) }
         .only(WHAT, "the row's kind getter")
