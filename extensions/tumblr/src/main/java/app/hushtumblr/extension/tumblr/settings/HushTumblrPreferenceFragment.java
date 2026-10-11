@@ -314,8 +314,9 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                     L10n.t("Hide note counts"), L10n.t("Takes the like, reblog and comment counts off the footer "
                         + "under posts, and keeps the buttons."), SettingsIcons.BLOCK);
             patchToggle(posts, context, build, PatchFamily.HIDE_LIKE_BUTTON, Settings.HIDE_LIKE_BUTTON,
-                    L10n.t("Hide the like button"), L10n.t("Takes the like button out of the footer under posts. "
-                        + "Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+                    L10n.t("Hide the like button"), L10n.t("Takes the like button out of the footer under posts, "
+                        + "and the reactions off community posts. Restart Tumblr to see the change."),
+                    SettingsIcons.BLOCK);
             patchToggle(posts, context, build, PatchFamily.HIDE_REBLOG_BUTTON, Settings.HIDE_REBLOG_BUTTON,
                     L10n.t("Hide the reblog button"), L10n.t("Takes the reblog button out of the footer under "
                         + "posts. Restart Tumblr to see the change."), SettingsIcons.BLOCK);

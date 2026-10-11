@@ -71,6 +71,28 @@ public class StoreButtonsTest {
     }
 
     @Test
+    public void theSwitchTakesTheHiddenButtonsRoomOutOfExploresSearchBar() {
+        assertEquals("off, Tumblr's room", 96, StoreButtons.tumblrMartRoom(96));
+        assertEquals(96, StoreButtons.diamondRoom(96));
+
+        Settings.HIDE_TUMBLRMART.save(true);
+        assertEquals(0, StoreButtons.tumblrMartRoom(96));
+        assertEquals(0, StoreButtons.diamondRoom(96));
+        assertEquals("no room to take", 0, StoreButtons.diamondRoom(0));
+        String report = String.join("\n", HookStatus.report());
+        assertTrue(report, report.contains("search bar room freed 2"));
+
+        PatchFamilyForTests.capabilities(EnumSet.of(PatchFamily.Capability.PREMIUM_DIAMOND));
+        assertEquals("its hook isn't in this build", 96, StoreButtons.tumblrMartRoom(96));
+        assertEquals(0, StoreButtons.diamondRoom(96));
+
+        PauseForTests.pause(HushTumblrPause.Reason.SWITCH);
+        assertEquals(96, StoreButtons.diamondRoom(96));
+        PauseForTests.resume();
+        SettingsContextRule.withoutContext(() -> assertEquals(96, StoreButtons.diamondRoom(96)));
+    }
+
+    @Test
     public void theSwitchStartsOffSoTumblrDrawsBoth() {
         View diamond = shown();
         View store = shown();

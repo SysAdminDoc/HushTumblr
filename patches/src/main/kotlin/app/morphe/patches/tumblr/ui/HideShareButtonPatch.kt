@@ -16,6 +16,7 @@ import app.morphe.patches.tumblr.misc.settings.settingsPatch
 
 private const val PATCH = "Hide the share button"
 internal const val HIDE_SHARE_HOOK = "$POST_FOOTER->hideShareButton()Z"
+internal const val HIDE_COMMUNITY_SHARE_HOOK = "$POST_FOOTER->hideCommunityShare(Landroid/view/ViewGroup;)V"
 
 /**
  * Puts `PostFooter.hideShareButton` first in the function that draws the footer's share button, the
@@ -26,6 +27,9 @@ internal const val HIDE_SHARE_HOOK = "$POST_FOOTER->hideShareButton()Z"
  * The function is the one whose source note starts with [FOOTER_CONTROLS] and [SHARE_CONTROL].
  * Every footer drawn with Tumblr's split note counts calls it: the dashboard, blogs, search, Tumblr
  * TV and reblog notes. Found by reading Tumblr 46.5.0.109 (2026-10-11).
+ *
+ * Community posts draw their own footer with Views, so its bind ([resolveCommunityFooterBind]) ends
+ * with `PostFooter.hideCommunityShare`, which hides its share button with the same answer.
  */
 @Suppress("unused")
 val hideShareButtonPatch = bytecodePatch(
@@ -41,9 +45,11 @@ val hideShareButtonPatch = bytecodePatch(
     execute {
         requireStatusMethod("hideShareButton")
         requireStatusMethod("shareButton")
-        // Found and checked before the edit, so a refusal leaves the APK as it was.
+        // Found and checked before any edit, so a refusal leaves the APK as it was.
         val button = resolveFooterButton(PATCH, SHARE_CONTROL, HIDE_SHARE_HOOK)
+        val community = resolveCommunityFooterBind(PATCH, HIDE_COMMUNITY_SHARE_HOOK, COMMUNITY_SHARE_CONTROLS)
         button.returnEarlyWhen(PATCH, HIDE_SHARE_HOOK, "return-void")
+        community.addHook(HIDE_COMMUNITY_SHARE_HOOK)
         enableCapability("shareButton")
         enableStatus("hideShareButton")
     }

@@ -17,6 +17,7 @@ import app.morphe.patches.tumblr.lookup.methodRef
 import app.morphe.patches.tumblr.lookup.stringRef
 import app.morphe.patches.tumblr.misc.extension.SETTINGS_STATUS
 import app.morphe.patches.tumblr.misc.extension.parameterRegisterNumber
+import app.morphe.util.namedRegisters
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
@@ -36,13 +37,17 @@ class PostPartsFixtureTest {
     @Test
     fun `each declared build hands the tag drawer no tags when asked to`() {
         for (build in Fixtures.declaredBuilds()) {
-            val classes = FixtureDex.classesWhere(build, { true }) { it.definingClass == WRAPPED_TAGS }
+            val classes = FixtureDex.classesWhere(build, { true }) {
+                it.definingClass == WRAPPED_TAGS || it.definingClass == VIDEO_HUB_TEXT
+            }
             val context = PatchContexts.of(ExtensionDex.classes() + classes)
             val drawer = context.resolveTagDrawer()
             val identity = "${drawer.definingClass}->${drawer.name}"
             val before = drawer.instructionList().map { it.opcode }
             val text = drawer.parameterRegisterNumber(drawer.tagParameter("Ljava/lang/String;"))
             val list = drawer.parameterRegisterNumber(drawer.tagParameter("Ljava/util/List;"))
+            val tv = context.resolveTvTags()
+            val tvBefore = tv.method.instructionList().map { it.opcode }
 
             hideHashtagsPatch.execute(context)
 
@@ -58,6 +63,20 @@ class PostPartsFixtureTest {
             assertEquals(identity, list, (body[4] as OneRegisterInstruction).registerA)
             assertEquals(identity, EMPTY_LIST, body[4].fieldRef()?.let { "${it.definingClass}->${it.name}:${it.type}" })
             assertEquals("$identity: what follows is Tumblr's own code", before, body.drop(5).map { it.opcode })
+
+            val where = "${tv.method.definingClass}->${tv.method.name}"
+            val tvBody = context.mutableClassDefBy(tv.method.definingClass).methods
+                .single { it.name == tv.method.name && it.parameterTypes == tv.method.parameterTypes }
+                .instructionList()
+            assertEquals("$where: two instructions added", tvBefore.size + 2, tvBody.size)
+            assertEquals("$where: the extension is handed the tags", TV_TAGS_HOOK, tvBody[tv.at].methodRef()?.let {
+                "${it.definingClass}->${it.name}(${it.parameterTypes.joinToString("")})${it.returnType}" })
+            assertEquals(where, listOf(tv.register), tvBody[tv.at].namedRegisters())
+            assertEquals("$where: its answer is the tags", Opcode.MOVE_RESULT_OBJECT, tvBody[tv.at + 1].opcode)
+            assertEquals(where, tv.register, (tvBody[tv.at + 1] as OneRegisterInstruction).registerA)
+            assertEquals("$where: right before the split", tv.register, tvBody[tv.at + 2].namedRegisters().first())
+            assertEquals("$where: Tumblr's own code around it", tvBefore,
+                tvBody.filterIndexed { at, _ -> at != tv.at && at != tv.at + 1 }.map { it.opcode })
             assertSwitchedOn(context, build.name, "hideHashtags", "postTags")
         }
     }

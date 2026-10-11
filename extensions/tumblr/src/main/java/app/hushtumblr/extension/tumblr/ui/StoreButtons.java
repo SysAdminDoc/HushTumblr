@@ -24,6 +24,11 @@ import app.hushtumblr.extension.tumblr.settings.Settings;
  * those screens when its view is made, and {@link #hideTumblrMart} goes right after Tumblr sets its
  * visibility. The diamond is drawn again each time the screen comes back; the TumblrMart button only
  * when the screen is made, so a change shows fully after Tumblr restarts.
+ *
+ * <p>Explore's search bar narrows as its header collapses, to leave room for the icons beside it,
+ * and Tumblr works out that room from its own feature flags rather than from what's shown.
+ * {@link #tumblrMartRoom} and {@link #diamondRoom} take the hidden buttons' share out of it, so the
+ * bar doesn't stop short of an empty space.
  */
 public final class StoreButtons {
     private StoreButtons() {}
@@ -47,6 +52,35 @@ public final class StoreButtons {
         } catch (Throwable failure) {
             HookStatus.threw(FamilyNames.HIDE_TUMBLRMART, "diamond", failure);
             return false;
+        }
+    }
+
+    /**
+     * Injected where Explore's header has worked out the room its search bar leaves for the
+     * TumblrMart button once the header collapses. None while the switch hides the button, so the
+     * bar reaches the icons that are left. The room itself otherwise. Never throws.
+     */
+    public static int tumblrMartRoom(int room) {
+        return room(room, PatchFamily.Capability.TUMBLRMART_BUTTONS);
+    }
+
+    /** {@link #tumblrMartRoom} for the diamond's room. */
+    public static int diamondRoom(int room) {
+        return room(room, PatchFamily.Capability.PREMIUM_DIAMOND);
+    }
+
+    /** No room while the switch hides the button [hook] hides, [room] otherwise. */
+    private static int room(int room, PatchFamily.Capability hook) {
+        if (room == 0 || !Utils.settingsReady()) return room;
+        try {
+            if (!hook.installed()) return room;
+            HookStatus.invoked(FamilyNames.HIDE_TUMBLRMART);
+            if (!Settings.HIDE_TUMBLRMART.get()) return room;
+            HookStatus.counted(FamilyNames.HIDE_TUMBLRMART, "search bar room freed");
+            return 0;
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.HIDE_TUMBLRMART, "search bar", failure);
+            return room;
         }
     }
 

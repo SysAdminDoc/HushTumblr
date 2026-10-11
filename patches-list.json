@@ -369,7 +369,7 @@
     },
     {
       "name": "Hide hashtags",
-      "description": "Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts.",
+      "description": "Takes the tags off the bottom of posts in your dashboard, other feeds and Tumblr TV, and keeps the source link. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts.",
       "category": "Posts",
       "use": true,
       "dependencies": [
@@ -408,7 +408,7 @@
     },
     {
       "name": "Hide note counts",
-      "description": "Takes the like, reblog and comment counts off the footer under posts in your dashboard and other feeds. The buttons stay and still work. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts.",
+      "description": "Takes the like, reblog and comment counts off the footer under posts, community posts included, and the count off the top of a post's notes. The buttons stay and still work. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts.",
       "category": "Posts",
       "use": true,
       "dependencies": [
@@ -954,7 +954,7 @@
     },
     {
       "name": "Hide the like button",
-      "description": "Takes the like button out of the footer under posts in your dashboard and other feeds. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts.",
+      "description": "Takes the like button out of the footer under posts in your dashboard and other feeds, and the reactions off community posts. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts.",
       "category": "Posts",
       "use": true,
       "dependencies": [

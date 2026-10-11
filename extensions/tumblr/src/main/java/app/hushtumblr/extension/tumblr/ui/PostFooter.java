@@ -5,9 +5,24 @@
  */
 package app.hushtumblr.extension.tumblr.ui;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import android.content.Context;
+import android.content.res.Resources;
+import android.view.View;
+import android.view.ViewGroup;
 
+import androidx.annotation.Nullable;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+
+import app.hushtumblr.extension.shared.L10n;
+import app.hushtumblr.extension.shared.ResourceType;
+import app.hushtumblr.extension.shared.ResourceUtils;
 import app.hushtumblr.extension.shared.Utils;
 import app.hushtumblr.extension.shared.diagnostics.HookStatus;
 import app.hushtumblr.extension.shared.settings.BooleanSetting;
@@ -27,12 +42,36 @@ import app.hushtumblr.extension.tumblr.settings.Settings;
  * <p>The counts go through {@link #noteCount}, which Tumblr's footer asks for each count before it
  * turns it into text. Tumblr leaves a count of zero blank, so answering zero blanks it. That's only
  * text, so the counts switch shows on the next post that scrolls in.
+ *
+ * <p>Community posts have a footer of their own, made of Views: a comment button, a share button and
+ * the reactions, which stand in for likes there. Each button switch's community hook goes at the end
+ * of the method that binds that footer and sets its own controls GONE, with the same answer the
+ * Compose button got. The community comment button writes "3 comments" rather than a bare number, so
+ * {@link #communityCommentsText} swaps that text for Tumblr's own "Comments", and {@link #notesTitle}
+ * does the same for the count at the top of a post's notes.
  */
 public final class PostFooter {
     private PostFooter() {}
 
     /** Each button's answer, by its hook, once the settings were ready to give one. */
     private static final Map<PatchFamily.Capability, Boolean> FIXED = new ConcurrentHashMap<>();
+
+    /** A community post's reactions and the button that adds one, by their kept class names. */
+    static final Set<String> COMMUNITY_REACTIONS =
+            names("CommunitiesReactionControl", "CommunitiesAddReactionControl");
+
+    /** A community post's comment button, by its kept class name. */
+    static final Set<String> COMMUNITY_COMMENTS = names("CommunitiesCommentsControl");
+
+    /** A community post's share button, by its kept class name. */
+    static final Set<String> COMMUNITY_SHARING = names("CommunitiesSharingControl");
+
+    /** Tumblr's own word for a post's comments, and for its notes, by their string names. */
+    static final String COMMENTS_LABEL = "comments";
+    static final String NOTES_LABEL = "notification_channel_name_notes_v2";
+
+    /** The longest label taken from Tumblr; anything longer isn't the word wanted. */
+    private static final int LONGEST_LABEL = 40;
 
     /**
      * Injected at the start of the method that turns a like, reblog or comment count into its text.
@@ -52,6 +91,51 @@ public final class PostFooter {
             HookStatus.threw(FamilyNames.HIDE_NOTE_COUNTS, "switch read", failure);
             return count;
         }
+    }
+
+    /**
+     * Injected where a community post's comment button has written its "3 comments" text. Tumblr's
+     * own "Comments" in its place while Hide note counts is on, read each time the button is drawn.
+     * The text itself otherwise. Never throws.
+     */
+    public static String communityCommentsText(String text) {
+        return countFree(text, COMMENTS_LABEL, () -> L10n.t("Comments"), "comment count hidden");
+    }
+
+    /**
+     * Injected where a post's notes screen has written its "12 notes" title. Tumblr's own "Notes" in
+     * its place while Hide note counts is on. The title itself otherwise. Never throws.
+     */
+    public static String notesTitle(String title) {
+        return countFree(title, NOTES_LABEL, () -> L10n.t("Notes"), "notes count hidden");
+    }
+
+    /** [text], or Tumblr's [label] (HushTumblr's [own] word when this build lacks it) while counts are hidden. */
+    private static String countFree(String text, String label, Supplier<String> own, String counted) {
+        if (text == null || !Utils.settingsReady()) return text;
+        try {
+            if (!PatchFamily.Capability.NOTE_COUNTS.installed()) return text;
+            HookStatus.invoked(FamilyNames.HIDE_NOTE_COUNTS);
+            if (!Settings.HIDE_NOTE_COUNTS.get()) return text;
+            HookStatus.counted(FamilyNames.HIDE_NOTE_COUNTS, counted);
+            return tumblrLabel(Utils.getContext(), label, own);
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.HIDE_NOTE_COUNTS, "count text", failure);
+            return text;
+        }
+    }
+
+    /** Tumblr's string [name] in the app's language, or HushTumblr's [own] word when it has no usable one. */
+    static String tumblrLabel(@Nullable Context context, String name, Supplier<String> own) {
+        int id = context == null ? 0 : ResourceUtils.getIdentifier(context, ResourceType.STRING, name);
+        if (id == 0) return own.get();
+        try {
+            String text = context.getString(id).trim();
+            if (!text.isEmpty() && text.length() <= LONGEST_LABEL && text.indexOf('\n') < 0) return text;
+        } catch (Resources.NotFoundException missing) {
+            // A name with no value in this configuration: the build doesn't offer that word here.
+        }
+        return own.get();
     }
 
     /** Injected first in the footer's like button. True while Hide the like button is on. */
@@ -79,23 +163,89 @@ public final class PostFooter {
     }
 
     /**
+     * Injected at the end of the method that binds a community post's footer. Hides its reactions
+     * while Hide the like button is on. Never throws.
+     */
+    public static void hideCommunityReactions(@Nullable ViewGroup footer) {
+        hideInCommunityFooter(footer, PatchFamily.Capability.LIKE_BUTTON, FamilyNames.HIDE_LIKE_BUTTON,
+                Settings.HIDE_LIKE_BUTTON, COMMUNITY_REACTIONS, "community reactions hidden");
+    }
+
+    /**
+     * Injected at the end of the method that binds a community post's footer. Hides its comment
+     * button while Hide the comment button is on. Never throws.
+     */
+    public static void hideCommunityComments(@Nullable ViewGroup footer) {
+        hideInCommunityFooter(footer, PatchFamily.Capability.COMMENT_BUTTON, FamilyNames.HIDE_COMMENT_BUTTON,
+                Settings.HIDE_COMMENT_BUTTON, COMMUNITY_COMMENTS, "community comment button hidden");
+    }
+
+    /**
+     * Injected at the end of the method that binds a community post's footer. Hides its share button
+     * while Hide the share button is on. Never throws.
+     */
+    public static void hideCommunityShare(@Nullable ViewGroup footer) {
+        hideInCommunityFooter(footer, PatchFamily.Capability.SHARE_BUTTON, FamilyNames.HIDE_SHARE_BUTTON,
+                Settings.HIDE_SHARE_BUTTON, COMMUNITY_SHARING, "community share button hidden");
+    }
+
+    /**
+     * Sets every view in [footer] whose class is one of [controls] GONE when the button's answer is
+     * to hide it. Tumblr sets each control's visibility again as it binds the footer, before this
+     * runs, so the controls come back once the switch is off and Tumblr restarts.
+     */
+    private static void hideInCommunityFooter(@Nullable ViewGroup footer, PatchFamily.Capability hook,
+            String family, BooleanSetting setting, Set<String> controls, String counted) {
+        if (footer == null || !answer(hook, family, setting)) return;
+        try {
+            if (hideControls(footer, controls) > 0) HookStatus.counted(family, counted);
+        } catch (Throwable failure) {
+            HookStatus.threw(family, "community footer", failure);
+        }
+    }
+
+    /** Sets each view under [group] whose class is named in [controls] GONE, and says how many. */
+    static int hideControls(ViewGroup group, Set<String> controls) {
+        int hidden = 0;
+        for (int i = 0; i < group.getChildCount(); i++) {
+            View child = group.getChildAt(i);
+            if (controls.contains(child.getClass().getSimpleName())) {
+                child.setVisibility(View.GONE);
+                hidden++;
+            } else if (child instanceof ViewGroup) {
+                hidden += hideControls((ViewGroup) child, controls);
+            }
+        }
+        return hidden;
+    }
+
+    /** The button's [answer], counted as [counted] when it's to hide. */
+    private static boolean hides(PatchFamily.Capability hook, String family, BooleanSetting setting,
+            String counted) {
+        if (!answer(hook, family, setting)) return false;
+        HookStatus.counted(family, counted);
+        return true;
+    }
+
+    /**
      * The button's answer: its switch as it was the first time it was asked once the settings were
      * ready. False before then, paused (the pause is decided once a run too), with its hook not in
      * this build, or when anything here fails. Never throws.
      */
-    private static boolean hides(PatchFamily.Capability hook, String family, BooleanSetting setting,
-            String counted) {
+    private static boolean answer(PatchFamily.Capability hook, String family, BooleanSetting setting) {
         if (!Utils.settingsReady()) return false;
         try {
             if (!hook.installed()) return false;
             HookStatus.invoked(family);
-            if (!FIXED.computeIfAbsent(hook, unused -> setting.get())) return false;
-            HookStatus.counted(family, counted);
-            return true;
+            return FIXED.computeIfAbsent(hook, unused -> setting.get());
         } catch (Throwable failure) {
             HookStatus.threw(family, "switch read", failure);
             return false;
         }
+    }
+
+    private static Set<String> names(String... names) {
+        return Collections.unmodifiableSet(new HashSet<>(Arrays.asList(names)));
     }
 
     /** Forgets every fixed answer, as a new run of Tumblr would. */

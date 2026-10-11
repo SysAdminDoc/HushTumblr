@@ -19,7 +19,9 @@ import app.hushtumblr.extension.tumblr.settings.Settings;
  * switches show on the next card that scrolls in, without a restart. {@code PostCardWrappedTags}
  * draws a post's tags in the row under it, which also holds the source link, a submission credit
  * and a badge. While {@link #hideTags} answers true, the method that draws the tags is handed none,
- * so the row keeps the rest and goes away when there's nothing else in it. {@code PostCardHeader}
+ * so the row keeps the rest and goes away when there's nothing else in it. Tumblr TV writes a post's
+ * tags under the video when the post has no description, and {@link #tvTags} hands it none to write.
+ * {@code PostCardHeader}
  * hides its Follow button when its own check says so, and {@link #hideFollowButton} makes the
  * check say so.
  */
@@ -34,6 +36,17 @@ public final class PostParts {
     public static boolean hideTags() {
         return hides(PatchFamily.Capability.POST_TAGS, FamilyNames.HIDE_HASHTAGS, Settings.HIDE_HASHTAGS,
                 "tags hidden");
+    }
+
+    /**
+     * Injected where Tumblr TV's post text, for a post with no description, has read the post's tags
+     * as one ", "-separated String. None while Hide hashtags is on, so the line under the video
+     * stays empty. The tags themselves otherwise. Never throws.
+     */
+    public static String tvTags(String tags) {
+        if (tags == null || tags.isEmpty()) return tags;
+        return hides(PatchFamily.Capability.POST_TAGS, FamilyNames.HIDE_HASHTAGS, Settings.HIDE_HASHTAGS,
+                "Tumblr TV tags hidden") ? "" : tags;
     }
 
     /**

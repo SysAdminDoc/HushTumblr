@@ -254,7 +254,7 @@ TumblrMart buttons	os botões da TumblrMart
 Hide note counts	Ocultar a contagem de notas
 Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.	Tira os números de curtidas, reblogues e comentários do rodapé dos posts e mantém os botões.
 Hide the like button	Ocultar o botão de curtir
-Takes the like button out of the footer under posts. Restart Tumblr to see the change.	Tira o botão de curtir do rodapé dos posts. Reinicie o Tumblr para ver a mudança.
+Takes the like button out of the footer under posts, and the reactions off community posts. Restart Tumblr to see the change.	Tira o botão de curtir do rodapé dos posts e as reações dos posts de comunidades. Reinicie o Tumblr para ver a mudança.
 Hide the reblog button	Ocultar o botão de reblogue
 Takes the reblog button out of the footer under posts. Restart Tumblr to see the change.	Tira o botão de reblogue do rodapé dos posts. Reinicie o Tumblr para ver a mudança.
 Hide the comment button	Ocultar o botão de comentar
@@ -301,3 +301,6 @@ Explore	Explorar
 Tumblr TV	Tumblr TV
 Communities	Comunidades
 Account	Conta
+# context: with Hide note counts on, these stand in for "3 comments" on a community post's comment button and for "12 notes" at the top of a post's notes. Tumblr's own word is used when the app has one; these are the fallback. Use Tumblr's own words in your language.
+Comments	Comentários
+Notes	Notas

@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(554);
+        Map<String, String> table = new HashMap<>(558);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -132,6 +132,8 @@ public final class L10nTranslations {
                 "Suche l\u00f6schen");
         table.put("Clears the saved log and patch check results that a report would include.",
                 "Leert das gespeicherte Protokoll und die Patch-Pr\u00fcfergebnisse, die ein Bericht enthalten w\u00fcrde.");
+        table.put("Comments",
+                "Kommentare");
         table.put("Communities",
                 "Communitys");
         table.put("Copy a quick report or save the full one to %1$s. Links, IDs, cookies and sign-in tokens are left out. Check it for other private text before you share it.",
@@ -178,11 +180,11 @@ public final class L10nTranslations {
                 "Diagnosedaten wiederhergestellt.");
         table.put("Diagnostic report copied to the clipboard.",
                 "Diagnosebericht in die Zwischenablage kopiert.");
-        table.put("Disable analytics",
-                "Analyse deaktivieren");
     }
 
     private static void fillDe1(Map<String, String> table) {
+        table.put("Disable analytics",
+                "Analyse deaktivieren");
         table.put("Disable update prompts",
                 "Update-Aufforderungen deaktivieren");
         table.put("Every switch but Debug logging acts as if it were off, and what was set when you patched stays in. Your settings stay as they are.",
@@ -301,11 +303,11 @@ public final class L10nTranslations {
                 "Import r\u00fcckg\u00e4ngig gemacht. Deine fr\u00fcheren Schalter sind wiederhergestellt.");
         table.put("Importing settings",
                 "Einstellungen werden importiert");
-        table.put("In Tumblr: %1$s",
-                "In Tumblr: %1$s");
     }
 
     private static void fillDe2(Map<String, String> table) {
+        table.put("In Tumblr: %1$s",
+                "In Tumblr: %1$s");
         table.put("Installed patches and switches",
                 "Installierte Patches und Schalter");
         table.put("Interface",
@@ -336,6 +338,8 @@ public final class L10nTranslations {
                 "Keine passenden Einstellungen");
         table.put("None of Tumblr's web addresses are selected for this app, so their links open elsewhere. Tap to select them in Android's settings.",
                 "Keine Webadresse von Tumblr ist f\u00fcr diese App ausgew\u00e4hlt, deshalb \u00f6ffnen sich ihre Links woanders. Tippe, um sie in den Android-Einstellungen auszuw\u00e4hlen.");
+        table.put("Notes",
+                "Anmerkungen");
         table.put("Notifications",
                 "Benachrichtigungen");
         table.put("OK",
@@ -422,13 +426,13 @@ public final class L10nTranslations {
                 "Einstellungen exportiert.");
         table.put("Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.",
                 "Einstellungen exportiert. Die App, in der die Datei liegt, lie\u00df HushTumblr sie nicht zur\u00fccklesen, daher wurde sie nicht gepr\u00fcft.");
+    }
+
+    private static void fillDe3(Map<String, String> table) {
         table.put("Settings imported.",
                 "Einstellungen importiert.");
         table.put("Settings imported. %1$d switch changed.",
                 "Einstellungen importiert. %1$d Schalter wurde ge\u00e4ndert.");
-    }
-
-    private static void fillDe3(Map<String, String> table) {
         table.put("Settings imported. %1$d switches changed.",
                 "Einstellungen importiert. %1$d Schalter wurden ge\u00e4ndert.");
         table.put("Setup and backup guide",
@@ -489,8 +493,8 @@ public final class L10nTranslations {
                 "Nimmt den Kommentar-Button aus der Leiste unter Beitr\u00e4gen. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
         table.put("Takes the communities Tumblr suggests you join, and their headings, out of your dashboard and other feeds.",
                 "Entfernt die Communitys, denen du laut Tumblr beitreten sollst, samt ihren \u00dcberschriften aus deinem Dashboard und anderen Feeds.");
-        table.put("Takes the like button out of the footer under posts. Restart Tumblr to see the change.",
-                "Nimmt den Like-Button aus der Leiste unter Beitr\u00e4gen. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
+        table.put("Takes the like button out of the footer under posts, and the reactions off community posts. Restart Tumblr to see the change.",
+                "Nimmt den Like-Button aus der Leiste unter Beitr\u00e4gen und die Reaktionen von Community-Beitr\u00e4gen. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
         table.put("Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.",
                 "Nimmt die Zahlen f\u00fcr Likes, Reblogs und Kommentare aus der Leiste unter Beitr\u00e4gen. Die Buttons bleiben.");
         table.put("Takes the reblog button out of the footer under posts. Restart Tumblr to see the change.",
@@ -545,13 +549,13 @@ public final class L10nTranslations {
                 "Die Einstellungsdatei wurde gespeichert, liest sich aber nicht so zur\u00fcck, wie sie geschrieben wurde. Speichere sie noch einmal als neue Datei.");
         table.put("There's no diagnostic data to clear.",
                 "Es gibt keine Diagnosedaten zum L\u00f6schen.");
+    }
+
+    private static void fillDe4(Map<String, String> table) {
         table.put("There's no diagnostic data to put back.",
                 "Es gibt keine Diagnosedaten zum Wiederherstellen.");
         table.put("There's no import to undo.",
                 "Es gibt keinen Import zum R\u00fcckg\u00e4ngigmachen.");
-    }
-
-    private static void fillDe4(Map<String, String> table) {
         table.put("This build doesn't include the parts that handle %1$s.",
                 "Dieser Build enth\u00e4lt die Teile nicht, die %1$s behandeln.");
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
@@ -629,7 +633,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(554);
+        Map<String, String> table = new HashMap<>(558);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -711,6 +715,8 @@ public final class L10nTranslations {
                 "Borrar b\u00fasqueda");
         table.put("Clears the saved log and patch check results that a report would include.",
                 "Borra el registro guardado y los resultados de las comprobaciones de parches que incluir\u00eda un informe.");
+        table.put("Comments",
+                "Comentarios");
         table.put("Communities",
                 "Comunidades");
         table.put("Copy a quick report or save the full one to %1$s. Links, IDs, cookies and sign-in tokens are left out. Check it for other private text before you share it.",
@@ -757,11 +763,11 @@ public final class L10nTranslations {
                 "Se restauraron los datos de diagn\u00f3stico.");
         table.put("Diagnostic report copied to the clipboard.",
                 "Informe de diagn\u00f3stico copiado en el portapapeles.");
-        table.put("Disable analytics",
-                "Desactivar estad\u00edsticas");
     }
 
     private static void fillEs1(Map<String, String> table) {
+        table.put("Disable analytics",
+                "Desactivar estad\u00edsticas");
         table.put("Disable update prompts",
                 "Desactivar avisos de actualizaci\u00f3n");
         table.put("Every switch but Debug logging acts as if it were off, and what was set when you patched stays in. Your settings stay as they are.",
@@ -880,11 +886,11 @@ public final class L10nTranslations {
                 "Importaci\u00f3n deshecha. Se restauraron tus ajustes anteriores.");
         table.put("Importing settings",
                 "Importando la configuraci\u00f3n");
-        table.put("In Tumblr: %1$s",
-                "En Tumblr: %1$s");
     }
 
     private static void fillEs2(Map<String, String> table) {
+        table.put("In Tumblr: %1$s",
+                "En Tumblr: %1$s");
         table.put("Installed patches and switches",
                 "Parches instalados e interruptores");
         table.put("Interface",
@@ -915,6 +921,8 @@ public final class L10nTranslations {
                 "No hay ajustes coincidentes");
         table.put("None of Tumblr's web addresses are selected for this app, so their links open elsewhere. Tap to select them in Android's settings.",
                 "Ninguna direcci\u00f3n web de Tumblr est\u00e1 seleccionada para esta app, as\u00ed que sus enlaces se abren en otro sitio. Toca para seleccionarlas en los ajustes de Android.");
+        table.put("Notes",
+                "Notas");
         table.put("Notifications",
                 "Notificaciones");
         table.put("OK",
@@ -1001,13 +1009,13 @@ public final class L10nTranslations {
                 "Configuraci\u00f3n exportada.");
         table.put("Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.",
                 "Configuraci\u00f3n exportada. La app que guarda el archivo no dej\u00f3 que HushTumblr lo volviera a leer, as\u00ed que no se comprob\u00f3.");
+    }
+
+    private static void fillEs3(Map<String, String> table) {
         table.put("Settings imported.",
                 "Configuraci\u00f3n importada.");
         table.put("Settings imported. %1$d switch changed.",
                 "Configuraci\u00f3n importada. Cambi\u00f3 %1$d interruptor.");
-    }
-
-    private static void fillEs3(Map<String, String> table) {
         table.put("Settings imported. %1$d switches changed.",
                 "Configuraci\u00f3n importada. Cambiaron %1$d interruptores.");
         table.put("Setup and backup guide",
@@ -1068,8 +1076,8 @@ public final class L10nTranslations {
                 "Quita el bot\u00f3n de comentarios del pie de las publicaciones. Reinicia Tumblr para ver el cambio.");
         table.put("Takes the communities Tumblr suggests you join, and their headings, out of your dashboard and other feeds.",
                 "Quita las comunidades a las que Tumblr te sugiere unirte, y sus encabezados, de tu panel y otros feeds.");
-        table.put("Takes the like button out of the footer under posts. Restart Tumblr to see the change.",
-                "Quita el bot\u00f3n Me gusta del pie de las publicaciones. Reinicia Tumblr para ver el cambio.");
+        table.put("Takes the like button out of the footer under posts, and the reactions off community posts. Restart Tumblr to see the change.",
+                "Quita el bot\u00f3n Me gusta del pie de las publicaciones y las reacciones de las publicaciones de comunidades. Reinicia Tumblr para ver el cambio.");
         table.put("Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.",
                 "Quita los n\u00fameros de Me gusta, reblogueos y comentarios del pie de las publicaciones, y deja los botones.");
         table.put("Takes the reblog button out of the footer under posts. Restart Tumblr to see the change.",
@@ -1124,13 +1132,13 @@ public final class L10nTranslations {
                 "El archivo de configuraci\u00f3n se guard\u00f3, pero al volver a leerlo no coincide con lo que se escribi\u00f3. Gu\u00e1rdalo de nuevo como un archivo nuevo.");
         table.put("There's no diagnostic data to clear.",
                 "No hay datos de diagn\u00f3stico que borrar.");
+    }
+
+    private static void fillEs4(Map<String, String> table) {
         table.put("There's no diagnostic data to put back.",
                 "No hay datos de diagn\u00f3stico que restaurar.");
         table.put("There's no import to undo.",
                 "No hay ninguna importaci\u00f3n que deshacer.");
-    }
-
-    private static void fillEs4(Map<String, String> table) {
         table.put("This build doesn't include the parts that handle %1$s.",
                 "Esta versi\u00f3n no incluye las partes que se encargan de %1$s.");
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
@@ -1208,7 +1216,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(554);
+        Map<String, String> table = new HashMap<>(558);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -1290,6 +1298,8 @@ public final class L10nTranslations {
                 "Hapus pencarian");
         table.put("Clears the saved log and patch check results that a report would include.",
                 "Menghapus log tersimpan dan hasil pemeriksaan patch yang akan dimuat dalam laporan.");
+        table.put("Comments",
+                "Komentar");
         table.put("Communities",
                 "Komunitas");
         table.put("Copy a quick report or save the full one to %1$s. Links, IDs, cookies and sign-in tokens are left out. Check it for other private text before you share it.",
@@ -1336,11 +1346,11 @@ public final class L10nTranslations {
                 "Data diagnostik dikembalikan.");
         table.put("Diagnostic report copied to the clipboard.",
                 "Laporan diagnostik disalin ke papan klip.");
-        table.put("Disable analytics",
-                "Nonaktifkan analitik");
     }
 
     private static void fillIn1(Map<String, String> table) {
+        table.put("Disable analytics",
+                "Nonaktifkan analitik");
         table.put("Disable update prompts",
                 "Nonaktifkan permintaan pembaruan");
         table.put("Every switch but Debug logging acts as if it were off, and what was set when you patched stays in. Your settings stay as they are.",
@@ -1459,11 +1469,11 @@ public final class L10nTranslations {
                 "Impor diurungkan. Setelan sakelar sebelumnya dipulihkan.");
         table.put("Importing settings",
                 "Mengimpor pengaturan");
-        table.put("In Tumblr: %1$s",
-                "Di Tumblr: %1$s");
     }
 
     private static void fillIn2(Map<String, String> table) {
+        table.put("In Tumblr: %1$s",
+                "Di Tumblr: %1$s");
         table.put("Installed patches and switches",
                 "Patch yang terpasang dan sakelar");
         table.put("Interface",
@@ -1494,6 +1504,8 @@ public final class L10nTranslations {
                 "Tidak ada pengaturan yang cocok");
         table.put("None of Tumblr's web addresses are selected for this app, so their links open elsewhere. Tap to select them in Android's settings.",
                 "Tidak ada alamat web Tumblr yang dipilih untuk aplikasi ini, jadi tautannya terbuka di tempat lain. Ketuk untuk memilihnya di pengaturan Android.");
+        table.put("Notes",
+                "Nota");
         table.put("Notifications",
                 "Notifikasi");
         table.put("OK",
@@ -1580,13 +1592,13 @@ public final class L10nTranslations {
                 "Pengaturan diekspor.");
         table.put("Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.",
                 "Pengaturan diekspor. Aplikasi yang menyimpan file itu tidak mengizinkan HushTumblr membacanya kembali, jadi file itu tidak diperiksa.");
+    }
+
+    private static void fillIn3(Map<String, String> table) {
         table.put("Settings imported.",
                 "Pengaturan diimpor.");
         table.put("Settings imported. %1$d switch changed.",
                 "Pengaturan diimpor. %1$d sakelar berubah.");
-    }
-
-    private static void fillIn3(Map<String, String> table) {
         table.put("Settings imported. %1$d switches changed.",
                 "Pengaturan diimpor. %1$d sakelar berubah.");
         table.put("Setup and backup guide",
@@ -1647,8 +1659,8 @@ public final class L10nTranslations {
                 "Menghapus tombol komentar dari bagian bawah postingan. Mulai ulang Tumblr untuk melihat perubahannya.");
         table.put("Takes the communities Tumblr suggests you join, and their headings, out of your dashboard and other feeds.",
                 "Menghapus komunitas yang disarankan Tumblr untuk kamu ikuti, beserta judulnya, dari dasbor dan feed lainnya.");
-        table.put("Takes the like button out of the footer under posts. Restart Tumblr to see the change.",
-                "Menghapus tombol suka dari bagian bawah postingan. Mulai ulang Tumblr untuk melihat perubahannya.");
+        table.put("Takes the like button out of the footer under posts, and the reactions off community posts. Restart Tumblr to see the change.",
+                "Menghapus tombol suka dari bagian bawah postingan, dan reaksi dari postingan komunitas. Mulai ulang Tumblr untuk melihat perubahannya.");
         table.put("Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.",
                 "Menghapus jumlah suka, reblog, dan komentar dari bagian bawah postingan, tapi tombolnya tetap ada.");
         table.put("Takes the reblog button out of the footer under posts. Restart Tumblr to see the change.",
@@ -1703,13 +1715,13 @@ public final class L10nTranslations {
                 "File pengaturan sudah disimpan, tetapi isinya saat dibaca kembali tidak sama dengan yang ditulis. Simpan lagi sebagai file baru.");
         table.put("There's no diagnostic data to clear.",
                 "Tidak ada data diagnostik yang dapat dihapus.");
+    }
+
+    private static void fillIn4(Map<String, String> table) {
         table.put("There's no diagnostic data to put back.",
                 "Tidak ada data diagnostik yang dapat dikembalikan.");
         table.put("There's no import to undo.",
                 "Tidak ada impor untuk diurungkan.");
-    }
-
-    private static void fillIn4(Map<String, String> table) {
         table.put("This build doesn't include the parts that handle %1$s.",
                 "Build ini tidak menyertakan bagian yang menangani %1$s.");
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
@@ -1787,7 +1799,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(554);
+        Map<String, String> table = new HashMap<>(558);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -1869,6 +1881,8 @@ public final class L10nTranslations {
                 "Limpar busca");
         table.put("Clears the saved log and patch check results that a report would include.",
                 "Apaga o registro salvo e os resultados das verifica\u00e7\u00f5es dos patches que um relat\u00f3rio incluiria.");
+        table.put("Comments",
+                "Coment\u00e1rios");
         table.put("Communities",
                 "Comunidades");
         table.put("Copy a quick report or save the full one to %1$s. Links, IDs, cookies and sign-in tokens are left out. Check it for other private text before you share it.",
@@ -1915,11 +1929,11 @@ public final class L10nTranslations {
                 "Dados de diagn\u00f3stico restaurados.");
         table.put("Diagnostic report copied to the clipboard.",
                 "Relat\u00f3rio de diagn\u00f3stico copiado para a \u00e1rea de transfer\u00eancia.");
-        table.put("Disable analytics",
-                "Desativar an\u00e1lises");
     }
 
     private static void fillPt_rBR1(Map<String, String> table) {
+        table.put("Disable analytics",
+                "Desativar an\u00e1lises");
         table.put("Disable update prompts",
                 "Desativar avisos de atualiza\u00e7\u00e3o");
         table.put("Every switch but Debug logging acts as if it were off, and what was set when you patched stays in. Your settings stay as they are.",
@@ -2038,11 +2052,11 @@ public final class L10nTranslations {
                 "Importa\u00e7\u00e3o desfeita. Seus ajustes anteriores foram restaurados.");
         table.put("Importing settings",
                 "Importando as configura\u00e7\u00f5es");
-        table.put("In Tumblr: %1$s",
-                "No Tumblr: %1$s");
     }
 
     private static void fillPt_rBR2(Map<String, String> table) {
+        table.put("In Tumblr: %1$s",
+                "No Tumblr: %1$s");
         table.put("Installed patches and switches",
                 "Patches instalados e op\u00e7\u00f5es");
         table.put("Interface",
@@ -2073,6 +2087,8 @@ public final class L10nTranslations {
                 "Nenhuma configura\u00e7\u00e3o encontrada");
         table.put("None of Tumblr's web addresses are selected for this app, so their links open elsewhere. Tap to select them in Android's settings.",
                 "Nenhum endere\u00e7o web do Tumblr est\u00e1 selecionado para este app, ent\u00e3o os links deles abrem em outro lugar. Toque para selecion\u00e1-los nas configura\u00e7\u00f5es do Android.");
+        table.put("Notes",
+                "Notas");
         table.put("Notifications",
                 "Notifica\u00e7\u00f5es");
         table.put("OK",
@@ -2159,13 +2175,13 @@ public final class L10nTranslations {
                 "Configura\u00e7\u00f5es exportadas.");
         table.put("Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.",
                 "Configura\u00e7\u00f5es exportadas. O app que guarda o arquivo n\u00e3o deixou o HushTumblr l\u00ea-lo de volta, ent\u00e3o ele n\u00e3o foi conferido.");
+    }
+
+    private static void fillPt_rBR3(Map<String, String> table) {
         table.put("Settings imported.",
                 "Configura\u00e7\u00f5es importadas.");
         table.put("Settings imported. %1$d switch changed.",
                 "Configura\u00e7\u00f5es importadas. %1$d op\u00e7\u00e3o foi alterada.");
-    }
-
-    private static void fillPt_rBR3(Map<String, String> table) {
         table.put("Settings imported. %1$d switches changed.",
                 "Configura\u00e7\u00f5es importadas. %1$d op\u00e7\u00f5es foram alteradas.");
         table.put("Setup and backup guide",
@@ -2226,8 +2242,8 @@ public final class L10nTranslations {
                 "Tira o bot\u00e3o de comentar do rodap\u00e9 dos posts. Reinicie o Tumblr para ver a mudan\u00e7a.");
         table.put("Takes the communities Tumblr suggests you join, and their headings, out of your dashboard and other feeds.",
                 "Tira do seu painel e de outros feeds as comunidades em que o Tumblr sugere que voc\u00ea entre, junto com os t\u00edtulos delas.");
-        table.put("Takes the like button out of the footer under posts. Restart Tumblr to see the change.",
-                "Tira o bot\u00e3o de curtir do rodap\u00e9 dos posts. Reinicie o Tumblr para ver a mudan\u00e7a.");
+        table.put("Takes the like button out of the footer under posts, and the reactions off community posts. Restart Tumblr to see the change.",
+                "Tira o bot\u00e3o de curtir do rodap\u00e9 dos posts e as rea\u00e7\u00f5es dos posts de comunidades. Reinicie o Tumblr para ver a mudan\u00e7a.");
         table.put("Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.",
                 "Tira os n\u00fameros de curtidas, reblogues e coment\u00e1rios do rodap\u00e9 dos posts e mant\u00e9m os bot\u00f5es.");
         table.put("Takes the reblog button out of the footer under posts. Restart Tumblr to see the change.",
@@ -2282,13 +2298,13 @@ public final class L10nTranslations {
                 "O arquivo de configura\u00e7\u00f5es foi salvo, mas ao ser lido de volta n\u00e3o corresponde ao que foi gravado. Salve de novo como um arquivo novo.");
         table.put("There's no diagnostic data to clear.",
                 "N\u00e3o h\u00e1 dados de diagn\u00f3stico para limpar.");
+    }
+
+    private static void fillPt_rBR4(Map<String, String> table) {
         table.put("There's no diagnostic data to put back.",
                 "N\u00e3o h\u00e1 dados de diagn\u00f3stico para restaurar.");
         table.put("There's no import to undo.",
                 "N\u00e3o h\u00e1 importa\u00e7\u00e3o para desfazer.");
-    }
-
-    private static void fillPt_rBR4(Map<String, String> table) {
         table.put("This build doesn't include the parts that handle %1$s.",
                 "Esta vers\u00e3o n\u00e3o inclui as partes que cuidam de %1$s.");
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
@@ -2366,7 +2382,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(554);
+        Map<String, String> table = new HashMap<>(558);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -2448,6 +2464,8 @@ public final class L10nTranslations {
                 "Aramay\u0131 temizle");
         table.put("Clears the saved log and patch check results that a report would include.",
                 "Bir raporun i\u00e7erece\u011fi kay\u0131tl\u0131 g\u00fcnl\u00fc\u011f\u00fc ve yama kontrol sonu\u00e7lar\u0131n\u0131 temizler.");
+        table.put("Comments",
+                "Yorumlar");
         table.put("Communities",
                 "Topluluklar");
         table.put("Copy a quick report or save the full one to %1$s. Links, IDs, cookies and sign-in tokens are left out. Check it for other private text before you share it.",
@@ -2494,11 +2512,11 @@ public final class L10nTranslations {
                 "Tan\u0131lama verileri geri getirildi.");
         table.put("Diagnostic report copied to the clipboard.",
                 "Tan\u0131lama raporu panoya kopyaland\u0131.");
-        table.put("Disable analytics",
-                "Analizleri devre d\u0131\u015f\u0131 b\u0131rak");
     }
 
     private static void fillTr1(Map<String, String> table) {
+        table.put("Disable analytics",
+                "Analizleri devre d\u0131\u015f\u0131 b\u0131rak");
         table.put("Disable update prompts",
                 "G\u00fcncelleme uyar\u0131lar\u0131n\u0131 kapat");
         table.put("Every switch but Debug logging acts as if it were off, and what was set when you patched stays in. Your settings stay as they are.",
@@ -2617,11 +2635,11 @@ public final class L10nTranslations {
                 "\u0130\u00e7e aktarma geri al\u0131nd\u0131. \u00d6nceki anahtar ayarlar\u0131n\u0131z geri geldi.");
         table.put("Importing settings",
                 "Ayarlar i\u00e7e aktar\u0131l\u0131yor");
-        table.put("In Tumblr: %1$s",
-                "Tumblr'da: %1$s");
     }
 
     private static void fillTr2(Map<String, String> table) {
+        table.put("In Tumblr: %1$s",
+                "Tumblr'da: %1$s");
         table.put("Installed patches and switches",
                 "Y\u00fckl\u00fc yamalar ve anahtarlar");
         table.put("Interface",
@@ -2652,6 +2670,8 @@ public final class L10nTranslations {
                 "E\u015fle\u015fen ayar yok");
         table.put("None of Tumblr's web addresses are selected for this app, so their links open elsewhere. Tap to select them in Android's settings.",
                 "Tumblr'\u0131n web adreslerinden hi\u00e7biri bu uygulama i\u00e7in se\u00e7ili de\u011fil, bu y\u00fczden ba\u011flant\u0131lar\u0131 ba\u015fka yerde a\u00e7\u0131l\u0131r. Android ayarlar\u0131nda se\u00e7mek i\u00e7in dokunun.");
+        table.put("Notes",
+                "Notlar");
         table.put("Notifications",
                 "Bildirimler");
         table.put("OK",
@@ -2738,13 +2758,13 @@ public final class L10nTranslations {
                 "Ayarlar d\u0131\u015fa aktar\u0131ld\u0131.");
         table.put("Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.",
                 "Ayarlar d\u0131\u015fa aktar\u0131ld\u0131. Dosyay\u0131 tutan uygulama HushTumblr'\u0131n onu geri okumas\u0131na izin vermedi, bu y\u00fczden kontrol edilmedi.");
+    }
+
+    private static void fillTr3(Map<String, String> table) {
         table.put("Settings imported.",
                 "Ayarlar i\u00e7e aktar\u0131ld\u0131.");
         table.put("Settings imported. %1$d switch changed.",
                 "Ayarlar i\u00e7e aktar\u0131ld\u0131. %1$d anahtar de\u011fi\u015fti.");
-    }
-
-    private static void fillTr3(Map<String, String> table) {
         table.put("Settings imported. %1$d switches changed.",
                 "Ayarlar i\u00e7e aktar\u0131ld\u0131. %1$d anahtar de\u011fi\u015fti.");
         table.put("Setup and backup guide",
@@ -2805,8 +2825,8 @@ public final class L10nTranslations {
                 "G\u00f6nderilerin alt\u0131ndaki yorum d\u00fc\u011fmesini kald\u0131r\u0131r. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
         table.put("Takes the communities Tumblr suggests you join, and their headings, out of your dashboard and other feeds.",
                 "Tumblr'\u0131n kat\u0131lman\u0131 \u00f6nerdi\u011fi topluluklar\u0131 ve ba\u015fl\u0131klar\u0131n\u0131 panondan ve di\u011fer ak\u0131\u015flardan kald\u0131r\u0131r.");
-        table.put("Takes the like button out of the footer under posts. Restart Tumblr to see the change.",
-                "G\u00f6nderilerin alt\u0131ndaki be\u011fen d\u00fc\u011fmesini kald\u0131r\u0131r. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
+        table.put("Takes the like button out of the footer under posts, and the reactions off community posts. Restart Tumblr to see the change.",
+                "G\u00f6nderilerin alt\u0131ndaki be\u011fen d\u00fc\u011fmesini ve topluluk g\u00f6nderilerindeki tepkileri kald\u0131r\u0131r. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
         table.put("Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.",
                 "G\u00f6nderilerin alt\u0131ndaki be\u011feni, RB ve yorum say\u0131lar\u0131n\u0131 kald\u0131r\u0131r, d\u00fc\u011fmeler kal\u0131r.");
         table.put("Takes the reblog button out of the footer under posts. Restart Tumblr to see the change.",
@@ -2861,13 +2881,13 @@ public final class L10nTranslations {
                 "Ayar dosyas\u0131 kaydedildi, ancak geri okundu\u011funda yaz\u0131lanla ayn\u0131 de\u011fil. Yeni bir dosya olarak tekrar kaydet.");
         table.put("There's no diagnostic data to clear.",
                 "Temizlenecek tan\u0131lama verisi yok.");
+    }
+
+    private static void fillTr4(Map<String, String> table) {
         table.put("There's no diagnostic data to put back.",
                 "Geri getirilecek tan\u0131lama verisi yok.");
         table.put("There's no import to undo.",
                 "Geri al\u0131nacak i\u00e7e aktarma yok.");
-    }
-
-    private static void fillTr4(Map<String, String> table) {
         table.put("This build doesn't include the parts that handle %1$s.",
                 "Bu s\u00fcr\u00fcm %1$s ile ilgilenen par\u00e7alar\u0131 i\u00e7ermiyor.");
         table.put("This build handles %1$s. It's missing the parts for %2$s.",

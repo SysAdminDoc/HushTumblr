@@ -5,7 +5,7 @@
  */
 package app.morphe.patches.tumblr.ui
 
-import app.morphe.patcher.extensions.InstructionExtensions.addInstruction
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.BytecodePatchContext
@@ -40,11 +40,14 @@ import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 
 private const val PATCH = "Hide the diamond and TumblrMart"
 internal const val STORE_BUTTONS = "$EXTENSION_PACKAGE/ui/StoreButtons;"
 internal const val HIDE_DIAMOND_HOOK = "$STORE_BUTTONS->hideDiamond(Landroid/view/View;Landroid/view/View;)Z"
 internal const val HIDE_TUMBLRMART_HOOK = "$STORE_BUTTONS->hideTumblrMart(Landroid/view/View;)V"
+internal const val TUMBLRMART_ROOM_HOOK = "$STORE_BUTTONS->tumblrMartRoom(I)I"
+internal const val DIAMOND_ROOM_HOOK = "$STORE_BUTTONS->diamondRoom(I)I"
 
 /** The preference the diamond's drawer reads to pick its icon. Only the diamond's class names it. */
 internal const val DIAMOND_CLICKED = "arg_has_clicked_on_premium_diamond"
@@ -58,8 +61,21 @@ internal const val VIEW_IDS = "Lcom/tumblr/R\$id;"
 /** The TumblrMart button's view ID on the dashboard's top bar, and on Explore and notifications. */
 internal val TUMBLRMART_IDS = setOf("tumblrmart_button_top_bar", "tumblr_mart_icon")
 
+/** Explore's search bar's view ID. Only Explore's header looks it up. */
+internal const val SEARCH_BAR_ID = "search_bar"
+
+/** Tumblr's feature flags that give the TumblrMart button and the diamond room by Explore's search bar. Kept enum names. */
+private const val TUMBLRMART_FLAG = "APP_TOP_NAVIGATION_UPDATE"
+private const val DIAMOND_FLAG = "ENABLE_TUMBLR_PREMIUM"
+
+/** The size Tumblr gives each of those rooms. A dimension name, kept in R. */
+private const val ICON_ROOM = "top_navigation_icon_size"
+
 /** One place Tumblr shows a TumblrMart button: the hook goes in at [at], with the button in [register]. */
 internal class TumblrMartSite(val method: MutableMethod, val at: Int, val register: Int)
+
+/** One room by Explore's search bar: [hook] goes in at [at], on the room in [register]. */
+internal class SearchBarRoom(val method: MutableMethod, val at: Int, val register: Int, val hook: String)
 
 /**
  * Keeps the Premium diamond and the TumblrMart button out of Tumblr's top bars while the switch is
@@ -78,6 +94,12 @@ internal class TumblrMartSite(val method: MutableMethod, val at: Int, val regist
  * point is reached only from the visibility call, and the button's register isn't reused between
  * the lookup and the call; a reader that doesn't fit refuses the patch rather than missing a
  * screen. Found by reading Tumblr 46.5.0.109 (2026-10-11).
+ *
+ * Explore's search bar: the header narrows it as it collapses, leaving room on the right for each
+ * icon whose feature flag is on, whether the icon shows or not. [resolveSearchBarRooms] finds the
+ * TumblrMart button's room and the diamond's in the header's constructor, and
+ * `StoreButtons.tumblrMartRoom` and `diamondRoom` answer none while the switch hides them, so the
+ * bar runs up to the icons that are left instead of stopping at a gap.
  */
 @Suppress("unused")
 val hideTumblrMartPatch = bytecodePatch(
@@ -97,12 +119,17 @@ val hideTumblrMartPatch = bytecodePatch(
         // Found and checked before any edit, so a refusal leaves the APK as it was.
         val diamond = resolveDiamondDrawer()
         val sites = resolveTumblrMartSites()
+        val rooms = resolveSearchBarRooms()
         diamond.hideDiamondWhenAsked()
-        // Last first in each method, so an earlier site's index still holds.
-        for (site in sites.sortedByDescending { it.at }) {
+        val edits = sites.map { site ->
             val button = "v${site.register}"
-            site.method.addInstruction(site.at, "invoke-static/range {$button .. $button}, $HIDE_TUMBLRMART_HOOK")
+            Triple(site.method, site.at, "invoke-static/range {$button .. $button}, $HIDE_TUMBLRMART_HOOK")
+        } + rooms.map { room ->
+            val held = "v${room.register}"
+            Triple(room.method, room.at, "invoke-static {$held}, ${room.hook}\nmove-result $held")
         }
+        // Last first in each method, so an earlier edit's index still holds. Explore's header has both.
+        for ((method, at, smali) in edits.sortedByDescending { it.second }) method.addInstructions(at, smali)
         enableCapability("premiumDiamond")
         enableCapability("tumblrMartButtons")
         enableStatus("hideTumblrMart")
@@ -163,6 +190,59 @@ private fun Method.tumblrMartPlaces(): List<Pair<Int, Int>> {
         at to button
     }
 }
+
+/**
+ * The TumblrMart button's room and the diamond's by Explore's search bar, throwing when the header
+ * that looks the bar up is missing or doubled, or when a room isn't worked out the way the hooks
+ * expect.
+ *
+ * The header's constructor is the one method reading [SEARCH_BAR_ID] (`util/c.<init>` in
+ * 46.5.0.109). For each flag it reads the flag's enum constant, works out the room from
+ * [ICON_ROOM] when the flag is on, stores it in an int field of the header (`B` at 129 for
+ * TumblrMart, `C` at 147 for the diamond) and later adds it into the search bar's collapsed end
+ * margin (172 to 174), which it hands to the margin animator. Nothing else reads those fields. Each
+ * hook goes right after the field store, on the stored register, so the add takes its answer.
+ */
+internal fun BytecodePatchContext.resolveSearchBarRooms(): List<SearchBarRoom> {
+    requireExtensionHook(PATCH, TUMBLRMART_ROOM_HOOK)
+    requireExtensionHook(PATCH, DIAMOND_ROOM_HOOK)
+    val headers = mutableListOf<Method>()
+    classDefForEach { owner ->
+        if (owner.type.startsWith(EXTENSION_ROOT)) return@classDefForEach
+        owner.methods.filterTo(headers) { method -> method.instructionList().any { it.isSearchBarId() } }
+    }
+    val header = headers.only(PATCH, "Explore's header, which looks its search bar up")
+    return listOf(TUMBLRMART_FLAG to TUMBLRMART_ROOM_HOOK, DIAMOND_FLAG to DIAMOND_ROOM_HOOK).map { (flag, hook) ->
+        val (at, register) = header.roomFrom(flag)
+        SearchBarRoom(mutableOf(header), at, register, hook)
+    }
+}
+
+/** Where the room [flag] gives is stored, as the index right after the store and the room's register. */
+private fun Method.roomFrom(flag: String): Pair<Int, Int> {
+    val body = instructionList()
+    val where = "$definingClass->$name"
+    val read = body.indices
+        .filter { at -> body[at].opcode == Opcode.SGET_OBJECT && body[at].fieldRef()?.let { it.name == flag && it.type == it.definingClass } == true }
+        .only(PATCH, "$where's read of $flag")
+    val stored = (read + 1 until body.size)
+        .firstOrNull { body[it].opcode == Opcode.IPUT && body[it].fieldRef()?.definingClass == definingClass }
+    requireShape(PATCH, stored != null, "$where never stores the room $flag gives")
+    requireShape(PATCH, (read + 1 until stored!!).any { body[it].fieldRef()?.name == ICON_ROOM },
+        "$where doesn't size the room $flag gives from $ICON_ROOM")
+    val room = (body[stored] as TwoRegisterInstruction).registerA
+    val at = stored + 1
+    requireShape(PATCH, room <= 15, "$where keeps the room $flag gives in v$room, past what the added call can name")
+    requireShape(PATCH, at < body.size && !isJumpTarget(at), "something in $where jumps past the room $flag gives")
+    val used = (at until body.size).firstOrNull { room in body[it].namedRegisters() }
+    requireShape(PATCH, used != null && body[used].opcode in setOf(Opcode.ADD_INT_2ADDR, Opcode.ADD_INT),
+        "$where doesn't add the room $flag gives into the search bar's margin")
+    return at to room
+}
+
+/** An `sget` of Explore's search bar's view ID. */
+private fun Instruction.isSearchBarId(): Boolean =
+    opcode == Opcode.SGET && fieldRef()?.let { it.definingClass == VIEW_IDS && it.name == SEARCH_BAR_ID } == true
 
 /** An `sget` of one of the TumblrMart button's view IDs. */
 private fun Instruction.isTumblrMartId(): Boolean =

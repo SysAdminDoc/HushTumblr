@@ -58,8 +58,8 @@ There are 35 patches so far, all for Tumblr 46.5.0.109. None of them has been bu
 | `Hide Watch it rows` | Takes Tumblr TV's Watch it rows and video hub cards out of your dashboard and other feeds, along with their headings. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
 | `Hide ads` | Takes ads and paid Blaze posts out of your dashboard and other feeds, and stops Tumblr asking its ad networks for more. On by default. Turn it off in Tumblr settings > HushTumblr > Feed. |
 | `Hide advertising ID` | Tumblr and the ad companies inside it see an empty advertising ID with ad tracking limited, as if you'd deleted your ad ID in Android. On by default. Turn it off in Tumblr settings > HushTumblr > Privacy. |
-| `Hide hashtags` | Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
-| `Hide note counts` | Takes the like, reblog and comment counts off the footer under posts in your dashboard and other feeds. The buttons stay and still work. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
+| `Hide hashtags` | Takes the tags off the bottom of posts in your dashboard, other feeds and Tumblr TV, and keeps the source link. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
+| `Hide note counts` | Takes the like, reblog and comment counts off the footer under posts, community posts included, and the count off the top of a post's notes. The buttons stay and still work. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Hide photo posts` | Takes photo posts out of your dashboard and other feeds as each page loads. A post with pictures and no video, its reblog trail included, counts as a photo post. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
 | `Hide posts with these words` | Takes posts out of your dashboard and other feeds when their text, reblog trail, tags or summary has a word or phrase from your list, ignoring case and matching whole words. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
 | `Hide reblogs` | Takes reblogs out of your dashboard and other feeds as each page loads, and keeps the posts people made themselves. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
@@ -73,7 +73,7 @@ There are 35 patches so far, all for Tumblr 46.5.0.109. None of them has been bu
 | `Hide the ad-free banner` | Hides the banner on your dashboard that asks you to pay for Ad-Free Browsing. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
 | `Hide the comment button` | Takes the comment button out of the footer under posts in your dashboard and other feeds. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Hide the diamond and TumblrMart` | Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
-| `Hide the like button` | Takes the like button out of the footer under posts in your dashboard and other feeds. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
+| `Hide the like button` | Takes the like button out of the footer under posts in your dashboard and other feeds, and the reactions off community posts. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Hide the reblog button` | Takes the reblog button out of the footer under posts in your dashboard and other feeds. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Hide the share button` | Takes the share button out of the footer under posts in your dashboard and other feeds. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Hide unread dots` | Hides the unread dots and counts on the bottom bar's Dashboard, Communities and Notifications tabs. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |

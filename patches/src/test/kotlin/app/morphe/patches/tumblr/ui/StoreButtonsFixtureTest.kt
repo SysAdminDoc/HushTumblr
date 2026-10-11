@@ -57,6 +57,11 @@ class StoreButtonsFixtureTest {
             val owners = sites.map { it.method.definingClass }
             assertTrue("${build.name}: the dashboard's top bar is one of them, $owners", DASHBOARD_HOST in owners)
             assertTrue("${build.name}: notifications is one of them, $owners", NOTIFICATIONS in owners)
+            val rooms = context.resolveSearchBarRooms()
+            assertEquals("${build.name}: TumblrMart's room, then the diamond's",
+                listOf(TUMBLRMART_ROOM_HOOK, DIAMOND_ROOM_HOOK), rooms.map { it.hook })
+            assertTrue("${build.name}: the rooms are in a header that shows a TumblrMart button",
+                rooms.all { room -> sites.any { it.method.key() == room.method.key() } })
             val before = sites.associate { it.method.key() to it.method.instructionList().map { i -> i.opcode } }
 
             hideTumblrMartPatch.execute(context)
@@ -77,21 +82,36 @@ class StoreButtonsFixtureTest {
 
             for ((key, sitesHere) in sites.groupBy { it.method.key() }) {
                 val method = sitesHere.first().method
+                val roomsHere = rooms.filter { it.method.key() == key }
                 val body = context.mutableClassDefBy(method.definingClass).methods
                     .single { it.name == method.name && it.parameterTypes == method.parameterTypes }
                     .instructionList()
-                assertEquals("$key: one call per button", before.getValue(key).size + sitesHere.size, body.size)
+                assertEquals("$key: one call per button, two instructions per room",
+                    before.getValue(key).size + sitesHere.size + 2 * roomsHere.size, body.size)
+                // Each earlier hook in the same method moves a later one down by what it added.
+                fun moved(at: Int) = at + sitesHere.count { it.at < at } + 2 * roomsHere.count { it.at < at }
+                val added = mutableSetOf<Int>()
                 for (site in sitesHere) {
-                    // Each earlier hook in the same method moves this one down by one.
-                    val at = site.at + sitesHere.count { it.at < site.at }
+                    val at = moved(site.at)
                     assertEquals("$key: the hook follows the visibility call", "setVisibility", body[at - 1].methodRef()?.name)
                     assertEquals(key, site.register, body[at - 1].namedRegisters().first())
                     assertEquals(key, Opcode.INVOKE_STATIC_RANGE, body[at].opcode)
                     assertEquals("$key: the extension is told", HIDE_TUMBLRMART_HOOK, body[at].call())
                     assertEquals("$key: about the button", listOf(site.register), body[at].namedRegisters())
+                    added += at
+                }
+                for (room in roomsHere) {
+                    val at = moved(room.at)
+                    assertEquals("$key: the room hook follows the room's field store", Opcode.IPUT, body[at - 1].opcode)
+                    assertEquals(key, room.register, body[at - 1].namedRegisters().first())
+                    assertEquals("$key: the extension is asked", room.hook, body[at].call())
+                    assertEquals("$key: about the room", listOf(room.register), body[at].namedRegisters())
+                    assertEquals("$key: its answer is the room", Opcode.MOVE_RESULT, body[at + 1].opcode)
+                    assertEquals(key, room.register, (body[at + 1] as OneRegisterInstruction).registerA)
+                    added += listOf(at, at + 1)
                 }
                 assertEquals("$key: the rest is Tumblr's own code", before.getValue(key),
-                    body.filterNot { it.call() == HIDE_TUMBLRMART_HOOK }.map { it.opcode })
+                    body.filterIndexed { at, _ -> at !in added }.map { it.opcode })
             }
             for (flag in listOf("hideTumblrMart", "premiumDiamond", "tumblrMartButtons")) {
                 val first = context.mutableClassDefBy(SETTINGS_STATUS).methods.single { it.name == flag }

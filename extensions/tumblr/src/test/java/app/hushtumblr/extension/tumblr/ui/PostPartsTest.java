@@ -5,7 +5,9 @@
  */
 package app.hushtumblr.extension.tumblr.ui;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.After;
@@ -64,6 +66,24 @@ public class PostPartsTest {
         String report = String.join("\n", HookStatus.report());
         assertTrue(report, report.contains("tags hidden 1"));
         assertTrue(report, report.contains("follow button hidden 2"));
+    }
+
+    @Test
+    public void hideHashtagsEmptiesTumblrTvsTagLine() {
+        assertEquals("cats, dogs", PostParts.tvTags("cats, dogs"));
+        Settings.HIDE_HASHTAGS.save(true);
+        assertEquals("", PostParts.tvTags("cats, dogs"));
+        assertEquals("nothing to hide", "", PostParts.tvTags(""));
+        assertNull(PostParts.tvTags(null));
+
+        String report = String.join("\n", HookStatus.report());
+        assertTrue(report, report.contains("Tumblr TV tags hidden 1"));
+
+        PatchFamilyForTests.capabilities(EnumSet.of(PatchFamily.Capability.FOLLOW_BUTTON));
+        assertEquals("its hook isn't in this build", "cats", PostParts.tvTags("cats"));
+        PatchFamilyForTests.capabilities(EnumSet.allOf(PatchFamily.Capability.class));
+        PauseForTests.pause(HushTumblrPause.Reason.SWITCH);
+        assertEquals("cats", PostParts.tvTags("cats"));
     }
 
     @Test
