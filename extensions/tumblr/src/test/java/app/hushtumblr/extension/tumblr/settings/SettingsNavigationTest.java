@@ -778,10 +778,11 @@ public class SettingsNavigationTest {
         layout(dialog.getView());
         View heading = list().getChildAt(1);
         assertTrue(heading.createAccessibilityNodeInfo().isHeading());
-        View privacy = list().getChildAt(2);
-        assertEquals(android.widget.Button.class.getName(), privacy.createAccessibilityNodeInfo().getClassName());
-        assertTrue(privacy.performAccessibilityAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK, null));
-        assertEquals("Disable analytics", ((Preference) list().getItemAtPosition(0)).getTitle());
+        // The first page row is Feed's.
+        View feed = list().getChildAt(2);
+        assertEquals(android.widget.Button.class.getName(), feed.createAccessibilityNodeInfo().getClassName());
+        assertTrue(feed.performAccessibilityAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK, null));
+        assertEquals("Hide ads", ((Preference) list().getItemAtPosition(0)).getTitle());
         page.navigation.back();
         findSearch(dialog.getView()).setText("Hide advertising");
         layout(dialog.getView());
