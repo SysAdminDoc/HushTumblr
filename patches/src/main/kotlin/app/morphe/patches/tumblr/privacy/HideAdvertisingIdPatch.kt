@@ -39,9 +39,9 @@ internal val ADVERTISING_ID_GETTERS = mapOf(
 @Suppress("unused")
 val hideAdvertisingIdPatch = bytecodePatch(
     name = PATCH,
-    description = "Tumblr and the ad companies inside it see an empty advertising ID with ad tracking limited, the" +
-        " same as if you deleted your ad ID in Android. Good for keeping ads from following you. On by default." +
-        " Turn it off in HushTumblr settings > Privacy.",
+    description = "Tumblr and the ad companies inside it see an empty advertising ID with ad tracking limited, as" +
+        " if you'd deleted your ad ID in Android. On by default. Turn it off in Tumblr settings > HushTumblr >" +
+        " Privacy.",
     default = true,
 ) {
     category("Privacy")

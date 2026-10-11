@@ -47,20 +47,20 @@ Each of these has to be checked against Tumblr itself before it's described as a
 
 ## Patches
 
-There are 6 patches so far. They came over from HushPinterest and now point at Tumblr 46.5.0.109, but none of them has been built or tried on a phone yet.
+There are 6 patches so far, all for Tumblr 46.5.0.109. None of them has been built or tried on a phone yet.
 
 | Patch | What it does |
 |---|---|
 | `Disable analytics` | Turns off Firebase crash reports and Google's analytics collection inside Tumblr. Good if you'd rather share less. Works as soon as you patch it in, with no switch. |
-| `Fix push notifications` | Lets the patched app sign up for push notifications. Google's Firebase service can refuse a patched Tumblr when the request doesn't name Tumblr's original signature, so this sends that signature's fingerprint and changes nothing else in the request. On by default. Turn it off in HushTumblr settings > More settings > Notifications. |
-| `Hide advertising ID` | Tumblr and the ad companies inside it see an empty advertising ID with ad tracking limited, the same as if you deleted your ad ID in Android. Good for keeping ads from following you. On by default. Turn it off in HushTumblr settings > Privacy. |
-| `HushTumblr settings` | Adds a HushTumblr page to Tumblr where you turn features on or off, pause HushTumblr, back up your settings and read the licenses. Open it by long-pressing the Tumblr icon. Works as soon as you patch it in, with no switch. |
+| `Fix push notifications` | Lets the patched app sign up for push notifications. Firebase can refuse a patched Tumblr whose request doesn't name Tumblr's original signature, so this sends that signature's fingerprint and changes nothing else. On by default. Turn it off in Tumblr settings > HushTumblr > More settings > Notifications. |
+| `Hide advertising ID` | Tumblr and the ad companies inside it see an empty advertising ID with ad tracking limited, as if you'd deleted your ad ID in Android. On by default. Turn it off in Tumblr settings > HushTumblr > Privacy. |
+| `HushTumblr settings` | Adds a HushTumblr page where you turn features on or off, pause HushTumblr, back up your settings and read the licenses. Open it from Tumblr's Settings or by long-pressing the Tumblr icon. Works as soon as you patch it in, with no switch. |
 | `Remove ad tracking permissions` | Removes Google's advertising ID permission and Android's Privacy Sandbox ad services from Tumblr, so it can't use them. Google Play services then answers with zeros. Works as soon as you patch it in, with no switch. |
 | `Spoof signature for Google sign-in` | Helps Google sign-in work in the patched app by naming Tumblr's original signature. It only helps with microG-RE or the XSpoofSignatures module. Email sign-in doesn't need it. It isn't selected by default. Works as soon as you patch it in, with no switch. |
 
 Morphe Manager selects every patch but Spoof signature for Google sign-in by default. Hide advertising ID and Fix push notifications start with their switches on. Disable analytics, Remove ad tracking permissions and the signature patch have no switch, and their manifest changes stay until you patch again without them. The settings patch is required by the others.
 
-Switches change the runtime hooks without patching again. Pause makes those hooks follow Tumblr's original path. Besides the long-press shortcut, HushTumblr settings opens from Tumblr's App info page through Additional settings in the app. There's no row inside Tumblr's own settings yet.
+Switches change the runtime hooks without patching again. Pause makes those hooks follow Tumblr's original path. HushTumblr settings opens from the HushTumblr row at the end of Tumblr's own Settings screen. The long-press shortcut on the Tumblr icon and Additional settings in the app, on Tumblr's App info page, open it too.
 
 ## Privacy
 

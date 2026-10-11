@@ -164,7 +164,9 @@
         "patches/src/main/kotlin/app/morphe/patches/tumblr/ui/**",
         "extensions/tumblr/src/main/java/app/hushtumblr/extension/tumblr/flags/**",
         "patches/src/main/kotlin/app/morphe/patches/tumblr/flags/**",
-        "patches/src/main/kotlin/app/morphe/patches/tumblr/lookup/**"
+        "patches/src/main/kotlin/app/morphe/patches/tumblr/lookup/**",
+        "extensions/tumblr/src/main/java/app/hushtumblr/extension/tumblr/settings/SettingsHubRow.java",
+        "patches/src/main/kotlin/app/morphe/patches/tumblr/misc/settings/SettingsHubRow.kt"
       ],
       "origin": "original",
       "upstream": "https://github.com/SysAdminDoc/HushTumblr",
