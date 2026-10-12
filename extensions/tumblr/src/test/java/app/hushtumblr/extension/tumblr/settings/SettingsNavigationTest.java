@@ -43,6 +43,7 @@ import java.util.TreeMap;
 import app.hushtumblr.extension.shared.L10n;
 import app.hushtumblr.extension.shared.SettingsContextRule;
 import app.hushtumblr.extension.shared.settings.BaseSettings;
+import app.hushtumblr.extension.shared.settings.BooleanSetting;
 import app.hushtumblr.extension.shared.settings.FailingStore;
 import app.hushtumblr.extension.shared.settings.HushTumblrPause;
 import app.hushtumblr.extension.shared.settings.PauseForTests;
@@ -85,6 +86,7 @@ public class SettingsNavigationTest {
         PatchFamily.capabilitiesForTests = null;
         Settings.HIDE_ADVERTISING_ID.resetToDefault();
         Settings.FIX_PUSH_NOTIFICATIONS.resetToDefault();
+        Settings.HIDE_TUMBLR_TV.resetToDefault();
         BaseSettings.PAUSED.resetToDefault();
         app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.remove(
                 Settings.HIDE_ADVERTISING_ID.key);
@@ -420,6 +422,41 @@ public class SettingsNavigationTest {
         page.navigation.back();
         page.navigation.navigate("Links");
         assertEquals("a restart owed elsewhere was said here", categoryCount("Links"), list().getCount());
+    }
+
+    /** The switches that only answer Tumblr's feature flags, which Tumblr reads once a run. */
+    private static final List<BooleanSetting> FLAG_BACKED = Arrays.asList(Settings.DISABLE_ANALYTICS,
+            Settings.HIDE_AD_FREE_BANNER, Settings.HIDE_TUMBLR_TV, Settings.HIDE_COMMUNITIES_TAB,
+            Settings.HIDE_BLAZE_PROMPTS, Settings.TURN_OFF_SCREENSHOT_SHARING, Settings.DISABLE_UPDATE_PROMPTS);
+
+    /**
+     * A flag-backed switch owes a restart like any other restart-needing one: its page shows the
+     * shared line and the shared toast, and its own summary no longer says the same thing. Turned
+     * back to what the running Tumblr has, it owes nothing and the line goes.
+     */
+    @Test public void aFlagBackedSwitchGetsTheSharedRestartLineAndToastInsteadOfASentence() {
+        for (BooleanSetting setting : FLAG_BACKED) {
+            assertTrue(setting.key, setting.rebootApp);
+            Preference row = page.findPreference(setting.key);
+            assertNotNull(setting.key, row);
+            assertFalse(setting.key + " repeats the restart sentence",
+                    String.valueOf(row.getSummary()).matches("(?is).*restart.*"));
+        }
+        page.navigation.navigate("Interface");
+        layout(dialog.getView());
+        String restartLine = "A change here applies after Tumblr restarts.";
+        assertNotEquals(restartLine, String.valueOf(((Preference) list().getItemAtPosition(0)).getTitle()));
+
+        tap(Settings.HIDE_TUMBLR_TV.key);
+        layout(dialog.getView());
+        assertTrue(Settings.HIDE_TUMBLR_TV.savedValue());
+        assertEquals(restartLine, String.valueOf(((Preference) list().getItemAtPosition(0)).getTitle()));
+        assertEquals("Saved. Restart Tumblr to apply this change.", ShadowToast.getTextOfLatestToast());
+
+        tap(Settings.HIDE_TUMBLR_TV.key);
+        layout(dialog.getView());
+        assertFalse(Settings.HIDE_TUMBLR_TV.savedValue());
+        assertNotEquals(restartLine, String.valueOf(((Preference) list().getItemAtPosition(0)).getTitle()));
     }
 
     /** The paused line on real pages, dark and light, for a look before the phone does. */

@@ -267,7 +267,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                         + "after Tumblr restarts."), SettingsIcons.BLOCK);
             patchToggle(feed, context, build, PatchFamily.HIDE_AD_FREE_BANNER, Settings.HIDE_AD_FREE_BANNER,
                     L10n.t("Hide the ad-free banner"), L10n.t("Hides the dashboard banner that asks you to pay for "
-                        + "Ad-Free Browsing. Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+                        + "Ad-Free Browsing."), SettingsIcons.BLOCK);
             // The card switches act on each page as it loads (TimelineFilter), so they need no restart.
             patchToggle(feed, context, build, PatchFamily.HIDE_SUGGESTED_BLOGS, Settings.HIDE_SUGGESTED_BLOGS,
                     L10n.t("Hide suggested blogs"), L10n.t("Takes the blogs Tumblr suggests you follow, and their "
@@ -328,18 +328,18 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                         + "posts. Restart Tumblr to see the change."), SettingsIcons.BLOCK);
         }
 
-        // Tabs, buttons, prompts and pop-ups. A switch that answers one of Tumblr's own feature flags says a
-        // restart shows it, since Tumblr reads each flag once a run. Skip review prompts is read each
-        // time the prompt would open, so it needs none.
+        // Tabs, buttons, prompts and pop-ups. A switch that answers one of Tumblr's own feature flags is
+        // read once a run, so its change gets the page's shared restart line and toast (rebootApp in
+        // Settings) instead of a sentence of its own. Skip review prompts is read each time the prompt
+        // would open, so it needs none.
         if (!Collections.disjoint(build, PatchFamily.INTERFACE_PAGE)) {
             PreferenceCategory ui = category(screen, L10n.t("Interface"));
             patchToggle(ui, context, build, PatchFamily.HIDE_TUMBLR_TV, Settings.HIDE_TUMBLR_TV, L10n.t("Hide Tumblr TV"),
-                    L10n.t("Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there. "
-                        + "Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+                    L10n.t("Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there."),
+                    SettingsIcons.BLOCK);
             patchToggle(ui, context, build, PatchFamily.HIDE_COMMUNITIES_TAB, Settings.HIDE_COMMUNITIES_TAB,
                     L10n.t("Hide the Communities tab"), L10n.t("Takes the Communities tab out of the bottom bar and "
-                        + "stops Communities tips in the post editor. Restart Tumblr to see the change."),
-                    SettingsIcons.BLOCK);
+                        + "stops Communities tips in the post editor."), SettingsIcons.BLOCK);
             // The bar is built once a run (BottomBarTabs), so these show after a restart.
             patchToggle(ui, context, build, PatchFamily.HIDE_EXPLORE_TAB, Settings.HIDE_EXPLORE_TAB,
                     L10n.t("Hide the Explore tab"), L10n.t("Takes the Explore and search button off the bottom bar. "
@@ -366,7 +366,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                     SettingsIcons.BLOCK);
             patchToggle(ui, context, build, PatchFamily.HIDE_BLAZE_PROMPTS, Settings.HIDE_BLAZE_PROMPTS,
                     L10n.t("Hide Blaze prompts"), L10n.t("Hides the Blaze buttons, banners and the nudge to promote "
-                        + "a post after you share it. Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+                        + "a post after you share it."), SettingsIcons.BLOCK);
             // Not flag-backed, but the TumblrMart button is only placed when its screen is made.
             patchToggle(ui, context, build, PatchFamily.HIDE_TUMBLRMART, Settings.HIDE_TUMBLRMART,
                     L10n.t("Hide the diamond and TumblrMart"), L10n.t("Hides the Premium diamond and the TumblrMart "
@@ -374,8 +374,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                         + "change."), SettingsIcons.BLOCK);
             patchToggle(ui, context, build, PatchFamily.TURN_OFF_SCREENSHOT_SHARING,
                     Settings.TURN_OFF_SCREENSHOT_SHARING, L10n.t("Turn off screenshot sharing"),
-                    L10n.t("Stops Tumblr watching for screenshots and offering to save the post as an image. "
-                        + "Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+                    L10n.t("Stops Tumblr watching for screenshots and offering to save the post as an image."),
+                    SettingsIcons.BLOCK);
             patchToggle(ui, context, build, PatchFamily.SKIP_REVIEW_PROMPTS, Settings.SKIP_REVIEW_PROMPTS,
                     L10n.t("Skip review prompts"), L10n.t("Stops the pop-up that asks what you think of the Tumblr "
                         + "app and then asks for a rating or feedback."), SettingsIcons.BLOCK);
@@ -387,12 +387,12 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
 
         if (!Collections.disjoint(build, PatchFamily.PRIVACY_PAGE)) {
             PreferenceCategory privacy = category(screen, L10n.t("Privacy"));
-            // The switch covers Tumblr's own tracking flags. The manifest half was set when patching,
-            // and the summary says so.
+            // The switch covers Tumblr's own tracking flags, so a change gets the shared restart line.
+            // The manifest half was set when patching, and the summary says so.
             patchToggle(privacy, context, build, PatchFamily.DISABLE_ANALYTICS, Settings.DISABLE_ANALYTICS,
-                    L10n.t("Disable analytics"), L10n.t("Stops Tumblr's own tracking and ad measurement once it "
-                        + "restarts. Firebase and Google's analytics collection stay off until you patch again "
-                        + "without it."), SettingsIcons.BLOCK);
+                    L10n.t("Disable analytics"), L10n.t("Stops Tumblr's own tracking and ad measurement. Firebase "
+                        + "and Google's analytics collection stay off until you patch again without it."),
+                    SettingsIcons.BLOCK);
             patchToggle(privacy, context, build, PatchFamily.HIDE_ADVERTISING_ID, Settings.HIDE_ADVERTISING_ID,
                     L10n.t("Hide advertising ID"), L10n.t("Tumblr and the ad companies inside it see an empty "
                         + "advertising ID with ad tracking limited, as if you deleted your ad ID in Android "
@@ -447,10 +447,10 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         // is one Pause turns off, so it sits above the Pause row with the rest.
         PreferenceCategory updates = category(screen, L10n.t("Updates"));
         // Only with the patch, and first: Tumblr's own update check, which answers one of Tumblr's
-        // feature flags, so it says a restart shows it.
+        // feature flags, so a change gets the shared restart line.
         patchToggle(updates, context, build, PatchFamily.DISABLE_UPDATE_PROMPTS, Settings.DISABLE_UPDATE_PROMPTS,
                 L10n.t("Disable update prompts"), L10n.t("Stops Tumblr asking Google Play for a newer Tumblr and "
-                    + "showing Play's update prompt. Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+                    + "showing Play's update prompt."), SettingsIcons.BLOCK);
         updates.addPreference(mark(toggle(context, Settings.CHECK_FOR_RELEASES, L10n.t("Check for new HushTumblr releases"),
                 L10n.t("Once a day, when Tumblr starts, checks GitHub for a newer HushTumblr and tells you at "
                     + "the top of these settings. Nothing is downloaded.")), SettingsIcons.BELL));

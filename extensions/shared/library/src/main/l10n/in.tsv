@@ -211,30 +211,30 @@ Feed	Feed
 Hide ads	Sembunyikan iklan
 Takes ads and paid Blaze posts out of your dashboard and other feeds. Ad requests stop after Tumblr restarts.	Menghapus iklan dan postingan Blaze berbayar dari dasbor dan feed lainnya. Permintaan iklan berhenti setelah Tumblr dimulai ulang.
 # context: the Disable analytics switch on the Privacy page.
-Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.	Menghentikan pelacakan dan pengukuran iklan milik Tumblr setelah dimulai ulang. Pengumpulan data Firebase dan Google Analytics tetap mati sampai kamu menambal ulang tanpanya.
+Stops Tumblr's own tracking and ad measurement. Firebase and Google's analytics collection stay off until you patch again without it.	Menghentikan pelacakan dan pengukuran iklan milik Tumblr. Pengumpulan data Firebase dan Google Analytics tetap mati sampai kamu menambal ulang tanpanya.
 # context: the Hide the ad-free banner switch on the Feed page.
 Hide the ad-free banner	Sembunyikan banner bebas iklan
-Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.	Menyembunyikan banner di dasbor yang memintamu membayar untuk menjelajah tanpa iklan. Mulai ulang Tumblr untuk melihat perubahannya.
+Hides the dashboard banner that asks you to pay for Ad-Free Browsing.	Menyembunyikan banner di dasbor yang memintamu membayar untuk menjelajah tanpa iklan.
 # context: the Interface page and its Hide Tumblr TV switch. Tumblr TV is Tumblr's product name.
 Interface	Antarmuka
 Hide Tumblr TV	Sembunyikan Tumblr TV
-Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there. Restart Tumblr to see the change.	Menghapus tab Tumblr TV dari bilah bawah dan mencegah pendaftaran mengarahkanmu ke sana. Mulai ulang Tumblr untuk melihat perubahannya.
+Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there.	Menghapus tab Tumblr TV dari bilah bawah dan mencegah pendaftaran mengarahkanmu ke sana.
 # context: the Hide the Communities tab switch on the Interface page. Communities is Tumblr's name for its group spaces.
 Hide the Communities tab	Sembunyikan tab Komunitas
-Takes the Communities tab out of the bottom bar and stops Communities tips in the post editor. Restart Tumblr to see the change.	Menghapus tab Komunitas dari bilah bawah dan menghentikan tips Komunitas di editor postingan. Mulai ulang Tumblr untuk melihat perubahannya.
+Takes the Communities tab out of the bottom bar and stops Communities tips in the post editor.	Menghapus tab Komunitas dari bilah bawah dan menghentikan tips Komunitas di editor postingan.
 # context: the Hide Blaze prompts switch on the Interface page. Blaze is Tumblr's paid post promotion.
 Hide Blaze prompts	Sembunyikan ajakan Blaze
-Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.	Menyembunyikan tombol dan banner Blaze serta ajakan untuk mempromosikan postingan setelah kamu membagikannya. Mulai ulang Tumblr untuk melihat perubahannya.
+Hides the Blaze buttons, banners and the nudge to promote a post after you share it.	Menyembunyikan tombol dan banner Blaze serta ajakan untuk mempromosikan postingan setelah kamu membagikannya.
 # context: the Skip review prompts switch on the Interface page. It stops Tumblr's rate-this-app pop-up.
 # context: the Skip review prompts switch on the Interface page. It stops Tumblr's "What do you think of the Tumblr app?" pop-up.
 Skip review prompts	Lewati permintaan ulasan
 Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.	Menghentikan pop-up yang menanyakan pendapatmu tentang aplikasi Tumblr lalu meminta rating atau masukan.
 # context: the Turn off screenshot sharing switch on the Interface page. Tumblr watches for screenshots and offers to save the post as an image.
 Turn off screenshot sharing	Matikan berbagi tangkapan layar
-Stops Tumblr watching for screenshots and offering to save the post as an image. Restart Tumblr to see the change.	Tumblr berhenti memantau tangkapan layar dan menawarkan untuk menyimpan postingan sebagai gambar. Mulai ulang Tumblr untuk melihat perubahannya.
+Stops Tumblr watching for screenshots and offering to save the post as an image.	Tumblr berhenti memantau tangkapan layar dan menawarkan untuk menyimpan postingan sebagai gambar.
 # context: the Disable update prompts switch on the Updates page. Tumblr asks Google Play for a newer version and opens Play's update prompt.
 Disable update prompts	Nonaktifkan permintaan pembaruan
-Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt. Restart Tumblr to see the change.	Tumblr berhenti menanyakan versi yang lebih baru ke Google Play dan menampilkan permintaan pembaruan dari Play. Mulai ulang Tumblr untuk melihat perubahannya.
+Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt.	Tumblr berhenti menanyakan versi yang lebih baru ke Google Play dan menampilkan permintaan pembaruan dari Play.
 # context: the three suggestion card switches on the Feed page. Watch it is the name of Tumblr TV's rows in the dashboard; keep it in English.
 Hide suggested blogs	Sembunyikan blog yang disarankan
 Takes the blogs Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.	Menghapus blog yang disarankan Tumblr untuk kamu ikuti, beserta judulnya, dari dasbor dan feed lainnya.

@@ -24,7 +24,8 @@ import app.hushtumblr.extension.tumblr.settings.PatchFamily;
  * flag, compares it with "true", logs the answer and returns it. The patch puts {@link #isEnabled}
  * right after that comparison, so a family whose switch is on can answer off for the flags it
  * claims here. Tumblr keeps the first answer for each flag until it restarts, so a switch that
- * works this way says "Restart Tumblr to see the change."
+ * only works this way is a restart-needing setting, and the settings screen shows its shared
+ * restart line and toast when it changes.
  *
  * <p>Tumblr checks flags while it starts, before HushTumblr has a context. Nothing here loads the
  * settings until {@link Utils#settingsReady()} says it may: the table names each family by its

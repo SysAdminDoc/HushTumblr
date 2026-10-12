@@ -211,30 +211,30 @@ Feed	Feed
 Hide ads	Ocultar anuncios
 Takes ads and paid Blaze posts out of your dashboard and other feeds. Ad requests stop after Tumblr restarts.	Quita los anuncios y las publicaciones pagadas con Blaze de tu panel y de otros feeds. Las solicitudes de anuncios se detienen cuando Tumblr se reinicia.
 # context: the Disable analytics switch on the Privacy page.
-Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.	Detiene el seguimiento propio de Tumblr y la medición de anuncios cuando se reinicia. La recopilación de Firebase y Google Analytics sigue desactivada hasta que vuelvas a parchear sin él.
+Stops Tumblr's own tracking and ad measurement. Firebase and Google's analytics collection stay off until you patch again without it.	Detiene el seguimiento propio de Tumblr y la medición de anuncios. La recopilación de Firebase y Google Analytics sigue desactivada hasta que vuelvas a parchear sin él.
 # context: the Hide the ad-free banner switch on the Feed page.
 Hide the ad-free banner	Ocultar el banner sin anuncios
-Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.	Oculta el banner del panel que te pide pagar por navegar sin anuncios. Reinicia Tumblr para ver el cambio.
+Hides the dashboard banner that asks you to pay for Ad-Free Browsing.	Oculta el banner del panel que te pide pagar por navegar sin anuncios.
 # context: the Interface page and its Hide Tumblr TV switch. Tumblr TV is Tumblr's product name.
 Interface	Interfaz
 Hide Tumblr TV	Ocultar Tumblr TV
-Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there. Restart Tumblr to see the change.	Quita la pestaña de Tumblr TV de la barra inferior y evita que el registro te lleve allí. Reinicia Tumblr para ver el cambio.
+Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there.	Quita la pestaña de Tumblr TV de la barra inferior y evita que el registro te lleve allí.
 # context: the Hide the Communities tab switch on the Interface page. Communities is Tumblr's name for its group spaces.
 Hide the Communities tab	Ocultar la pestaña Comunidades
-Takes the Communities tab out of the bottom bar and stops Communities tips in the post editor. Restart Tumblr to see the change.	Quita la pestaña Comunidades de la barra inferior y detiene los consejos sobre comunidades en el editor de publicaciones. Reinicia Tumblr para ver el cambio.
+Takes the Communities tab out of the bottom bar and stops Communities tips in the post editor.	Quita la pestaña Comunidades de la barra inferior y detiene los consejos sobre comunidades en el editor de publicaciones.
 # context: the Hide Blaze prompts switch on the Interface page. Blaze is Tumblr's paid post promotion.
 Hide Blaze prompts	Ocultar avisos de Blaze
-Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.	Oculta los botones y banners de Blaze y el aviso para promocionar una publicación después de compartirla. Reinicia Tumblr para ver el cambio.
+Hides the Blaze buttons, banners and the nudge to promote a post after you share it.	Oculta los botones y banners de Blaze y el aviso para promocionar una publicación después de compartirla.
 # context: the Skip review prompts switch on the Interface page. It stops Tumblr's rate-this-app pop-up.
 # context: the Skip review prompts switch on the Interface page. It stops Tumblr's "What do you think of the Tumblr app?" pop-up.
 Skip review prompts	Omitir solicitudes de reseña
 Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.	Evita la ventana emergente que pregunta qué opinas de la app de Tumblr y luego pide una valoración o comentarios.
 # context: the Turn off screenshot sharing switch on the Interface page. Tumblr watches for screenshots and offers to save the post as an image.
 Turn off screenshot sharing	Desactivar compartir capturas de pantalla
-Stops Tumblr watching for screenshots and offering to save the post as an image. Restart Tumblr to see the change.	Tumblr deja de vigilar las capturas de pantalla y de ofrecer guardar la publicación como imagen. Reinicia Tumblr para ver el cambio.
+Stops Tumblr watching for screenshots and offering to save the post as an image.	Tumblr deja de vigilar las capturas de pantalla y de ofrecer guardar la publicación como imagen.
 # context: the Disable update prompts switch on the Updates page. Tumblr asks Google Play for a newer version and opens Play's update prompt.
 Disable update prompts	Desactivar avisos de actualización
-Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt. Restart Tumblr to see the change.	Tumblr deja de preguntar a Google Play por una versión más nueva y de mostrar el aviso de actualización de Play. Reinicia Tumblr para ver el cambio.
+Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt.	Tumblr deja de preguntar a Google Play por una versión más nueva y de mostrar el aviso de actualización de Play.
 # context: the three suggestion card switches on the Feed page. Watch it is the name of Tumblr TV's rows in the dashboard; keep it in English.
 Hide suggested blogs	Ocultar blogs sugeridos
 Takes the blogs Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.	Quita los blogs que Tumblr te sugiere seguir, y sus encabezados, de tu panel y otros feeds.

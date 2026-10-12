@@ -275,12 +275,12 @@ public final class L10nTranslations {
                 "Ungelesen-Punkte ausblenden");
         table.put("Hide video posts",
                 "Videobeitr\u00e4ge ausblenden");
-        table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.",
-                "Blendet die Blaze-Schaltfl\u00e4chen, -Banner und den Hinweis aus, einen Beitrag nach dem Teilen zu bewerben. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
+        table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it.",
+                "Blendet die Blaze-Schaltfl\u00e4chen, -Banner und den Hinweis aus, einen Beitrag nach dem Teilen zu bewerben.");
         table.put("Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.",
                 "Blendet den Premium-Diamanten und den TumblrMart-Button oben in deinem Dashboard, in Entdecken und in den Mitteilungen aus. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
-        table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
-                "Blendet das Banner im Dashboard aus, das dich bittet, f\u00fcr werbefreies Surfen zu bezahlen. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
+        table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing.",
+                "Blendet das Banner im Dashboard aus, das dich bittet, f\u00fcr werbefreies Surfen zu bezahlen.");
         table.put("Hides the unread count on the bottom bar's Communities tab. One already showing goes when Tumblr next updates its counts.",
                 "Blendet die Ungelesen-Zahl am Communities-Tab der unteren Leiste aus. Eine schon sichtbare verschwindet, wenn Tumblr seine Zahlen das n\u00e4chste Mal aktualisiert.");
         table.put("Hides the unread count on the bottom bar's Dashboard tab. One already showing goes when Tumblr next updates its counts.",
@@ -461,12 +461,12 @@ public final class L10nTranslations {
                 "Signatur f\u00fcr Google-Anmeldung vort\u00e4uschen");
         table.put("Stays in while paused",
                 "Bleibt w\u00e4hrend der Pause aktiv");
-        table.put("Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt. Restart Tumblr to see the change.",
-                "Tumblr fragt Google Play nicht mehr nach einer neueren Version und zeigt die Update-Aufforderung von Play nicht mehr an. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
-        table.put("Stops Tumblr watching for screenshots and offering to save the post as an image. Restart Tumblr to see the change.",
-                "Tumblr achtet nicht mehr auf Screenshots und bietet nicht mehr an, den Beitrag als Bild zu speichern. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
-        table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
-                "Beendet Tumblrs eigenes Tracking und die Werbemessung, sobald Tumblr neu startet. Die Datenerfassung von Firebase und Google Analytics bleibt aus, bis du ohne diesen Patch neu patchst.");
+        table.put("Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt.",
+                "Tumblr fragt Google Play nicht mehr nach einer neueren Version und zeigt die Update-Aufforderung von Play nicht mehr an.");
+        table.put("Stops Tumblr watching for screenshots and offering to save the post as an image.",
+                "Tumblr achtet nicht mehr auf Screenshots und bietet nicht mehr an, den Beitrag als Bild zu speichern.");
+        table.put("Stops Tumblr's own tracking and ad measurement. Firebase and Google's analytics collection stay off until you patch again without it.",
+                "Beendet Tumblrs eigenes Tracking und die Werbemessung. Die Datenerfassung von Firebase und Google Analytics bleibt aus, bis du ohne diesen Patch neu patchst.");
         table.put("Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.",
                 "Verhindert das Pop-up, das fragt, was du von der Tumblr-App h\u00e4ltst, und dann um eine Bewertung oder Feedback bittet.");
         table.put("Support HushTumblr",
@@ -491,16 +491,16 @@ public final class L10nTranslations {
                 "Entfernt Beitr\u00e4ge mit Bildern und ohne Video, auch im rebloggten Teil, aus deinem Dashboard und anderen Feeds.");
         table.put("Takes reblogs out of your dashboard and other feeds, and keeps the posts people made themselves.",
                 "Entfernt Reblogs aus deinem Dashboard und anderen Feeds und l\u00e4sst Beitr\u00e4ge stehen, die Leute selbst erstellt haben.");
-        table.put("Takes the Communities tab out of the bottom bar and stops Communities tips in the post editor. Restart Tumblr to see the change.",
-                "Entfernt den Communities-Tab aus der unteren Leiste und beendet die Communities-Tipps im Beitragseditor. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
+        table.put("Takes the Communities tab out of the bottom bar and stops Communities tips in the post editor.",
+                "Entfernt den Communities-Tab aus der unteren Leiste und beendet die Communities-Tipps im Beitragseditor.");
         table.put("Takes the Explore and search button off the bottom bar. Restart Tumblr to see the change.",
                 "Entfernt die Schaltfl\u00e4che f\u00fcr Entdecken und Suche aus der unteren Leiste. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
         table.put("Takes the Follow button out of the header of posts from blogs you don't follow yet.",
                 "Entfernt den Folgen-Button aus dem Kopf von Beitr\u00e4gen aus Blogs, denen du noch nicht folgst.");
         table.put("Takes the Notifications button off the bottom bar. Restart Tumblr to see the change.",
                 "Entfernt die Schaltfl\u00e4che Benachrichtigungen aus der unteren Leiste. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
-        table.put("Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there. Restart Tumblr to see the change.",
-                "Entfernt den Tumblr-TV-Tab aus der unteren Leiste und verhindert, dass dich die Registrierung dorthin schickt. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
+        table.put("Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there.",
+                "Entfernt den Tumblr-TV-Tab aus der unteren Leiste und verhindert, dass dich die Registrierung dorthin schickt.");
         table.put("Takes the blogs Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.",
                 "Entfernt die Blogs, denen du laut Tumblr folgen sollst, samt ihren \u00dcberschriften aus deinem Dashboard und anderen Feeds.");
         table.put("Takes the comment button out of the footer under posts. Restart Tumblr to see the change.",
@@ -872,12 +872,12 @@ public final class L10nTranslations {
                 "Ocultar los puntos de no le\u00eddos");
         table.put("Hide video posts",
                 "Ocultar publicaciones con video");
-        table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.",
-                "Oculta los botones y banners de Blaze y el aviso para promocionar una publicaci\u00f3n despu\u00e9s de compartirla. Reinicia Tumblr para ver el cambio.");
+        table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it.",
+                "Oculta los botones y banners de Blaze y el aviso para promocionar una publicaci\u00f3n despu\u00e9s de compartirla.");
         table.put("Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.",
                 "Oculta el diamante de Premium y el bot\u00f3n de TumblrMart en la parte de arriba de tu panel, Explorar y notificaciones. Reinicia Tumblr para ver el cambio.");
-        table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
-                "Oculta el banner del panel que te pide pagar por navegar sin anuncios. Reinicia Tumblr para ver el cambio.");
+        table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing.",
+                "Oculta el banner del panel que te pide pagar por navegar sin anuncios.");
         table.put("Hides the unread count on the bottom bar's Communities tab. One already showing goes when Tumblr next updates its counts.",
                 "Oculta el contador de no le\u00eddos de la pesta\u00f1a Comunidades en la barra inferior. Si ya se ve, desaparece la pr\u00f3xima vez que Tumblr actualice sus contadores.");
         table.put("Hides the unread count on the bottom bar's Dashboard tab. One already showing goes when Tumblr next updates its counts.",
@@ -1058,12 +1058,12 @@ public final class L10nTranslations {
                 "Falsear la firma para iniciar sesi\u00f3n con Google");
         table.put("Stays in while paused",
                 "Se mantiene durante la pausa");
-        table.put("Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt. Restart Tumblr to see the change.",
-                "Tumblr deja de preguntar a Google Play por una versi\u00f3n m\u00e1s nueva y de mostrar el aviso de actualizaci\u00f3n de Play. Reinicia Tumblr para ver el cambio.");
-        table.put("Stops Tumblr watching for screenshots and offering to save the post as an image. Restart Tumblr to see the change.",
-                "Tumblr deja de vigilar las capturas de pantalla y de ofrecer guardar la publicaci\u00f3n como imagen. Reinicia Tumblr para ver el cambio.");
-        table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
-                "Detiene el seguimiento propio de Tumblr y la medici\u00f3n de anuncios cuando se reinicia. La recopilaci\u00f3n de Firebase y Google Analytics sigue desactivada hasta que vuelvas a parchear sin \u00e9l.");
+        table.put("Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt.",
+                "Tumblr deja de preguntar a Google Play por una versi\u00f3n m\u00e1s nueva y de mostrar el aviso de actualizaci\u00f3n de Play.");
+        table.put("Stops Tumblr watching for screenshots and offering to save the post as an image.",
+                "Tumblr deja de vigilar las capturas de pantalla y de ofrecer guardar la publicaci\u00f3n como imagen.");
+        table.put("Stops Tumblr's own tracking and ad measurement. Firebase and Google's analytics collection stay off until you patch again without it.",
+                "Detiene el seguimiento propio de Tumblr y la medici\u00f3n de anuncios. La recopilaci\u00f3n de Firebase y Google Analytics sigue desactivada hasta que vuelvas a parchear sin \u00e9l.");
         table.put("Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.",
                 "Evita la ventana emergente que pregunta qu\u00e9 opinas de la app de Tumblr y luego pide una valoraci\u00f3n o comentarios.");
         table.put("Support HushTumblr",
@@ -1088,16 +1088,16 @@ public final class L10nTranslations {
                 "Quita de tu panel y otros feeds las publicaciones con im\u00e1genes y sin video, incluida la parte rebloggeada.");
         table.put("Takes reblogs out of your dashboard and other feeds, and keeps the posts people made themselves.",
                 "Quita los reblogs de tu panel y otros feeds, y deja las publicaciones que la gente hizo por su cuenta.");
-        table.put("Takes the Communities tab out of the bottom bar and stops Communities tips in the post editor. Restart Tumblr to see the change.",
-                "Quita la pesta\u00f1a Comunidades de la barra inferior y detiene los consejos sobre comunidades en el editor de publicaciones. Reinicia Tumblr para ver el cambio.");
+        table.put("Takes the Communities tab out of the bottom bar and stops Communities tips in the post editor.",
+                "Quita la pesta\u00f1a Comunidades de la barra inferior y detiene los consejos sobre comunidades en el editor de publicaciones.");
         table.put("Takes the Explore and search button off the bottom bar. Restart Tumblr to see the change.",
                 "Quita el bot\u00f3n de Explorar y b\u00fasqueda de la barra inferior. Reinicia Tumblr para ver el cambio.");
         table.put("Takes the Follow button out of the header of posts from blogs you don't follow yet.",
                 "Quita el bot\u00f3n Seguir de la cabecera de las publicaciones de blogs que a\u00fan no sigues.");
         table.put("Takes the Notifications button off the bottom bar. Restart Tumblr to see the change.",
                 "Quita el bot\u00f3n de Notificaciones de la barra inferior. Reinicia Tumblr para ver el cambio.");
-        table.put("Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there. Restart Tumblr to see the change.",
-                "Quita la pesta\u00f1a de Tumblr TV de la barra inferior y evita que el registro te lleve all\u00ed. Reinicia Tumblr para ver el cambio.");
+        table.put("Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there.",
+                "Quita la pesta\u00f1a de Tumblr TV de la barra inferior y evita que el registro te lleve all\u00ed.");
         table.put("Takes the blogs Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.",
                 "Quita los blogs que Tumblr te sugiere seguir, y sus encabezados, de tu panel y otros feeds.");
         table.put("Takes the comment button out of the footer under posts. Restart Tumblr to see the change.",
@@ -1469,12 +1469,12 @@ public final class L10nTranslations {
                 "Sembunyikan titik belum dibaca");
         table.put("Hide video posts",
                 "Sembunyikan postingan video");
-        table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.",
-                "Menyembunyikan tombol dan banner Blaze serta ajakan untuk mempromosikan postingan setelah kamu membagikannya. Mulai ulang Tumblr untuk melihat perubahannya.");
+        table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it.",
+                "Menyembunyikan tombol dan banner Blaze serta ajakan untuk mempromosikan postingan setelah kamu membagikannya.");
         table.put("Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.",
                 "Menyembunyikan berlian Premium dan tombol TumblrMart di bagian atas dasbor, Jelajahi, dan notifikasi. Mulai ulang Tumblr untuk melihat perubahannya.");
-        table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
-                "Menyembunyikan banner di dasbor yang memintamu membayar untuk menjelajah tanpa iklan. Mulai ulang Tumblr untuk melihat perubahannya.");
+        table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing.",
+                "Menyembunyikan banner di dasbor yang memintamu membayar untuk menjelajah tanpa iklan.");
         table.put("Hides the unread count on the bottom bar's Communities tab. One already showing goes when Tumblr next updates its counts.",
                 "Menyembunyikan hitungan belum dibaca di tab Komunitas pada bilah bawah. Yang sudah tampil hilang saat Tumblr memperbarui hitungannya lagi.");
         table.put("Hides the unread count on the bottom bar's Dashboard tab. One already showing goes when Tumblr next updates its counts.",
@@ -1655,12 +1655,12 @@ public final class L10nTranslations {
                 "Palsukan tanda tangan untuk login Google");
         table.put("Stays in while paused",
                 "Tetap aktif saat dijeda");
-        table.put("Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt. Restart Tumblr to see the change.",
-                "Tumblr berhenti menanyakan versi yang lebih baru ke Google Play dan menampilkan permintaan pembaruan dari Play. Mulai ulang Tumblr untuk melihat perubahannya.");
-        table.put("Stops Tumblr watching for screenshots and offering to save the post as an image. Restart Tumblr to see the change.",
-                "Tumblr berhenti memantau tangkapan layar dan menawarkan untuk menyimpan postingan sebagai gambar. Mulai ulang Tumblr untuk melihat perubahannya.");
-        table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
-                "Menghentikan pelacakan dan pengukuran iklan milik Tumblr setelah dimulai ulang. Pengumpulan data Firebase dan Google Analytics tetap mati sampai kamu menambal ulang tanpanya.");
+        table.put("Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt.",
+                "Tumblr berhenti menanyakan versi yang lebih baru ke Google Play dan menampilkan permintaan pembaruan dari Play.");
+        table.put("Stops Tumblr watching for screenshots and offering to save the post as an image.",
+                "Tumblr berhenti memantau tangkapan layar dan menawarkan untuk menyimpan postingan sebagai gambar.");
+        table.put("Stops Tumblr's own tracking and ad measurement. Firebase and Google's analytics collection stay off until you patch again without it.",
+                "Menghentikan pelacakan dan pengukuran iklan milik Tumblr. Pengumpulan data Firebase dan Google Analytics tetap mati sampai kamu menambal ulang tanpanya.");
         table.put("Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.",
                 "Menghentikan pop-up yang menanyakan pendapatmu tentang aplikasi Tumblr lalu meminta rating atau masukan.");
         table.put("Support HushTumblr",
@@ -1685,16 +1685,16 @@ public final class L10nTranslations {
                 "Menghapus postingan dengan gambar dan tanpa video, termasuk bagian yang di-reblog, dari dasbor dan feed lainnya.");
         table.put("Takes reblogs out of your dashboard and other feeds, and keeps the posts people made themselves.",
                 "Menghapus reblog dari dasbor dan feed lainnya, dan tetap menampilkan postingan yang dibuat orang sendiri.");
-        table.put("Takes the Communities tab out of the bottom bar and stops Communities tips in the post editor. Restart Tumblr to see the change.",
-                "Menghapus tab Komunitas dari bilah bawah dan menghentikan tips Komunitas di editor postingan. Mulai ulang Tumblr untuk melihat perubahannya.");
+        table.put("Takes the Communities tab out of the bottom bar and stops Communities tips in the post editor.",
+                "Menghapus tab Komunitas dari bilah bawah dan menghentikan tips Komunitas di editor postingan.");
         table.put("Takes the Explore and search button off the bottom bar. Restart Tumblr to see the change.",
                 "Menghapus tombol Jelajahi dan pencarian dari bilah bawah. Mulai ulang Tumblr untuk melihat perubahannya.");
         table.put("Takes the Follow button out of the header of posts from blogs you don't follow yet.",
                 "Menghapus tombol Ikuti dari bagian atas postingan dari blog yang belum kamu ikuti.");
         table.put("Takes the Notifications button off the bottom bar. Restart Tumblr to see the change.",
                 "Menghapus tombol Notifikasi dari bilah bawah. Mulai ulang Tumblr untuk melihat perubahannya.");
-        table.put("Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there. Restart Tumblr to see the change.",
-                "Menghapus tab Tumblr TV dari bilah bawah dan mencegah pendaftaran mengarahkanmu ke sana. Mulai ulang Tumblr untuk melihat perubahannya.");
+        table.put("Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there.",
+                "Menghapus tab Tumblr TV dari bilah bawah dan mencegah pendaftaran mengarahkanmu ke sana.");
         table.put("Takes the blogs Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.",
                 "Menghapus blog yang disarankan Tumblr untuk kamu ikuti, beserta judulnya, dari dasbor dan feed lainnya.");
         table.put("Takes the comment button out of the footer under posts. Restart Tumblr to see the change.",
@@ -2066,12 +2066,12 @@ public final class L10nTranslations {
                 "Ocultar os pontos de n\u00e3o lidos");
         table.put("Hide video posts",
                 "Ocultar posts de v\u00eddeo");
-        table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.",
-                "Esconde os bot\u00f5es e banners do Blaze e o aviso para promover um post depois que voc\u00ea o compartilha. Reinicie o Tumblr para ver a mudan\u00e7a.");
+        table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it.",
+                "Esconde os bot\u00f5es e banners do Blaze e o aviso para promover um post depois que voc\u00ea o compartilha.");
         table.put("Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.",
                 "Oculta o diamante do Premium e o bot\u00e3o da TumblrMart no topo do seu painel, do Explorar e das notifica\u00e7\u00f5es. Reinicie o Tumblr para ver a mudan\u00e7a.");
-        table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
-                "Esconde o banner do painel que pede para voc\u00ea pagar pela navega\u00e7\u00e3o sem an\u00fancios. Reinicie o Tumblr para ver a mudan\u00e7a.");
+        table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing.",
+                "Esconde o banner do painel que pede para voc\u00ea pagar pela navega\u00e7\u00e3o sem an\u00fancios.");
         table.put("Hides the unread count on the bottom bar's Communities tab. One already showing goes when Tumblr next updates its counts.",
                 "Esconde a contagem de n\u00e3o lidos da aba Comunidades na barra de baixo. Se j\u00e1 estiver aparecendo, some quando o Tumblr atualizar as contagens de novo.");
         table.put("Hides the unread count on the bottom bar's Dashboard tab. One already showing goes when Tumblr next updates its counts.",
@@ -2252,12 +2252,12 @@ public final class L10nTranslations {
                 "Falsificar assinatura para login com Google");
         table.put("Stays in while paused",
                 "O que continua ativo na pausa");
-        table.put("Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt. Restart Tumblr to see the change.",
-                "O Tumblr para de perguntar ao Google Play por uma vers\u00e3o mais nova e de mostrar o aviso de atualiza\u00e7\u00e3o do Play. Reinicie o Tumblr para ver a mudan\u00e7a.");
-        table.put("Stops Tumblr watching for screenshots and offering to save the post as an image. Restart Tumblr to see the change.",
-                "O Tumblr para de observar capturas de tela e de oferecer salvar o post como imagem. Reinicie o Tumblr para ver a mudan\u00e7a.");
-        table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
-                "Para o rastreamento pr\u00f3prio do Tumblr e a medi\u00e7\u00e3o de an\u00fancios depois que ele reinicia. A coleta do Firebase e do Google Analytics continua desligada at\u00e9 voc\u00ea aplicar o patch de novo sem ele.");
+        table.put("Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt.",
+                "O Tumblr para de perguntar ao Google Play por uma vers\u00e3o mais nova e de mostrar o aviso de atualiza\u00e7\u00e3o do Play.");
+        table.put("Stops Tumblr watching for screenshots and offering to save the post as an image.",
+                "O Tumblr para de observar capturas de tela e de oferecer salvar o post como imagem.");
+        table.put("Stops Tumblr's own tracking and ad measurement. Firebase and Google's analytics collection stay off until you patch again without it.",
+                "Para o rastreamento pr\u00f3prio do Tumblr e a medi\u00e7\u00e3o de an\u00fancios. A coleta do Firebase e do Google Analytics continua desligada at\u00e9 voc\u00ea aplicar o patch de novo sem ele.");
         table.put("Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.",
                 "Impede o pop-up que pergunta o que voc\u00ea acha do app do Tumblr e depois pede uma avalia\u00e7\u00e3o ou feedback.");
         table.put("Support HushTumblr",
@@ -2282,16 +2282,16 @@ public final class L10nTranslations {
                 "Tira do seu painel e de outros feeds os posts com imagens e sem v\u00eddeo, incluindo a parte reblogada.");
         table.put("Takes reblogs out of your dashboard and other feeds, and keeps the posts people made themselves.",
                 "Tira os reblogs do seu painel e de outros feeds, e mant\u00e9m os posts que as pessoas fizeram.");
-        table.put("Takes the Communities tab out of the bottom bar and stops Communities tips in the post editor. Restart Tumblr to see the change.",
-                "Tira a aba Comunidades da barra inferior e para as dicas sobre comunidades no editor de posts. Reinicie o Tumblr para ver a mudan\u00e7a.");
+        table.put("Takes the Communities tab out of the bottom bar and stops Communities tips in the post editor.",
+                "Tira a aba Comunidades da barra inferior e para as dicas sobre comunidades no editor de posts.");
         table.put("Takes the Explore and search button off the bottom bar. Restart Tumblr to see the change.",
                 "Tira o bot\u00e3o de Explorar e busca da barra de baixo. Reinicie o Tumblr para ver a mudan\u00e7a.");
         table.put("Takes the Follow button out of the header of posts from blogs you don't follow yet.",
                 "Tira o bot\u00e3o Seguir do topo dos posts de blogs que voc\u00ea ainda n\u00e3o segue.");
         table.put("Takes the Notifications button off the bottom bar. Restart Tumblr to see the change.",
                 "Tira o bot\u00e3o de Notifica\u00e7\u00f5es da barra de baixo. Reinicie o Tumblr para ver a mudan\u00e7a.");
-        table.put("Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there. Restart Tumblr to see the change.",
-                "Tira a aba do Tumblr TV da barra inferior e impede que o cadastro mande voc\u00ea para l\u00e1. Reinicie o Tumblr para ver a mudan\u00e7a.");
+        table.put("Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there.",
+                "Tira a aba do Tumblr TV da barra inferior e impede que o cadastro mande voc\u00ea para l\u00e1.");
         table.put("Takes the blogs Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.",
                 "Tira do seu painel e de outros feeds os blogs que o Tumblr sugere que voc\u00ea siga, junto com os t\u00edtulos deles.");
         table.put("Takes the comment button out of the footer under posts. Restart Tumblr to see the change.",
@@ -2663,12 +2663,12 @@ public final class L10nTranslations {
                 "Okunmad\u0131 noktalar\u0131n\u0131 gizle");
         table.put("Hide video posts",
                 "Video g\u00f6nderilerini gizle");
-        table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.",
-                "Blaze d\u00fc\u011fmelerini, banner'lar\u0131n\u0131 ve bir g\u00f6nderiyi payla\u015ft\u0131ktan sonra tan\u0131tman\u0131 \u00f6neren uyar\u0131y\u0131 gizler. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
+        table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it.",
+                "Blaze d\u00fc\u011fmelerini, banner'lar\u0131n\u0131 ve bir g\u00f6nderiyi payla\u015ft\u0131ktan sonra tan\u0131tman\u0131 \u00f6neren uyar\u0131y\u0131 gizler.");
         table.put("Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.",
                 "Panonun, Ke\u015ffet'in ve bildirimlerin \u00fcst\u00fcndeki Premium elmas\u0131n\u0131 ve TumblrMart d\u00fc\u011fmesini gizler. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
-        table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.",
-                "Panoda reklams\u0131z gezinme i\u00e7in \u00f6deme yapman\u0131 isteyen banner'\u0131 gizler. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
+        table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing.",
+                "Panoda reklams\u0131z gezinme i\u00e7in \u00f6deme yapman\u0131 isteyen banner'\u0131 gizler.");
         table.put("Hides the unread count on the bottom bar's Communities tab. One already showing goes when Tumblr next updates its counts.",
                 "Alt \u00e7ubuktaki Topluluklar sekmesinin okunmad\u0131 say\u0131s\u0131n\u0131 gizler. Zaten g\u00f6r\u00fcnen say\u0131, Tumblr say\u0131lar\u0131 bir sonraki g\u00fcncelledi\u011finde kaybolur.");
         table.put("Hides the unread count on the bottom bar's Dashboard tab. One already showing goes when Tumblr next updates its counts.",
@@ -2849,12 +2849,12 @@ public final class L10nTranslations {
                 "Google ile oturum a\u00e7ma i\u00e7in imzay\u0131 taklit et");
         table.put("Stays in while paused",
                 "Duraklat\u0131lsa da devrede kal\u0131r");
-        table.put("Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt. Restart Tumblr to see the change.",
-                "Tumblr, Google Play'e daha yeni bir s\u00fcr\u00fcm olup olmad\u0131\u011f\u0131n\u0131 sormay\u0131 ve Play'in g\u00fcncelleme uyar\u0131s\u0131n\u0131 g\u00f6stermeyi b\u0131rak\u0131r. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
-        table.put("Stops Tumblr watching for screenshots and offering to save the post as an image. Restart Tumblr to see the change.",
-                "Tumblr ekran g\u00f6r\u00fcnt\u00fclerini izlemeyi ve g\u00f6nderiyi resim olarak kaydetmeyi \u00f6nermeyi b\u0131rak\u0131r. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
-        table.put("Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.",
-                "Tumblr yeniden ba\u015flad\u0131ktan sonra kendi izlemesini ve reklam \u00f6l\u00e7\u00fcm\u00fcn\u00fc durdurur. Firebase ve Google Analytics veri toplama, bu yama olmadan yeniden yamalayana kadar kapal\u0131 kal\u0131r.");
+        table.put("Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt.",
+                "Tumblr, Google Play'e daha yeni bir s\u00fcr\u00fcm olup olmad\u0131\u011f\u0131n\u0131 sormay\u0131 ve Play'in g\u00fcncelleme uyar\u0131s\u0131n\u0131 g\u00f6stermeyi b\u0131rak\u0131r.");
+        table.put("Stops Tumblr watching for screenshots and offering to save the post as an image.",
+                "Tumblr ekran g\u00f6r\u00fcnt\u00fclerini izlemeyi ve g\u00f6nderiyi resim olarak kaydetmeyi \u00f6nermeyi b\u0131rak\u0131r.");
+        table.put("Stops Tumblr's own tracking and ad measurement. Firebase and Google's analytics collection stay off until you patch again without it.",
+                "Tumblr'\u0131n kendi izlemesini ve reklam \u00f6l\u00e7\u00fcm\u00fcn\u00fc durdurur. Firebase ve Google Analytics veri toplama, bu yama olmadan yeniden yamalayana kadar kapal\u0131 kal\u0131r.");
         table.put("Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.",
                 "Tumblr uygulamas\u0131 hakk\u0131nda ne d\u00fc\u015f\u00fcnd\u00fc\u011f\u00fcn\u00fc soran ve ard\u0131ndan puan ya da geri bildirim isteyen a\u00e7\u0131l\u0131r pencereyi durdurur.");
         table.put("Support HushTumblr",
@@ -2879,16 +2879,16 @@ public final class L10nTranslations {
                 "Yeniden bloglanan k\u0131s\u0131m dahil, resim olan ama video olmayan g\u00f6nderileri panondan ve di\u011fer ak\u0131\u015flardan kald\u0131r\u0131r.");
         table.put("Takes reblogs out of your dashboard and other feeds, and keeps the posts people made themselves.",
                 "Yeniden bloglar\u0131 panondan ve di\u011fer ak\u0131\u015flardan kald\u0131r\u0131r, ki\u015filerin kendi yapt\u0131\u011f\u0131 g\u00f6nderileri b\u0131rak\u0131r.");
-        table.put("Takes the Communities tab out of the bottom bar and stops Communities tips in the post editor. Restart Tumblr to see the change.",
-                "Topluluklar sekmesini alt \u00e7ubuktan kald\u0131r\u0131r ve g\u00f6nderi d\u00fczenleyicideki Topluluklar ipu\u00e7lar\u0131n\u0131 durdurur. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
+        table.put("Takes the Communities tab out of the bottom bar and stops Communities tips in the post editor.",
+                "Topluluklar sekmesini alt \u00e7ubuktan kald\u0131r\u0131r ve g\u00f6nderi d\u00fczenleyicideki Topluluklar ipu\u00e7lar\u0131n\u0131 durdurur.");
         table.put("Takes the Explore and search button off the bottom bar. Restart Tumblr to see the change.",
                 "Ke\u015ffet ve arama d\u00fc\u011fmesini alt \u00e7ubuktan kald\u0131r\u0131r. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
         table.put("Takes the Follow button out of the header of posts from blogs you don't follow yet.",
                 "Hen\u00fcz takip etmedi\u011fin bloglar\u0131n g\u00f6nderilerinin ba\u015fl\u0131\u011f\u0131ndaki Takip et d\u00fc\u011fmesini kald\u0131r\u0131r.");
         table.put("Takes the Notifications button off the bottom bar. Restart Tumblr to see the change.",
                 "Bildirimler d\u00fc\u011fmesini alt \u00e7ubuktan kald\u0131r\u0131r. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
-        table.put("Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there. Restart Tumblr to see the change.",
-                "Tumblr TV sekmesini alt \u00e7ubuktan kald\u0131r\u0131r ve kay\u0131t olduktan sonra seni oraya g\u00f6ndermesini engeller. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
+        table.put("Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there.",
+                "Tumblr TV sekmesini alt \u00e7ubuktan kald\u0131r\u0131r ve kay\u0131t olduktan sonra seni oraya g\u00f6ndermesini engeller.");
         table.put("Takes the blogs Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.",
                 "Tumblr'\u0131n takip etmeni \u00f6nerdi\u011fi bloglar\u0131 ve ba\u015fl\u0131klar\u0131n\u0131 panondan ve di\u011fer ak\u0131\u015flardan kald\u0131r\u0131r.");
         table.put("Takes the comment button out of the footer under posts. Restart Tumblr to see the change.",

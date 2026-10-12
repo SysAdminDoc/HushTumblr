@@ -35,6 +35,10 @@ import app.hushtumblr.extension.shared.settings.BooleanSetting;
  * ({@link app.hushtumblr.extension.shared.settings.HushTumblrPause}), a switch answers off unless
  * {@link app.hushtumblr.extension.shared.settings.Setting#keepWhenPaused} marks it, and the hook behind
  * it takes Tumblr's own path.
+ *
+ * <p>A switch that only answers Tumblr's feature flags passes {@code true} as its third argument:
+ * Tumblr keeps each flag's first answer until it restarts, so changing one owes a restart, and
+ * the settings screen says so with its shared restart line and toast.
  */
 @SuppressWarnings("unused")
 public class Settings extends BaseSettings {
@@ -67,35 +71,35 @@ public class Settings extends BaseSettings {
      * analytics was set when patching and stays whatever this says. On to start, like the patch.
      */
     public static final BooleanSetting DISABLE_ANALYTICS =
-            new BooleanSetting("hushtumblr_disable_analytics", TRUE);
+            new BooleanSetting("hushtumblr_disable_analytics", TRUE, true);
 
     /**
      * The dashboard's banner selling Ad-Free Browsing stays hidden
      * ({@link app.hushtumblr.extension.tumblr.flags.FeatureSwitches}). Off to start.
      */
     public static final BooleanSetting HIDE_AD_FREE_BANNER =
-            new BooleanSetting("hushtumblr_hide_ad_free_banner", FALSE);
+            new BooleanSetting("hushtumblr_hide_ad_free_banner", FALSE, true);
 
     /**
      * The Tumblr TV tab leaves the bottom bar, and sign-up no longer ends in Tumblr TV
      * ({@link app.hushtumblr.extension.tumblr.flags.FeatureSwitches}). Off to start.
      */
     public static final BooleanSetting HIDE_TUMBLR_TV =
-            new BooleanSetting("hushtumblr_hide_tumblr_tv", FALSE);
+            new BooleanSetting("hushtumblr_hide_tumblr_tv", FALSE, true);
 
     /**
      * The Communities tab leaves the bottom bar, and the post editor stops showing Communities tips
      * ({@link app.hushtumblr.extension.tumblr.flags.FeatureSwitches}). Off to start.
      */
     public static final BooleanSetting HIDE_COMMUNITIES_TAB =
-            new BooleanSetting("hushtumblr_hide_communities_tab", FALSE);
+            new BooleanSetting("hushtumblr_hide_communities_tab", FALSE, true);
 
     /**
      * Tumblr's buttons, banners and nudges selling Blaze stay hidden
      * ({@link app.hushtumblr.extension.tumblr.flags.FeatureSwitches}). Off to start.
      */
     public static final BooleanSetting HIDE_BLAZE_PROMPTS =
-            new BooleanSetting("hushtumblr_hide_blaze_prompts", FALSE);
+            new BooleanSetting("hushtumblr_hide_blaze_prompts", FALSE, true);
 
     /**
      * Tumblr's pop-up asking you to rate it doesn't open
@@ -109,14 +113,14 @@ public class Settings extends BaseSettings {
      * ({@link app.hushtumblr.extension.tumblr.flags.FeatureSwitches}). Off to start.
      */
     public static final BooleanSetting TURN_OFF_SCREENSHOT_SHARING =
-            new BooleanSetting("hushtumblr_turn_off_screenshot_sharing", FALSE);
+            new BooleanSetting("hushtumblr_turn_off_screenshot_sharing", FALSE, true);
 
     /**
      * Tumblr doesn't ask Google Play for a newer version or show Play's update prompt
      * ({@link app.hushtumblr.extension.tumblr.flags.FeatureSwitches}). Off to start.
      */
     public static final BooleanSetting DISABLE_UPDATE_PROMPTS =
-            new BooleanSetting("hushtumblr_disable_update_prompts", FALSE);
+            new BooleanSetting("hushtumblr_disable_update_prompts", FALSE, true);
 
     /**
      * The "Check out these blogs" cards and carousels, and their headings, come out of each page

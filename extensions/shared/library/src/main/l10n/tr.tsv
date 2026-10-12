@@ -211,30 +211,30 @@ Feed	Akış
 Hide ads	Reklamları gizle
 Takes ads and paid Blaze posts out of your dashboard and other feeds. Ad requests stop after Tumblr restarts.	Reklamları ve ücretli Blaze gönderilerini panondan ve diğer akışlardan kaldırır. Reklam istekleri Tumblr yeniden başladıktan sonra durur.
 # context: the Disable analytics switch on the Privacy page.
-Stops Tumblr's own tracking and ad measurement once it restarts. Firebase and Google's analytics collection stay off until you patch again without it.	Tumblr yeniden başladıktan sonra kendi izlemesini ve reklam ölçümünü durdurur. Firebase ve Google Analytics veri toplama, bu yama olmadan yeniden yamalayana kadar kapalı kalır.
+Stops Tumblr's own tracking and ad measurement. Firebase and Google's analytics collection stay off until you patch again without it.	Tumblr'ın kendi izlemesini ve reklam ölçümünü durdurur. Firebase ve Google Analytics veri toplama, bu yama olmadan yeniden yamalayana kadar kapalı kalır.
 # context: the Hide the ad-free banner switch on the Feed page.
 Hide the ad-free banner	Reklamsız gezinme banner'ını gizle
-Hides the dashboard banner that asks you to pay for Ad-Free Browsing. Restart Tumblr to see the change.	Panoda reklamsız gezinme için ödeme yapmanı isteyen banner'ı gizler. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Hides the dashboard banner that asks you to pay for Ad-Free Browsing.	Panoda reklamsız gezinme için ödeme yapmanı isteyen banner'ı gizler.
 # context: the Interface page and its Hide Tumblr TV switch. Tumblr TV is Tumblr's product name.
 Interface	Arayüz
 Hide Tumblr TV	Tumblr TV'yi gizle
-Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there. Restart Tumblr to see the change.	Tumblr TV sekmesini alt çubuktan kaldırır ve kayıt olduktan sonra seni oraya göndermesini engeller. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there.	Tumblr TV sekmesini alt çubuktan kaldırır ve kayıt olduktan sonra seni oraya göndermesini engeller.
 # context: the Hide the Communities tab switch on the Interface page. Communities is Tumblr's name for its group spaces.
 Hide the Communities tab	Topluluklar sekmesini gizle
-Takes the Communities tab out of the bottom bar and stops Communities tips in the post editor. Restart Tumblr to see the change.	Topluluklar sekmesini alt çubuktan kaldırır ve gönderi düzenleyicideki Topluluklar ipuçlarını durdurur. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Takes the Communities tab out of the bottom bar and stops Communities tips in the post editor.	Topluluklar sekmesini alt çubuktan kaldırır ve gönderi düzenleyicideki Topluluklar ipuçlarını durdurur.
 # context: the Hide Blaze prompts switch on the Interface page. Blaze is Tumblr's paid post promotion.
 Hide Blaze prompts	Blaze önerilerini gizle
-Hides the Blaze buttons, banners and the nudge to promote a post after you share it. Restart Tumblr to see the change.	Blaze düğmelerini, banner'larını ve bir gönderiyi paylaştıktan sonra tanıtmanı öneren uyarıyı gizler. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Hides the Blaze buttons, banners and the nudge to promote a post after you share it.	Blaze düğmelerini, banner'larını ve bir gönderiyi paylaştıktan sonra tanıtmanı öneren uyarıyı gizler.
 # context: the Skip review prompts switch on the Interface page. It stops Tumblr's rate-this-app pop-up.
 # context: the Skip review prompts switch on the Interface page. It stops Tumblr's "What do you think of the Tumblr app?" pop-up.
 Skip review prompts	Değerlendirme isteklerini atla
 Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.	Tumblr uygulaması hakkında ne düşündüğünü soran ve ardından puan ya da geri bildirim isteyen açılır pencereyi durdurur.
 # context: the Turn off screenshot sharing switch on the Interface page. Tumblr watches for screenshots and offers to save the post as an image.
 Turn off screenshot sharing	Ekran görüntüsü paylaşımını kapat
-Stops Tumblr watching for screenshots and offering to save the post as an image. Restart Tumblr to see the change.	Tumblr ekran görüntülerini izlemeyi ve gönderiyi resim olarak kaydetmeyi önermeyi bırakır. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Stops Tumblr watching for screenshots and offering to save the post as an image.	Tumblr ekran görüntülerini izlemeyi ve gönderiyi resim olarak kaydetmeyi önermeyi bırakır.
 # context: the Disable update prompts switch on the Updates page. Tumblr asks Google Play for a newer version and opens Play's update prompt.
 Disable update prompts	Güncelleme uyarılarını kapat
-Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt. Restart Tumblr to see the change.	Tumblr, Google Play'e daha yeni bir sürüm olup olmadığını sormayı ve Play'in güncelleme uyarısını göstermeyi bırakır. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Stops Tumblr asking Google Play for a newer Tumblr and showing Play's update prompt.	Tumblr, Google Play'e daha yeni bir sürüm olup olmadığını sormayı ve Play'in güncelleme uyarısını göstermeyi bırakır.
 # context: the three suggestion card switches on the Feed page. Watch it is the name of Tumblr TV's rows in the dashboard; keep it in English.
 Hide suggested blogs	Önerilen blogları gizle
 Takes the blogs Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.	Tumblr'ın takip etmeni önerdiği blogları ve başlıklarını panondan ve diğer akışlardan kaldırır.
