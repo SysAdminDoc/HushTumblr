@@ -96,6 +96,7 @@ import app.hushtumblr.extension.shared.settings.FailingStore;
 import app.hushtumblr.extension.shared.settings.HushTumblrPause;
 import app.hushtumblr.extension.shared.settings.PauseForTests;
 import app.hushtumblr.extension.shared.settings.Setting;
+import app.hushtumblr.extension.shared.settings.StringSetting;
 import app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment;
 import app.hushtumblr.extension.shared.settings.preference.LogBufferManager;
 import app.hushtumblr.extension.shared.settings.preference.SharedPrefCategory;
@@ -140,6 +141,7 @@ public class SettingsBackupTest {
     @Before
     public void startClean() {
         for (BooleanSetting setting : SettingsBackup.ALLOWLIST) setting.resetToDefault();
+        for (StringSetting setting : SettingsBackup.TEXT_ALLOWLIST) setting.resetToDefault();
         SettingsBackup.discardUndo();
         PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
         PatchFamily.capabilitiesForTests = null;
@@ -158,6 +160,7 @@ public class SettingsBackupTest {
         Utils.awaitBackgroundTasksForTests();
         ShadowLooper.idleMainLooper();
         for (BooleanSetting setting : SettingsBackup.ALLOWLIST) setting.resetToDefault();
+        for (StringSetting setting : SettingsBackup.TEXT_ALLOWLIST) setting.resetToDefault();
         // The release check stays out of every file, so the list above doesn't reach it.
         Settings.CHECK_FOR_RELEASES.resetToDefault();
         BaseSettings.PAUSED.resetToDefault();
@@ -287,9 +290,9 @@ public class SettingsBackupTest {
     }
 
     /**
-     * A file is a format name, a version and one true or false per switch, whatever else the phone
-     * holds: not the pause, not debug logging or safe mode, not the log, the diagnostic counts or
-     * anything that names the phone or the person.
+     * A file is a format name, a version, one true or false per switch and the text settings,
+     * whatever else the phone holds: not the pause, not debug logging or safe mode, not the log, the
+     * diagnostic counts or anything that names the phone or the person.
      */
     @Test
     public void aFileIsItsFormatItsVersionAndOneValuePerSwitch() throws Exception {
@@ -306,9 +309,10 @@ public class SettingsBackupTest {
 
         String text = SettingsBackup.create();
         JSONObject root = new JSONObject(text);
-        assertEquals(new TreeSet<>(Arrays.asList("format", "schema", "settings")), names(root));
+        assertEquals(new TreeSet<>(Arrays.asList("format", "schema", "settings", "text")), names(root));
         assertEquals("hushtumblr-settings", root.get("format"));
-        assertEquals(1, root.get("schema"));
+        assertEquals(2, root.get("schema"));
+        assertEquals(keys(SettingsBackup.TEXT_ALLOWLIST), names(root.getJSONObject("text")));
         JSONObject switches = root.getJSONObject("settings");
         assertEquals(keys(SettingsBackup.ALLOWLIST), names(switches));
         for (BooleanSetting setting : SettingsBackup.ALLOWLIST) {
@@ -319,7 +323,7 @@ public class SettingsBackupTest {
         assertEquals(false, switches.get(Settings.HIDE_ADVERTISING_ID.key));
         assertEquals(true, switches.get(Settings.FIX_PUSH_NOTIFICATIONS.key));
         for (Setting<?> setting : Setting.allLoadedSettings()) {
-            if (SettingsBackup.ALLOWLIST.contains(setting)) continue;
+            if (SettingsBackup.ALLOWLIST.contains(setting) || SettingsBackup.TEXT_ALLOWLIST.contains(setting)) continue;
             assertFalse(setting.key + " is in the file", text.contains(setting.key));
         }
         for (String leak : new String[]{"sentinel", "sessionid", "ds_user_id", "100012345678901", "secret-session",
@@ -354,6 +358,130 @@ public class SettingsBackupTest {
             }
             assertEquals("a file read back is the file", file, SettingsBackup.create());
         }
+    }
+
+    /**
+     * The words to hide and the tab order go out in the text section, come back exactly, read in
+     * the preview by name, and an Undo puts back what was there.
+     */
+    @Test
+    public void textSettingsGoOutAndComeBackExactly() throws Exception {
+        String words = "cat\nDog pics, bird";
+        String order = "Account,Notifications";
+        TextSettings.HIDDEN_WORDS.save(words);
+        TextSettings.TAB_ORDER.save(order);
+        String file = SettingsBackup.create();
+        JSONObject text = new JSONObject(file).getJSONObject("text");
+        assertEquals(words, text.get(TextSettings.HIDDEN_WORDS.key));
+        assertEquals(order, text.get(TextSettings.TAB_ORDER.key));
+
+        TextSettings.HIDDEN_WORDS.save("something else");
+        TextSettings.TAB_ORDER.resetToDefault();
+        SettingsBackup.Snapshot snapshot = SettingsBackup.parse(file);
+        assertEquals(Collections.emptyList(), snapshot.skipped);
+        assertEquals(0, snapshot.unknown);
+        assertEquals(2, snapshot.switchChanges());
+        String preview = SettingsBackupPreference.previewMessage(snapshot);
+        assertTrue(preview, preview.startsWith(L10n.f("%1$s (%2$s to %3$s)", L10n.t("Words to hide"),
+                L10n.isolate("something else"), L10n.isolate("cat, dog pics, bird"))));
+        assertTrue(preview, preview.contains("\n\n" + L10n.t("Tab order") + " (" + L10n.t("Tumblr's order") + " to "));
+        assertFalse("text settings were counted as switches: " + preview, preview.contains("switch"));
+
+        assertEquals("text settings aren't counted as switches", 0, SettingsBackup.apply(snapshot));
+        assertEquals(words, TextSettings.HIDDEN_WORDS.savedValue());
+        assertEquals(words, TextSettings.HIDDEN_WORDS.persistedValue());
+        assertEquals(order, TextSettings.TAB_ORDER.persistedValue());
+        assertEquals("a file read back is the file", file, SettingsBackup.create());
+
+        assertEquals(SettingsBackup.UndoResult.UNDONE, SettingsBackup.undo());
+        assertEquals("something else", TextSettings.HIDDEN_WORDS.persistedValue());
+        assertEquals("", TextSettings.TAB_ORDER.persistedValue());
+    }
+
+    /** A version 1 file still restores its switches, and the text settings stay as they are. */
+    @Test
+    public void aVersionOneFileRestoresItsSwitchesAndLeavesTheTextAlone() throws Exception {
+        TextSettings.HIDDEN_WORDS.save("cat");
+        TextSettings.TAB_ORDER.save("Account");
+        String old = "{\"format\":\"hushtumblr-settings\",\"schema\":1,\"settings\":{\""
+                + Settings.HIDE_ADVERTISING_ID.key + "\":false}}";
+        SettingsBackup.Snapshot snapshot = SettingsBackup.parse(old);
+        assertTrue(snapshot.texts.isEmpty());
+        assertEquals(1, SettingsBackup.apply(snapshot));
+        assertFalse(Settings.HIDE_ADVERTISING_ID.savedValue());
+        assertEquals("cat", TextSettings.HIDDEN_WORDS.persistedValue());
+        assertEquals("Account", TextSettings.TAB_ORDER.persistedValue());
+
+        // Version 1 has no text section, so one in a version 1 file is a name it doesn't know.
+        JSONObject stray = new JSONObject(old).put("text", new JSONObject()
+                .put(TextSettings.HIDDEN_WORDS.key, "dog").put(TextSettings.TAB_ORDER.key, ""));
+        stray.getJSONObject("settings").put(Settings.HIDE_ADVERTISING_ID.key, true);
+        snapshot = SettingsBackup.parse(stray.toString());
+        assertEquals(1, snapshot.unknown);
+        assertTrue(snapshot.texts.isEmpty());
+        assertEquals(1, SettingsBackup.apply(snapshot));
+        assertTrue(Settings.HIDE_ADVERTISING_ID.savedValue());
+        assertEquals("cat", TextSettings.HIDDEN_WORDS.persistedValue());
+        assertEquals("Account", TextSettings.TAB_ORDER.persistedValue());
+    }
+
+    /**
+     * A text value its settings row could never have saved is left out and named in the preview,
+     * and the rest of the file still imports. Only a text section that isn't one refuses the file.
+     */
+    @Test
+    public void aTextValueThatFailsItsCheckIsLeftOutAndSaidWhileTheRestImports() throws Exception {
+        TextSettings.HIDDEN_WORDS.save("cat");
+        TextSettings.TAB_ORDER.save("Account");
+        String leftOut = L10n.f("%1$s: the value in that file can't be used, so it'll be left out.", L10n.t("Tab order"));
+        for (Object badOrder : new Object[]{"Account,Nowhere", "Account,Account", "Account, Notifications", ",Account",
+                5, true, JSONObject.NULL, new JSONObject(), new org.json.JSONArray()}) {
+            JSONObject file = new JSONObject(fileWith(Settings.HIDE_ADVERTISING_ID, false)).put("text", new JSONObject()
+                    .put(TextSettings.HIDDEN_WORDS.key, "dog").put(TextSettings.TAB_ORDER.key, badOrder));
+            SettingsBackup.Snapshot snapshot = SettingsBackup.parse(file.toString());
+            assertEquals(String.valueOf(badOrder), Collections.singletonList(TextSettings.TAB_ORDER), snapshot.skipped);
+            String preview = SettingsBackupPreference.previewMessage(snapshot);
+            assertTrue(preview, preview.endsWith("\n\n" + leftOut));
+            assertEquals(1, SettingsBackup.apply(snapshot));
+            assertFalse(Settings.HIDE_ADVERTISING_ID.savedValue());
+            assertEquals("dog", TextSettings.HIDDEN_WORDS.persistedValue());
+            assertEquals("a value that failed its check was written", "Account", TextSettings.TAB_ORDER.persistedValue());
+            Settings.HIDE_ADVERTISING_ID.resetToDefault();
+            TextSettings.HIDDEN_WORDS.save("cat");
+            SettingsBackup.discardUndo();
+        }
+        // The words take any text, trimmed as their box trims it, so only a value that isn't text fails.
+        for (Object badWords : new Object[]{7, false, JSONObject.NULL, new org.json.JSONArray()}) {
+            JSONObject file = new JSONObject(SettingsBackup.create());
+            file.getJSONObject("text").put(TextSettings.HIDDEN_WORDS.key, badWords);
+            SettingsBackup.Snapshot snapshot = SettingsBackup.parse(file.toString());
+            assertEquals(String.valueOf(badWords), Collections.singletonList(TextSettings.HIDDEN_WORDS), snapshot.skipped);
+            assertEquals(0, snapshot.switchChanges());
+            assertEquals(L10n.t("Your switches already match that file, so nothing will change.") + "\n\n"
+                    + L10n.f("%1$s: the value in that file can't be used, so it'll be left out.", L10n.t("Words to hide")),
+                    SettingsBackupPreference.previewMessage(snapshot));
+        }
+        JSONObject padded = new JSONObject(SettingsBackup.create());
+        padded.getJSONObject("text").put(TextSettings.HIDDEN_WORDS.key, "  dog \n");
+        assertEquals("dog", SettingsBackup.parse(padded.toString()).texts.get(TextSettings.HIDDEN_WORDS));
+        // A text section that isn't one was never written by HushTumblr.
+        assertEquals(SettingsBackup.Reason.FORMAT,
+                reasonFor(new JSONObject(SettingsBackup.create()).put("text", "cat").toString()));
+        assertEquals("cat", TextSettings.HIDDEN_WORDS.persistedValue());
+        assertEquals("Account", TextSettings.TAB_ORDER.persistedValue());
+    }
+
+    /** A list of words longer than any one switch name still reads back: the parser's string cap is the file's. */
+    @Test
+    public void aLongWordListStillImports() throws Exception {
+        StringBuilder words = new StringBuilder();
+        for (int index = 0; words.length() < 4000; index++) words.append("word").append(index).append('\n');
+        String saved = words.toString().trim();
+        TextSettings.HIDDEN_WORDS.save(saved);
+        String file = SettingsBackup.create();
+        TextSettings.HIDDEN_WORDS.resetToDefault();
+        SettingsBackup.apply(SettingsBackup.parse(file));
+        assertEquals(saved, TextSettings.HIDDEN_WORDS.persistedValue());
     }
 
     // ---- Writing ---------------------------------------------------------------------------
@@ -518,7 +646,7 @@ public class SettingsBackupTest {
         withStore(counting(Setting.preferences.preferences, counts, () -> false, false), () -> {
             assertEquals(before.size(), SettingsBackup.apply(SettingsBackup.parse(file.toString())));
             assertEquals(SettingsBackup.UndoState.AVAILABLE, SettingsBackup.undoState());
-            assertEquals(new TreeSet<>(Arrays.asList("format", "schema", "settings")),
+            assertEquals(new TreeSet<>(Arrays.asList("format", "schema", "settings", "text")),
                     names(new JSONObject(SettingsBackup.create())));
             assertEquals(SettingsBackup.UndoResult.UNDONE, SettingsBackup.undo());
             assertEquals(SettingsBackup.UndoState.NONE, SettingsBackup.undoState());
@@ -1166,7 +1294,7 @@ public class SettingsBackupTest {
         // Anything else where the version goes was never written by HushTumblr.
         String good = SettingsBackup.create();
         for (String version : new String[]{"0", "-1", "\"1\"", "1.0", "1.5", "4294967297", "null", "true", "[1]"}) {
-            String bad = good.replace("\"schema\": 1", "\"schema\": " + version);
+            String bad = good.replace("\"schema\": " + SettingsBackup.SCHEMA, "\"schema\": " + version);
             assertTrue("the replacement missed", !bad.equals(good));
             assertEquals(version, SettingsBackup.Reason.FORMAT, reasonFor(bad));
         }
@@ -1586,7 +1714,7 @@ public class SettingsBackupTest {
         files.put(good.replace("\"" + key + "\": true", "\"" + key + "\": false, \"" + key + "\": false"),
                 SettingsBackup.Reason.DUPLICATE);
         files.put(wrongType.toString(), SettingsBackup.Reason.VALUE);
-        files.put(new JSONObject(good).put("schema", 2).toString(), SettingsBackup.Reason.SCHEMA);
+        files.put(new JSONObject(good).put("schema", SettingsBackup.SCHEMA + 1).toString(), SettingsBackup.Reason.SCHEMA);
         files.put(new JSONObject(good).put("format", "something else").toString(), SettingsBackup.Reason.FORMAT);
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
             Activity activity = controller.get();

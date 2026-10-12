@@ -48,6 +48,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -58,9 +59,12 @@ import app.hushtumblr.extension.shared.Logger;
 import app.hushtumblr.extension.shared.Utils;
 import app.hushtumblr.extension.shared.settings.BooleanSetting;
 import app.hushtumblr.extension.shared.settings.Setting;
+import app.hushtumblr.extension.shared.settings.StringSetting;
 import app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment;
 import app.hushtumblr.extension.shared.settings.preference.ImmediateAction;
 import app.hushtumblr.extension.shared.settings.preference.LogBufferManager;
+import app.hushtumblr.extension.tumblr.timeline.PostRules;
+import app.hushtumblr.extension.tumblr.ui.BottomBarTabs;
 
 /**
  * Export settings, Import settings and Undo import.
@@ -151,7 +155,7 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
 
     @Nullable private static SharedPreferences observedStore;
     private static final SharedPreferences.OnSharedPreferenceChangeListener undoListener = (store, key) -> {
-        if (key != null && SettingsBackup.ALLOWLIST.stream().noneMatch(setting -> setting.key.equals(key))) return;
+        if (key != null && !SettingsBackup.carries(key)) return;
         Utils.runOnMainThread(() -> {
             // Review successful saved revisions after the write and any rollback finish.
             if (OWNER.get() == null) setRowsBusy(0, null);
@@ -304,6 +308,10 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
             Runnable result = null;
             try {
                 SettingsBackup.Snapshot snapshot = SettingsBackup.parse(read(context.getContentResolver(), uri, run));
+                for (StringSetting skipped : snapshot.skipped) {
+                    // The key only: the value is the person's own text.
+                    Logger.printInfo(() -> "Settings file: a value left out for " + skipped.key);
+                }
                 result = () -> offer(snapshot);
             } catch (SettingsBackup.Rejected refused) {
                 Logger.printInfo(() -> "Settings file refused: " + refused.reason);
@@ -382,31 +390,73 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
         shown.dismiss();
     }
 
-    /** Named saved-value changes, including switches whose patch isn't installed in this build. */
+    /**
+     * Named saved-value changes, including switches whose patch isn't installed in this build, then
+     * the text settings the file changes and any whose value is left out.
+     */
     static String previewMessage(SettingsBackup.Snapshot snapshot) {
         synchronized (Setting.class) {
             Map<Setting<?>, Object> changes = snapshot.changes();
-            int switches = changes.size();
-            StringBuilder message = new StringBuilder(switches == 0
+            int switches = 0;
+            for (Setting<?> setting : changes.keySet()) {
+                if (setting instanceof BooleanSetting) switches++;
+            }
+            StringBuilder message = new StringBuilder(changes.isEmpty()
                     ? L10n.t("Your switches already match that file, so nothing will change.")
+                    : switches == 0 ? ""
                     : L10n.quantity(switches, "%1$d switch will change.", "%1$d switches will change.", switches));
             for (Map.Entry<Setting<?>, Object> entry : changes.entrySet()) {
+                if (entry.getKey() instanceof StringSetting) {
+                    StringSetting text = (StringSetting) entry.getKey();
+                    paragraph(message, L10n.f("%1$s (%2$s to %3$s)", textName(text),
+                            textShown(text, text.persistedValue()), textShown(text, (String) entry.getValue())));
+                    continue;
+                }
                 BooleanSetting setting = (BooleanSetting) entry.getKey();
-                message.append("\n\n").append(L10n.f("%1$s (%2$s to %3$s)", switchName(setting),
+                paragraph(message, L10n.f("%1$s (%2$s to %3$s)", switchName(setting),
                         switchValue(setting.persistedValue()), switchValue((Boolean) entry.getValue())));
                 if (!available(setting)) {
                     message.append('\n').append(L10n.t("Your choice is saved, but this build doesn't include the "
                         + "patch for it."));
                 }
             }
+            for (StringSetting text : snapshot.skipped) {
+                paragraph(message, L10n.f("%1$s: the value in that file can't be used, so it'll be left out.",
+                        textName(text)));
+            }
             if (snapshot.unknown > 0) {
-                message.append("\n\n").append(L10n.quantity(snapshot.unknown,
+                paragraph(message, L10n.quantity(snapshot.unknown,
                         "%1$d item in that file isn't a setting this version of HushTumblr knows, so it'll be left out.",
                         "%1$d items in that file aren't settings this version of HushTumblr knows, so they'll be left out.",
                         snapshot.unknown));
             }
             return message.toString();
         }
+    }
+
+    /** Adds [text] to [message] as a paragraph of its own. */
+    private static void paragraph(StringBuilder message, String text) {
+        if (message.length() > 0) message.append("\n\n");
+        message.append(text);
+    }
+
+    /** A text setting's name, as its row on the settings screen gives it. */
+    static String textName(StringSetting setting) {
+        return setting == TextSettings.TAB_ORDER ? L10n.t("Tab order") : L10n.t("Words to hide");
+    }
+
+    /** What [value] of [setting] reads as in the preview: the words, or the tabs in the bar's order. */
+    static String textShown(StringSetting setting, String value) {
+        if (setting == TextSettings.TAB_ORDER) {
+            if (BottomBarTabs.parse(value).isEmpty()) return L10n.t("Tumblr's order");
+            List<String> labels = new ArrayList<>();
+            for (String name : BottomBarTabs.choices(value)) {
+                labels.add(L10n.isolate(HushTumblrPreferenceFragment.tabLabel(name)));
+            }
+            return String.join(", ", labels);
+        }
+        List<String> words = PostRules.wordList(value);
+        return words.isEmpty() ? L10n.t("None") : L10n.isolate(String.join(", ", words));
     }
 
     private static String switchValue(boolean value) {

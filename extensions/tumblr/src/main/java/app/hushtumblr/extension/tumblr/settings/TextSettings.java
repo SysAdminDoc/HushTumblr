@@ -9,9 +9,10 @@ import app.hushtumblr.extension.shared.settings.StringSetting;
 
 /**
  * The settings that hold text rather than on or off. They live apart from {@link Settings}, whose
- * every setting is a switch a settings file can carry: a file holds true or false and nothing
- * else, so these stay out of backups until the format can carry text. While HushTumblr is paused
- * each answers empty, which leaves Tumblr as it is.
+ * every setting is a switch a settings file carries in its switch section. A file carries these in
+ * a text section of their own since version 2 ({@link SettingsBackup#TEXT_ALLOWLIST}), each checked
+ * on import by the rule its row saves by. While HushTumblr is paused each answers empty, which
+ * leaves Tumblr as it is.
  */
 public final class TextSettings {
     private TextSettings() {}

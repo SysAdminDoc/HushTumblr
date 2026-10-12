@@ -531,6 +531,15 @@ public class SettingsL10nTest {
         unchanged.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
         settle();
 
+        // The text settings: words to hide that change, and a tab order the file can't use.
+        TextSettings.HIDDEN_WORDS.resetToDefault();
+        String withText = "{\"format\":\"hushtumblr-settings\",\"schema\":2,\"settings\":{},\"text\":{\""
+                + TextSettings.HIDDEN_WORDS.key + "\":\"cat\",\"" + TextSettings.TAB_ORDER.key + "\":\"Nowhere\"}}";
+        AlertDialog texts = importPreview(activity, rows, withText);
+        shown.add(String.valueOf(org.robolectric.Shadows.shadowOf(texts).getMessage()));
+        texts.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();
+        settle();
+
         for (SettingsBackup.Reason reason : SettingsBackup.Reason.values()) {
             shown.add(SettingsBackupPreference.refusal(reason));
         }
