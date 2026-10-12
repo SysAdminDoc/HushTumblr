@@ -57,6 +57,7 @@ public class PostFooterTest {
         Settings.HIDE_REBLOG_BUTTON.resetToDefault();
         Settings.HIDE_COMMENT_BUTTON.resetToDefault();
         Settings.HIDE_SHARE_BUTTON.resetToDefault();
+        Settings.HIDE_SAVE_BUTTON.resetToDefault();
         PostFooter.forgetAnswersForTests();
         PauseForTests.resume();
         HookStatus.clear();
@@ -77,6 +78,49 @@ public class PostFooterTest {
         String report = String.join("\n", HookStatus.report());
         assertTrue(report, report.contains("reblog button hidden 1"));
         assertTrue(report, report.contains("share button hidden 2"));
+    }
+
+    @Test
+    public void theSaveSwitchHidesTheSaveButtonAndKeepsItsAnswerUntilTumblrRestarts() {
+        assertFalse("it starts off", PostFooter.hideSaveButton());
+        PostFooter.forgetAnswersForTests();
+
+        Settings.HIDE_SAVE_BUTTON.save(true);
+        assertTrue(PostFooter.hideSaveButton());
+        assertFalse("the other buttons have their own switches", PostFooter.hideShareButton());
+        Settings.HIDE_SAVE_BUTTON.save(false);
+        assertTrue("the footer Compose drew keeps its buttons", PostFooter.hideSaveButton());
+
+        String report = String.join("\n", HookStatus.report());
+        assertTrue(report, report.contains("save button hidden 2"));
+
+        PatchFamilyForTests.capabilities(EnumSet.of(PatchFamily.Capability.SHARE_BUTTON));
+        PostFooter.forgetAnswersForTests();
+        Settings.HIDE_SAVE_BUTTON.save(true);
+        assertFalse("its hook isn't in this build", PostFooter.hideSaveButton());
+    }
+
+    @Test
+    public void theCountsSwitchLeavesACommunityReactionItsEmojiWithoutItsCount() {
+        String reacted = "😂🔥 1234";
+        assertEquals("its switch is off", reacted, PostFooter.communityReactionsText(reacted, 1234));
+
+        Settings.HIDE_NOTE_COUNTS.save(true);
+        assertEquals("😂🔥", PostFooter.communityReactionsText(reacted, 1234));
+        assertEquals("a reaction nobody else made yet", "❤️", PostFooter.communityReactionsText("❤️ 1", 1));
+        assertEquals("text that doesn't end in its count is Tumblr's", "❤️ 12",
+                PostFooter.communityReactionsText("❤️ 12", 2));
+        assertNull("nothing to change", PostFooter.communityReactionsText(null, 3));
+
+        Settings.HIDE_NOTE_COUNTS.save(false);
+        assertEquals("read each time", reacted, PostFooter.communityReactionsText(reacted, 1234));
+
+        Settings.HIDE_NOTE_COUNTS.save(true);
+        PatchFamilyForTests.capabilities(EnumSet.of(PatchFamily.Capability.LIKE_BUTTON));
+        assertEquals("its hook isn't in this build", reacted, PostFooter.communityReactionsText(reacted, 1234));
+
+        String report = String.join("\n", HookStatus.report());
+        assertTrue(report, report.contains("reaction count hidden 2"));
     }
 
     @Test
@@ -218,6 +262,7 @@ public class PostFooterTest {
         assertFalse(PostFooter.hideReblogButton());
         assertFalse(PostFooter.hideCommentButton());
         assertFalse(PostFooter.hideShareButton());
+        assertFalse(PostFooter.hideSaveButton());
     }
 
     @Test

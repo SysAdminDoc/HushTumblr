@@ -40,6 +40,11 @@ internal const val NOTE_COUNT_HOOK = "$POST_FOOTER->noteCount(I)I"
 internal const val COMMUNITY_COMMENTS_TEXT_HOOK = "$POST_FOOTER->communityCommentsText(Ljava/lang/String;)Ljava/lang/String;"
 internal const val NOTES_TITLE_HOOK = "$POST_FOOTER->notesTitle(Ljava/lang/String;)Ljava/lang/String;"
 internal const val TEXT_COUNT_HOOK = "$POST_FOOTER->textCount(Ljava/lang/String;)Ljava/lang/String;"
+internal const val COMMUNITY_REACTIONS_TEXT_HOOK =
+    "$POST_FOOTER->communityReactionsText(Ljava/lang/String;I)Ljava/lang/String;"
+
+/** A community post's reaction button, a View Tumblr names in its layouts, so R8 keeps the name. */
+internal const val REACTION_CONTROL = "${COMMUNITY_CONTROLS}CommunitiesReactionControl;"
 
 /** Compose's source note for the function that writes a community post's comment count. */
 internal const val COMMUNITY_COMMENTS_TEXT = "com.tumblr.ui.widget.postcontrol.rememberFormattedComments ("
@@ -49,6 +54,7 @@ private const val COMMUNITY_COMMENTS_PLURAL = "community_post_comments"
 private const val NOTE_COUNT_PLURAL = "note_count_show"
 
 private const val STRING = "Ljava/lang/String;"
+private const val STRING_BUILDER = "Ljava/lang/StringBuilder;"
 private const val CHAR_SEQUENCE = "Ljava/lang/CharSequence;"
 
 /**
@@ -57,6 +63,12 @@ private const val CHAR_SEQUENCE = "Ljava/lang/CharSequence;"
  * blanks right after whenever the text went to a word.
  */
 internal class CountTextSite(val method: MutableMethod, val at: Int, val register: Int, val count: Int? = null)
+
+/**
+ * Where the reaction text hook goes: in front of instruction [at], the `setText` that shows the text
+ * in register [text], with the reactions' total still in register [count].
+ */
+internal class ReactionTextSite(val method: MutableMethod, val at: Int, val text: Int, val count: Int)
 
 /**
  * Hands the method that turns a like, reblog or comment count into the footer's text the count
@@ -73,6 +85,10 @@ internal class CountTextSite(val method: MutableMethod, val at: Int, val registe
  * Two more counts are words rather than numbers, so they get Tumblr's own word in their place:
  * a community post's comment button writes "3 comments" ([resolveCommunityCommentsText]), and a
  * post's notes screen is titled "12 notes" ([resolveNotesTitle]). Each is read as it's written.
+ *
+ * A community post's reactions stand in for likes there, and each reaction button writes its emoji,
+ * a space and how many reacted ([resolveCommunityReactionsText]); the extension hands back just the
+ * emoji, read each time the button is bound.
  */
 @Suppress("unused")
 val hideNoteCountsPatch = bytecodePatch(
@@ -95,6 +111,7 @@ val hideNoteCountsPatch = bytecodePatch(
             resolveCommunityCommentsText() to COMMUNITY_COMMENTS_TEXT_HOOK,
             resolveNotesTitle() to NOTES_TITLE_HOOK,
         )
+        val reactions = resolveCommunityReactionsText()
         val count = formatter.parameterRegister(0)
         formatter.addInstructions(
             0,
@@ -119,6 +136,13 @@ val hideNoteCountsPatch = bytecodePatch(
                 """ + bolded,
             )
         }
+        reactions.method.addInstructions(
+            reactions.at,
+            """
+                invoke-static {v${reactions.text}, v${reactions.count}}, $COMMUNITY_REACTIONS_TEXT_HOOK
+                move-result-object v${reactions.text}
+            """,
+        )
         enableCapability("noteCounts")
         enableStatus("hideNoteCounts")
     }
@@ -231,6 +255,49 @@ internal fun BytecodePatchContext.resolveNotesTitle(): CountTextSite {
 }
 
 /**
+ * Right before a community post's reaction button shows its text, throwing when this build has no
+ * such button, no method that writes it, or one that writes it another way.
+ *
+ * The button is [REACTION_CONTROL], and the method is its one instance method taking a List and
+ * returning nothing (`d`, regs=12, in 46.5.0.109), called from the community footer's bind for each
+ * reaction. It adds up the reactions' counts (v4), joins their emoji, then appends a space and the
+ * total with `StringBuilder.append(I)` (35), moves `toString()` into v11 (37) and hands it to
+ * `TextView.setText` (38). The hook goes in front of that `setText`, where nothing jumps, with the
+ * text and the total. Nothing measures the text or reads it back afterwards: the button keeps its
+ * reactions in a list field of its own, which is what `c()` reads. Found by reading Tumblr
+ * 46.5.0.109 (2026-10-11).
+ */
+internal fun BytecodePatchContext.resolveCommunityReactionsText(): ReactionTextSite {
+    requireExtensionHook(PATCH, COMMUNITY_REACTIONS_TEXT_HOOK)
+    val control = classDefByOrNull(REACTION_CONTROL)
+    requireShape(PATCH, control != null, "Tumblr's community footer has no CommunitiesReactionControl")
+    val writer = control!!.methods
+        .filter { method ->
+            !method.isStatic() && method.returnType == "V" &&
+                method.parameterTypes.map(CharSequence::toString) == listOf("Ljava/util/List;")
+        }
+        .only(PATCH, "the method that writes a community reaction's count")
+    val body = writer.instructionList()
+    val appended = body.indexOfFirst { it.callsStringBuilder("append", listOf("I")) }
+    requireShape(PATCH, appended >= 0, "the community reaction count isn't appended as a number")
+    val count = body[appended].namedRegisters().getOrNull(1)
+    val built = (appended + 1 until body.size).firstOrNull { body[it].callsStringBuilder("toString", emptyList()) }
+    val moved = built?.let { body.getOrNull(it + 1) }
+    requireShape(PATCH, count != null && moved?.opcode == Opcode.MOVE_RESULT_OBJECT,
+        "the community reaction text isn't a String moved into a register")
+    val text = (moved as OneRegisterInstruction).registerA
+    val at = (built!! + 2 until body.size).firstOrNull { body[it].setsText() }
+    requireShape(PATCH, at != null && body[at].namedRegisters().getOrNull(1) == text &&
+        (built + 2 until at).none { writesRegister(body[it], text) } &&
+        (appended + 1 until at).none { writesRegister(body[it], count!!) },
+        "the community reaction text and its count don't reach setText unchanged")
+    requireShape(PATCH, !writer.isJumpTarget(at!!), "something jumps past the hook on the community reaction text")
+    requireShape(PATCH, text <= 15 && count!! <= 15,
+        "the community reaction text or count is past what the added call can name")
+    return ReactionTextSite(mutableOf(writer), at, text, count!!)
+}
+
+/**
  * The place right after the call at [written] has its String answer moved into a register, ready
  * for a hook on it, throwing naming [what] when there's no such call, no move, or the place can't
  * take the hook.
@@ -254,6 +321,19 @@ private fun Instruction.readsPlural(name: String): Boolean =
 /** A call of `String.length()`. */
 private fun Instruction.measuresString(): Boolean =
     methodRef()?.let { it.definingClass == STRING && it.name == "length" && it.parameterTypes.isEmpty() } == true
+
+/** A call of `StringBuilder.[name]` taking [parameters]. */
+private fun Instruction.callsStringBuilder(name: String, parameters: List<String>): Boolean =
+    methodRef()?.let {
+        it.definingClass == STRING_BUILDER && it.name == name && it.parameterTypes.map(CharSequence::toString) == parameters
+    } == true
+
+/** A call of `TextView.setText(CharSequence)`. */
+private fun Instruction.setsText(): Boolean =
+    methodRef()?.let {
+        it.definingClass == "Landroid/widget/TextView;" && it.name == "setText" &&
+            it.parameterTypes.map(CharSequence::toString) == listOf(CHAR_SEQUENCE)
+    } == true
 
 /** A call of `Activity.setTitle(CharSequence)`. */
 private fun Instruction.setsTitle(): Boolean =

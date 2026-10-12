@@ -200,6 +200,13 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_hide_share_button", FALSE);
 
     /**
+     * The footer under posts doesn't show the Save button, which Tumblr draws only while its
+     * POST_STASH flag is on ({@link app.hushtumblr.extension.tumblr.ui.PostFooter}). Off to start.
+     */
+    public static final BooleanSetting HIDE_SAVE_BUTTON =
+            new BooleanSetting("hushtumblr_hide_save_button", FALSE);
+
+    /**
      * The bottom bar's Dashboard tab doesn't show its unread count
      * ({@link app.hushtumblr.extension.tumblr.ui.BottomBar}). Off to start.
      */

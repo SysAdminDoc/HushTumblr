@@ -253,7 +253,7 @@ Hide the diamond and TumblrMart	Sembunyikan berlian dan TumblrMart
 Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.	Menyembunyikan berlian Premium dan tombol TumblrMart di bagian atas dasbor, Jelajahi, dan notifikasi. Mulai ulang Tumblr untuk melihat perubahannya.
 the Premium diamond	berlian Premium
 TumblrMart buttons	tombol TumblrMart
-# context: the footer under a post, with its like, reblog, comment and share buttons and their counts. Use the words Tumblr shows in your language for notes and for each button.
+# context: the footer under a post, with its like, reblog, comment, share and Save buttons and their counts. Use the words Tumblr shows in your language for notes and for each button.
 Hide note counts	Sembunyikan jumlah nota
 Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.	Menghapus jumlah suka, reblog, dan komentar dari bagian bawah postingan, tapi tombolnya tetap ada.
 Hide the like button	Sembunyikan tombol suka
@@ -264,6 +264,8 @@ Hide the comment button	Sembunyikan tombol komentar
 Takes the comment button out of the footer under posts. Restart Tumblr to see the change.	Menghapus tombol komentar dari bagian bawah postingan. Mulai ulang Tumblr untuk melihat perubahannya.
 Hide the share button	Sembunyikan tombol bagikan
 Takes the share button out of the footer under posts. Restart Tumblr to see the change.	Menghapus tombol bagikan dari bagian bawah postingan. Mulai ulang Tumblr untuk melihat perubahannya.
+Hide the Save button	Sembunyikan tombol simpan
+Takes the Save button out of the footer under posts, when Tumblr shows one. Restart Tumblr to see the change.	Menghapus tombol simpan dari bagian bawah postingan, saat Tumblr menampilkannya. Mulai ulang Tumblr untuk melihat perubahannya.
 # context: the bottom bar's unread badges, the small dots and numbers on the Dashboard, Communities and Notifications tabs, one switch per tab. Use Tumblr's own names for the tabs in your language.
 Hide unread dots	Sembunyikan titik belum dibaca
 Hide the Dashboard count	Sembunyikan hitungan Dasbor

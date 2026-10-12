@@ -77,6 +77,8 @@ public final class SettingsStatus {
     public static boolean commentButton() { return false; }
     public static boolean hideShareButton() { return false; }
     public static boolean shareButton() { return false; }
+    public static boolean hideSaveButton() { return false; }
+    public static boolean saveButton() { return false; }
     public static boolean hideUnreadDots() { return false; }
     public static boolean unreadDots() { return false; }
     public static boolean hideReblogs() { return false; }

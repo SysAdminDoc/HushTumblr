@@ -47,6 +47,9 @@ internal const val REBLOG_CONTROL = "ReblogEngagement"
 /** Compose's name for the footer's share button. */
 internal const val SHARE_CONTROL = "ShareEngagement"
 
+/** Compose's name for the footer's Save button, which Tumblr draws only while its `POST_STASH` flag is on. */
+internal const val SAVE_CONTROL = "SaveEngagement"
+
 /** A community post's footer, made of Views. Tumblr names it in its layouts, so R8 keeps the name. */
 internal const val COMMUNITY_FOOTER = "Lcom/tumblr/ui/widget/CommunityPostCardFooter;"
 

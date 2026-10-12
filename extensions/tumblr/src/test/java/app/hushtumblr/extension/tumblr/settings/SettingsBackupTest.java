@@ -261,6 +261,7 @@ public class SettingsBackupTest {
                 Settings.HIDE_REBLOG_BUTTON,
                 Settings.HIDE_COMMENT_BUTTON,
                 Settings.HIDE_SHARE_BUTTON,
+                Settings.HIDE_SAVE_BUTTON,
                 Settings.HIDE_DASHBOARD_COUNT,
                 Settings.HIDE_COMMUNITIES_COUNT,
                 Settings.HIDE_NOTIFICATIONS_COUNT,

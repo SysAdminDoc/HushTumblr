@@ -81,6 +81,7 @@ public enum PatchFamily {
     HIDE_REBLOG_BUTTON(FamilyNames.HIDE_REBLOG_BUTTON, "hideReblogButton", null, Settings.HIDE_REBLOG_BUTTON),
     HIDE_COMMENT_BUTTON(FamilyNames.HIDE_COMMENT_BUTTON, "hideCommentButton", null, Settings.HIDE_COMMENT_BUTTON),
     HIDE_SHARE_BUTTON(FamilyNames.HIDE_SHARE_BUTTON, "hideShareButton", null, Settings.HIDE_SHARE_BUTTON),
+    HIDE_SAVE_BUTTON(FamilyNames.HIDE_SAVE_BUTTON, "hideSaveButton", null, Settings.HIDE_SAVE_BUTTON),
     /** One hook, with a switch for each tab's badge. */
     HIDE_UNREAD_DOTS(FamilyNames.HIDE_UNREAD_DOTS, "hideUnreadDots", null, Settings.HIDE_DASHBOARD_COUNT,
             Settings.HIDE_COMMUNITIES_COUNT, Settings.HIDE_NOTIFICATIONS_COUNT),
@@ -149,8 +150,8 @@ public enum PatchFamily {
             TURN_OFF_SCREENSHOT_SHARING, SKIP_REVIEW_PROMPTS, HIDE_BLAZE_PROMPTS, HIDE_COMMUNITIES_TAB, HIDE_TUMBLR_TV));
 
     /** The families the Posts page holds. The page and its home row both read this. */
-    static final Set<PatchFamily> POSTS_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_SHARE_BUTTON,
-            HIDE_COMMENT_BUTTON, HIDE_REBLOG_BUTTON, HIDE_LIKE_BUTTON, HIDE_NOTE_COUNTS, HIDE_FOLLOW_BUTTON,
+    static final Set<PatchFamily> POSTS_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_SAVE_BUTTON,
+            HIDE_SHARE_BUTTON, HIDE_COMMENT_BUTTON, HIDE_REBLOG_BUTTON, HIDE_LIKE_BUTTON, HIDE_NOTE_COUNTS, HIDE_FOLLOW_BUTTON,
             HIDE_HASHTAGS));
 
     /** The families the Privacy page holds. The page and its home row both read this. */
@@ -183,6 +184,7 @@ public enum PatchFamily {
         REBLOG_BUTTON(HIDE_REBLOG_BUTTON, "reblogButton", "Hide the reblog button"),
         COMMENT_BUTTON(HIDE_COMMENT_BUTTON, "commentButton", "Hide the comment button"),
         SHARE_BUTTON(HIDE_SHARE_BUTTON, "shareButton", "Hide the share button"),
+        SAVE_BUTTON(HIDE_SAVE_BUTTON, "saveButton", "Hide the Save button"),
         UNREAD_DOTS(HIDE_UNREAD_DOTS, "unreadDots", "Hide unread dots"),
         REBLOG_POSTS(HIDE_REBLOGS, "reblogPosts", "Hide reblogs"),
         VIDEO_POSTS(HIDE_VIDEO_POSTS, "videoPosts", "Hide video posts"),

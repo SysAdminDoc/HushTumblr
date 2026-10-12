@@ -326,6 +326,9 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             patchToggle(posts, context, build, PatchFamily.HIDE_SHARE_BUTTON, Settings.HIDE_SHARE_BUTTON,
                     L10n.t("Hide the share button"), L10n.t("Takes the share button out of the footer under "
                         + "posts. Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+            patchToggle(posts, context, build, PatchFamily.HIDE_SAVE_BUTTON, Settings.HIDE_SAVE_BUTTON,
+                    L10n.t("Hide the Save button"), L10n.t("Takes the Save button out of the footer under posts, "
+                        + "when Tumblr shows one. Restart Tumblr to see the change."), SettingsIcons.BLOCK);
         }
 
         // Tabs, buttons, prompts and pop-ups. A switch that answers one of Tumblr's own feature flags is

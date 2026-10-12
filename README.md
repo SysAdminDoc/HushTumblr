@@ -45,7 +45,7 @@ Each of these has to be checked against Tumblr itself before it's described as a
 
 ## Patches
 
-There are 35 patches so far, all for Tumblr 46.5.0.109. None of them has been built or tried on a phone yet.
+There are 36 patches so far, all for Tumblr 46.5.0.109. None of them has been built or tried on a phone yet.
 
 | Patch | What it does |
 |---|---|
@@ -70,6 +70,7 @@ There are 35 patches so far, all for Tumblr 46.5.0.109. None of them has been bu
 | `Hide the Explore tab` | Takes the Explore and search button off the bottom bar. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `Hide the Follow button` | Takes the Follow button out of the header of posts from blogs you don't follow yet. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Hide the Notifications tab` | Takes the Notifications button off the bottom bar. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
+| `Hide the Save button` | Takes the Save button out of the footer under posts in your dashboard and other feeds, when Tumblr shows one. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Hide the ad-free banner` | Hides the banner on your dashboard that asks you to pay for Ad-Free Browsing. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
 | `Hide the comment button` | Takes the comment button out of the footer under posts in your dashboard and other feeds. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Hide the diamond and TumblrMart` | Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |

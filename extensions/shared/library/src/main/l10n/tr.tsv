@@ -253,7 +253,7 @@ Hide the diamond and TumblrMart	Elmas ve TumblrMart'ı gizle
 Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.	Panonun, Keşfet'in ve bildirimlerin üstündeki Premium elmasını ve TumblrMart düğmesini gizler. Değişikliği görmek için Tumblr'ı yeniden başlat.
 the Premium diamond	Premium elması
 TumblrMart buttons	TumblrMart düğmeleri
-# context: the footer under a post, with its like, reblog, comment and share buttons and their counts. Use the words Tumblr shows in your language for notes and for each button.
+# context: the footer under a post, with its like, reblog, comment, share and Save buttons and their counts. Use the words Tumblr shows in your language for notes and for each button.
 Hide note counts	Not sayılarını gizle
 Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.	Gönderilerin altındaki beğeni, RB ve yorum sayılarını kaldırır, düğmeler kalır.
 Hide the like button	Beğen düğmesini gizle
@@ -264,6 +264,8 @@ Hide the comment button	Yorum düğmesini gizle
 Takes the comment button out of the footer under posts. Restart Tumblr to see the change.	Gönderilerin altındaki yorum düğmesini kaldırır. Değişikliği görmek için Tumblr'ı yeniden başlat.
 Hide the share button	Paylaş düğmesini gizle
 Takes the share button out of the footer under posts. Restart Tumblr to see the change.	Gönderilerin altındaki paylaş düğmesini kaldırır. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Hide the Save button	Kaydet düğmesini gizle
+Takes the Save button out of the footer under posts, when Tumblr shows one. Restart Tumblr to see the change.	Tumblr gösterdiğinde gönderilerin altındaki kaydet düğmesini kaldırır. Değişikliği görmek için Tumblr'ı yeniden başlat.
 # context: the bottom bar's unread badges, the small dots and numbers on the Dashboard, Communities and Notifications tabs, one switch per tab. Use Tumblr's own names for the tabs in your language.
 Hide unread dots	Okunmadı noktalarını gizle
 Hide the Dashboard count	Pano sayacını gizle

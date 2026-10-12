@@ -49,7 +49,8 @@ import app.hushtumblr.extension.tumblr.settings.Settings;
  * Compose button got. The community comment button writes "3 comments" rather than a bare number, so
  * {@link #communityCommentsText} swaps that text for Tumblr's own "Comments" ({@link #textCount}
  * blanks the count Tumblr bolds in it along with it), and {@link #notesTitle} does the same for the
- * count at the top of a post's notes.
+ * count at the top of a post's notes. Each reaction button writes its emoji and how many reacted,
+ * and {@link #communityReactionsText} leaves just the emoji.
  */
 public final class PostFooter {
     private PostFooter() {}
@@ -104,6 +105,29 @@ public final class PostFooter {
      */
     public static String communityCommentsText(String text) {
         return countFree(text, COMMENTS_LABEL, () -> L10n.t("Comments"), "comment count hidden");
+    }
+
+    /**
+     * Injected where a community post's reaction button is about to show its text: the reactions'
+     * emoji, a space and [count], how many reacted. Just the emoji while Hide note counts is on,
+     * read each time the button is bound. The text itself otherwise, or when it doesn't end in that
+     * count. Never throws.
+     */
+    public static String communityReactionsText(String text, int count) {
+        if (text == null || !Utils.settingsReady()) return text;
+        try {
+            if (!PatchFamily.Capability.NOTE_COUNTS.installed()) return text;
+            HookStatus.invoked(FamilyNames.HIDE_NOTE_COUNTS);
+            if (!Settings.HIDE_NOTE_COUNTS.get()) return text;
+            // Tumblr appends the total with StringBuilder.append(int), which writes it the way this does.
+            String total = " " + count;
+            if (!text.endsWith(total)) return text;
+            HookStatus.counted(FamilyNames.HIDE_NOTE_COUNTS, "reaction count hidden");
+            return text.substring(0, text.length() - total.length());
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.HIDE_NOTE_COUNTS, "reaction count", failure);
+            return text;
+        }
     }
 
     /**
@@ -185,6 +209,15 @@ public final class PostFooter {
     public static boolean hideShareButton() {
         return hides(PatchFamily.Capability.SHARE_BUTTON, FamilyNames.HIDE_SHARE_BUTTON,
                 Settings.HIDE_SHARE_BUTTON, "share button hidden");
+    }
+
+    /**
+     * Injected first in the footer's Save button, which Tumblr draws only while its POST_STASH flag
+     * is on. True while Hide the Save button is on.
+     */
+    public static boolean hideSaveButton() {
+        return hides(PatchFamily.Capability.SAVE_BUTTON, FamilyNames.HIDE_SAVE_BUTTON, Settings.HIDE_SAVE_BUTTON,
+                "save button hidden");
     }
 
     /**

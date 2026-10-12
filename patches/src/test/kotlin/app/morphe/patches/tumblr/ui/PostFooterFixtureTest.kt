@@ -32,9 +32,10 @@ import org.junit.experimental.categories.Category
 import java.io.File
 
 /**
- * The footer's count formatter and each of its four buttons in each declared build. The formatter
- * gets the extension's count in place of its own first thing, and the community comment text and
- * the notes title go to the extension as they're written; each button gets the question in front
+ * The footer's count formatter and each of its five buttons in each declared build. The formatter
+ * gets the extension's count in place of its own first thing, the community comment text and the
+ * notes title go to the extension as they're written, and a community reaction's text goes to it
+ * with its count before it's shown; each button gets the question in front
  * of its first instruction and returns at once on true, and the like, comment and share buttons'
  * community controls go to the extension at the end of the community footer's bind. Tumblr's code
  * is otherwise unchanged, and each patch turns its switch and its target on.
@@ -54,6 +55,8 @@ class PostFooterFixtureTest {
                 context.resolveNotesTitle() to NOTES_TITLE_HOOK,
             )
             val textsBefore = texts.map { (site, _) -> site.method.instructionList().map { it.opcode } }
+            val reactions = context.resolveCommunityReactionsText()
+            val reactionsBefore = reactions.method.instructionList().map { it.opcode }
             assertEquals("${build.name}: the community comment count is handed over with its text", true,
                 texts.first().first.count != null)
             assertEquals("${build.name}: the notes title has no count of its own", null, texts.last().first.count)
@@ -89,6 +92,18 @@ class PostFooterFixtureTest {
                 assertEquals("$where: Tumblr's own code around it", textsBefore[index],
                     text.filterIndexed { at, _ -> at !in site.at until site.at + added }.map { it.opcode })
             }
+            val reaction = context.bodyOf(reactions.method)
+            val where = "${reactions.method.definingClass}->${reactions.method.name}"
+            assertEquals("$where: two instructions added", reactionsBefore.size + 2, reaction.size)
+            assertEquals("$where: the extension is handed the text and its count",
+                COMMUNITY_REACTIONS_TEXT_HOOK, reaction[reactions.at].call())
+            assertEquals(where, listOf(reactions.text, reactions.count), reaction[reactions.at].namedRegisters())
+            assertEquals("$where: its answer is the text", Opcode.MOVE_RESULT_OBJECT, reaction[reactions.at + 1].opcode)
+            assertEquals(where, reactions.text, (reaction[reactions.at + 1] as OneRegisterInstruction).registerA)
+            assertEquals("$where: then Tumblr shows it", "Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V",
+                reaction[reactions.at + 2].call())
+            assertEquals("$where: Tumblr's own code around it", reactionsBefore,
+                reaction.filterIndexed { at, _ -> at !in reactions.at until reactions.at + 2 }.map { it.opcode })
             assertSwitchedOn(context, build.name, "hideNoteCounts", "noteCounts")
         }
     }
@@ -111,6 +126,10 @@ class PostFooterFixtureTest {
     fun `each declared build returns from the share button first thing when asked to`() =
         checkButton(hideShareButtonPatch, SHARE_CONTROL, HIDE_SHARE_HOOK, "hideShareButton", "shareButton",
             HIDE_COMMUNITY_SHARE_HOOK to COMMUNITY_SHARE_CONTROLS)
+
+    @Test
+    fun `each declared build returns from the Save button first thing when asked to`() =
+        checkButton(hideSaveButtonPatch, SAVE_CONTROL, HIDE_SAVE_HOOK, "hideSaveButton", "saveButton", null)
 
     @Test
     fun `each declared build hands the community footer to every button patch it has`() {

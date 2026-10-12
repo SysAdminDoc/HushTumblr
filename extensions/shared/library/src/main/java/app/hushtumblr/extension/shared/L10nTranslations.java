@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(572);
+        Map<String, String> table = new HashMap<>(576);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -259,6 +259,8 @@ public final class L10nTranslations {
                 "Benachrichtigungsz\u00e4hler ausblenden");
         table.put("Hide the Notifications tab",
                 "Benachrichtigungen-Tab ausblenden");
+        table.put("Hide the Save button",
+                "Speichern-Button ausblenden");
         table.put("Hide the ad-free banner",
                 "Werbefrei-Banner ausblenden");
         table.put("Hide the comment button",
@@ -301,11 +303,11 @@ public final class L10nTranslations {
                 "HushTumblr pausiert, sobald Tumblr neu startet.");
         table.put("HushTumblr settings",
                 "HushTumblr-Einstellungen");
-        table.put("HushTumblr settings couldn't open",
-                "HushTumblr-Einstellungen lie\u00dfen sich nicht \u00f6ffnen");
     }
 
     private static void fillDe2(Map<String, String> table) {
+        table.put("HushTumblr settings couldn't open",
+                "HushTumblr-Einstellungen lie\u00dfen sich nicht \u00f6ffnen");
         table.put("HushTumblr turns back on when Tumblr restarts.",
                 "HushTumblr ist wieder aktiv, sobald Tumblr neu startet.");
         table.put("If you joined through Google or don't know your Tumblr password, ask for a password reset on Tumblr's login screen. Enter the email already linked to that account, then use the reset link sent to your email to set a Tumblr password. It's separate from your Google password.",
@@ -424,11 +426,11 @@ public final class L10nTranslations {
                 "Speichert deine Schalter in einer Datei. Sie gelten f\u00fcr alle Konten in dieser Tumblr-App. Pause und Debug-Protokollierung sind nicht enthalten, die Suche nach neuen Versionen auch nicht.");
         table.put("Saved. Restart Tumblr to apply this change.",
                 "Gespeichert. Starte Tumblr neu, um diese \u00c4nderung zu \u00fcbernehmen.");
-        table.put("Saving the settings file",
-                "Einstellungsdatei wird gespeichert");
     }
 
     private static void fillDe3(Map<String, String> table) {
+        table.put("Saving the settings file",
+                "Einstellungsdatei wird gespeichert");
         table.put("Search settings",
                 "Einstellungen suchen");
         table.put("Selecting links by hand",
@@ -499,6 +501,8 @@ public final class L10nTranslations {
                 "Entfernt den Folgen-Button aus dem Kopf von Beitr\u00e4gen aus Blogs, denen du noch nicht folgst.");
         table.put("Takes the Notifications button off the bottom bar. Restart Tumblr to see the change.",
                 "Entfernt die Schaltfl\u00e4che Benachrichtigungen aus der unteren Leiste. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
+        table.put("Takes the Save button out of the footer under posts, when Tumblr shows one. Restart Tumblr to see the change.",
+                "Nimmt den Speichern-Button aus der Leiste unter Beitr\u00e4gen, wenn Tumblr einen zeigt. Starte Tumblr neu, um die \u00c4nderung zu sehen.");
         table.put("Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there.",
                 "Entfernt den Tumblr-TV-Tab aus der unteren Leiste und verhindert, dass dich die Registrierung dorthin schickt.");
         table.put("Takes the blogs Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.",
@@ -545,13 +549,13 @@ public final class L10nTranslations {
                 "Die App, in der die Einstellungsdatei liegt, braucht zu lange, deshalb wartet HushTumblr nicht mehr. Sie kann das Speichern noch abschlie\u00dfen, also pr\u00fcfe die Datei, bevor du dich darauf verl\u00e4sst.");
         table.put("The bottom bar keeps Tumblr's order.",
                 "Die untere Leiste beh\u00e4lt die Reihenfolge von Tumblr.");
+    }
+
+    private static void fillDe4(Map<String, String> table) {
         table.put("The diagnostic report couldn't be saved yet. Try again in a moment.",
                 "Der Diagnosebericht lie\u00df sich noch nicht speichern. Versuche es gleich noch einmal.");
         table.put("The diagnostic report couldn't be saved. Try again.",
                 "Der Diagnosebericht lie\u00df sich nicht speichern. Versuche es noch einmal.");
-    }
-
-    private static void fillDe4(Map<String, String> table) {
         table.put("The file %1$s couldn't be removed. Delete it from %2$s to turn HushTumblr back on.",
                 "Die Datei %1$s lie\u00df sich nicht entfernen. L\u00f6sche sie aus %2$s, um HushTumblr wieder einzuschalten.");
         table.put("The file %1$s couldn't be removed. Delete it from %2$s, then tap Resume again.",
@@ -647,7 +651,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(572);
+        Map<String, String> table = new HashMap<>(576);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -856,6 +860,8 @@ public final class L10nTranslations {
                 "Ocultar el contador de Notificaciones");
         table.put("Hide the Notifications tab",
                 "Ocultar la pesta\u00f1a Notificaciones");
+        table.put("Hide the Save button",
+                "Ocultar el bot\u00f3n Guardar");
         table.put("Hide the ad-free banner",
                 "Ocultar el banner sin anuncios");
         table.put("Hide the comment button",
@@ -898,11 +904,11 @@ public final class L10nTranslations {
                 "HushTumblr se pausa cuando Tumblr se reinicie.");
         table.put("HushTumblr settings",
                 "Configuraci\u00f3n de HushTumblr");
-        table.put("HushTumblr settings couldn't open",
-                "No se pudo abrir la configuraci\u00f3n de HushTumblr");
     }
 
     private static void fillEs2(Map<String, String> table) {
+        table.put("HushTumblr settings couldn't open",
+                "No se pudo abrir la configuraci\u00f3n de HushTumblr");
         table.put("HushTumblr turns back on when Tumblr restarts.",
                 "HushTumblr vuelve a activarse cuando Tumblr se reinicie.");
         table.put("If you joined through Google or don't know your Tumblr password, ask for a password reset on Tumblr's login screen. Enter the email already linked to that account, then use the reset link sent to your email to set a Tumblr password. It's separate from your Google password.",
@@ -1021,11 +1027,11 @@ public final class L10nTranslations {
                 "Guarda tus interruptores en un archivo. Cubren todas las cuentas de esta app de Tumblr. La pausa y el Registro de depuraci\u00f3n no se incluyen, y la b\u00fasqueda de nuevas versiones tampoco.");
         table.put("Saved. Restart Tumblr to apply this change.",
                 "Guardado. Reinicia Tumblr para aplicar este cambio.");
-        table.put("Saving the settings file",
-                "Guardando el archivo de configuraci\u00f3n");
     }
 
     private static void fillEs3(Map<String, String> table) {
+        table.put("Saving the settings file",
+                "Guardando el archivo de configuraci\u00f3n");
         table.put("Search settings",
                 "Buscar ajustes");
         table.put("Selecting links by hand",
@@ -1096,6 +1102,8 @@ public final class L10nTranslations {
                 "Quita el bot\u00f3n Seguir de la cabecera de las publicaciones de blogs que a\u00fan no sigues.");
         table.put("Takes the Notifications button off the bottom bar. Restart Tumblr to see the change.",
                 "Quita el bot\u00f3n de Notificaciones de la barra inferior. Reinicia Tumblr para ver el cambio.");
+        table.put("Takes the Save button out of the footer under posts, when Tumblr shows one. Restart Tumblr to see the change.",
+                "Quita el bot\u00f3n Guardar del pie de las publicaciones, cuando Tumblr lo muestra. Reinicia Tumblr para ver el cambio.");
         table.put("Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there.",
                 "Quita la pesta\u00f1a de Tumblr TV de la barra inferior y evita que el registro te lleve all\u00ed.");
         table.put("Takes the blogs Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.",
@@ -1142,13 +1150,13 @@ public final class L10nTranslations {
                 "La app que guarda el archivo de configuraci\u00f3n tarda demasiado, as\u00ed que HushTumblr dej\u00f3 de esperar. Esa app a\u00fan puede terminar de guardarlo, as\u00ed que revisa el archivo antes de confiar en \u00e9l.");
         table.put("The bottom bar keeps Tumblr's order.",
                 "La barra inferior mantiene el orden de Tumblr.");
+    }
+
+    private static void fillEs4(Map<String, String> table) {
         table.put("The diagnostic report couldn't be saved yet. Try again in a moment.",
                 "Todav\u00eda no se pudo guardar el informe de diagn\u00f3stico. Int\u00e9ntalo de nuevo en un momento.");
         table.put("The diagnostic report couldn't be saved. Try again.",
                 "No se pudo guardar el informe de diagn\u00f3stico. Int\u00e9ntalo de nuevo.");
-    }
-
-    private static void fillEs4(Map<String, String> table) {
         table.put("The file %1$s couldn't be removed. Delete it from %2$s to turn HushTumblr back on.",
                 "No se pudo eliminar el archivo %1$s. B\u00f3rralo de %2$s para volver a activar HushTumblr.");
         table.put("The file %1$s couldn't be removed. Delete it from %2$s, then tap Resume again.",
@@ -1244,7 +1252,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(572);
+        Map<String, String> table = new HashMap<>(576);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -1453,6 +1461,8 @@ public final class L10nTranslations {
                 "Sembunyikan hitungan Notifikasi");
         table.put("Hide the Notifications tab",
                 "Sembunyikan tab Notifikasi");
+        table.put("Hide the Save button",
+                "Sembunyikan tombol simpan");
         table.put("Hide the ad-free banner",
                 "Sembunyikan banner bebas iklan");
         table.put("Hide the comment button",
@@ -1495,11 +1505,11 @@ public final class L10nTranslations {
                 "HushTumblr dijeda saat Tumblr dimulai ulang.");
         table.put("HushTumblr settings",
                 "Pengaturan HushTumblr");
-        table.put("HushTumblr settings couldn't open",
-                "Pengaturan HushTumblr tidak dapat dibuka");
     }
 
     private static void fillIn2(Map<String, String> table) {
+        table.put("HushTumblr settings couldn't open",
+                "Pengaturan HushTumblr tidak dapat dibuka");
         table.put("HushTumblr turns back on when Tumblr restarts.",
                 "HushTumblr aktif lagi saat Tumblr dimulai ulang.");
         table.put("If you joined through Google or don't know your Tumblr password, ask for a password reset on Tumblr's login screen. Enter the email already linked to that account, then use the reset link sent to your email to set a Tumblr password. It's separate from your Google password.",
@@ -1618,11 +1628,11 @@ public final class L10nTranslations {
                 "Simpan sakelar Anda ke sebuah file. Sakelar ini mencakup semua akun di aplikasi Tumblr ini. Jeda dan Pencatatan debug tidak disertakan, begitu pula pemeriksaan rilis.");
         table.put("Saved. Restart Tumblr to apply this change.",
                 "Tersimpan. Mulai ulang Tumblr untuk menerapkan perubahan ini.");
-        table.put("Saving the settings file",
-                "Menyimpan file pengaturan");
     }
 
     private static void fillIn3(Map<String, String> table) {
+        table.put("Saving the settings file",
+                "Menyimpan file pengaturan");
         table.put("Search settings",
                 "Cari pengaturan");
         table.put("Selecting links by hand",
@@ -1693,6 +1703,8 @@ public final class L10nTranslations {
                 "Menghapus tombol Ikuti dari bagian atas postingan dari blog yang belum kamu ikuti.");
         table.put("Takes the Notifications button off the bottom bar. Restart Tumblr to see the change.",
                 "Menghapus tombol Notifikasi dari bilah bawah. Mulai ulang Tumblr untuk melihat perubahannya.");
+        table.put("Takes the Save button out of the footer under posts, when Tumblr shows one. Restart Tumblr to see the change.",
+                "Menghapus tombol simpan dari bagian bawah postingan, saat Tumblr menampilkannya. Mulai ulang Tumblr untuk melihat perubahannya.");
         table.put("Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there.",
                 "Menghapus tab Tumblr TV dari bilah bawah dan mencegah pendaftaran mengarahkanmu ke sana.");
         table.put("Takes the blogs Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.",
@@ -1739,13 +1751,13 @@ public final class L10nTranslations {
                 "Aplikasi yang menyimpan file pengaturan terlalu lama, jadi HushTumblr berhenti menunggu. Aplikasi itu mungkin masih menyelesaikan penyimpanannya, jadi periksa file itu sebelum mengandalkannya.");
         table.put("The bottom bar keeps Tumblr's order.",
                 "Bilah bawah tetap memakai urutan Tumblr.");
+    }
+
+    private static void fillIn4(Map<String, String> table) {
         table.put("The diagnostic report couldn't be saved yet. Try again in a moment.",
                 "Laporan diagnostik belum dapat disimpan. Coba lagi dalam beberapa saat.");
         table.put("The diagnostic report couldn't be saved. Try again.",
                 "Laporan diagnostik tidak dapat disimpan. Coba lagi.");
-    }
-
-    private static void fillIn4(Map<String, String> table) {
         table.put("The file %1$s couldn't be removed. Delete it from %2$s to turn HushTumblr back on.",
                 "File %1$s tidak dapat dihapus. Hapus file itu dari %2$s untuk mengaktifkan HushTumblr lagi.");
         table.put("The file %1$s couldn't be removed. Delete it from %2$s, then tap Resume again.",
@@ -1841,7 +1853,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(572);
+        Map<String, String> table = new HashMap<>(576);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -2050,6 +2062,8 @@ public final class L10nTranslations {
                 "Ocultar a contagem de Notifica\u00e7\u00f5es");
         table.put("Hide the Notifications tab",
                 "Ocultar a aba Notifica\u00e7\u00f5es");
+        table.put("Hide the Save button",
+                "Ocultar o bot\u00e3o de salvar");
         table.put("Hide the ad-free banner",
                 "Ocultar o banner sem an\u00fancios");
         table.put("Hide the comment button",
@@ -2092,11 +2106,11 @@ public final class L10nTranslations {
                 "O HushTumblr ser\u00e1 pausado quando o Tumblr for reiniciado.");
         table.put("HushTumblr settings",
                 "Configura\u00e7\u00f5es do HushTumblr");
-        table.put("HushTumblr settings couldn't open",
-                "N\u00e3o foi poss\u00edvel abrir as configura\u00e7\u00f5es do HushTumblr");
     }
 
     private static void fillPt_rBR2(Map<String, String> table) {
+        table.put("HushTumblr settings couldn't open",
+                "N\u00e3o foi poss\u00edvel abrir as configura\u00e7\u00f5es do HushTumblr");
         table.put("HushTumblr turns back on when Tumblr restarts.",
                 "O HushTumblr ser\u00e1 reativado quando o Tumblr for reiniciado.");
         table.put("If you joined through Google or don't know your Tumblr password, ask for a password reset on Tumblr's login screen. Enter the email already linked to that account, then use the reset link sent to your email to set a Tumblr password. It's separate from your Google password.",
@@ -2215,11 +2229,11 @@ public final class L10nTranslations {
                 "Salve suas op\u00e7\u00f5es em um arquivo. Elas valem para todas as contas deste app do Tumblr. Pausa e Registro de depura\u00e7\u00e3o n\u00e3o s\u00e3o inclu\u00eddos, nem a verifica\u00e7\u00e3o de novas vers\u00f5es.");
         table.put("Saved. Restart Tumblr to apply this change.",
                 "Salvo. Reinicie o Tumblr para aplicar esta altera\u00e7\u00e3o.");
-        table.put("Saving the settings file",
-                "Salvando o arquivo de configura\u00e7\u00f5es");
     }
 
     private static void fillPt_rBR3(Map<String, String> table) {
+        table.put("Saving the settings file",
+                "Salvando o arquivo de configura\u00e7\u00f5es");
         table.put("Search settings",
                 "Buscar configura\u00e7\u00f5es");
         table.put("Selecting links by hand",
@@ -2290,6 +2304,8 @@ public final class L10nTranslations {
                 "Tira o bot\u00e3o Seguir do topo dos posts de blogs que voc\u00ea ainda n\u00e3o segue.");
         table.put("Takes the Notifications button off the bottom bar. Restart Tumblr to see the change.",
                 "Tira o bot\u00e3o de Notifica\u00e7\u00f5es da barra de baixo. Reinicie o Tumblr para ver a mudan\u00e7a.");
+        table.put("Takes the Save button out of the footer under posts, when Tumblr shows one. Restart Tumblr to see the change.",
+                "Tira o bot\u00e3o de salvar do rodap\u00e9 dos posts, quando o Tumblr mostra um. Reinicie o Tumblr para ver a mudan\u00e7a.");
         table.put("Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there.",
                 "Tira a aba do Tumblr TV da barra inferior e impede que o cadastro mande voc\u00ea para l\u00e1.");
         table.put("Takes the blogs Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.",
@@ -2336,13 +2352,13 @@ public final class L10nTranslations {
                 "O app que guarda o arquivo de configura\u00e7\u00f5es est\u00e1 demorando demais, ent\u00e3o o HushTumblr parou de esperar. Esse app ainda pode terminar de salv\u00e1-lo, ent\u00e3o confira o arquivo antes de confiar nele.");
         table.put("The bottom bar keeps Tumblr's order.",
                 "A barra de baixo mant\u00e9m a ordem do Tumblr.");
+    }
+
+    private static void fillPt_rBR4(Map<String, String> table) {
         table.put("The diagnostic report couldn't be saved yet. Try again in a moment.",
                 "O relat\u00f3rio de diagn\u00f3stico ainda n\u00e3o p\u00f4de ser salvo. Tente de novo em instantes.");
         table.put("The diagnostic report couldn't be saved. Try again.",
                 "N\u00e3o foi poss\u00edvel salvar o relat\u00f3rio de diagn\u00f3stico. Tente de novo.");
-    }
-
-    private static void fillPt_rBR4(Map<String, String> table) {
         table.put("The file %1$s couldn't be removed. Delete it from %2$s to turn HushTumblr back on.",
                 "N\u00e3o foi poss\u00edvel remover o arquivo %1$s. Exclua-o de %2$s para reativar o HushTumblr.");
         table.put("The file %1$s couldn't be removed. Delete it from %2$s, then tap Resume again.",
@@ -2438,7 +2454,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(572);
+        Map<String, String> table = new HashMap<>(576);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -2647,6 +2663,8 @@ public final class L10nTranslations {
                 "Bildirimler sayac\u0131n\u0131 gizle");
         table.put("Hide the Notifications tab",
                 "Bildirimler sekmesini gizle");
+        table.put("Hide the Save button",
+                "Kaydet d\u00fc\u011fmesini gizle");
         table.put("Hide the ad-free banner",
                 "Reklams\u0131z gezinme banner'\u0131n\u0131 gizle");
         table.put("Hide the comment button",
@@ -2689,11 +2707,11 @@ public final class L10nTranslations {
                 "HushTumblr, Tumblr yeniden ba\u015flad\u0131\u011f\u0131nda duraklat\u0131l\u0131r.");
         table.put("HushTumblr settings",
                 "HushTumblr ayarlar\u0131");
-        table.put("HushTumblr settings couldn't open",
-                "HushTumblr ayarlar\u0131 a\u00e7\u0131lamad\u0131");
     }
 
     private static void fillTr2(Map<String, String> table) {
+        table.put("HushTumblr settings couldn't open",
+                "HushTumblr ayarlar\u0131 a\u00e7\u0131lamad\u0131");
         table.put("HushTumblr turns back on when Tumblr restarts.",
                 "HushTumblr, Tumblr yeniden ba\u015flad\u0131\u011f\u0131nda tekrar a\u00e7\u0131l\u0131r.");
         table.put("If you joined through Google or don't know your Tumblr password, ask for a password reset on Tumblr's login screen. Enter the email already linked to that account, then use the reset link sent to your email to set a Tumblr password. It's separate from your Google password.",
@@ -2812,11 +2830,11 @@ public final class L10nTranslations {
                 "Anahtarlar\u0131n\u0131 bir dosyaya kaydet. Anahtarlar bu Tumblr uygulamas\u0131ndaki t\u00fcm hesaplar i\u00e7in ge\u00e7erlidir. Duraklatma ve Hata ay\u0131klama g\u00fcnl\u00fc\u011f\u00fc dahil edilmez, s\u00fcr\u00fcm denetimi de edilmez.");
         table.put("Saved. Restart Tumblr to apply this change.",
                 "Kaydedildi. Bu de\u011fi\u015fikli\u011fi uygulamak i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
-        table.put("Saving the settings file",
-                "Ayar dosyas\u0131 kaydediliyor");
     }
 
     private static void fillTr3(Map<String, String> table) {
+        table.put("Saving the settings file",
+                "Ayar dosyas\u0131 kaydediliyor");
         table.put("Search settings",
                 "Ayarlarda ara");
         table.put("Selecting links by hand",
@@ -2887,6 +2905,8 @@ public final class L10nTranslations {
                 "Hen\u00fcz takip etmedi\u011fin bloglar\u0131n g\u00f6nderilerinin ba\u015fl\u0131\u011f\u0131ndaki Takip et d\u00fc\u011fmesini kald\u0131r\u0131r.");
         table.put("Takes the Notifications button off the bottom bar. Restart Tumblr to see the change.",
                 "Bildirimler d\u00fc\u011fmesini alt \u00e7ubuktan kald\u0131r\u0131r. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
+        table.put("Takes the Save button out of the footer under posts, when Tumblr shows one. Restart Tumblr to see the change.",
+                "Tumblr g\u00f6sterdi\u011finde g\u00f6nderilerin alt\u0131ndaki kaydet d\u00fc\u011fmesini kald\u0131r\u0131r. De\u011fi\u015fikli\u011fi g\u00f6rmek i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
         table.put("Takes the Tumblr TV tab out of the bottom bar, and keeps sign-up from sending you there.",
                 "Tumblr TV sekmesini alt \u00e7ubuktan kald\u0131r\u0131r ve kay\u0131t olduktan sonra seni oraya g\u00f6ndermesini engeller.");
         table.put("Takes the blogs Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.",
@@ -2933,13 +2953,13 @@ public final class L10nTranslations {
                 "Ayar dosyas\u0131n\u0131 tutan uygulama \u00e7ok uzun s\u00fcr\u00fcyor, bu y\u00fczden HushTumblr beklemeyi b\u0131rakt\u0131. O uygulama kaydetmeyi yine de bitirebilir, bu y\u00fczden dosyaya g\u00fcvenmeden \u00f6nce onu kontrol et.");
         table.put("The bottom bar keeps Tumblr's order.",
                 "Alt \u00e7ubuk Tumblr'\u0131n s\u0131ras\u0131n\u0131 korur.");
+    }
+
+    private static void fillTr4(Map<String, String> table) {
         table.put("The diagnostic report couldn't be saved yet. Try again in a moment.",
                 "Tan\u0131lama raporu hen\u00fcz kaydedilemedi. Birazdan tekrar dene.");
         table.put("The diagnostic report couldn't be saved. Try again.",
                 "Tan\u0131lama raporu kaydedilemedi. Tekrar dene.");
-    }
-
-    private static void fillTr4(Map<String, String> table) {
         table.put("The file %1$s couldn't be removed. Delete it from %2$s to turn HushTumblr back on.",
                 "%1$s dosyas\u0131 kald\u0131r\u0131lamad\u0131. HushTumblr'\u0131 yeniden a\u00e7mak i\u00e7in onu %2$s i\u00e7inden sil.");
         table.put("The file %1$s couldn't be removed. Delete it from %2$s, then tap Resume again.",

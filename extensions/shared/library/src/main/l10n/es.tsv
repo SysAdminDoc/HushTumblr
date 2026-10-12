@@ -253,7 +253,7 @@ Hide the diamond and TumblrMart	Ocultar el diamante y TumblrMart
 Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.	Oculta el diamante de Premium y el botón de TumblrMart en la parte de arriba de tu panel, Explorar y notificaciones. Reinicia Tumblr para ver el cambio.
 the Premium diamond	el diamante de Premium
 TumblrMart buttons	los botones de TumblrMart
-# context: the footer under a post, with its like, reblog, comment and share buttons and their counts. Use the words Tumblr shows in your language for notes and for each button.
+# context: the footer under a post, with its like, reblog, comment, share and Save buttons and their counts. Use the words Tumblr shows in your language for notes and for each button.
 Hide note counts	Ocultar el número de notas
 Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.	Quita los números de Me gusta, reblogueos y comentarios del pie de las publicaciones, y deja los botones.
 Hide the like button	Ocultar el botón Me gusta
@@ -264,6 +264,8 @@ Hide the comment button	Ocultar el botón de comentarios
 Takes the comment button out of the footer under posts. Restart Tumblr to see the change.	Quita el botón de comentarios del pie de las publicaciones. Reinicia Tumblr para ver el cambio.
 Hide the share button	Ocultar el botón Compartir
 Takes the share button out of the footer under posts. Restart Tumblr to see the change.	Quita el botón Compartir del pie de las publicaciones. Reinicia Tumblr para ver el cambio.
+Hide the Save button	Ocultar el botón Guardar
+Takes the Save button out of the footer under posts, when Tumblr shows one. Restart Tumblr to see the change.	Quita el botón Guardar del pie de las publicaciones, cuando Tumblr lo muestra. Reinicia Tumblr para ver el cambio.
 # context: the bottom bar's unread badges, the small dots and numbers on the Dashboard, Communities and Notifications tabs, one switch per tab. Use Tumblr's own names for the tabs in your language.
 Hide unread dots	Ocultar los puntos de no leídos
 Hide the Dashboard count	Ocultar el contador del Panel

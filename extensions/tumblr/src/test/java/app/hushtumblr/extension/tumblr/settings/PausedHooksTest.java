@@ -154,8 +154,10 @@ public class PausedHooksTest {
         probes.put(Settings.HIDE_FOLLOW_BUTTON, Collections.singletonList(PostParts::hideFollowButton));
         // The Premium diamond is hidden.
         probes.put(Settings.HIDE_TUMBLRMART, Collections.singletonList(() -> StoreButtons.hideDiamond(null, null)));
-        // The like, reblog and comment counts under a post are blank.
-        probes.put(Settings.HIDE_NOTE_COUNTS, Collections.singletonList(() -> PostFooter.noteCount(5) == 0));
+        // The like, reblog and comment counts under a post are blank, and a community reaction keeps
+        // its emoji without its count.
+        probes.put(Settings.HIDE_NOTE_COUNTS, Arrays.asList(() -> PostFooter.noteCount(5) == 0,
+                () -> "😀".equals(PostFooter.communityReactionsText("😀 5", 5))));
         // The footer under a post leaves out a button. Each answer is kept until Tumblr restarts, so
         // each probe asks as a fresh start would.
         probes.put(Settings.HIDE_LIKE_BUTTON,
@@ -166,6 +168,8 @@ public class PausedHooksTest {
                 Collections.singletonList(() -> PostFooterForTests.askedAfresh(PostFooter::hideCommentButton)));
         probes.put(Settings.HIDE_SHARE_BUTTON,
                 Collections.singletonList(() -> PostFooterForTests.askedAfresh(PostFooter::hideShareButton)));
+        probes.put(Settings.HIDE_SAVE_BUTTON,
+                Collections.singletonList(() -> PostFooterForTests.askedAfresh(PostFooter::hideSaveButton)));
         // The bottom bar gets no unread badge to pop in on that switch's tab.
         probes.put(Settings.HIDE_DASHBOARD_COUNT, Collections.singletonList(BottomBarForTests::hidesTheDashboardCount));
         probes.put(Settings.HIDE_COMMUNITIES_COUNT, Collections.singletonList(BottomBarForTests::hidesTheCommunitiesCount));
