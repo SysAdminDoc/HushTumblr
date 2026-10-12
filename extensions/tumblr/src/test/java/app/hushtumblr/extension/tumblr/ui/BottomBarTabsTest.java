@@ -31,6 +31,7 @@ import java.util.Map;
 
 import app.hushtumblr.extension.shared.SettingsContextRule;
 import app.hushtumblr.extension.shared.diagnostics.HookStatus;
+import app.hushtumblr.extension.shared.settings.HushTumblrPause;
 import app.hushtumblr.extension.shared.settings.PauseForTests;
 import app.hushtumblr.extension.tumblr.settings.PatchFamily;
 import app.hushtumblr.extension.tumblr.settings.PatchFamilyForTests;
@@ -104,7 +105,7 @@ public class BottomBarTabsTest {
     public void pausedTheListStaysTumblrs() {
         Settings.REORDER_TABS.save(true);
         TextSettings.TAB_ORDER.save("Account");
-        PauseForTests.pause();
+        PauseForTests.pause(HushTumblrPause.Reason.SWITCH);
         List<Object> tabs = BottomBarTabsForTests.tabs();
         BottomBarTabs.arrangeTabs(tabs);
         assertEquals(BottomBarTabsForTests.tabs(), tabs);
