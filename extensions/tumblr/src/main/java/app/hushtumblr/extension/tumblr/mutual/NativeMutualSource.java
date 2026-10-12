@@ -12,4 +12,3 @@ public final class NativeMutualSource implements HushMutualSource {
     @Override public Object execute(Object call, long timeoutMillis) { throw new UnsupportedOperationException("Native followers bridge"); }
     @Override public void cancel(Object call) { throw new UnsupportedOperationException("Native followers bridge"); }
 }
-

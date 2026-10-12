@@ -9,4 +9,3 @@ public interface HushMutualBlog {
     String hushMutualName();
     String hushMutualUuid();
 }
-

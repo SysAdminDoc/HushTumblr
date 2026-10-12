@@ -9,4 +9,3 @@ public interface HushMutualFollower {
     boolean hushMutualFollowing();
     Object hushMutualFollowerBlog();
 }
-

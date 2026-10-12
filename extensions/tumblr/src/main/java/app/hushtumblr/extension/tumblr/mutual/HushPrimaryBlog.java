@@ -8,4 +8,3 @@ package app.hushtumblr.extension.tumblr.mutual;
 public interface HushPrimaryBlog extends HushMutualBlog {
     boolean hushMutualPrimary();
 }
-

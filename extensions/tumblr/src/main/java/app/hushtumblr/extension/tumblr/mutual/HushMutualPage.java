@@ -10,4 +10,3 @@ public interface HushMutualPage {
     Object hushMutualPagination();
     Object hushMutualLinks();
 }
-

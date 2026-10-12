@@ -8,4 +8,3 @@ package app.hushtumblr.extension.tumblr.mutual;
 public interface HushMutualLink {
     String hushMutualLink();
 }
-

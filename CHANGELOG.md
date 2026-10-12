@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* **Tooling:** Expanded compiled-code checks to cover every patch family and its original fallback. Altered hooks are rejected before a device build.
 * **Tumblr:** Long word lists now scroll inside the editor, keeping Save and Cancel within reach.
 * **Tumblr:** Saving a word list during an import now checks and saves the combined size in one step. Older backups ignore unsupported allowed-word fields instead of rejecting the whole file.
 * **Tooling:** Gallery cleanup is checked against the captions it owns, including recycling while the feature is paused. The verifier rejects unowned removals and escaped caption references.

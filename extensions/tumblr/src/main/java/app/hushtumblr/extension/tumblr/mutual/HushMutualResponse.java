@@ -9,4 +9,3 @@ public interface HushMutualResponse {
     Object hushMutualResponse();
     int hushMutualStatus();
 }
-

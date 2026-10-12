@@ -11,4 +11,3 @@ public interface HushMutualSource {
     Object execute(Object call, long timeoutMillis);
     void cancel(Object call);
 }
-
