@@ -24,6 +24,8 @@ The latest release is [v0.0.1](https://github.com/SysAdminDoc/HushTumblr/release
 
 The v0.0.3 source adds more feed controls and fixes saving, importing and restoring settings. Search and the category pages use dark cards with pale blue controls and room for descriptions. Your saved choices stay the same.
 
+Settings mirror for right-to-left languages. Local post muting is available from Tumblr's redesigned post menu, with Undo to bring the post back.
+
 ![HushTumblr settings overview, Feed and Privacy pages](assets/settings-preview.png)
 
 ## Supported version
