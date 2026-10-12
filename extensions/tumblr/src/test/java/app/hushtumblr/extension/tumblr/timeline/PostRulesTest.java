@@ -119,14 +119,21 @@ public class PostRulesTest {
         assertEquals(Arrays.asList(TEXT, PHOTO), shown(TEXT, reblog, PHOTO));
     }
 
-    /** A paid Blaze post is judged by the post inside it when Hide ads leaves it in. */
+    /**
+     * A campaign in your own Blaze dashboard carries your post, but it isn't a post in a feed, so no
+     * post switch takes it out. The same posts in a feed go, as the control.
+     */
     @Test
-    public void aBlazePostIsJudgedByThePostItCarries() {
+    public void aBlazeCampaignIsLeftAloneByThePostSwitches() {
+        Settings.HIDE_REBLOGS.save(true);
         Settings.HIDE_VIDEO_POSTS.save(true);
-        TimelineObject blazed = TimelineItems.blazed(VIDEO);
-        assertEquals(Collections.singletonList(TEXT), shown(blazed, TEXT));
-        TimelineObject blazedText = TimelineItems.blazed(TEXT);
-        assertEquals(Collections.singletonList(blazedText), shown(blazedText));
+        Settings.HIDE_TEXT_POSTS.save(true);
+        TimelineObject reblog = TimelineItems.reblogOf(Collections.singletonList(new TextBlock("first")));
+        TimelineObject campaign = TimelineItems.blazed(VIDEO);
+        TimelineObject reblogCampaign = TimelineItems.blazed(reblog);
+        TimelineObject textCampaign = TimelineItems.blazed(TEXT);
+        assertEquals(Arrays.asList(campaign, reblogCampaign, textCampaign),
+                shown(campaign, VIDEO, reblogCampaign, reblog, textCampaign, TEXT));
     }
 
     @Test

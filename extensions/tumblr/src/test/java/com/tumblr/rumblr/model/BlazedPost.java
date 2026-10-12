@@ -6,8 +6,8 @@
 package com.tumblr.rumblr.model;
 
 /**
- * Stands in for Tumblr's BlazedPost, a paid promotion of a post. The post filters find it by this
- * class name and read the post inside through {@code getPost}, a name Tumblr keeps.
+ * Stands in for Tumblr's BlazedPost, one campaign in the list of your own Blaze dashboard, with the
+ * post it promotes inside under {@code getPost}. The filters leave it alone.
  */
 public final class BlazedPost implements Timelineable {
     private final Object post;

@@ -126,6 +126,17 @@ public class TimelineFilterTest {
         assertSame(page, TimelineFilter.filter(page));
     }
 
+    /**
+     * Your own Blaze dashboard lists your campaigns as BLAZED_POST items, built through the same
+     * page, so Hide ads leaves the whole list as Tumblr built it.
+     */
+    @Test
+    public void yourOwnBlazeCampaignListStays() {
+        List<Object> page = Arrays.asList(TimelineItems.blazed(TimelineItems.post()),
+                TimelineItems.blazed(TimelineItems.postWith()), TimelineItems.of(TimelineObjectType.BLAZED_POST));
+        assertSame(page, TimelineFilter.filter(page));
+    }
+
     /** A page with nothing to take out comes back as the very list Tumblr built. */
     @Test
     public void postsAndOtherItemsStay() {

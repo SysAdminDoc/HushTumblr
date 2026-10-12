@@ -114,7 +114,7 @@ public final class TimelineItems {
         return new TimelineObject(new Post(Collections.emptyList(), null, Arrays.asList(tags), summary, null), false);
     }
 
-    /** A paid Blaze post carrying [post]'s payload. */
+    /** A campaign in your own Blaze dashboard's list, carrying [post]'s payload. */
     public static TimelineObject blazed(TimelineObject post) {
         return new TimelineObject(new BlazedPost(post.getData()), false);
     }

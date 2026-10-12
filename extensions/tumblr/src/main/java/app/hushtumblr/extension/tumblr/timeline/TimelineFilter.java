@@ -61,14 +61,14 @@ public final class TimelineFilter {
     static final String SPONSORED = "SPONSORED";
 
     /**
-     * The kinds of item that are an ad or a paid placement whatever else they carry, by the constant
-     * names Tumblr's {@code TimelineObjectType} keeps. {@code BLAZED_POST} is a post someone paid
-     * Tumblr to show to people who don't follow them.
+     * The kinds of item that are an ad whatever else they carry, by the constant names Tumblr's
+     * {@code TimelineObjectType} keeps. {@code BLAZED_POST} isn't one: it's a campaign in the list
+     * of your own Blaze dashboard, which loads through the same page. A paid Blaze post in a feed is
+     * a post served as sponsored, see {@link Model#isPaidPlacement}.
      */
     static final Set<String> AD_TYPES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             "GEMINI_AD", "FACEBOOK_BIDDAABLE", "NIMBUS_AD", "DISPLAY_IO_INTERSCROLLER_S2S_ADS", "VUNGLE_AD",
-            "CLIENT_SIDE_AD", "CLIENT_SIDE_MEDIATION", "DISPLAY_IO_INTERSCROLLER_AD", "GOOGLE_NATIVE",
-            "BLAZED_POST")));
+            "CLIENT_SIDE_AD", "CLIENT_SIDE_MEDIATION", "DISPLAY_IO_INTERSCROLLER_AD", "GOOGLE_NATIVE")));
 
     /** Blogs Tumblr suggests you follow, as cards, rows and the small cards of a carousel. */
     static final Set<String> BLOG_TYPES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(

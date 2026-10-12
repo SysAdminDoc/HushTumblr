@@ -7,7 +7,6 @@ package app.hushtumblr.extension.tumblr.timeline;
 
 import androidx.annotation.Nullable;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,8 +31,8 @@ import app.hushtumblr.extension.tumblr.settings.TextSettings;
  * and hands each item's payload to {@link #removes}.
  *
  * <p>A post is read through {@link HushPost}, which the post bridge patch adds to Tumblr's post
- * model. A paid Blaze post carries its post inside, read by {@code getPost}, a name Tumblr keeps.
- * Anything that can't be read is kept.
+ * model. Anything else is kept, a campaign in your own Blaze dashboard included: it carries your
+ * post, but it isn't a post in a feed. Anything that can't be read is kept too.
  *
  * <p>A post's kind comes from all of its blocks, the ones in its reblog trail and its own: any
  * video block makes it a video post, any image block without a video makes it a photo post, and
@@ -42,7 +41,6 @@ import app.hushtumblr.extension.tumblr.settings.TextSettings;
 public final class PostRules {
     static final String VIDEO_BLOCK = "com.tumblr.rumblr.model.post.blocks.VideoBlock";
     static final String IMAGE_BLOCK = "com.tumblr.rumblr.model.post.blocks.ImageBlock";
-    static final String BLAZED_POST = "com.tumblr.rumblr.model.BlazedPost";
 
     /** The families whose switches are here. A heading never goes with one of their posts. */
     static final Set<String> FAMILIES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
@@ -72,10 +70,6 @@ public final class PostRules {
     /** The last word list read and what it parsed to, so a page doesn't parse it again. */
     @Nullable
     private static volatile Parsed parsed;
-
-    /** {@code BlazedPost.getPost}, found the first time a Blaze post is read. */
-    @Nullable
-    private static volatile Method blazedPost;
 
     /** The post switches on now, or null when none is. Throws for TimelineFilter to report. */
     @Nullable
@@ -111,7 +105,7 @@ public final class PostRules {
      * null to keep it: anything that isn't a post, and a post that can't be read.
      */
     @Nullable
-    String removes(@Nullable Object payload) throws ReflectiveOperationException {
+    String removes(@Nullable Object payload) {
         HushPost post = postOf(payload);
         if (post == null) return null;
         List<?> trail = post.hushTrail();
@@ -126,18 +120,10 @@ public final class PostRules {
         return null;
     }
 
-    /** The post [payload] is or carries, or null when it's neither. */
+    /** The post [payload] is, or null when it isn't one. */
     @Nullable
-    static HushPost postOf(@Nullable Object payload) throws ReflectiveOperationException {
-        if (payload instanceof HushPost) return (HushPost) payload;
-        if (payload == null || !BLAZED_POST.equals(payload.getClass().getName())) return null;
-        Method getter = blazedPost;
-        if (getter == null || getter.getDeclaringClass() != payload.getClass()) {
-            getter = payload.getClass().getMethod("getPost");
-            blazedPost = getter;
-        }
-        Object inner = getter.invoke(payload);
-        return inner instanceof HushPost ? (HushPost) inner : null;
+    static HushPost postOf(@Nullable Object payload) {
+        return payload instanceof HushPost ? (HushPost) payload : null;
     }
 
     /** A reblog says which post it reblogs, and carries the posts before it in its trail. */
