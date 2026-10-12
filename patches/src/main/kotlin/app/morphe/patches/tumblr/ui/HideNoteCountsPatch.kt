@@ -208,7 +208,7 @@ internal fun BytecodePatchContext.resolveCommunityCommentsText(): CountTextSite 
     val plural = body.indexOfFirst { it.readsPlural(COMMUNITY_COMMENTS_PLURAL) }
     requireShape(PATCH, plural >= 0, "the community comment count isn't written with $COMMUNITY_COMMENTS_PLURAL")
     val written = (plural + 1 until body.size).firstOrNull { body[it].methodRef()?.returnType == STRING }
-    val site = writer.textSiteAfter(written, "the community comment count")
+    val site = textSiteAfter(writer, written, "the community comment count")
 
     val packed = (plural + 1 until site.at)
         .filter { body[it].opcode == Opcode.FILLED_NEW_ARRAY || body[it].opcode == Opcode.FILLED_NEW_ARRAY_RANGE }
@@ -246,7 +246,7 @@ internal fun BytecodePatchContext.resolveNotesTitle(): CountTextSite {
     val body = title.instructionList()
     val plural = body.indexOfFirst { it.readsPlural(NOTE_COUNT_PLURAL) }
     val written = (plural + 1 until body.size).firstOrNull { body[it].methodRef()?.name == "getQuantityString" }
-    val site = title.textSiteAfter(written, "the notes title")
+    val site = textSiteAfter(title, written, "the notes title")
     val shown = (site.at until body.size).firstOrNull { body[it].setsTitle() }
     requireShape(PATCH, shown != null && body[shown].namedRegisters().getOrNull(1) == site.register &&
         (site.at until shown).none { writesRegister(body[it], site.register) },
@@ -302,16 +302,16 @@ internal fun BytecodePatchContext.resolveCommunityReactionsText(): ReactionTextS
  * for a hook on it, throwing naming [what] when there's no such call, no move, or the place can't
  * take the hook.
  */
-private fun Method.textSiteAfter(written: Int?, what: String): CountTextSite {
-    val body = instructionList()
+private fun BytecodePatchContext.textSiteAfter(method: Method, written: Int?, what: String): CountTextSite {
+    val body = method.instructionList()
     val moved = written?.let { body.getOrNull(it + 1) }
     requireShape(PATCH, moved?.opcode == Opcode.MOVE_RESULT_OBJECT && body[written!!].methodRef()?.returnType == STRING,
         "$what isn't a String moved into a register")
     val register = (moved as OneRegisterInstruction).registerA
     val at = written!! + 2
     requireShape(PATCH, register <= 15, "$what is in v$register, past what the added call can name")
-    requireShape(PATCH, at < body.size && !isJumpTarget(at), "something jumps past the hook on $what")
-    return CountTextSite(mutableOf(this), at, register)
+    requireShape(PATCH, at < body.size && !method.isJumpTarget(at), "something jumps past the hook on $what")
+    return CountTextSite(mutableOf(method), at, register)
 }
 
 /** An `sget` of the plural resource named [name], from whichever R class holds it. */
