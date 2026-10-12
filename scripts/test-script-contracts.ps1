@@ -1546,8 +1546,8 @@ Write-Host '[scripts] advisory gate contracts passed'
 # README's Manager floor badge, its install steps, and its sentence naming the latest release with the
 # Morphe add-source link, each only where the README doesn't hold it yet; and a dated CHANGELOG
 # heading with one bullet Morphe Manager scopes to Tumblr. Everything else is this checkout's own
-# text. Once the index is committed, the three are copied like every other release file and have
-# to carry those facts themselves.
+# text. A later source version may keep notes under Unreleased until preparation. Strict release
+# fixtures date that section in their own copy; the real file and published index stay unchanged.
 $rootIndexPath = Join-Path $Root 'patches-bundle.json'
 $preRelease = -not (Test-Path -LiteralPath $rootIndexPath -PathType Leaf)
 $seedTarget = Get-PatchTarget -PatchList $catalog
@@ -1567,8 +1567,14 @@ $seedIndexText = ([ordered]@{
         signature_download_url = ''
         version = $seedVersion
     } | ConvertTo-Json)
+$rootChangelog = [System.IO.File]::ReadAllText((Join-Path $Root 'CHANGELOG.md'))
+$seedPendingChangelog = -not $preRelease -and
+    [version]$seedVersion -gt [version]((Get-Content -LiteralPath $rootIndexPath -Raw | ConvertFrom-Json).version) -and
+    @(Get-ChangelogVersions -Text $rootChangelog) -notcontains $seedVersion -and
+    $rootChangelog -match '(?m)^##[ \t]+Unreleased[ \t]*(?=\r?$)'
 function Test-SeededReleaseFile([string]$Relative) {
-    return $preRelease -and $Relative -in @('patches-bundle.json', 'README.md', 'CHANGELOG.md')
+    return ($preRelease -and $Relative -in @('patches-bundle.json', 'README.md', 'CHANGELOG.md')) -or
+        ($seedPendingChangelog -and $Relative -eq 'CHANGELOG.md')
 }
 function Get-ReleaseFileText([string]$Relative) {
     if (-not (Test-SeededReleaseFile $Relative)) { return [System.IO.File]::ReadAllText((Join-Path $Root $Relative)) }
@@ -1602,11 +1608,24 @@ function Get-ReleaseFileText([string]$Relative) {
             $readme + "`n"
         }
         'CHANGELOG.md' {
+            if ($seedPendingChangelog) {
+                return ([regex]'(?m)^##[ \t]+Unreleased[ \t]*(?=\r?$)').Replace($rootChangelog,
+                    "## $seedVersion (2026-09-29)", 1)
+            }
             ([regex]'(?m)^## ').Replace([System.IO.File]::ReadAllText((Join-Path $Root 'CHANGELOG.md')),
                 ("## $seedVersion (2026-09-29)`n`n* **Tumblr:** The first release, $(@($catalog.patches).Count) patches " +
                     "for Tumblr $($seedTarget.PackageVersion).`n`n## "), 1)
         }
     }
+}
+if ($seedPendingChangelog) {
+    $originalChangelog = $rootChangelog
+    try {
+        $rootChangelog = $rootChangelog -replace '\r?\n', "`r`n"
+        $windowsFixture = Get-ReleaseFileText 'CHANGELOG.md'
+        $entry = Test-ChangelogManagerEntry -Current $windowsFixture -ExpectedVersion $seedVersion
+        Assert-True $entry.Valid "Pending notes with Windows line endings did not produce a release fixture: $($entry.Reason)"
+    } finally { $rootChangelog = $originalChangelog }
 }
 function Copy-ReleaseFile([string]$Relative, [string]$Destination) {
     if (-not (Test-SeededReleaseFile $Relative)) {
@@ -1747,6 +1766,52 @@ try {
 
     $catalogVersion = ((Get-Content -LiteralPath (Join-Path $factsRoot 'gradle.properties')) `
         -match '^version\s*=' | Select-Object -First 1) -replace '^version\s*=\s*', ''
+
+    # Pending source notes are valid for an ordinary push, but cannot stand in for a release
+    # entry once the index catches up. Published history and non-empty pending notes still count.
+    $pendingNumber = [version]$catalogVersion
+    $pendingVersion = "$($pendingNumber.Major).$($pendingNumber.Minor).$($pendingNumber.Build + 1)"
+    Set-FactsFile 'gradle.properties' {
+        param($text) $text -replace '(?m)^(\s*version\s*=\s*)\S+', "`${1}$pendingVersion"
+    }
+    Set-FactsFile 'patches-list.json' {
+        param($text) $text.Replace('"v' + $catalogVersion + '"', '"v' + $pendingVersion + '"')
+    }
+    Copy-ReleaseFile 'patches-bundle.json' (Join-Path $factsRoot 'patches-bundle.json')
+    Copy-ReleaseFile 'README.md' (Join-Path $factsRoot 'README.md')
+    Copy-Item -LiteralPath (Join-Path $Root $bugFormRelative) -Destination (Join-Path $factsRoot $bugFormRelative) -Force
+    Set-FactsFile 'README.md' {
+        param($text) $text -replace 'badge/version-\d+(?:\.\d+)+-', "badge/version-$pendingVersion-" `
+            -replace 'alt="Version \d+(?:\.\d+)+"', "alt=`"Version $pendingVersion`""
+    }
+    Set-FactsFile 'CHANGELOG.md' {
+        param($text) "## Unreleased`n`n* **Tumblr:** Pending settings changes.`n`n$text"
+    }
+    $pendingChangelog = Get-Content -LiteralPath (Join-Path $factsRoot 'CHANGELOG.md') -Raw
+    Invoke-Facts -AllowLag
+    Assert-True ($LASTEXITCODE -eq 0) 'An ordinary source push with Unreleased notes was refused.'
+    Set-FactsFile 'CHANGELOG.md' {
+        param($text) $text -replace '(?ms)^## Unreleased.*?(?=^## |\z)', "## Unreleased`n`n"
+    }
+    Assert-Throws { Invoke-Facts -AllowLag } "*no heading for $pendingVersion*" `
+        'An undocumented source version was accepted during an index lag.'
+    Set-FactsFile 'CHANGELOG.md' { param($unused) $pendingChangelog }
+    $publishedChangelogVersion = Get-ReleaseIndexVersion
+    Set-FactsFile 'CHANGELOG.md' {
+        param($text) $text -replace ('(?m)^##\s+' + [regex]::Escape($publishedChangelogVersion) + '\b.*$'), '## Retired'
+    }
+    Assert-Throws { Invoke-Facts -AllowLag } "*no heading for $publishedChangelogVersion*" `
+        'Unreleased notes hid the removal of a published changelog entry.'
+    Set-FactsFile 'CHANGELOG.md' { param($unused) $pendingChangelog }
+    Sync-FixtureIndex
+    Sync-FixtureBugForm
+    Sync-FixtureReadme
+    Assert-Throws { Invoke-Facts } "*no heading for $pendingVersion*" `
+        'A release index accepted Unreleased notes instead of its dated entry.'
+    foreach ($name in @('gradle.properties', 'patches-list.json', 'README.md', 'CHANGELOG.md',
+            'patches-bundle.json', $bugFormRelative)) {
+        Reset-FactsFile $name
+    }
 
     # The windows the sync above exists for, built the way a move to a new Tumblr build makes
     # them: the catalog and the README move to a newer Tumblr build while the index

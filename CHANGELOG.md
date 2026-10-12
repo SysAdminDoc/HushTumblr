@@ -5,6 +5,7 @@
 * **Tumblr:** Refreshed every HushTumblr settings page with navy cards, pale blue controls and larger page titles. Navigation has outlined icon tiles, and switch descriptions have more room.
 * **Tumblr:** Backup and diagnostic actions now have separate cards. The words editor, tab order list and other dialogs use the same colors as the settings pages. Search, recovery and enlarged text follow the new design too.
 * **Tumblr:** Kept the existing settings, defaults and saved choices. Added current settings screenshots to the README.
+* **Tooling:** Source updates can keep their notes under Unreleased while the published bundle stays on its released version. Release checks still require a dated entry.
 
 ## 0.0.1 (2026-10-12)
 

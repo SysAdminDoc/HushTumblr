@@ -907,8 +907,9 @@ function Test-ChangelogHere {
         version in a form Morphe Manager can show.
     .DESCRIPTION
         Held against the file as it stood at the most recent tag reachable from HEAD, which is
-        read with git. A checkout with no tag, or one where that tag carried no CHANGELOG, is
-        still held to naming the version it builds; there is simply nothing older to compare.
+        read with git. Publication requires a dated entry for the built version. An ordinary
+        source push ahead of the index may keep pending notes under Unreleased, while the
+        published version still needs its dated entry. No tag means no older file to compare.
     #>
     $path = Join-Path $rootPath 'CHANGELOG.md'
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
@@ -930,7 +931,19 @@ function Test-ChangelogHere {
         }
     }
 
-    $arguments = @{ Current = $current; ExpectedVersion = $releaseVersion }
+    $changelogVersion = $releaseVersion
+    $pending = [regex]::Match($current,
+        '(?ms)^##[ \t]+Unreleased[ \t]*\r?\n(?<entry>.*?)(?=^#{1,2}[ \t]|\z)')
+    # An ordinary source push can precede release preparation. Keep its notes pending while
+    # still requiring the published release's dated entry and all earlier release history.
+    # A matching index, a release gate or an empty pending section gets no exception.
+    if ($AllowPublishedIndexLag -and $indexLagsSource -and $releaseVersion -ne $publishedVersion -and
+            @(Get-ChangelogVersions -Text $current) -notcontains $releaseVersion -and $pending.Success -and
+            $pending.Groups['entry'].Value -match '(?m)^\* \*\*(?:Tumblr|Tooling):\*\*\s+\S') {
+        $changelogVersion = $publishedVersion
+        Write-Host "[release] source $releaseVersion has Unreleased notes; checking published $publishedVersion history"
+    }
+    $arguments = @{ Current = $current; ExpectedVersion = $changelogVersion }
     if ($null -ne $previous) {
         $arguments['Previous'] = $previous
         $arguments['PreviousLabel'] = $label
@@ -938,17 +951,17 @@ function Test-ChangelogHere {
     $check = Test-ChangelogVersions @arguments
     if (-not $check.Valid) { throw "The CHANGELOG does not describe this release: $($check.Reason)" }
 
-    $manager = Test-ChangelogManagerEntry -Current $current -ExpectedVersion $releaseVersion
+    $manager = Test-ChangelogManagerEntry -Current $current -ExpectedVersion $changelogVersion
     if (-not $manager.Valid) { throw "Morphe Manager cannot show this release: $($manager.Reason)" }
-    Write-Host ("[release] Morphe Manager can read the $releaseVersion entry: dated " +
+    Write-Host ("[release] Morphe Manager can read the $changelogVersion entry: dated " +
         "$($manager.Date), $($manager.Bullets) bullets scoped Tumblr")
 
     $described = @(Get-ChangelogVersions -Text $current)
     if ($null -eq $previous) {
-        Write-Host ("[release] the CHANGELOG describes $releaseVersion and " +
+        Write-Host ("[release] the CHANGELOG describes $changelogVersion and " +
             "$($described.Count) versions in all; there is no earlier tag to compare with")
     } else {
-        Write-Host ("[release] the CHANGELOG describes $releaseVersion and keeps every version " +
+        Write-Host ("[release] the CHANGELOG describes $changelogVersion and keeps every version " +
             "$label described, $($described.Count) in all")
     }
 }
