@@ -264,9 +264,14 @@ Hide the comment button	Ocultar el botón de comentarios
 Takes the comment button out of the footer under posts. Restart Tumblr to see the change.	Quita el botón de comentarios del pie de las publicaciones. Reinicia Tumblr para ver el cambio.
 Hide the share button	Ocultar el botón Compartir
 Takes the share button out of the footer under posts. Restart Tumblr to see the change.	Quita el botón Compartir del pie de las publicaciones. Reinicia Tumblr para ver el cambio.
-# context: the bottom bar's unread badges, the small dots and numbers on the Dashboard, Communities and Notifications tabs. Use Tumblr's own names for the tabs in your language.
+# context: the bottom bar's unread badges, the small dots and numbers on the Dashboard, Communities and Notifications tabs, one switch per tab. Use Tumblr's own names for the tabs in your language.
 Hide unread dots	Ocultar los puntos de no leídos
-Hides the unread dots and counts on the bottom bar's Dashboard, Communities and Notifications tabs.	Oculta los puntos y números de no leídos en las pestañas Panel, Comunidades y Notificaciones de la barra inferior.
+Hide the Dashboard count	Ocultar el contador del Panel
+Hides the unread count on the bottom bar's Dashboard tab. One already showing goes when Tumblr next updates its counts.	Oculta el contador de no leídos de la pestaña Panel en la barra inferior. Si ya se ve, desaparece la próxima vez que Tumblr actualice sus contadores.
+Hide the Communities count	Ocultar el contador de Comunidades
+Hides the unread count on the bottom bar's Communities tab. One already showing goes when Tumblr next updates its counts.	Oculta el contador de no leídos de la pestaña Comunidades en la barra inferior. Si ya se ve, desaparece la próxima vez que Tumblr actualice sus contadores.
+Hide the Notifications count	Ocultar el contador de Notificaciones
+Hides the unread count on the bottom bar's Notifications tab. One already showing goes when Tumblr next updates its counts.	Oculta el contador de no leídos de la pestaña Notificaciones en la barra inferior. Si ya se ve, desaparece la próxima vez que Tumblr actualice sus contadores.
 # Post filters on the Feed page, and the word list
 Hide reblogs	Ocultar reblogs
 Takes reblogs out of your dashboard and other feeds, and keeps the posts people made themselves.	Quita los reblogs de tu panel y otros feeds, y deja las publicaciones que la gente hizo por su cuenta.

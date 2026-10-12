@@ -1071,7 +1071,7 @@
     },
     {
       "name": "Hide unread dots",
-      "description": "Hides the unread dots and counts on the bottom bar's Dashboard, Communities and Notifications tabs. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface.",
+      "description": "Hides the unread dots and counts on the bottom bar's Dashboard, Communities and Notifications tabs, with a switch for each tab. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface.",
       "category": "Navigation",
       "use": true,
       "dependencies": [

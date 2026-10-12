@@ -196,11 +196,25 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_hide_share_button", FALSE);
 
     /**
-     * The bottom bar doesn't show its unread dots and counts
+     * The bottom bar's Dashboard tab doesn't show its unread count
      * ({@link app.hushtumblr.extension.tumblr.ui.BottomBar}). Off to start.
      */
-    public static final BooleanSetting HIDE_UNREAD_DOTS =
-            new BooleanSetting("hushtumblr_hide_unread_dots", FALSE);
+    public static final BooleanSetting HIDE_DASHBOARD_COUNT =
+            new BooleanSetting("hushtumblr_hide_dashboard_count", FALSE);
+
+    /**
+     * The bottom bar's Communities tab doesn't show its unread count
+     * ({@link app.hushtumblr.extension.tumblr.ui.BottomBar}). Off to start.
+     */
+    public static final BooleanSetting HIDE_COMMUNITIES_COUNT =
+            new BooleanSetting("hushtumblr_hide_communities_count", FALSE);
+
+    /**
+     * The bottom bar's Notifications tab doesn't show its unread count
+     * ({@link app.hushtumblr.extension.tumblr.ui.BottomBar}). Off to start.
+     */
+    public static final BooleanSetting HIDE_NOTIFICATIONS_COUNT =
+            new BooleanSetting("hushtumblr_hide_notifications_count", FALSE);
 
     /**
      * Reblogs leave each page of posts Tumblr loads: a post that names the post it reblogs or

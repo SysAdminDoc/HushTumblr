@@ -111,7 +111,8 @@ public class HushTumblrPreferenceFragmentTest {
         ROW_TITLES.put(PatchFamily.HIDE_REBLOG_BUTTON, "Hide the reblog button");
         ROW_TITLES.put(PatchFamily.HIDE_COMMENT_BUTTON, "Hide the comment button");
         ROW_TITLES.put(PatchFamily.HIDE_SHARE_BUTTON, "Hide the share button");
-        ROW_TITLES.put(PatchFamily.HIDE_UNREAD_DOTS, "Hide unread dots");
+        // One row per tab's badge; the first stands for the patch.
+        ROW_TITLES.put(PatchFamily.HIDE_UNREAD_DOTS, "Hide the Dashboard count");
         ROW_TITLES.put(PatchFamily.HIDE_REBLOGS, "Hide reblogs");
         ROW_TITLES.put(PatchFamily.HIDE_VIDEO_POSTS, "Hide video posts");
         ROW_TITLES.put(PatchFamily.HIDE_PHOTO_POSTS, "Hide photo posts");

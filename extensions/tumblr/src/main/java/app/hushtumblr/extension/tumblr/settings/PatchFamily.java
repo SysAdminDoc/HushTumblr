@@ -81,7 +81,9 @@ public enum PatchFamily {
     HIDE_REBLOG_BUTTON(FamilyNames.HIDE_REBLOG_BUTTON, "hideReblogButton", null, Settings.HIDE_REBLOG_BUTTON),
     HIDE_COMMENT_BUTTON(FamilyNames.HIDE_COMMENT_BUTTON, "hideCommentButton", null, Settings.HIDE_COMMENT_BUTTON),
     HIDE_SHARE_BUTTON(FamilyNames.HIDE_SHARE_BUTTON, "hideShareButton", null, Settings.HIDE_SHARE_BUTTON),
-    HIDE_UNREAD_DOTS(FamilyNames.HIDE_UNREAD_DOTS, "hideUnreadDots", null, Settings.HIDE_UNREAD_DOTS),
+    /** One hook, with a switch for each tab's badge. */
+    HIDE_UNREAD_DOTS(FamilyNames.HIDE_UNREAD_DOTS, "hideUnreadDots", null, Settings.HIDE_DASHBOARD_COUNT,
+            Settings.HIDE_COMMUNITIES_COUNT, Settings.HIDE_NOTIFICATIONS_COUNT),
     HIDE_REBLOGS(FamilyNames.HIDE_REBLOGS, "hideReblogs", null, Settings.HIDE_REBLOGS),
     HIDE_VIDEO_POSTS(FamilyNames.HIDE_VIDEO_POSTS, "hideVideoPosts", null, Settings.HIDE_VIDEO_POSTS),
     HIDE_PHOTO_POSTS(FamilyNames.HIDE_PHOTO_POSTS, "hidePhotoPosts", null, Settings.HIDE_PHOTO_POSTS),

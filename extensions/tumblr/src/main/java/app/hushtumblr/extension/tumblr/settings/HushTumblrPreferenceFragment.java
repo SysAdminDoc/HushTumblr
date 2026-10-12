@@ -351,10 +351,19 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                     L10n.t("Reorder the bottom bar"), L10n.t("Puts the bottom bar's tabs in the order set below. "
                         + "Restart Tumblr to see the change."), SettingsIcons.INTERFACE);
             if (build.contains(PatchFamily.REORDER_TABS)) ui.addPreference(mark(tabOrderRow(context), SettingsIcons.INTERFACE));
-            // Read each time Tumblr's unread counts come in (BottomBar), so it needs no restart.
-            patchToggle(ui, context, build, PatchFamily.HIDE_UNREAD_DOTS, Settings.HIDE_UNREAD_DOTS,
-                    L10n.t("Hide unread dots"), L10n.t("Hides the unread dots and counts on the bottom bar's "
-                        + "Dashboard, Communities and Notifications tabs."), SettingsIcons.BLOCK);
+            // One patch, a switch per tab's badge. Read each time Tumblr's unread counts come in
+            // (BottomBar), so they need no restart.
+            patchToggle(ui, context, build, PatchFamily.HIDE_UNREAD_DOTS, Settings.HIDE_DASHBOARD_COUNT,
+                    L10n.t("Hide the Dashboard count"), L10n.t("Hides the unread count on the bottom bar's Dashboard "
+                        + "tab. One already showing goes when Tumblr next updates its counts."), SettingsIcons.BLOCK);
+            patchToggle(ui, context, build, PatchFamily.HIDE_UNREAD_DOTS, Settings.HIDE_COMMUNITIES_COUNT,
+                    L10n.t("Hide the Communities count"), L10n.t("Hides the unread count on the bottom bar's "
+                        + "Communities tab. One already showing goes when Tumblr next updates its counts."),
+                    SettingsIcons.BLOCK);
+            patchToggle(ui, context, build, PatchFamily.HIDE_UNREAD_DOTS, Settings.HIDE_NOTIFICATIONS_COUNT,
+                    L10n.t("Hide the Notifications count"), L10n.t("Hides the unread count on the bottom bar's "
+                        + "Notifications tab. One already showing goes when Tumblr next updates its counts."),
+                    SettingsIcons.BLOCK);
             patchToggle(ui, context, build, PatchFamily.HIDE_BLAZE_PROMPTS, Settings.HIDE_BLAZE_PROMPTS,
                     L10n.t("Hide Blaze prompts"), L10n.t("Hides the Blaze buttons, banners and the nudge to promote "
                         + "a post after you share it. Restart Tumblr to see the change."), SettingsIcons.BLOCK);

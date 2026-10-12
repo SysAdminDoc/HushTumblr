@@ -40,27 +40,34 @@ internal const val UNREAD_BADGE_HOOK = "$BOTTOM_BAR->unreadBadge(Landroid/widget
 /** The dashboard tab's unread badge, a view id in [VIEW_IDS]. Resource names are kept. */
 internal const val DASHBOARD_BADGE = "dashboard_badge"
 
+/**
+ * The three tabs' unread badges, view ids in [VIEW_IDS]. `BottomBar` tells them apart by these
+ * names, one switch each, so the bar must look up every one of them.
+ */
+internal val UNREAD_BADGES = listOf(DASHBOARD_BADGE, "communities_badge", "notification_badge")
+
 private const val TEXT_VIEW = "Landroid/widget/TextView;"
 private const val ANIMATION = "Landroid/view/animation/Animation;"
 
 /**
- * Hands the bottom bar's badge pop-in the badge `BottomBar.unreadBadge` answers, null while the
- * switch is on (after it hides the badge). The pop-in's own first instruction returns when it has
- * no badge, so the dot never starts its animation, and that animation's start is the only place
- * Tumblr makes a badge visible. The Dashboard, Communities and Notifications badges all go through
- * it each time Tumblr's unread counts come in, so the switch shows with the next count.
+ * Hands the bottom bar's badge pop-in the badge `BottomBar.unreadBadge` answers, null while that
+ * badge's switch is on (after it hides the badge). The pop-in's own first instruction returns when
+ * it has no badge, so the dot never starts its animation, and that animation's start is the only
+ * place Tumblr makes a badge visible. The Dashboard, Communities and Notifications badges all go
+ * through it each time Tumblr's unread counts come in, so a switch shows with the next count. The
+ * extension tells the badges apart by their view ids, [UNREAD_BADGES] by name.
  *
- * The bar is the one class that looks up [DASHBOARD_BADGE]. The pop-in is its one instance method
- * taking a TextView and an Animation that starts the animation only on a view that isn't already
- * showing (its `getVisibility` answer is tested with `if-eqz`); the pop-out has the same shape
- * with `if-nez`. Its first instruction must be the null check on the badge. Found by reading
- * Tumblr 46.5.0.109 (2026-10-11).
+ * The bar is the one class that looks up [DASHBOARD_BADGE], and it must look up each of
+ * [UNREAD_BADGES]. The pop-in is its one instance method taking a TextView and an Animation that
+ * starts the animation only on a view that isn't already showing (its `getVisibility` answer is
+ * tested with `if-eqz`); the pop-out has the same shape with `if-nez`. Its first instruction must
+ * be the null check on the badge. Found by reading Tumblr 46.5.0.109 (2026-10-11).
  */
 @Suppress("unused")
 val hideUnreadDotsPatch = bytecodePatch(
     name = PATCH,
     description = "Hides the unread dots and counts on the bottom bar's Dashboard, Communities and Notifications" +
-        " tabs. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface.",
+        " tabs, with a switch for each tab. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface.",
     default = true,
 ) {
     category("Navigation")
@@ -86,8 +93,9 @@ val hideUnreadDotsPatch = bytecodePatch(
 }
 
 /**
- * The bottom bar's badge pop-in, throwing when this build has no bar or several, no pop-in or
- * several, or one that doesn't start with its own null check on the badge.
+ * The bottom bar's badge pop-in, throwing when this build has no bar or several, a bar that doesn't
+ * look up each of [UNREAD_BADGES], no pop-in or several, or one that doesn't start with its own
+ * null check on the badge.
  */
 internal fun BytecodePatchContext.resolveBadgePopIn(): MutableMethod {
     requireExtensionHook(PATCH, UNREAD_BADGE_HOOK)
@@ -97,6 +105,13 @@ internal fun BytecodePatchContext.resolveBadgePopIn(): MutableMethod {
         if (owner.methods.any { method -> method.instructionList().any { it.isDashboardBadge() } }) bars += owner
     }
     val bar = bars.distinctBy { it.type }.only(PATCH, "the bottom bar that looks up the dashboard's unread badge")
+    val badges = bar.methods.flatMap { method -> method.instructionList().mapNotNull { it.viewIdRead() } }.toSet()
+    val unknown = UNREAD_BADGES.filterNot { it in badges }
+    requireShape(
+        PATCH,
+        unknown.isEmpty(),
+        "the bottom bar doesn't look up the unread badges ${unknown.joinToString()} by those names",
+    )
     val popIn = bar.methods
         .filter { method ->
             !method.isStatic() && method.returnType == "V" &&
@@ -114,8 +129,11 @@ internal fun BytecodePatchContext.resolveBadgePopIn(): MutableMethod {
     return method
 }
 
-internal fun Instruction.isDashboardBadge(): Boolean =
-    opcode == Opcode.SGET && fieldRef()?.let { it.definingClass == VIEW_IDS && it.name == DASHBOARD_BADGE } == true
+internal fun Instruction.isDashboardBadge(): Boolean = viewIdRead() == DASHBOARD_BADGE
+
+/** The name of the view id this reads, or null when it reads none. */
+internal fun Instruction.viewIdRead(): String? =
+    if (opcode == Opcode.SGET) fieldRef()?.takeIf { it.definingClass == VIEW_IDS }?.name else null
 
 /** Whether the method starts an animation only when its view's visibility isn't VISIBLE (zero). */
 private fun Method.popsInHidden(): Boolean {

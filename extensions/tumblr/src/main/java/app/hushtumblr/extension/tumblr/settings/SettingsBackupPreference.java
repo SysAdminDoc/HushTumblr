@@ -436,7 +436,9 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
             case "hushtumblr_hide_reblog_button": return L10n.t("Hide the reblog button");
             case "hushtumblr_hide_comment_button": return L10n.t("Hide the comment button");
             case "hushtumblr_hide_share_button": return L10n.t("Hide the share button");
-            case "hushtumblr_hide_unread_dots": return L10n.t("Hide unread dots");
+            case "hushtumblr_hide_dashboard_count": return L10n.t("Hide the Dashboard count");
+            case "hushtumblr_hide_communities_count": return L10n.t("Hide the Communities count");
+            case "hushtumblr_hide_notifications_count": return L10n.t("Hide the Notifications count");
             case "hushtumblr_hide_reblogs": return L10n.t("Hide reblogs");
             case "hushtumblr_hide_video_posts": return L10n.t("Hide video posts");
             case "hushtumblr_hide_photo_posts": return L10n.t("Hide photo posts");

@@ -19,6 +19,7 @@ import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
@@ -26,10 +27,17 @@ import org.junit.experimental.categories.Category
  * The bottom bar's badge pop-in in each declared build. Its badge is swapped for the extension's
  * answer first thing, and Tumblr's own null check on it comes straight after, so a null answer
  * returns at once. The rest of Tumblr's code is unchanged, and the patch turns its switch and
- * target on.
+ * target on. The bar looks up each tab's badge by the name the extension tells it apart by.
  */
 @Category(FixtureTests::class)
 class BottomBarFixtureTest {
+    @Test
+    fun `the extension tells the badges apart by the names the patch requires`() {
+        assertEquals(UNREAD_BADGES, listOf("DASHBOARD", "COMMUNITIES", "NOTIFICATIONS").map {
+            ExtensionDex.stringConstant(BOTTOM_BAR, it)
+        })
+    }
+
     @Test
     fun `each declared build hands the badge pop-in the extension's badge`() {
         for (build in Fixtures.declaredBuilds()) {
@@ -41,6 +49,9 @@ class BottomBarFixtureTest {
             val identity = "${popIn.definingClass}->${popIn.name}"
             val before = popIn.instructionList().map { it.opcode }
             val badge = popIn.parameterRegisterNumber(0)
+            val read = context.mutableClassDefBy(popIn.definingClass).methods
+                .flatMap { method -> method.instructionList().mapNotNull { it.viewIdRead() } }
+            assertTrue("$identity: the bar looks up each tab's badge, $read", read.containsAll(UNREAD_BADGES))
 
             hideUnreadDotsPatch.execute(context)
 

@@ -19,14 +19,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import android.widget.TextView;
-
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 import java.lang.reflect.Field;
@@ -46,7 +43,7 @@ import app.hushtumblr.extension.tumblr.flags.FeatureSwitchesTest;
 import app.hushtumblr.extension.tumblr.notifications.PushNotificationsTest;
 import app.hushtumblr.extension.tumblr.privacy.AdvertisingId;
 import app.hushtumblr.extension.tumblr.timeline.TimelineItems;
-import app.hushtumblr.extension.tumblr.ui.BottomBar;
+import app.hushtumblr.extension.tumblr.ui.BottomBarForTests;
 import app.hushtumblr.extension.tumblr.ui.BottomBarTabsForTests;
 import app.hushtumblr.extension.tumblr.ui.DarkBackgroundForTests;
 import app.hushtumblr.extension.tumblr.ui.PostFooter;
@@ -87,6 +84,7 @@ public class PausedHooksTest {
         TextSettings.HIDDEN_WORDS.resetToDefault();
         TextSettings.TAB_ORDER.resetToDefault();
         BottomBarTabsForTests.forget();
+        BottomBarForTests.forget();
         PatchFamily.capabilitiesForTests = null;
         PatchFamily.inBuildForTests = null;
         ReleaseCheckForTests.forget();
@@ -168,9 +166,11 @@ public class PausedHooksTest {
                 Collections.singletonList(() -> PostFooterForTests.askedAfresh(PostFooter::hideCommentButton)));
         probes.put(Settings.HIDE_SHARE_BUTTON,
                 Collections.singletonList(() -> PostFooterForTests.askedAfresh(PostFooter::hideShareButton)));
-        // The bottom bar gets no unread badge to pop in.
-        probes.put(Settings.HIDE_UNREAD_DOTS, Collections.singletonList(
-                () -> BottomBar.unreadBadge(new TextView(RuntimeEnvironment.getApplication())) == null));
+        // The bottom bar gets no unread badge to pop in on that switch's tab.
+        probes.put(Settings.HIDE_DASHBOARD_COUNT, Collections.singletonList(BottomBarForTests::hidesTheDashboardCount));
+        probes.put(Settings.HIDE_COMMUNITIES_COUNT, Collections.singletonList(BottomBarForTests::hidesTheCommunitiesCount));
+        probes.put(Settings.HIDE_NOTIFICATIONS_COUNT,
+                Collections.singletonList(BottomBarForTests::hidesTheNotificationsCount));
         // A page with a reblog comes back without it.
         probes.put(Settings.HIDE_REBLOGS, Collections.singletonList(TimelineItems::aPageLosesItsReblog));
         // A page with a video post comes back without it.
