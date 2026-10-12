@@ -613,8 +613,10 @@ public class SettingsNavigationTest {
     }
 
     @Test public void aliasesCannotAddRowsForPatchesThisBuildDoesNotHave() {
-        // Neither switch an alias names is in a build with only the analytics patch.
-        PatchFamily.inBuildForTests = EnumSet.of(PatchFamily.DISABLE_ANALYTICS);
+        // Neither switch an alias names is in a build with only Hide hashtags, and no row that build
+        // shows holds an alias's words. Disable analytics can't stand in here: its own summary,
+        // "Stops Tumblr's own tracking and ad measurement", rightly matches "Ad tracking".
+        PatchFamily.inBuildForTests = EnumSet.of(PatchFamily.HIDE_HASHTAGS);
         recreate();
         for (Map.Entry<String, String> alias : SettingsNavigation.localizedSearchAliases().entrySet()) {
             assertNull(page.findPreference(alias.getKey()));
