@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* **Tooling:** Updated the checked Gradle wrapper to 9.8.1. Build and release entry points reject an affected, incomplete or mismatched wrapper before it runs.
+
 * **Tumblr:** Refreshed every HushTumblr settings page with navy cards, pale blue controls and larger page titles. Navigation has outlined icon tiles, and switch descriptions have more room.
 * **Tumblr:** Backup and diagnostic actions now have separate cards. The words editor, tab order list and other dialogs use the same colors as the settings pages. Search, recovery and enlarged text follow the new design too.
 * **Tumblr:** Kept the existing settings, defaults and saved choices. Added current settings screenshots to the README.

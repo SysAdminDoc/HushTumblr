@@ -3,13 +3,63 @@
     Scan the resolved build, test and provided dependency report with the release advisory policy.
 .DESCRIPTION
     Generate the report with :patches:buildDependencyReport. This report includes the toolchain
-    classpaths that the shipped SBOM deliberately excludes. Query failures stop the gate, and
+    classpaths that the shipped SBOM deliberately excludes. Check the reviewed wrapper before
+    starting Gradle, then compare the report's resolved version with it. Query failures stop the gate, and
     high, critical and unrated findings need a current exception specific to the build graph.
 #>
 [CmdletBinding()]
 param([string]$Root, [string]$ReportPath, [string]$ExceptionsPath)
 
 . (Join-Path $PSScriptRoot 'release-advisories.ps1')
+
+function Assert-ReviewedGradleWrapper {
+    param([Parameter(Mandatory = $true)][string]$Root)
+
+    $path = Join-Path $Root 'gradle/wrapper/gradle-wrapper.properties'
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+        throw "The Gradle wrapper properties are missing: $path"
+    }
+    $properties = [Collections.Generic.Dictionary[string, string]]::new([StringComparer]::Ordinal)
+    foreach ($line in @(Get-Content -LiteralPath $path)) {
+        if ($line -match '^\s*(?:[#!]|$)') { continue }
+        # Keep one unambiguous key=value per line. Java property continuations, escaped keys and
+        # alternate separators must not let this reader check a different URL than Gradle uses.
+        if ($line.EndsWith('\') -or $line -cnotmatch '^([A-Za-z][A-Za-z0-9.]*)=(.*)$') {
+            throw "The Gradle wrapper properties must use one key=value per line: $path"
+        }
+        $key = $Matches[1]
+        $value = $Matches[2]
+        if ($properties.ContainsKey($key)) { throw "The Gradle wrapper repeats property ${key}: $path" }
+        $properties.Add($key, $value)
+    }
+    $url = $properties['distributionUrl']
+    if (-not $url -or $url.Replace('\:', ':') -cnotmatch
+            '^https://services[.]gradle[.]org/distributions/gradle-(\d+[.]\d+[.]\d+)-bin[.]zip$') {
+        throw "The Gradle wrapper must pin an official binary distribution and its resolved version: $path"
+    }
+    $version = $Matches[1]
+    # Reviewed against Gradle's own advisories on 2026-10-12. These affect the build tool, not
+    # the extension runtime. A newer distribution needs a review and its official checksums too.
+    if ($version -cne '9.8.1') {
+        throw ("Unreviewed Gradle wrapper $version. Use the reviewed 9.8.1 distribution before starting Gradle " +
+            '(GHSA-mvvg-497x-hmj8, GHSA-xwqc-3h47-hg64, GHSA-j5m7-59rp-24f5).')
+    }
+    # https://services.gradle.org/distributions/gradle-9.8.1-bin.zip.sha256
+    if ($properties['distributionSha256Sum'] -cne 'dce76f55f8e251a3a1f130eb120f30b3d271de2b76c9b0729d316b5a1b6dc01f') {
+        throw "The Gradle 9.8.1 distribution checksum is missing or differs from the reviewed official checksum: $path"
+    }
+    if ($properties['validateDistributionUrl'] -cne 'true') {
+        throw "The Gradle wrapper must keep validateDistributionUrl=true: $path"
+    }
+    $jar = Join-Path $Root 'gradle/wrapper/gradle-wrapper.jar'
+    if (-not (Test-Path -LiteralPath $jar -PathType Leaf)) { throw "The Gradle wrapper JAR is missing: $jar" }
+    # https://services.gradle.org/distributions/gradle-9.8.1-wrapper.jar.sha256
+    if ((Get-FileHash -LiteralPath $jar -Algorithm SHA256).Hash -ine
+            '3b8a25775a69158b5ad2b1d17a80a88dc7b40a352a73eb27d06c612a7ce68e98') {
+        throw "The Gradle wrapper JAR differs from the reviewed official 9.8.1 checksum: $jar"
+    }
+    return [pscustomobject]@{ Path = $path; GradleVersion = $version }
+}
 
 function Read-BuildDependencyReport {
     param([Parameter(Mandatory = $true)][string]$Path)
@@ -20,7 +70,8 @@ function Read-BuildDependencyReport {
     try { $report = Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json }
     catch { throw "The build dependency report is not valid JSON: $Path. $($_.Exception.Message)" }
     if (($report.schemaVersion -isnot [int] -and $report.schemaVersion -isnot [long]) -or
-            $report.schemaVersion -ne 1 -or [string]::IsNullOrWhiteSpace($report.gradleVersion)) {
+            $report.schemaVersion -ne 1 -or $report.gradleVersion -isnot [string] -or
+            $report.gradleVersion -cnotmatch '^\d+[.]\d+[.]\d+$') {
         throw "The build dependency report must have schemaVersion 1 and its resolved Gradle version: $Path"
     }
     if ($report.configurations -isnot [array] -or $report.configurations.Count -eq 0 -or
@@ -63,7 +114,10 @@ function Read-BuildDependencyReport {
             Purl = $component.purl; Configurations = @($component.configurations)
         })
     }
-    return [pscustomobject]@{ Path = $Path; Libraries = $libraries.ToArray(); Configurations = @($report.configurations) }
+    return [pscustomobject]@{
+        Path = $Path; GradleVersion = $report.gradleVersion
+        Libraries = $libraries.ToArray(); Configurations = @($report.configurations)
+    }
 }
 
 function Assert-ReviewedToolingResolutions {
@@ -97,10 +151,15 @@ function Assert-ReviewedToolingResolutions {
 
 function Invoke-BuildAdvisoryGate {
     param(
+        [Parameter(Mandatory = $true)][string]$Root,
         [Parameter(Mandatory = $true)]$Report,
         [Parameter(Mandatory = $true)][string]$ExceptionsPath,
         [datetime]$Today = [datetime]::Today
     )
+    $wrapper = Assert-ReviewedGradleWrapper -Root $Root
+    if ($Report.GradleVersion -isnot [string] -or $Report.GradleVersion -cne $wrapper.GradleVersion) {
+        throw "The resolved build report's Gradle version '$($Report.GradleVersion)' does not match the wrapper's $($wrapper.GradleVersion). Regenerate :patches:buildDependencyReport."
+    }
     Assert-ReviewedToolingResolutions -Report $Report
     $exceptions = @(Read-AdvisoryExceptions -Path $ExceptionsPath -Today $Today)
     $findings = @(Get-SbomAdvisories -Sbom $Report)
@@ -129,4 +188,4 @@ if (-not $Root) { $Root = Split-Path -Parent $PSScriptRoot }
 if (-not $ReportPath) { $ReportPath = Join-Path $Root 'patches/build/dependency-reports/build-dependencies.json' }
 if (-not $ExceptionsPath) { $ExceptionsPath = Join-Path $Root 'scripts/build-advisory-exceptions.txt' }
 $resolvedReport = Read-BuildDependencyReport -Path $ReportPath
-Invoke-BuildAdvisoryGate -Report $resolvedReport -ExceptionsPath $ExceptionsPath
+Invoke-BuildAdvisoryGate -Root $Root -Report $resolvedReport -ExceptionsPath $ExceptionsPath

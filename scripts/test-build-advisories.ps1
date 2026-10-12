@@ -20,7 +20,7 @@ $asked = New-Object Collections.Generic.List[string]
 $answers = @{}
 $saved = @{}
 foreach ($name in @('HUSHTUMBLR_SKIP_PRE_PUSH', 'HUSHTUMBLR_FIXTURE_DIR', 'HUSHTUMBLR_REQUIRE_FIXTURES',
-        'HUSHTUMBLR_BUILD_WRAPPER', 'GITHUB_ACTOR', 'GITHUB_TOKEN')) {
+        'HUSHTUMBLR_BUILD_WRAPPER', 'JAVA_HOME', 'GITHUB_ACTOR', 'GITHUB_TOKEN')) {
     $saved[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
 }
 $savedGit = @{}
@@ -37,7 +37,7 @@ function Assert-Fails([scriptblock]$Action, [string]$Pattern) {
 }
 function New-Report {
     return [ordered]@{
-        schemaVersion = 1; gradleVersion = '9.7.1'
+        schemaVersion = 1; gradleVersion = '9.8.1'
         configurations = @('settings:classpath', ':patches:patcherProvidedClasspath', ':patches:testRuntimeClasspath')
         components = @([ordered]@{
             group = 'com.example'; name = 'build-only-tool'; version = '1.2.3'; purl = $purl
@@ -46,7 +46,14 @@ function New-Report {
     }
 }
 function Write-Report($Report) { $Report | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $reportPath -Encoding UTF8 }
-function Invoke-Gate { Invoke-BuildAdvisoryGate -Report (Read-BuildDependencyReport $reportPath) -ExceptionsPath $exceptionPath -Today $today }
+function Invoke-Gate { Invoke-BuildAdvisoryGate -Root $testRoot -Report (Read-BuildDependencyReport $reportPath) -ExceptionsPath $exceptionPath -Today $today }
+function Copy-ReviewedWrapper([string]$Repository) {
+    $destination = Join-Path $Repository 'gradle/wrapper'
+    New-Item -ItemType Directory -Path $destination -Force | Out-Null
+    foreach ($name in @('gradle-wrapper.properties', 'gradle-wrapper.jar')) {
+        Copy-Item -LiteralPath (Join-Path $Root ('gradle/wrapper/' + $name)) -Destination (Join-Path $destination $name)
+    }
+}
 function Invoke-RestMethod {
     param($Uri, $Method, $ContentType, $Body, $TimeoutSec)
     $query = $Body | ConvertFrom-Json
@@ -152,7 +159,7 @@ function New-ReviewedBuildReport {
             $_ + ':_internal-unified-test-platform-core'
         })
     return [ordered]@{
-        schemaVersion = 1; gradleVersion = '9.7.1'; configurations = @('settings:classpath', $core, $emulator) +
+        schemaVersion = 1; gradleVersion = '9.8.1'; configurations = @('settings:classpath', $core, $emulator) +
             @($guava | Where-Object { $_ -notin @('settings:classpath', $core, $emulator) })
         components = @(foreach ($package in $modules.Keys) {
             $parts = $package.Split(':')
@@ -169,14 +176,61 @@ function New-ReviewedBuildReport {
 }
 try {
     New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
+    Copy-ReviewedWrapper $testRoot
+    $wrapperPath = Join-Path $testRoot 'gradle/wrapper/gradle-wrapper.properties'
+    $wrapperText = Get-Content -LiteralPath $wrapperPath -Raw
+    $wrapper = Assert-ReviewedGradleWrapper -Root $testRoot
+    Assert-True ($wrapper.GradleVersion -ceq '9.8.1') 'The reviewed official Gradle 9.8.1 wrapper was not accepted.'
+    $cases++
+    $badWrappers = @(
+        @{ Text = $wrapperText.Replace('gradle-9.8.1-bin.zip', 'gradle-9.7.1-bin.zip'); Pattern = '*Unreviewed Gradle wrapper 9.7.1*GHSA-mvvg-497x-hmj8*GHSA-xwqc-3h47-hg64*GHSA-j5m7-59rp-24f5*' },
+        @{ Text = $wrapperText.Replace('gradle-9.8.1-bin.zip', 'gradle-9.8.0-bin.zip'); Pattern = '*Unreviewed Gradle wrapper 9.8.0*' },
+        @{ Text = $wrapperText.Replace('gradle-9.8.1-bin.zip', 'gradle-9.8.2-bin.zip'); Pattern = '*Unreviewed Gradle wrapper 9.8.2*' },
+        @{ Text = $wrapperText.Replace('gradle-9.8.1-bin.zip', 'gradle-bin.zip'); Pattern = '*pin an official binary distribution and its resolved version*' },
+        @{ Text = $wrapperText.Replace('services.gradle.org', 'example.invalid'); Pattern = '*pin an official binary distribution*' },
+        @{ Text = ($wrapperText -replace '(?m)^distributionUrl=.*\r?\n?', ''); Pattern = '*pin an official binary distribution*' },
+        @{ Text = ($wrapperText -replace '(?m)^distributionSha256Sum=.*\r?\n?', ''); Pattern = '*distribution checksum is missing or differs*' },
+        @{ Text = ($wrapperText -replace '(?m)^distributionSha256Sum=.*', ('distributionSha256Sum=' + '0' * 64)); Pattern = '*distribution checksum is missing or differs*' },
+        @{ Text = $wrapperText.Replace('validateDistributionUrl=true', 'validateDistributionUrl=false'); Pattern = '*keep validateDistributionUrl=true*' },
+        @{ Text = ($wrapperText + "`ndistributionUrl=https\://services.gradle.org/distributions/gradle-9.7.1-bin.zip`n"); Pattern = '*repeats property distributionUrl*' },
+        @{ Text = $wrapperText.Replace('distributionUrl=', 'distribution\u0055rl='); Pattern = '*one key=value per line*' },
+        @{ Text = $wrapperText.Replace('distributionPath=wrapper/dists', 'distributionPath=wrapper/dists\'); Pattern = '*one key=value per line*' },
+        @{ Text = $wrapperText.Replace('distributionUrl=', 'distributionUrl:'); Pattern = '*one key=value per line*' }
+    )
+    foreach ($case in $badWrappers) {
+        Set-Content -LiteralPath $wrapperPath -Value $case.Text -Encoding ASCII -NoNewline
+        Assert-Fails { Assert-ReviewedGradleWrapper -Root $testRoot | Out-Null } $case.Pattern
+    }
+    Remove-Item -LiteralPath $wrapperPath
+    Assert-Fails { Assert-ReviewedGradleWrapper -Root $testRoot | Out-Null } '*wrapper properties are missing*'
+    Copy-ReviewedWrapper $testRoot
+    $wrapperJar = Join-Path $testRoot 'gradle/wrapper/gradle-wrapper.jar'
+    Set-Content -LiteralPath $wrapperJar -Value 'unreviewed binary' -Encoding ASCII
+    Assert-Fails { Assert-ReviewedGradleWrapper -Root $testRoot | Out-Null } '*wrapper JAR differs from the reviewed official 9.8.1 checksum*'
+    Remove-Item -LiteralPath $wrapperJar
+    Assert-Fails { Assert-ReviewedGradleWrapper -Root $testRoot | Out-Null } '*wrapper JAR is missing*'
+    Copy-ReviewedWrapper $testRoot
     Write-Report (New-Report)
     Set-Content -LiteralPath $exceptionPath -Value '# no accepted advisories' -Encoding ASCII
     $answers = @{ $purl = '{}' }
     $report = Read-BuildDependencyReport $reportPath
+    Assert-True ($report.GradleVersion -ceq '9.8.1') 'The report reader discarded the resolved Gradle version.'
     Assert-True ($report.Libraries.Count -eq 1 -and $report.Libraries[0].Configurations.Count -eq 3) 'One resolved module was not deduplicated across graph origins.'
     Invoke-Gate 6> $null
     Assert-True ($asked.Count -eq 1 -and $asked[0] -ceq $purl) 'OSV did not receive exactly the resolved module package URL.'
     $cases++
+    foreach ($version in @('9.7.1', '9.8.0', '9.8.2')) {
+        $fixture = New-Report
+        $fixture.gradleVersion = $version
+        Write-Report $fixture
+        $asked.Clear()
+        Assert-Fails { Invoke-Gate } '*Gradle version*does not match the wrapper*Regenerate*buildDependencyReport*'
+        Assert-True ($asked.Count -eq 0) 'A mismatched Gradle report reached the advisory query.'
+    }
+    Write-Report (New-Report)
+    $missingVersion = Read-BuildDependencyReport $reportPath
+    $missingVersion.GradleVersion = $null
+    Assert-Fails { Invoke-BuildAdvisoryGate -Root $testRoot -Report $missingVersion -ExceptionsPath $exceptionPath } '*Gradle version*does not match the wrapper*'
 
     foreach ($origin in @('settings:classpath', ':patches:patcherProvidedClasspath', ':patches:testRuntimeClasspath')) {
         $fixture = New-Report
@@ -221,6 +275,10 @@ try {
     $badReports = @(
         @{ Change = { param($r) $r.schemaVersion = 2 }; Pattern = '*schemaVersion 1*' },
         @{ Change = { param($r) $r.gradleVersion = '' }; Pattern = '*resolved Gradle version*' },
+        @{ Change = { param($r) $r.Remove('gradleVersion') }; Pattern = '*resolved Gradle version*' },
+        @{ Change = { param($r) $r.gradleVersion = 981 }; Pattern = '*resolved Gradle version*' },
+        @{ Change = { param($r) $r.gradleVersion = @('9.8.1') }; Pattern = '*resolved Gradle version*' },
+        @{ Change = { param($r) $r.gradleVersion = '9.8.1-rc-1' }; Pattern = '*resolved Gradle version*' },
         @{ Change = { param($r) $r.configurations = @() }; Pattern = '*nonempty configuration and component arrays*' },
         @{ Change = { param($r) $r.components = @() }; Pattern = '*nonempty configuration and component arrays*' },
         @{ Change = { param($r) $r.configurations += 'settings:classpath' }; Pattern = '*duplicate or invalid configuration*' },
@@ -300,6 +358,7 @@ try {
     $buildMarker = Join-Path $testRoot 'build-ran.json'
     $scanMarker = Join-Path $testRoot 'scan-ran.txt'
     New-Item -ItemType Directory -Path (Join-Path $repo 'scripts') -Force | Out-Null
+    Copy-ReviewedWrapper $repo
     & git -C $repo init --quiet --initial-branch=main
     if ($LASTEXITCODE -ne 0) { throw 'The policy routing repository could not be initialized.' }
     Set-Content -LiteralPath (Join-Path $repo 'scripts/test-script-contracts.ps1') -Value 'param([string]$Root)' -Encoding ASCII
@@ -315,13 +374,14 @@ try {
     $env:HUSHTUMBLR_FIXTURE_DIR = ' '
     $env:HUSHTUMBLR_REQUIRE_FIXTURES = 'prior-value'
     $env:HUSHTUMBLR_BUILD_WRAPPER = $wrapper
+    $env:JAVA_HOME = 'contract-jdk'
     $env:GITHUB_ACTOR = 'contract'
     $env:GITHUB_TOKEN = 'contract'
     $hook = Join-Path $Root 'scripts/pre-push.ps1'
-    function Invoke-Hook {
+    function Invoke-Hook([string[]]$Paths = @('scripts/build-advisory-exceptions.txt')) {
         Remove-Item -LiteralPath $buildMarker, $scanMarker -Force -ErrorAction SilentlyContinue
         $global:LASTEXITCODE = 0
-        & $hook -Root $repo -ChangedPaths @('scripts/build-advisory-exceptions.txt') 6> $null
+        & $hook -Root $repo -ChangedPaths $Paths 6> $null
         if ($LASTEXITCODE -ne 0) { throw "The policy push hook exited $LASTEXITCODE." }
     }
     Invoke-Hook
@@ -329,6 +389,32 @@ try {
     Assert-True (@($built.Tasks).Count -eq 1 -and $built.Tasks[0] -eq ':patches:buildDependencyReport') 'A policy-only push did not request exactly the dependency report.'
     Assert-True ($built.Required -eq 'prior-value' -and $env:HUSHTUMBLR_REQUIRE_FIXTURES -eq 'prior-value') 'A policy-only push changed fixture enforcement.'
     Assert-True ((Get-Content -LiteralPath $scanMarker -Raw).Trim() -eq $repo) 'The scanner was not given the tree that generated its report.'
+    $cases++
+    foreach ($inputPath in @('gradlew', 'gradlew.bat', 'gradle/wrapper/gradle-wrapper.properties', 'gradle/wrapper/gradle-wrapper.jar')) {
+        Invoke-Hook @($inputPath)
+        Assert-True (Test-Path -LiteralPath $buildMarker) "A push of $inputPath did not reach the build/advisory gate."
+        $cases++
+    }
+    . (Join-Path $Root 'scripts/release/release-common.ps1')
+    $repoWrapper = Join-Path $repo 'gradle/wrapper/gradle-wrapper.properties'
+    Set-Content -LiteralPath (Join-Path $repo 'gradlew.bat') -Encoding ASCII -Value @(
+        '@echo off', "echo started > `"$buildMarker`"", 'exit /b 0')
+    foreach ($entryPoint in @('pre-push', 'release', 'graph-review')) {
+        Set-Content -LiteralPath $repoWrapper -Value $wrapperText.Replace('gradle-9.8.1-bin.zip', 'gradle-9.7.1-bin.zip') -Encoding ASCII -NoNewline
+        Remove-Item -LiteralPath $buildMarker, $scanMarker -Force -ErrorAction SilentlyContinue
+        if ($entryPoint -ceq 'pre-push') {
+            Assert-Fails { Invoke-Hook } '*Unreviewed Gradle wrapper 9.7.1*'
+        } elseif ($entryPoint -ceq 'release') {
+            Assert-Fails { Invoke-ReleaseGradle -Root $repo -Tasks @(':patches:buildDependencyReport') } '*Unreviewed Gradle wrapper 9.7.1*'
+        } else {
+            Assert-Fails { & (Join-Path $Root 'scripts/test-bouncycastle-test-graph.ps1') -Root $repo } '*Unreviewed Gradle wrapper 9.7.1*'
+        }
+        Assert-True (-not (Test-Path -LiteralPath $buildMarker)) "$entryPoint executed the affected wrapper before refusing it."
+        Assert-True (-not (Test-Path -LiteralPath $scanMarker)) "$entryPoint reached the advisory scan with an affected wrapper."
+    }
+    Copy-ReviewedWrapper $repo
+    Invoke-ReleaseGradle -Root $repo -Tasks @(':patches:buildDependencyReport') 6> $null
+    Assert-True (Test-Path -LiteralPath $buildMarker) 'The release entry point refused the reviewed wrapper.'
     $cases++
     Set-Content -LiteralPath $wrapper -Value ($build[0..1] + 'exit 1') -Encoding ASCII
     Assert-Fails { Invoke-Hook } '*report could not be generated*'
@@ -345,7 +431,10 @@ try {
     if (Test-Path -LiteralPath $testRoot) { Remove-Item -LiteralPath $testRoot -Recurse -Force }
 }
 if ($ResolvedReportPath) {
-    Assert-ReviewedBuildGraph (Read-BuildDependencyReport $ResolvedReportPath)
+    $resolved = Read-BuildDependencyReport $ResolvedReportPath
+    Assert-ReviewedBuildGraph $resolved
+    $wrapper = Assert-ReviewedGradleWrapper -Root $Root
+    Assert-True ($resolved.GradleVersion -ceq $wrapper.GradleVersion) 'The real resolved Gradle version does not match the reviewed wrapper.'
     Write-Host '[scripts] resolved Android host/settings dependency remediation graph passed'
 }
 Write-Host "[scripts] resolved build advisory and push routing contracts passed ($cases cases)"

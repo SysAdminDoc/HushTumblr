@@ -83,6 +83,11 @@ try {
     Invoke-FixtureGit @('config', 'user.name', 'SysAdminDoc') | Out-Null
     Invoke-FixtureGit @('config', 'user.email', 'matt_parker@outlook.com') | Out-Null
     Copy-Item -LiteralPath (Join-Path $Root 'scripts/patch-target.ps1') -Destination (Join-Path $repo 'scripts/patch-target.ps1')
+    $fixtureWrapper = Join-Path $repo 'gradle/wrapper'
+    New-Item -ItemType Directory -Path $fixtureWrapper -Force | Out-Null
+    foreach ($name in @('gradle-wrapper.properties', 'gradle-wrapper.jar')) {
+        Copy-Item -LiteralPath (Join-Path $Root ('gradle/wrapper/' + $name)) -Destination (Join-Path $fixtureWrapper $name)
+    }
     Set-Content -LiteralPath (Join-Path $repo 'scripts/build-advisories.ps1') -Encoding ASCII -Value @(
         'param([string]$Root)', 'exit 0')
     Set-Content -LiteralPath (Join-Path $repo $source) -Value 'first source' -Encoding ASCII

@@ -44,6 +44,7 @@ if ($env:HUSHTUMBLR_SKIP_PRE_PUSH -eq '1') {
     exit 0
 }
 . (Join-Path $PSScriptRoot 'common.ps1')
+. (Join-Path $PSScriptRoot 'build-advisories.ps1') -Root $Root
 
 # A hook runs with git's own environment. User environment variables set after the shell
 # launched, or set in the user scope only, may be absent. Import the six this script and
@@ -589,7 +590,8 @@ try {
     }).Count -gt 0
     $buildAdvisoryInputs = @('scripts/build-advisories.ps1', 'scripts/build-advisory-exceptions.txt',
         'scripts/test-build-advisories.ps1', 'scripts/release-advisories.ps1',
-        'gradle.properties', 'gradle/wrapper/gradle-wrapper.properties', 'gradle/wrapper/gradle-wrapper.jar')
+        'gradle.properties', 'gradlew', 'gradlew.bat',
+        'gradle/wrapper/gradle-wrapper.properties', 'gradle/wrapper/gradle-wrapper.jar')
     $touchesBuildAdvisories = $touchesCode -or @($paths | Where-Object { $_ -in $buildAdvisoryInputs }).Count -gt 0
     $touchesScripts = @($paths | Where-Object { $_ -like 'scripts/*' }).Count -gt 0
     # The contract tests read two files outside scripts/ that nothing else checks: the catalog,
@@ -610,6 +612,7 @@ try {
         'scripts/ControlFlowFixture.java',
         'scripts/DexDiff.java',
         'scripts/FeatureDexFixture.java',
+        'scripts/SelectorDexFixture.java',
         'scripts/HostReferences.java',
         'scripts/HostReferenceFixture.java',
         'scripts/host-reference-contracts.txt',
@@ -900,6 +903,7 @@ try {
                     $env:HUSHTUMBLR_FIXTURE_DIR = Assert-PatchFixtures -ProjectRoot $gateRoot
                     $env:HUSHTUMBLR_REQUIRE_FIXTURES = '1'
                 }
+                Assert-ReviewedGradleWrapper -Root $gateRoot | Out-Null
 
                 # The Morphe settings plugin resolves from GitHub Packages, which needs a reader
                 # token. Require the fixtures before authenticating or starting that build.

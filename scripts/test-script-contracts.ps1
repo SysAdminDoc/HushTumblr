@@ -2353,8 +2353,21 @@ try {
         New-Item -ItemType Directory -Path (Join-Path $Repository 'scripts') -Force | Out-Null
         Copy-Item -LiteralPath (Join-Path $Root 'patches-list.json') -Destination (Join-Path $Repository 'patches-list.json')
         Copy-Item -LiteralPath (Join-Path $Root 'scripts/patch-target.ps1') -Destination (Join-Path $Repository 'scripts/patch-target.ps1')
+        $fixtureWrapper = Join-Path $Repository 'gradle/wrapper'
+        New-Item -ItemType Directory -Path $fixtureWrapper -Force | Out-Null
+        foreach ($name in @('gradle-wrapper.properties', 'gradle-wrapper.jar')) {
+            Copy-Item -LiteralPath (Join-Path $Root ('gradle/wrapper/' + $name)) -Destination (Join-Path $fixtureWrapper $name)
+        }
+        # A later isolation case copies the hook beside this scanner. Keep its real wrapper
+        # guard when dot-sourced, while the recorded scan itself still needs no network/report.
+        $checker = Join-Path $Root 'scripts/build-advisories.ps1'
+        $checkerAst = [Management.Automation.Language.Parser]::ParseFile($checker, [ref]$null, [ref]$null)
+        $wrapperGuard = $checkerAst.Find({ param($node)
+            $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
+                $node.Name -ceq 'Assert-ReviewedGradleWrapper'
+        }, $true).Extent.Text
         Set-Content -LiteralPath (Join-Path $Repository 'scripts/build-advisories.ps1') -Encoding ASCII -Value @(
-            'param([string]$Root)', 'exit 0')
+            'param([string]$Root)', $wrapperGuard, 'if ($MyInvocation.InvocationName -eq ''.'') { return }', 'exit 0')
     }
     Initialize-HookFixtureCatalog $hookRoot
     $routingFixtures = [IO.Path]::GetFullPath("$hookRoot-fixtures")
@@ -2506,7 +2519,7 @@ try {
     $prePushSource = [System.IO.File]::ReadAllText($prePushScript)
     $deadSuiteCopy = Join-Path $hookRoot 'pre-push-dead-suite.ps1'
     $verifierRoutes = [ordered]@{
-        'scripts/test-injected-registers.ps1' = @('BadDexFixture.java', 'DexDiff.java', 'FeatureDexFixture.java',
+        'scripts/test-injected-registers.ps1' = @('BadDexFixture.java', 'DexDiff.java', 'FeatureDexFixture.java', 'SelectorDexFixture.java',
             'HostReferences.java', 'HostReferenceFixture.java', 'host-reference-contracts.txt', 'test-host-references.ps1',
             'patch-for-device.ps1', 'injected-mutation-contracts.txt',
             'injected-register-contracts.ps1', 'injected-register-removal-allowlist.txt', 'script-wiring.ps1',
@@ -2781,6 +2794,7 @@ try {
     New-Item -ItemType Directory -Path (Split-Path -Parent $newBranchSource) -Force | Out-Null
     Set-Content -LiteralPath $newBranchSource -Encoding UTF8 -Value 'final class FirstCommit {}'
     & git -C $hookRoot add extensions/tumblr/src/main/java/FirstCommit.java patches-list.json `
+        gradle/wrapper/gradle-wrapper.properties gradle/wrapper/gradle-wrapper.jar `
         scripts/patch-target.ps1 scripts/build-advisories.ps1 scripts/test-script-contracts.ps1 scripts/test-tumblr-sources.ps1
     & git -C $hookRoot commit --quiet -m 'code first'
     $firstCommit = (& git -C $hookRoot rev-parse HEAD).Trim()
@@ -3241,6 +3255,7 @@ try {
                 'param([string]$Root)', 'exit 0')
         }
         & git -C $gateRepo add patches-list.json scripts/patch-target.ps1 `
+            gradle/wrapper/gradle-wrapper.properties gradle/wrapper/gradle-wrapper.jar `
             scripts/build-advisories.ps1 scripts/test-script-contracts.ps1 scripts/test-tumblr-sources.ps1
         $gateMarker = Join-Path $hookRoot 'gate-ran.txt'
         $gateStub = Join-Path $hookRoot 'gate-wrapper.ps1'

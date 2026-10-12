@@ -266,6 +266,8 @@ function Invoke-ReleaseGradle {
     param([Parameter(Mandatory = $true)][string]$Root, [Parameter(Mandatory = $true)][string[]]$Tasks,
         [string]$Job = 'release gradle')
 
+    . (Join-Path (Split-Path -Parent $PSScriptRoot) 'build-advisories.ps1') -Root $Root
+    Assert-ReviewedGradleWrapper -Root $Root | Out-Null
     if (-not $env:JAVA_HOME) { throw 'Set JAVA_HOME to a JDK 21 first. Gradle and the push gate both read it.' }
     if (-not $env:GITHUB_ACTOR -or -not $env:GITHUB_TOKEN) {
         # The Morphe settings plugin resolves from GitHub Packages, which needs a reader token.

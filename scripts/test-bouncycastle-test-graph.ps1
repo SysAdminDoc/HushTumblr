@@ -12,6 +12,7 @@ $ErrorActionPreference = 'Stop'
 if (-not $Root) { $Root = Split-Path -Parent $PSScriptRoot }
 $Root = [IO.Path]::GetFullPath($Root)
 . (Join-Path $PSScriptRoot 'common.ps1')
+. (Join-Path $PSScriptRoot 'build-advisories.ps1') -Root $Root
 $gradle = Join-Path $Root 'gradlew.bat'
 if (-not (Test-Path -LiteralPath $gradle -PathType Leaf)) { throw "Gradle wrapper missing: $gradle" }
 $temp = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\', '/')
@@ -22,6 +23,7 @@ $reportTask = ':patches:buildDependencyReport'
 $reviewTask = ':extensions:tumblr:verifyBouncyCastleTestGraph'
 
 function Invoke-ReviewCase([string]$Name, [string[]]$Tasks, [string]$ExpectedFailure) {
+    Assert-ReviewedGradleWrapper -Root $Root | Out-Null
     $log = Join-Path $testRoot ($Name + '.log')
     $savedErrorAction = $ErrorActionPreference
     try {
