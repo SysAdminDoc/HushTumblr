@@ -67,6 +67,7 @@ HushTumblr %1$s is out. Update it in Morphe Manager.	HushTumblr %1$s sudah diril
 You have the newest HushTumblr release.	Anda sudah memakai rilis HushTumblr terbaru.
 The newest HushTumblr release is %1$s.	Rilis HushTumblr terbaru adalah %1$s.
 Couldn't reach GitHub. Try again later.	GitHub tidak dapat dihubungi. Coba lagi nanti.
+Couldn't save the release check. Try again.	Pemeriksaan rilis tidak dapat disimpan. Coba lagi.
 GitHub is turning away checks from this network for now. Try again later.	GitHub sedang menolak pemeriksaan dari jaringan ini. Coba lagi nanti.
 GitHub sent back something HushTumblr couldn't read. Try again later.	GitHub mengirim sesuatu yang tidak bisa dibaca HushTumblr. Coba lagi nanti.
 Saving the settings file	Menyimpan file pengaturan
@@ -287,6 +288,8 @@ Hide posts with these words	Sembunyikan postingan dengan kata ini
 Takes posts out of your feeds when a hidden word matches one of the selected fields below.	Menghapus postingan dari feed jika kata tersembunyi cocok dengan salah satu bidang yang dipilih di bawah.
 Words to hide	Kata yang disembunyikan
 One word or phrase a line	Satu kata atau frasa per baris
+Changes are saved only when you tap Save.	Perubahan hanya disimpan setelah Anda mengetuk Simpan.
+Words saved	Kata disimpan
 Save	Simpan
 The list is empty. Tap to add words or phrases.	Daftarnya kosong. Ketuk untuk menambahkan kata atau frasa.
 Looks for: %1$s	Mencari: %1$s
@@ -321,6 +324,7 @@ This list is too large for a settings backup. Shorten it before saving. Your dra
 Couldn't save the words. Your earlier list is unchanged. Try again.	Kata-kata tidak dapat disimpan. Daftar sebelumnya tidak berubah. Coba lagi.
 Couldn't save the tab order. Your earlier order is unchanged. Try again.	Urutan tab tidak dapat disimpan. Urutan sebelumnya tidak berubah. Coba lagi.
 %1$s moved to position %2$d of %3$d.	%1$s dipindahkan ke posisi %2$d dari %3$d.
+%1$s is already first.	%1$s sudah berada di urutan pertama.
 Filter activity notifications	Filter notifikasi aktivitas
 Hide ask notifications	Sembunyikan notifikasi pertanyaan
 Hide boop notifications	Sembunyikan notifikasi boop
@@ -339,7 +343,7 @@ Match post summaries	Cocokkan ringkasan postingan
 Hidden and allowed words use the same selected fields. Other post filters still apply.	Kata tersembunyi dan yang diizinkan memakai bidang pilihan yang sama. Filter postingan lainnya tetap berlaku.
 Allowed words	Kata yang diizinkan
 Allowed words keep a post when the word filter would hide it. Other filters still apply.	Kata yang diizinkan mempertahankan postingan yang akan disembunyikan filter kata. Filter lainnya tetap berlaku.
-Posts matching a hidden word in the selected fields are hidden. Case doesn't matter, and only whole words count.	Postingan yang cocok dengan kata tersembunyi pada bidang pilihan akan disembunyikan. Huruf besar atau kecil tidak dibedakan, dan hanya kata utuh yang dihitung.
+Match whole words or phrases in the fields you chose. Case doesn't matter.	Cocokkan kata atau frasa utuh pada bidang yang Anda pilih. Huruf besar dan kecil tidak dibedakan.
 Show post timestamps	Tampilkan waktu postingan
 Shows Tumblr's own timestamps on newly drawn post cards.	Menampilkan waktu bawaan Tumblr pada kartu postingan yang baru ditampilkan.
 Restart Tumblr to apply these settings.	Mulai ulang Tumblr untuk menerapkan pengaturan ini.
@@ -355,11 +359,9 @@ Unmute posts or clear this account's private list	Tampilkan kembali postingan at
 Couldn't update muted posts	Tidak dapat memperbarui postingan yang dibisukan
 Post muted locally	Postingan dibisukan secara lokal
 Muted posts restored	Postingan yang dibisukan dipulihkan
-Couldn't restore muted posts	Tidak dapat memulihkan postingan yang dibisukan
 Muted posts aren't available for this account yet	Postingan yang dibisukan belum tersedia untuk akun ini
 Stored only on this device for this Tumblr account. Tap a post to unmute it. Up to 500 posts are kept per account.	Disimpan hanya di perangkat ini untuk akun Tumblr ini. Ketuk postingan untuk menampilkannya kembali. Maksimal 500 postingan disimpan per akun.
 Post	Postingan
-No muted posts	Tidak ada postingan yang dibisukan
 Clear muted posts	Hapus postingan yang dibisukan
 Post unmuted	Postingan ditampilkan kembali
 Muted posts cleared	Postingan yang dibisukan dihapus
@@ -369,3 +371,9 @@ Show mutual markers	Tampilkan penanda saling mengikuti
 Marks blogs that follow your primary blog when you follow them.	Menandai blog yang mengikuti blog utama Anda dan Anda ikuti.
 Mutual	Saling mengikuti
 Done	Selesai
+No muted posts. Use a post's menu to mute it on this device.	Tidak ada postingan yang dibisukan. Gunakan menu postingan untuk membisukannya di perangkat ini.
+Updating muted posts	Memperbarui postingan yang dibisukan
+Couldn't update muted posts. Your list is unchanged. Try again.	Tidak dapat memperbarui postingan yang dibisukan. Daftar Anda tidak berubah. Coba lagi.
+Couldn't restore muted posts. Try again.	Tidak dapat memulihkan postingan yang dibisukan. Coba lagi.
+The active account changed. Reopen Manage muted posts to see its list.	Akun aktif telah berubah. Buka kembali Kelola postingan yang dibisukan untuk melihat daftarnya.
+Unmute post %1$s	Tampilkan kembali postingan %1$s

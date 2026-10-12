@@ -67,6 +67,7 @@ HushTumblr %1$s is out. Update it in Morphe Manager.	HushTumblr %1$s ist erschie
 You have the newest HushTumblr release.	Du hast die neueste Version von HushTumblr.
 The newest HushTumblr release is %1$s.	Die neueste Version von HushTumblr ist %1$s.
 Couldn't reach GitHub. Try again later.	GitHub war nicht erreichbar. Versuche es später noch einmal.
+Couldn't save the release check. Try again.	Die Versionsprüfung konnte nicht gespeichert werden. Versuche es noch einmal.
 GitHub is turning away checks from this network for now. Try again later.	GitHub weist Anfragen aus diesem Netz gerade ab. Versuche es später noch einmal.
 GitHub sent back something HushTumblr couldn't read. Try again later.	GitHub hat etwas geschickt, das HushTumblr nicht lesen konnte. Versuche es später noch einmal.
 Saving the settings file	Einstellungsdatei wird gespeichert
@@ -287,6 +288,8 @@ Hide posts with these words	Beiträge mit diesen Wörtern ausblenden
 Takes posts out of your feeds when a hidden word matches one of the selected fields below.	Entfernt Posts aus deinen Feeds, wenn ein ausgeblendetes Wort in einem der unten ausgewählten Felder vorkommt.
 Words to hide	Auszublendende Wörter
 One word or phrase a line	Ein Wort oder eine Wortgruppe pro Zeile
+Changes are saved only when you tap Save.	Änderungen werden erst gespeichert, wenn du auf Speichern tippst.
+Words saved	Wörter gespeichert
 Save	Speichern
 The list is empty. Tap to add words or phrases.	Die Liste ist leer. Tippe, um Wörter oder Wortgruppen hinzuzufügen.
 Looks for: %1$s	Sucht nach: %1$s
@@ -321,6 +324,7 @@ This list is too large for a settings backup. Shorten it before saving. Your dra
 Couldn't save the words. Your earlier list is unchanged. Try again.	Die Wörter konnten nicht gespeichert werden. Deine bisherige Liste ist unverändert. Versuch es erneut.
 Couldn't save the tab order. Your earlier order is unchanged. Try again.	Die Tab-Reihenfolge konnte nicht gespeichert werden. Deine bisherige Reihenfolge ist unverändert. Versuch es erneut.
 %1$s moved to position %2$d of %3$d.	%1$s wurde auf Position %2$d von %3$d verschoben.
+%1$s is already first.	%1$s steht bereits an erster Stelle.
 Filter activity notifications	Aktivitätsbenachrichtigungen filtern
 Hide ask notifications	Fragebenachrichtigungen ausblenden
 Hide boop notifications	Boop-Benachrichtigungen ausblenden
@@ -339,7 +343,7 @@ Match post summaries	Beitragszusammenfassungen prüfen
 Hidden and allowed words use the same selected fields. Other post filters still apply.	Ausgeblendete und erlaubte Wörter nutzen dieselben gewählten Felder. Andere Beitragsfilter gelten weiter.
 Allowed words	Erlaubte Wörter
 Allowed words keep a post when the word filter would hide it. Other filters still apply.	Erlaubte Wörter behalten einen Beitrag, den der Wortfilter ausblenden würde. Andere Filter gelten weiter.
-Posts matching a hidden word in the selected fields are hidden. Case doesn't matter, and only whole words count.	Beiträge mit einem ausgeblendeten Wort in den gewählten Feldern werden ausgeblendet. Groß- und Kleinschreibung spielt keine Rolle. Nur ganze Wörter zählen.
+Match whole words or phrases in the fields you chose. Case doesn't matter.	Sucht nach ganzen Wörtern oder Wortgruppen in den gewählten Feldern. Groß- und Kleinschreibung spielt keine Rolle.
 Show post timestamps	Beitragszeitstempel anzeigen
 Shows Tumblr's own timestamps on newly drawn post cards.	Zeigt Tumblrs eigene Zeitstempel auf neu dargestellten Beitragskarten.
 Restart Tumblr to apply these settings.	Starte Tumblr neu, um diese Einstellungen anzuwenden.
@@ -355,11 +359,9 @@ Unmute posts or clear this account's private list	Posts wieder anzeigen oder die
 Couldn't update muted posts	Stummgeschaltete Posts konnten nicht aktualisiert werden
 Post muted locally	Post lokal stummgeschaltet
 Muted posts restored	Stummgeschaltete Posts wiederhergestellt
-Couldn't restore muted posts	Stummgeschaltete Posts konnten nicht wiederhergestellt werden
 Muted posts aren't available for this account yet	Stummgeschaltete Posts sind für dieses Konto noch nicht verfügbar
 Stored only on this device for this Tumblr account. Tap a post to unmute it. Up to 500 posts are kept per account.	Nur auf diesem Gerät für dieses Tumblr-Konto gespeichert. Tippe auf einen Post, um ihn wieder anzuzeigen. Pro Konto werden bis zu 500 Posts gespeichert.
 Post	Post
-No muted posts	Keine stummgeschalteten Posts
 Clear muted posts	Stummgeschaltete Posts löschen
 Post unmuted	Post wieder eingeblendet
 Muted posts cleared	Stummgeschaltete Posts gelöscht
@@ -369,3 +371,9 @@ Show mutual markers	Gegenseitige Follows markieren
 Marks blogs that follow your primary blog when you follow them.	Markiert Blogs, die deinem Hauptblog folgen und denen du folgst.
 Mutual	Gegenseitig
 Done	Fertig
+No muted posts. Use a post's menu to mute it on this device.	Keine stummgeschalteten Posts. Nutze das Menü eines Posts, um ihn auf diesem Gerät stummzuschalten.
+Updating muted posts	Stummgeschaltete Posts werden aktualisiert
+Couldn't update muted posts. Your list is unchanged. Try again.	Stummgeschaltete Posts konnten nicht aktualisiert werden. Deine Liste ist unverändert. Versuche es noch einmal.
+Couldn't restore muted posts. Try again.	Stummgeschaltete Posts konnten nicht wiederhergestellt werden. Versuche es noch einmal.
+The active account changed. Reopen Manage muted posts to see its list.	Das aktive Konto hat sich geändert. Öffne „Stummgeschaltete Posts verwalten“ erneut, um seine Liste zu sehen.
+Unmute post %1$s	Post %1$s wieder anzeigen

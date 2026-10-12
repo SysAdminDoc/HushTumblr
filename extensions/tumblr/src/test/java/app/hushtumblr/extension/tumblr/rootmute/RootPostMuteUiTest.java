@@ -9,16 +9,27 @@ import static org.junit.Assert.*;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Rect;
+import android.os.Looper;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.accessibility.AccessibilityManager;
+import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.time.Duration;
 
 import org.junit.After;
 import org.junit.Before;
@@ -27,10 +38,13 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
+import org.robolectric.Shadows;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
+import org.robolectric.annotation.GraphicsMode;
 import org.robolectric.shadows.ShadowAlertDialog;
+import org.robolectric.shadows.ShadowLooper;
 
 import app.hushtumblr.extension.shared.SettingsContextRule;
 import app.hushtumblr.extension.shared.settings.PauseForTests;
@@ -46,7 +60,7 @@ public class RootPostMuteUiTest {
     private ActivityController<Activity> controller;
 
     @Before public void prepare() {
-        controller = Robolectric.buildActivity(Activity.class).setup();
+        controller = Robolectric.buildActivity(Activity.class).setup().visible();
         PatchFamilyForTests.inBuild(EnumSet.of(PatchFamily.MUTE_ROOT_POSTS));
         PatchFamilyForTests.capabilities(EnumSet.of(PatchFamily.Capability.ROOT_POST_MUTES));
         Settings.MUTE_ROOT_POSTS.save(true); PauseForTests.resume();
@@ -108,7 +122,7 @@ public class RootPostMuteUiTest {
         mute("11"); RootPostMutePreference row = new RootPostMutePreference(controller.get()); row.onClick();
         AlertDialog old = ShadowAlertDialog.getLatestAlertDialog();
         List<Runnable> queued = new ArrayList<>(); RootPostMutes.workerForTests = queued::add;
-        find(old.getWindow().getDecorView(), ListView.class).performItemClick(null, 0, 0);
+        clickFirstPost(old);
         assertEquals(1, queued.size()); row.closeDialogs(); row.onClick();
         AlertDialog replacement = ShadowAlertDialog.getLatestAlertDialog(); assertNotSame(old, replacement);
         queued.get(0).run(); assertTrue(replacement.isShowing());
@@ -216,6 +230,291 @@ public class RootPostMuteUiTest {
         action.run();
         assertEquals(List.of(selected), owner.items);
         assertTrue(RootPostMutes.capture().roots.isEmpty());
+    }
+
+    @Test public void failedUnmuteKeepsThePrivateRowsAndOffersRetry() throws Exception {
+        mute("11");
+        AlertDialog dialog = RootPostMuteUi.manage(controller.get());
+        File saved = RootPostMutes.fileForTests;
+        RootPostMutes.fileForTests = temporary.newFolder("unmute-failure");
+        clickFirstPost(dialog);
+        assertTrue(dialog.isShowing());
+        assertEquals(java.util.Set.of("11"), RootPostMutes.capture().roots);
+        ListView list = find(dialog.getWindow().getDecorView(), ListView.class);
+        assertTrue(list.isEnabled());
+        assertTrue(dialog.getButton(AlertDialog.BUTTON_NEUTRAL).isEnabled());
+        assertTrue(notice(dialog).getText().toString().contains("Try again"));
+        assertEquals(View.ACCESSIBILITY_LIVE_REGION_POLITE, notice(dialog).getAccessibilityLiveRegion());
+        RootPostMutes.fileForTests = saved;
+        clickFirstPost(dialog);
+        assertTrue(dialog.isShowing());
+        assertTrue(RootPostMutes.capture().roots.isEmpty());
+        assertEquals(0, list.getCount() - list.getHeaderViewsCount());
+        assertTrue(inlineUndo(dialog).isShown());
+        dialog.dismiss();
+    }
+
+    @Test public void failedClearKeepsTheListAndCanBeRetried() throws Exception {
+        mute("11"); mute("22");
+        AlertDialog dialog = RootPostMuteUi.manage(controller.get());
+        Button clear = dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
+        File saved = RootPostMutes.fileForTests;
+        RootPostMutes.fileForTests = temporary.newFolder("clear-failure");
+        clear.performClick();
+        assertTrue(dialog.isShowing());
+        assertEquals(java.util.Set.of("11", "22"), RootPostMutes.capture().roots);
+        assertTrue(clear.isEnabled());
+        assertTrue(notice(dialog).getText().toString().contains("Try again"));
+        RootPostMutes.fileForTests = saved;
+        clear.performClick();
+        assertTrue(dialog.isShowing());
+        assertTrue(RootPostMutes.capture().roots.isEmpty());
+        assertFalse(clear.isEnabled());
+        inlineUndo(dialog).performClick();
+        assertEquals(java.util.Set.of("11", "22"), RootPostMutes.capture().roots);
+        assertTrue(clear.isEnabled());
+        dialog.dismiss();
+    }
+
+    @Test public void managerUndoStaysInItsVisibleWindowAndRetriesFailedPersistence() throws Exception {
+        mute("11");
+        AlertDialog dialog = RootPostMuteUi.manage(controller.get());
+        clickFirstPost(dialog);
+        assertTrue(dialog.isShowing());
+        assertNull(find(controller.get().findViewById(android.R.id.content), Button.class));
+        Button undo = inlineUndo(dialog);
+        assertTrue(undo.isShown());
+        File saved = RootPostMutes.fileForTests;
+        RootPostMutes.fileForTests = temporary.newFolder("undo-failure");
+        undo.performClick();
+        assertTrue(dialog.isShowing());
+        assertTrue(RootPostMutes.capture().roots.isEmpty());
+        assertTrue(undo.isEnabled());
+        assertTrue(undo.isShown());
+        assertTrue(notice(dialog).getText().toString().contains("Try again"));
+        RootPostMutes.fileForTests = saved;
+        undo.performClick();
+        assertEquals(java.util.Set.of("11"), RootPostMutes.capture().roots);
+        assertFalse(undo.isShown());
+        dialog.dismiss();
+    }
+
+    @Test public void anAccountChangeClosesPrivateRowsAndPendingCallbacksStayInert() {
+        mute("11");
+        AlertDialog dialog = RootPostMuteUi.manage(controller.get());
+        List<Runnable> queued = new ArrayList<>(); RootPostMutes.workerForTests = queued::add;
+        clickFirstPost(dialog);
+        assertEquals(1, queued.size());
+        assertFalse(dialog.getButton(AlertDialog.BUTTON_NEUTRAL).isEnabled());
+        account("account-b");
+        ShadowLooper.idleMainLooper();
+        assertFalse("Old account rows remain visible", dialog.isShowing());
+        queued.get(0).run();
+        assertFalse(dialog.isShowing());
+        assertNull(find(controller.get().findViewById(android.R.id.content), Button.class));
+    }
+
+    @Test public void aManagerRowIsAnUnmuteButtonAndDuplicateActionsWaitForTheWorker() {
+        mute("11");
+        AlertDialog dialog = RootPostMuteUi.manage(controller.get());
+        layoutManager(dialog);
+        ListView list = find(dialog.getWindow().getDecorView(), ListView.class);
+        int position = list.getHeaderViewsCount();
+        View row = list.getChildAt(position - list.getFirstVisiblePosition());
+        assertNotNull(row);
+        AccessibilityNodeInfo info = row.createAccessibilityNodeInfo();
+        assertEquals(Button.class.getName(), info.getClassName().toString());
+        assertTrue(info.isClickable());
+        assertTrue(info.getContentDescription().toString().contains("Unmute"));
+        List<Runnable> queued = new ArrayList<>(); RootPostMutes.workerForTests = queued::add;
+        assertTrue(row.performAccessibilityAction(AccessibilityNodeInfo.ACTION_CLICK, null));
+        assertFalse(list.isEnabled());
+        assertFalse(dialog.getButton(AlertDialog.BUTTON_NEUTRAL).isEnabled());
+        list.performItemClick(row, position, 0);
+        dialog.getButton(AlertDialog.BUTTON_NEUTRAL).performClick();
+        assertEquals(1, queued.size());
+        queued.get(0).run();
+        assertTrue(dialog.isShowing());
+        assertTrue(list.isEnabled());
+        dialog.dismiss();
+    }
+
+    @Test public void menuUndoUsesTheAccessibleTimeoutAndRetainsFailedRestores() throws Exception {
+        AccessibilityManager manager = controller.get().getSystemService(AccessibilityManager.class);
+        Shadows.shadowOf(manager).setInteractiveUiTimeout(60000);
+        RootPostMuteUi.changed(controller.get(), "Post muted locally", mute("11"));
+        Button undo = find(controller.get().findViewById(android.R.id.content), Button.class);
+        assertNotNull(undo);
+        Shadows.shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(11));
+        assertNotNull(undo.getParent());
+        File saved = RootPostMutes.fileForTests;
+        RootPostMutes.fileForTests = temporary.newFolder("menu-undo-failure");
+        undo.performClick();
+        assertNotNull(undo.getParent());
+        assertTrue(undo.isEnabled());
+        RootPostMutes.fileForTests = saved;
+        undo.performClick();
+        assertTrue(RootPostMutes.capture().roots.isEmpty());
+        assertNull(find(controller.get().findViewById(android.R.id.content), Button.class));
+        RootPostMuteUi.changed(controller.get(), "Post muted locally", mute("22"));
+        Button expiring = find(controller.get().findViewById(android.R.id.content), Button.class);
+        Shadows.shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(61));
+        assertNull(find(controller.get().findViewById(android.R.id.content), Button.class));
+        expiring.performClick();
+        assertEquals(java.util.Set.of("22"), RootPostMutes.capture().roots);
+    }
+
+    @Test public void inlineUndoHonorsTheAccessibleTimeoutThenMakesTheRetainedButtonInert() {
+        AccessibilityManager manager = controller.get().getSystemService(AccessibilityManager.class);
+        Shadows.shadowOf(manager).setInteractiveUiTimeout(60000);
+        mute("11");
+        AlertDialog dialog = RootPostMuteUi.manage(controller.get());
+        clickFirstPost(dialog);
+        Button undo = inlineUndo(dialog);
+        Shadows.shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(11));
+        assertEquals(View.VISIBLE, undo.getVisibility());
+        Shadows.shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(50));
+        assertEquals(View.GONE, undo.getVisibility());
+        undo.performClick();
+        assertTrue(RootPostMutes.capture().roots.isEmpty());
+        dialog.dismiss();
+    }
+
+    @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(qualifiers = "w390dp-h844dp-night-xhdpi")
+    public void aKeyboardCanReachTheManagersInlineUndo() {
+        mute("11");
+        AlertDialog dialog = RootPostMuteUi.manage(controller.get());
+        clickFirstPost(dialog);
+        ListView list = find(dialog.getWindow().getDecorView(), ListView.class);
+        Button undo = inlineUndo(dialog);
+        Object root = org.robolectric.util.ReflectionHelpers.callInstanceMethod(
+                dialog.getWindow().getDecorView(), "getViewRootImpl");
+        org.robolectric.util.ReflectionHelpers.callInstanceMethod(root, "ensureTouchMode",
+                org.robolectric.util.ReflectionHelpers.ClassParameter.from(boolean.class, false));
+        assertTrue(list.requestFocus());
+        assertFalse(undo.hasFocus());
+        list.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_DOWN));
+        list.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DPAD_DOWN));
+        assertTrue("Keyboard focus skipped the visible Undo action", undo.hasFocus());
+        undo.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_CENTER));
+        undo.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DPAD_CENTER));
+        ShadowLooper.idleMainLooper();
+        assertEquals(java.util.Set.of("11"), RootPostMutes.capture().roots);
+        dialog.dismiss();
+    }
+
+    private static void clickFirstPost(AlertDialog dialog) {
+        layoutManager(dialog);
+        ListView list = find(dialog.getWindow().getDecorView(), ListView.class);
+        int position = list.getHeaderViewsCount();
+        View row = list.getChildAt(position - list.getFirstVisiblePosition());
+        assertNotNull(row);
+        list.performItemClick(row, position, 0);
+        layoutManager(dialog);
+    }
+
+    private static void layoutManager(AlertDialog dialog) {
+        ShadowLooper.idleMainLooper();
+        int width = dialog.getWindow().getAttributes().width;
+        measure(dialog.getWindow().getDecorView(), width > 0 ? Math.min(780, width) : 716, 1688);
+    }
+
+    private static TextView notice(AlertDialog dialog) {
+        TextView notice = dialog.getWindow().getDecorView().findViewWithTag("root_mute_notice");
+        assertNotNull(notice);
+        return notice;
+    }
+
+    private static Button inlineUndo(AlertDialog dialog) {
+        Button undo = dialog.getWindow().getDecorView().findViewWithTag("root_mute_undo");
+        assertNotNull(undo);
+        return undo;
+    }
+
+    @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(qualifiers = "ar-rEG-w390dp-h320dp-night-xhdpi")
+    public void aShortScreenAtTwiceTheTextSizeKeepsActionsAndTheLastPrivateRowReachable() {
+        Configuration config = new Configuration(controller.get().getResources().getConfiguration());
+        config.fontScale = 2f;
+        controller.get().getResources().updateConfiguration(config, null);
+        for (int i = 1; i <= 20; i++) mute(String.valueOf(1000 + i));
+        controller.visible();
+        AlertDialog dialog = RootPostMuteUi.manage(controller.get());
+        ShadowLooper.idleMainLooper();
+        View decor = dialog.getWindow().getDecorView();
+        measure(decor, 716, 640);
+        assertTrue(decor.getHeight() <= 640);
+        for (int which : new int[]{AlertDialog.BUTTON_NEGATIVE, AlertDialog.BUTTON_NEUTRAL}) {
+            Button action = dialog.getButton(which);
+            Rect visible = new Rect();
+            assertTrue(action.getText().toString(), action.getGlobalVisibleRect(visible));
+            assertEquals(action.getText().toString(), action.getHeight(), visible.height());
+            android.text.Layout text = action.getLayout();
+            assertTrue(action.getText().toString(), text.getHeight() <= action.getHeight()
+                    - action.getCompoundPaddingTop() - action.getCompoundPaddingBottom());
+        }
+        ListView list = find(decor, ListView.class);
+        assertTrue(list.getHeight() > 0 && list.getHeight() < 640);
+        list.setSelection(list.getCount() - 1);
+        measure(decor, 716, 640);
+        assertEquals(list.getCount() - 1, list.getLastVisiblePosition());
+        View last = list.getChildAt(list.getChildCount() - 1);
+        assertTrue(last.getBottom() <= list.getHeight() - list.getPaddingBottom());
+        dialog.dismiss();
+    }
+
+    @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(qualifiers = "w390dp-h844dp-night-xhdpi")
+    public void rendersTheEmptyPrivateManager() throws Exception {
+        captureManager("root-mutes-empty");
+    }
+
+    @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(qualifiers = "w390dp-h844dp-night-xhdpi")
+    public void rendersThePopulatedPrivateManager() throws Exception {
+        mute("1001"); mute("1002"); mute("1003");
+        captureManager("root-mutes-populated");
+    }
+
+    @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(qualifiers = "ar-rEG-w390dp-h844dp-night-xhdpi")
+    public void rendersThePrivateManagerAtTwiceTheTextSizeInRtl() throws Exception {
+        Configuration config = new Configuration(controller.get().getResources().getConfiguration());
+        config.fontScale = 2f;
+        controller.get().getResources().updateConfiguration(config, null);
+        for (int i = 1; i <= 20; i++) mute(String.valueOf(1000 + i));
+        captureManager("root-mutes-large-rtl");
+    }
+
+    private void captureManager(String name) throws Exception {
+        controller.visible();
+        AlertDialog dialog = RootPostMuteUi.manage(controller.get());
+        assertNotNull(dialog);
+        try {
+            ShadowLooper.idleMainLooper();
+            View decor = dialog.getWindow().getDecorView();
+            int width = dialog.getWindow().getAttributes().width;
+            if (width <= 0) width = 716;
+            measure(decor, Math.min(780, width), 1688);
+            assertTrue(decor.getWidth() > 0 && decor.getHeight() > 0);
+            Bitmap image = Bitmap.createBitmap(780, 1688, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(image);
+            canvas.drawColor(android.graphics.Color.BLACK);
+            canvas.translate((780 - decor.getWidth()) / 2f, (1688 - decor.getHeight()) / 2f);
+            decor.draw(canvas);
+            File folder = new File("build/reports/settings-design");
+            assertTrue(folder.isDirectory() || folder.mkdirs());
+            try (FileOutputStream output = new FileOutputStream(new File(folder, name + ".png"))) {
+                assertTrue(image.compress(Bitmap.CompressFormat.PNG, 100, output));
+            } finally { image.recycle(); }
+        } finally { dialog.dismiss(); }
+    }
+
+    private static void measure(View decor, int width, int height) {
+        decor.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.AT_MOST));
+        decor.layout(0, 0, decor.getMeasuredWidth(), decor.getMeasuredHeight());
     }
 
     private static final class FakeTimeline implements HushLocalTimeline {
