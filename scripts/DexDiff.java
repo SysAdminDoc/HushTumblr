@@ -4286,6 +4286,147 @@ public class DexDiff {
             return found;
         }
 
+        boolean captionCleanupTry(Method m, int index, int start, int end, int handler) {
+            if (m == null || m.getImplementation().getTryBlocks().size() <= index) return false;
+            Layout layout = new Layout(m.getImplementation());
+            TryBlock<? extends ExceptionHandler> block = m.getImplementation().getTryBlocks().get(index);
+            return block.getStartCodeAddress() == layout.addresses.get(start)
+                    && block.getCodeUnitCount() == layout.addresses.get(end) - layout.addresses.get(start)
+                    && block.getExceptionHandlers().size() == 1 && block.getExceptionHandlers().get(0).getExceptionType() == null
+                    && block.getExceptionHandlers().get(0).getHandlerCodeAddress() == layout.addresses.get(handler);
+        }
+
+        /** A captured map and every copy may only serve the known put and balanced monitor cleanup. */
+        boolean captionMapDoesNotEscape(Method bind, int capture, int mapRegister) {
+            record State(int at, BitSet aliases) {}
+            FeatureFlow graph = flow(bind); List<Instruction> body = instructions(bind);
+            BitSet captured = new BitSet(); captured.set(mapRegister);
+            Deque<State> work = new ArrayDeque<>(); Set<State> visited = new HashSet<>();
+            work.add(new State(capture + 1, captured));
+            while (!work.isEmpty()) {
+                State state = work.poll(); if (!visited.add(state) || state.aliases().isEmpty()) continue;
+                int at = state.at(); Instruction instruction = body.get(at); BitSet after = (BitSet) state.aliases().clone();
+                boolean copy = instruction instanceof TwoRegisterInstruction
+                        && Set.of(Opcode.MOVE_OBJECT, Opcode.MOVE_OBJECT_FROM16, Opcode.MOVE_OBJECT_16).contains(instruction.getOpcode());
+                boolean uses = valueReads(instruction).stream().anyMatch(read -> state.aliases().get(read[0]))
+                        || instruction.getOpcode().name.startsWith("invoke") && arguments(instruction).stream().anyMatch(state.aliases()::get);
+                if (copy) {
+                    TwoRegisterInstruction move = (TwoRegisterInstruction) instruction;
+                    after.set(move.getRegisterA(), state.aliases().get(move.getRegisterB()));
+                } else {
+                    boolean allowed = at == capture + 1 && instruction.getOpcode() == Opcode.MONITOR_ENTER
+                            || at == capture + 4 && instruction.getOpcode() == Opcode.INVOKE_INTERFACE
+                            || instruction.getOpcode() == Opcode.MONITOR_EXIT;
+                    if (uses && !allowed) return false;
+                    if (instruction.getOpcode().setsRegister()) {
+                        int destination = firstRegister(instruction); after.clear(destination);
+                        if (instruction.getOpcode().setsWideRegister()) after.clear(destination + 1);
+                    }
+                }
+                for (int next : graph.normal.get(at)) work.add(new State(next, after));
+                // A throwing write has not produced its answer on its handler edge.
+                for (int next : graph.handlers.get(at)) work.add(new State(next, state.aliases()));
+            }
+            return true;
+        }
+
+        /** Only the recorded, freshly created caption may be removed while its family is off. */
+        boolean imageCaptionCleanup(Contract c) {
+            String hook = c.strings.get(5), owner = hook.substring(0, hook.indexOf("->"));
+            String view = "Landroid/view/View;", group = "Landroid/view/ViewGroup;", text = "Landroid/widget/TextView;",
+                    map = "Ljava/util/Map;", weak = "Ljava/lang/ref/WeakReference;", object = "Ljava/lang/Object;";
+            String captions = owner + "->CAPTIONS:" + map, clearKey = owner + "->clear(" + view + ")V";
+            String[] row = c.strings.get(9).split(">", 4), container = c.strings.get(8).split(">", 4);
+            if (row.length != 4 || container.length != 4) return false;
+            Method gallery = actual(hook), clear = actual(clearKey), init = actual(owner + "-><clinit>()V"),
+                    bind = actual(owner + "->bind(" + object + object + "Z)V");
+            List<Instruction> g = gallery == null ? List.of() : instructions(gallery), b = clear == null ? List.of() : instructions(clear),
+                    in = init == null ? List.of() : instructions(init), registration = bind == null ? List.of() : instructions(bind);
+            int fields = AccessFlags.PRIVATE.getValue() | AccessFlags.STATIC.getValue() | AccessFlags.FINAL.getValue();
+            boolean good = hasField(patched, owner, "CAPTIONS", map, fields, AccessFlags.PUBLIC.getValue() | AccessFlags.PROTECTED.getValue())
+                    && gallery != null && isStatic(gallery) && gallery.getImplementation().getRegisterCount() == 5 && g.size() == 26
+                    && fieldIs(g.get(0), Opcode.INSTANCE_OF, row[1], 0, 4) && movesTo(g.get(1), 0, Opcode.IF_NEZ) && target(gallery, 1) == 3
+                    && g.get(2).getOpcode() == Opcode.GOTO && target(gallery, 2) == 20 && fieldIs(g.get(3), Opcode.CHECK_CAST, row[1], 4, -1)
+                    && callIs(g.get(4), Opcode.INVOKE_INTERFACE, row[1] + "->" + row[2] + "()[" + object, 4)
+                    && movesTo(g.get(5), 4, Opcode.MOVE_RESULT_OBJECT) && movesTo(g.get(6), 4, Opcode.IF_NEZ) && target(gallery, 6) == 8
+                    && g.get(7).getOpcode() == Opcode.GOTO && target(gallery, 7) == 20 && movePair(g.get(8), Opcode.ARRAY_LENGTH, 0, 4)
+                    && literalIs(g.get(9), Opcode.CONST_4, 1, 0) && movePair(g.get(10), Opcode.IF_GE, 1, 0) && target(gallery, 10) == 20
+                    && threeRegisters(g.get(11), Opcode.AGET_OBJECT, 2, 4, 1) && fieldIs(g.get(12), Opcode.INSTANCE_OF, container[1], 3, 2)
+                    && movesTo(g.get(13), 3, Opcode.IF_EQZ) && target(gallery, 13) == 18 && fieldIs(g.get(14), Opcode.CHECK_CAST, container[1], 2, -1)
+                    && callIs(g.get(15), Opcode.INVOKE_INTERFACE, container[1] + "->" + container[2] + "()" + view, 2)
+                    && movesTo(g.get(16), 2, Opcode.MOVE_RESULT_OBJECT) && callIs(g.get(17), Opcode.INVOKE_STATIC, clearKey, 2)
+                    && movePair(g.get(18), Opcode.ADD_INT_LIT8, 1, 1) && ((NarrowLiteralInstruction) g.get(18)).getNarrowLiteral() == 1
+                    && g.get(19).getOpcode() == Opcode.GOTO && target(gallery, 19) == 10 && g.get(20).getOpcode() == Opcode.RETURN_VOID
+                    && movesTo(g.get(21), 4, Opcode.MOVE_EXCEPTION) && "Visible image descriptions".equals(literal(g.get(22))) && firstRegister(g.get(22)) == 0
+                    && "gallery caption cleanup".equals(literal(g.get(23))) && firstRegister(g.get(23)) == 1
+                    && callIs(g.get(24), Opcode.INVOKE_STATIC, "Lapp/hushtumblr/extension/shared/diagnostics/HookStatus;->threw(" + STRING_TYPE + STRING_TYPE + "Ljava/lang/Throwable;)V", 0, 1, 4)
+                    && g.get(25).getOpcode() == Opcode.RETURN_VOID && gallery.getImplementation().getTryBlocks().size() == 1
+                    && captionCleanupTry(gallery, 0, 0, 18, 21);
+            good &= clear != null && isStatic(clear) && AccessFlags.PRIVATE.isSet(clear.getAccessFlags())
+                    && clear.getImplementation().getRegisterCount() == 2 && b.size() == 27
+                    && movesTo(b.get(0), 1, Opcode.IF_NEZ) && target(clear, 0) == 2 && b.get(1).getOpcode() == Opcode.GOTO && target(clear, 1) == 23
+                    && fieldIs(b.get(2), Opcode.SGET_OBJECT, captions, 0, -1) && movesTo(b.get(3), 0, Opcode.MONITOR_ENTER)
+                    && callIs(b.get(4), Opcode.INVOKE_INTERFACE, map + "->remove(" + object + ")" + object, 0, 1)
+                    && movesTo(b.get(5), 1, Opcode.MOVE_RESULT_OBJECT) && fieldIs(b.get(6), Opcode.CHECK_CAST, weak, 1, -1)
+                    && movesTo(b.get(7), 0, Opcode.MONITOR_EXIT) && movesTo(b.get(8), 1, Opcode.IF_NEZ) && target(clear, 8) == 11
+                    && literalIs(b.get(9), Opcode.CONST_4, 1, 0) && b.get(10).getOpcode() == Opcode.GOTO && target(clear, 10) == 14
+                    && callIs(b.get(11), Opcode.INVOKE_VIRTUAL, "Ljava/lang/ref/Reference;->get()" + object, 1)
+                    && movesTo(b.get(12), 1, Opcode.MOVE_RESULT_OBJECT) && fieldIs(b.get(13), Opcode.CHECK_CAST, text, 1, -1)
+                    && movesTo(b.get(14), 1, Opcode.IF_EQZ) && target(clear, 14) == 23
+                    && callIs(b.get(15), Opcode.INVOKE_VIRTUAL, view + "->getParent()Landroid/view/ViewParent;", 1) && movesTo(b.get(16), 0, Opcode.MOVE_RESULT_OBJECT)
+                    && fieldIs(b.get(17), Opcode.INSTANCE_OF, group, 0, 0) && movesTo(b.get(18), 0, Opcode.IF_EQZ) && target(clear, 18) == 23
+                    && callIs(b.get(19), Opcode.INVOKE_VIRTUAL, view + "->getParent()Landroid/view/ViewParent;", 1) && movesTo(b.get(20), 0, Opcode.MOVE_RESULT_OBJECT)
+                    && fieldIs(b.get(21), Opcode.CHECK_CAST, group, 0, -1) && callIs(b.get(22), Opcode.INVOKE_VIRTUAL, group + "->removeView(" + view + ")V", 0, 1)
+                    && b.get(23).getOpcode() == Opcode.RETURN_VOID && movesTo(b.get(24), 1, Opcode.MOVE_EXCEPTION)
+                    && movesTo(b.get(25), 0, Opcode.MONITOR_EXIT) && movesTo(b.get(26), 1, Opcode.THROW)
+                    && clear.getImplementation().getTryBlocks().size() == 2 && captionCleanupTry(clear, 0, 4, 8, 24) && captionCleanupTry(clear, 1, 25, 26, 24);
+            good &= init != null && isStatic(init) && in.size() == 4 && fieldIs(in.get(0), Opcode.NEW_INSTANCE, "Ljava/util/WeakHashMap;", 0, -1)
+                    && callIs(in.get(1), Opcode.INVOKE_DIRECT, "Ljava/util/WeakHashMap;-><init>()V", 0)
+                    && fieldIs(in.get(2), Opcode.SPUT_OBJECT, captions, 0, -1) && in.get(3).getOpcode() == Opcode.RETURN_VOID && init.getImplementation().getTryBlocks().isEmpty();
+
+            // The map cannot escape or accept another writer. Its only value is a weak reference
+            // to the TextView this binder just created, never the native image frame passed in.
+            List<Integer> mapReads = new ArrayList<>(), constructors = new ArrayList<>();
+            for (int k = 0; k < registration.size(); k++) {
+                if (captions.equals(String.valueOf(reference(registration.get(k))))) mapReads.add(k);
+                if (isCall(registration.get(k), text, "<init>", "(Landroid/content/Context;)V")) constructors.add(k);
+            }
+            boolean recorded = bind != null && isStatic(bind) && AccessFlags.PRIVATE.isSet(bind.getAccessFlags()) && mapReads.size() == 1 && constructors.size() == 1;
+            int capture = mapReads.isEmpty() ? -1 : mapReads.get(0), constructor = constructors.isEmpty() ? -1 : constructors.get(0);
+            if (recorded && capture + 5 < registration.size() && constructor >= 3 && constructor < capture) {
+                Instruction create = registration.get(constructor - 3), reference = registration.get(capture + 2);
+                int caption = firstRegister(create), mapRegister = firstRegister(registration.get(capture)), weakRegister = firstRegister(reference);
+                int frame = parameter(bind, 0);
+                recorded = new HashSet<>(List.of(mapRegister, weakRegister, frame, caption)).size() == 4
+                        && fieldIs(create, Opcode.NEW_INSTANCE, text, caption, -1)
+                        && callIs(registration.get(constructor - 2), Opcode.INVOKE_VIRTUAL, view + "->getContext()Landroid/content/Context;", frame)
+                        && registration.get(constructor - 1).getOpcode() == Opcode.MOVE_RESULT_OBJECT
+                        && callIs(registration.get(constructor), Opcode.INVOKE_DIRECT, text + "-><init>(Landroid/content/Context;)V", caption, firstRegister(registration.get(constructor - 1)))
+                        && !writtenBetween(registration, constructor - 2, capture + 5, caption)
+                        && registration.get(capture).getOpcode() == Opcode.SGET_OBJECT && movesTo(registration.get(capture + 1), mapRegister, Opcode.MONITOR_ENTER)
+                        && fieldIs(reference, Opcode.NEW_INSTANCE, weak, weakRegister, -1)
+                        && callIs(registration.get(capture + 3), Opcode.INVOKE_DIRECT, weak + "-><init>(" + object + ")V", weakRegister, caption)
+                        && callIs(registration.get(capture + 4), Opcode.INVOKE_INTERFACE, map + "->put(" + object + object + ")" + object, mapRegister, frame, weakRegister)
+                        && movesTo(registration.get(capture + 5), mapRegister, Opcode.MONITOR_EXIT)
+                        && captionMapDoesNotEscape(bind, capture, mapRegister);
+                // Every route to the map capture, including handlers, must construct this caption first.
+                FeatureFlow graph = flow(bind); BitSet visited = new BitSet(); Deque<Integer> work = new ArrayDeque<>(); work.add(0);
+                while (!work.isEmpty()) {
+                    int at = work.poll(); if (at == constructor || visited.get(at)) continue;
+                    visited.set(at); if (at == capture) recorded = false;
+                    work.addAll(graph.normal.get(at)); work.addAll(graph.handlers.get(at));
+                }
+                recorded &= graph.reachable(0, true).get(capture + 4);
+            } else recorded = false;
+            int fieldUses = 0;
+            for (Method method : patched.methods.values()) for (Instruction instruction : instructions(method))
+                if (captions.equals(String.valueOf(reference(instruction)))) {
+                    fieldUses++;
+                    if (method != gallery && method != clear && method != init && method != bind) good = false;
+                }
+            return good && recorded && fieldUses == 3;
+        }
+
         /** Captions follow native photo binds and the gallery's clear-before-bind lifecycle. */
         void imageDescriptions(Contract c) {
             Method single = clean.methods.get(c.strings.get(1));
@@ -4309,9 +4450,17 @@ public class DexDiff {
             Method gallery = clean.methods.get(c.strings.get(4)), clear = clean.methods.get(c.strings.get(6));
             boolean galleryBound = false;
             if (gallery == null || clear == null) fail("the native gallery bind lifecycle is absent");
-            else galleryBound = hookAt(gallery, actual(gallery), 0, c.strings.get(3),
-                    List.of(parameter(gallery, 1), parameter(gallery, 2)), -1, List.of())
-                    & hookAt(clear, actual(clear), 0, c.strings.get(5), List.of(parameter(clear, 5)), -1, List.of());
+            else {
+                galleryBound = hookAt(gallery, actual(gallery), 0, c.strings.get(3),
+                        List.of(parameter(gallery, 1), parameter(gallery, 2)), -1, List.of());
+                boolean cleanup = imageCaptionCleanup(c);
+                if (!cleanup) fail("gallery caption cleanup ownership changed");
+                boolean controlled = featureControls;
+                featureControls = controlled && !cleanup;
+                galleryBound &= hookAt(clear, actual(clear), 0, c.strings.get(5), List.of(parameter(clear, 5)), -1, List.of());
+                featureControls = controlled;
+                galleryBound &= cleanup;
+            }
             boolean model = bridge(c.strings.get(7));
             boolean container = defaultObjectBridge(c.strings.get(8)), row = defaultObjectBridge(c.strings.get(9));
             capability("photoAltTextCaptions", photo && model && container);

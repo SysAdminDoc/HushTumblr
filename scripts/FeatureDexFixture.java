@@ -8,9 +8,11 @@ import com.android.tools.smali.dexlib2.iface.instruction.Instruction;
 import com.android.tools.smali.dexlib2.immutable.ImmutableClassDef;
 import com.android.tools.smali.dexlib2.immutable.ImmutableDexFile;
 import com.android.tools.smali.dexlib2.immutable.ImmutableField;
+import com.android.tools.smali.dexlib2.immutable.ImmutableExceptionHandler;
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod;
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodImplementation;
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter;
+import com.android.tools.smali.dexlib2.immutable.ImmutableTryBlock;
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction10t;
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction10x;
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction11n;
@@ -19,6 +21,7 @@ import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstructio
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction21t;
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction22c;
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction22b;
+import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction22t;
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction22x;
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction12x;
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction23x;
@@ -149,6 +152,9 @@ public final class FeatureDexFixture {
                     AccessFlags.PRIVATE.getValue(), null, Set.of(), Set.of()));
         if (owner.equals(PHOTO_BINDER)) for (String name : List.of("c", "d")) fields.add(new ImmutableField(owner, name, IMAGE_BLOCK,
                 AccessFlags.PRIVATE.getValue() | AccessFlags.FINAL.getValue(), null, Set.of(), Set.of()));
+        if (owner.equals(ALT_TEXT) && methods.stream().anyMatch(m -> m.getName().equals("clearGallery")))
+            fields.add(new ImmutableField(owner, "CAPTIONS", "Ljava/util/Map;",
+                    AccessFlags.PRIVATE.getValue() | AccessFlags.STATIC.getValue() | AccessFlags.FINAL.getValue(), null, Set.of(), Set.of()));
         return new ImmutableClassDef(owner, AccessFlags.PUBLIC.getValue() | (bridge ? AccessFlags.INTERFACE.getValue() | AccessFlags.ABSTRACT.getValue() : 0),
                 owner.equals(FEATURE) || owner.equals(ACTIVITY_TYPE) ? "Ljava/lang/Enum;" : owner.equals(COMMUNITY_FOOTER)
                         ? "Landroid/view/ViewGroup;" : SUPERCLASSES.getOrDefault(owner, OBJECT), interfaces, null,
@@ -516,6 +522,126 @@ public final class FeatureDexFixture {
                 List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN, 1)), "Z")));
     }
 
+    private static int captionAddress(List<Instruction> body, int at) {
+        int address = 0;
+        for (int k = 0; k < at; k++) address += body.get(k).getCodeUnits();
+        return address;
+    }
+
+    private static void captionBranch(List<Instruction> body, int at, int target) {
+        Instruction old = body.get(at);
+        int offset = captionAddress(body, target) - captionAddress(body, at);
+        if (old.getOpcode() == Opcode.GOTO) body.set(at, new ImmutableInstruction10t(Opcode.GOTO, offset));
+        else if (old instanceof com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction two)
+            body.set(at, new ImmutableInstruction22t(old.getOpcode(), two.getRegisterA(), two.getRegisterB(), offset));
+        else body.set(at, new ImmutableInstruction21t(old.getOpcode(), ((com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction) old).getRegisterA(), offset));
+    }
+
+    private static Method captionMethod(String name, int registers, List<Instruction> body, List<ImmutableTryBlock> tries, String... parameters) {
+        Method shape = method(ALT_TEXT, name, VOID, true, registers, body, parameters);
+        int flags = AccessFlags.STATIC.getValue() | (name.equals("clearGallery") ? AccessFlags.PUBLIC.getValue()
+                : name.equals("<clinit>") ? AccessFlags.CONSTRUCTOR.getValue() : AccessFlags.PRIVATE.getValue());
+        return new ImmutableMethod(ALT_TEXT, name, shape.getParameters(), VOID, flags, Set.of(), Set.of(),
+                new ImmutableMethodImplementation(registers, body, tries, List.of()));
+    }
+
+    private static List<Method> captionCleanup(String variant) {
+        String view = "Landroid/view/View;", group = "Landroid/view/ViewGroup;", text = "Landroid/widget/TextView;",
+                map = "Ljava/util/Map;", weak = "Ljava/lang/ref/WeakReference;";
+        ImmutableFieldReference captions = new ImmutableFieldReference(ALT_TEXT, "CAPTIONS", map);
+        List<Instruction> clear = new ArrayList<>(List.of(
+                new ImmutableInstruction21t(Opcode.IF_NEZ, 1, 1), new ImmutableInstruction10t(Opcode.GOTO, 1),
+                new ImmutableInstruction21c(Opcode.SGET_OBJECT, 0, captions), new ImmutableInstruction11x(Opcode.MONITOR_ENTER, 0),
+                invoke(Opcode.INVOKE_INTERFACE, ref(map, "remove", OBJECT, OBJECT), 0, variant.equals("cleanup-wrong-key") ? 0 : 1),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1), new ImmutableInstruction21c(Opcode.CHECK_CAST, 1, new ImmutableTypeReference(weak)),
+                new ImmutableInstruction11x(Opcode.MONITOR_EXIT, 0), new ImmutableInstruction21t(Opcode.IF_NEZ, 1, 1),
+                new ImmutableInstruction11n(Opcode.CONST_4, 1, 0), new ImmutableInstruction10t(Opcode.GOTO, 1),
+                invoke(Opcode.INVOKE_VIRTUAL, ref("Ljava/lang/ref/Reference;", "get", OBJECT), 1), new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1),
+                new ImmutableInstruction21c(Opcode.CHECK_CAST, 1, new ImmutableTypeReference(text)), new ImmutableInstruction21t(Opcode.IF_EQZ, 1, 1),
+                invoke(Opcode.INVOKE_VIRTUAL, ref(view, "getParent", "Landroid/view/ViewParent;"), 1), new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0),
+                new ImmutableInstruction22c(Opcode.INSTANCE_OF, 0, 0, new ImmutableTypeReference(group)), new ImmutableInstruction21t(Opcode.IF_EQZ, 0, 1),
+                invoke(Opcode.INVOKE_VIRTUAL, ref(view, "getParent", "Landroid/view/ViewParent;"), 1), new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0),
+                new ImmutableInstruction21c(Opcode.CHECK_CAST, 0, new ImmutableTypeReference(group)),
+                variant.equals("cleanup-removes-all") ? invoke(Opcode.INVOKE_VIRTUAL, ref(group, "removeAllViews", VOID), 0)
+                        : invoke(Opcode.INVOKE_VIRTUAL, ref(group, "removeView", VOID, view), 0, 1),
+                end(), new ImmutableInstruction11x(Opcode.MOVE_EXCEPTION, 1), new ImmutableInstruction11x(Opcode.MONITOR_EXIT, 0), new ImmutableInstruction11x(Opcode.THROW, 1)));
+        captionBranch(clear, 0, 2); captionBranch(clear, 1, 23); captionBranch(clear, 8, 11); captionBranch(clear, 10, 14);
+        captionBranch(clear, 14, 23); captionBranch(clear, 18, 23);
+        int clearHandler = 24;
+        if (variant.equals("cleanup-handler-redirect")) {
+            clearHandler = clear.size();
+            clear.addAll(List.of(new ImmutableInstruction11x(Opcode.MOVE_EXCEPTION, 0),
+                    new ImmutableInstruction21c(Opcode.CHECK_CAST, 1, new ImmutableTypeReference(view)),
+                    invoke(Opcode.INVOKE_VIRTUAL, ref(view, "getParent", "Landroid/view/ViewParent;"), 1), new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0),
+                    new ImmutableInstruction21c(Opcode.CHECK_CAST, 0, new ImmutableTypeReference(group)),
+                    invoke(Opcode.INVOKE_VIRTUAL, ref(group, "removeView", VOID, view), 0, 1), end()));
+        }
+        List<Method> methods = new ArrayList<>();
+        int clearStart = variant.equals("cleanup-try-range") ? 5 : 4;
+        methods.add(captionMethod("clear", 2, clear, List.of(
+                new ImmutableTryBlock(captionAddress(clear, clearStart), captionAddress(clear, 8) - captionAddress(clear, clearStart),
+                        List.of(new ImmutableExceptionHandler(null, captionAddress(clear, clearHandler)))),
+                new ImmutableTryBlock(captionAddress(clear, 25), captionAddress(clear, 26) - captionAddress(clear, 25),
+                        List.of(new ImmutableExceptionHandler(null, captionAddress(clear, 24))))), view));
+        List<Instruction> gallery = new ArrayList<>(List.of(
+                new ImmutableInstruction22c(Opcode.INSTANCE_OF, 0, 4, new ImmutableTypeReference(IMAGE_ROW)), new ImmutableInstruction21t(Opcode.IF_NEZ, 0, 1),
+                new ImmutableInstruction10t(Opcode.GOTO, 1), new ImmutableInstruction21c(Opcode.CHECK_CAST, 4, new ImmutableTypeReference(IMAGE_ROW)),
+                invoke(Opcode.INVOKE_INTERFACE, ref(IMAGE_ROW, "hushImageItems", "[" + OBJECT), 4), new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 4),
+                new ImmutableInstruction21t(Opcode.IF_NEZ, 4, 1), new ImmutableInstruction10t(Opcode.GOTO, 1), new ImmutableInstruction12x(Opcode.ARRAY_LENGTH, 0, 4),
+                new ImmutableInstruction11n(Opcode.CONST_4, 1, 0), new ImmutableInstruction22t(Opcode.IF_GE, 1, 0, 1), new ImmutableInstruction23x(Opcode.AGET_OBJECT, 2, 4, 1),
+                new ImmutableInstruction22c(Opcode.INSTANCE_OF, 3, 2, new ImmutableTypeReference(IMAGE_CONTAINER)), new ImmutableInstruction21t(Opcode.IF_EQZ, 3, 1),
+                new ImmutableInstruction21c(Opcode.CHECK_CAST, 2, new ImmutableTypeReference(IMAGE_CONTAINER)),
+                invoke(Opcode.INVOKE_INTERFACE, ref(IMAGE_CONTAINER, "hushImageFrame", view), 2), new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 2),
+                invoke(Opcode.INVOKE_STATIC, ref(ALT_TEXT, variant.equals("cleanup-wrong-target") ? "clearUnowned" : "clear", VOID, view), 2),
+                new ImmutableInstruction22b(Opcode.ADD_INT_LIT8, 1, 1, 1), new ImmutableInstruction10t(Opcode.GOTO, 1), end(),
+                new ImmutableInstruction11x(Opcode.MOVE_EXCEPTION, 4), literal("Visible image descriptions", 0), literal("gallery caption cleanup", 1),
+                invoke(Opcode.INVOKE_STATIC, ref("Lapp/hushtumblr/extension/shared/diagnostics/HookStatus;", "threw", VOID, STRING, STRING, "Ljava/lang/Throwable;"), 0, 1, 4), end()));
+        captionBranch(gallery, 1, 3); captionBranch(gallery, 2, 20); captionBranch(gallery, 6, 8); captionBranch(gallery, 7, 20);
+        captionBranch(gallery, 10, 20); captionBranch(gallery, 13, 18); captionBranch(gallery, 19, 10);
+        int shift = 0;
+        if (variant.equals("cleanup-gated")) {
+            gallery.addAll(0, List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction21t(Opcode.IF_EQZ, 0, 1)));
+            captionBranch(gallery, 2, 23); shift = 3;
+        }
+        List<ImmutableTryBlock> galleryTries = List.of(new ImmutableTryBlock(captionAddress(gallery, shift), captionAddress(gallery, 18 + shift) - captionAddress(gallery, shift),
+                List.of(new ImmutableExceptionHandler(variant.equals("cleanup-gallery-handler-type") ? "Ljava/lang/RuntimeException;" : null, captionAddress(gallery, 21 + shift)))));
+        if (variant.equals("cleanup-empty")) { gallery = List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), end()); galleryTries = List.of(); }
+        methods.add(captionMethod("clearGallery", 5, gallery, galleryTries, OBJECT));
+        String mapType = variant.equals("cleanup-strong-map") ? "Ljava/util/HashMap;" : "Ljava/util/WeakHashMap;";
+        methods.add(captionMethod("<clinit>", 1, List.of(new ImmutableInstruction21c(Opcode.NEW_INSTANCE, 0, new ImmutableTypeReference(mapType)),
+                invoke(Opcode.INVOKE_DIRECT, ref(mapType, "<init>", VOID), 0), new ImmutableInstruction21c(Opcode.SPUT_OBJECT, 0, captions), end()), List.of()));
+        List<Instruction> bind = new ArrayList<>(List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction21t(Opcode.IF_EQZ, 0, 1),
+                new ImmutableInstruction21c(Opcode.NEW_INSTANCE, 1, new ImmutableTypeReference(text)), invoke(Opcode.INVOKE_VIRTUAL, ref(view, "getContext", CONTEXT), 4),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0), invoke(Opcode.INVOKE_DIRECT, ref(text, "<init>", VOID, CONTEXT), 1, 0),
+                new ImmutableInstruction21c(Opcode.SGET_OBJECT, 3, captions), new ImmutableInstruction11x(Opcode.MONITOR_ENTER, 3),
+                new ImmutableInstruction21c(Opcode.NEW_INSTANCE, 2, new ImmutableTypeReference(weak)),
+                invoke(Opcode.INVOKE_DIRECT, ref(weak, "<init>", VOID, OBJECT), 2, variant.equals("cleanup-unowned-value") ? 4 : 1),
+                invoke(Opcode.INVOKE_INTERFACE, ref(map, "put", OBJECT, OBJECT, OBJECT), 3, 4, 2), new ImmutableInstruction11x(Opcode.MONITOR_EXIT, 3), end(),
+                new ImmutableInstruction11x(Opcode.MOVE_EXCEPTION, 0), new ImmutableInstruction11x(Opcode.MONITOR_EXIT, 3), new ImmutableInstruction11x(Opcode.THROW, 0)));
+        if (variant.equals("cleanup-map-escape-after-put")) bind.add(13, invoke(Opcode.INVOKE_STATIC, ref(ALT_TEXT, "writeMap", VOID, map), 3));
+        if (variant.equals("cleanup-map-alias-escape")) bind.addAll(13, List.of(new ImmutableInstruction12x(Opcode.MOVE_OBJECT, 0, 3),
+                new ImmutableInstruction11n(Opcode.CONST_4, 3, 0), invoke(Opcode.INVOKE_STATIC, ref(ALT_TEXT, "writeMap", VOID, map), 0)));
+        if (variant.equals("cleanup-map-mutation-after-put")) bind.add(13, invoke(Opcode.INVOKE_INTERFACE, ref(map, "clear", VOID), 3));
+        if (variant.equals("cleanup-killed-register")) bind.addAll(13, List.of(new ImmutableInstruction11n(Opcode.CONST_4, 3, 0),
+                new ImmutableInstruction22b(Opcode.ADD_INT_LIT8, 3, 3, 1)));
+        captionBranch(bind, 2, bind.size() - 4);
+        List<ImmutableTryBlock> bindTries = new ArrayList<>(List.of(new ImmutableTryBlock(captionAddress(bind, 9), captionAddress(bind, 13) - captionAddress(bind, 9),
+                List.of(new ImmutableExceptionHandler(null, captionAddress(bind, bind.size() - 3))))));
+        if (variant.equals("cleanup-bypass-constructor")) {
+            int handler = bind.size();
+            bind.addAll(List.of(new ImmutableInstruction11x(Opcode.MOVE_EXCEPTION, 0), new ImmutableInstruction11n(Opcode.CONST_4, 1, 0), new ImmutableInstruction10t(Opcode.GOTO, 1)));
+            captionBranch(bind, handler + 2, 7);
+            bindTries.add(0, new ImmutableTryBlock(captionAddress(bind, 0), captionAddress(bind, 2), List.of(new ImmutableExceptionHandler(null, captionAddress(bind, handler)))));
+        }
+        methods.add(captionMethod("bind", 7, bind, bindTries, OBJECT, OBJECT, "Z"));
+        if (variant.equals("cleanup-map-escape-after-put") || variant.equals("cleanup-map-alias-escape"))
+            methods.add(captionMethod("writeMap", 1, List.of(invoke(Opcode.INVOKE_INTERFACE, ref(map, "clear", VOID), 0), end()), List.of(), map));
+        if (variant.equals("cleanup-wrong-target")) methods.add(captionMethod("clearUnowned", 1, List.of(end()), List.of(), view));
+        if (variant.equals("cleanup-map-escape")) methods.add(method(ALT_TEXT, "escape", map, true, 1,
+                List.of(new ImmutableInstruction21c(Opcode.SGET_OBJECT, 0, captions), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0))));
+        return methods;
+    }
+
     private static void imageDescriptions(Map<String, List<Method>> classes, String variant) {
         boolean hooked = !variant.equals("clean");
         model(classes, IMAGE_BLOCK, new LinkedHashMap<>(Map.of("alt_text", ref(IMAGE_BLOCK, "j", STRING), "other", ref(IMAGE_BLOCK, "otherAlt", STRING))));
@@ -538,10 +664,10 @@ public final class FeatureDexFixture {
             if (!variant.equals("missing-row-bridge")) row.add(method(GALLERY_ROW, "hushImageItems", "[" + OBJECT, false, 2,
                     List.of(invoke(Opcode.INVOKE_INTERFACE, ref(GALLERY_ROW, "Z", images), 1), new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0),
                             new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0))));
-            List<Method> hooks = new ArrayList<>();
-            for (String name : List.of("photo", "gallery", "clearGallery")) hooks.add(method(ALT_TEXT, name, VOID, true,
-                    name.equals("clearGallery") ? 2 : 3, List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), end()),
-                    name.equals("clearGallery") ? new String[]{OBJECT} : new String[]{OBJECT, OBJECT}));
+            List<Method> hooks = captionCleanup(variant);
+            for (String name : List.of("photo", "gallery")) hooks.add(method(ALT_TEXT, name, VOID, true, 3,
+                    variant.equals("uncontrolled-" + name) ? List.of(end()) : List.of(new ImmutableInstruction11n(Opcode.CONST_4, 0, name.equals("gallery") ? 1 : 0),
+                            invoke(Opcode.INVOKE_STATIC, ref(ALT_TEXT, "bind", VOID, OBJECT, OBJECT, "Z"), 1, 2, 0), end()), OBJECT, OBJECT));
             classes.put(ALT_TEXT, hooks);
         }
         classes.put(PHOTO_CONTAINER, container); classes.put(GALLERY_ROW, row);
@@ -616,18 +742,25 @@ public final class FeatureDexFixture {
         }
         if (FAMILIES.containsKey("visibleAltText")) for (String variant : List.of("good", "missing-photo", "wrong-photo-field", "wrong-photo-holder",
                 "missing-gallery", "wrong-gallery-image", "missing-clear", "wrong-clear-row", "missing-alt-bridge", "wrong-alt-getter",
-                "missing-container-bridge", "wrong-container-invoke", "missing-row-bridge")) {
+                "missing-container-bridge", "wrong-container-invoke", "missing-row-bridge", "cleanup-wrong-key", "cleanup-removes-all",
+                "cleanup-wrong-target", "cleanup-gated", "cleanup-empty", "cleanup-strong-map", "cleanup-unowned-value", "cleanup-map-escape",
+                "uncontrolled-photo", "uncontrolled-gallery", "cleanup-map-escape-after-put", "cleanup-map-alias-escape", "cleanup-map-mutation-after-put",
+                "cleanup-killed-register", "cleanup-bypass-constructor", "cleanup-handler-redirect", "cleanup-try-range", "cleanup-gallery-handler-type")) {
             reset(); enable("visibleAltText");
             Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
             imageDescriptions(classes, variant);
             String reason = switch (variant) {
-                case "good" -> "";
+                case "good", "cleanup-killed-register" -> "";
                 case "missing-photo", "missing-gallery", "missing-clear" -> "has 0 calls";
                 case "wrong-photo-field", "wrong-photo-holder" -> "doesn't take the current image from its native binder field";
                 case "wrong-gallery-image", "wrong-clear-row" -> "doesn't take what its rule hands it";
                 case "missing-alt-bridge" -> "doesn't implement";
                 case "wrong-alt-getter" -> "doesn't hand back";
                 case "missing-container-bridge", "missing-row-bridge" -> "doesn't extend its image-description bridge";
+                case "cleanup-wrong-key", "cleanup-removes-all", "cleanup-wrong-target", "cleanup-gated", "cleanup-empty", "cleanup-strong-map",
+                        "cleanup-unowned-value", "cleanup-map-escape", "cleanup-map-escape-after-put", "cleanup-map-alias-escape", "cleanup-map-mutation-after-put",
+                        "cleanup-bypass-constructor", "cleanup-handler-redirect", "cleanup-try-range", "cleanup-gallery-handler-type" -> "gallery caption cleanup ownership changed";
+                case "uncontrolled-photo", "uncontrolled-gallery" -> "no compiled family control";
                 default -> "doesn't hand back its native image container getter";
             };
             smallCase(root, "feature-small-captions-" + variant, classes, "visibleAltText", reason);
