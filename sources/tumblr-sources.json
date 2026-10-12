@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "note": "Public sources reviewed for com.tumblr, with pinned commits, licenses and dispositions. scripts/tumblr-sources.ps1 validates schema version 1, scripts/audit-tumblr-sources.ps1 reports changes, and a local release needs a census from the last 14 days. No census has run yet, so the census date, the index listings and the entries are empty until the first audit fills them in. A first look on 2026-10-11 found Tumblr patches in ReVanced (gitlab.com/ReVanced/revanced-patches, no pinned version) and in arandomhooman/hoomans-morphe-patches (GPL-3.0, Tumblr 45.8.0.110 only), with copies of the latter in RookieEnough/De-ReVanced and chirag127/morphe-patches. The official Morphe bundle and ReVanced Extended have nothing for Tumblr. None of their code is in HushTumblr.",
+  "note": "Public sources reviewed for com.tumblr, with pinned commits, licenses and dispositions. scripts/tumblr-sources.ps1 validates schema version 1, scripts/audit-tumblr-sources.ps1 reports changes, and a local release needs a census from the last 14 days. The first census ran on 2026-10-12. Two lineages carry Tumblr patches: ReVanced's bundle on GitLab, copied byte for byte into many GitHub repositories, and arandomhooman/hoomans-morphe-patches. The official Morphe bundle has nothing for Tumblr. None of their code is in HushTumblr.",
   "census": {
-    "checkedAt": null,
-    "skipped": []
+    "checkedAt": "2026-10-12",
+    "skipped": ["gitlab-code-search"]
   },
   "self": {
     "repository": "https://github.com/SysAdminDoc/HushTumblr"
@@ -21,7 +21,7 @@
       "url": "https://morphe-patches.software",
       "hushtumblr": {
         "status": "not-listed",
-        "checked": null
+        "checked": "2026-10-12"
       }
     },
     {
@@ -30,7 +30,7 @@
       "url": "https://github.com/nvbangg/awesome-morphe",
       "hushtumblr": {
         "status": "not-listed",
-        "checked": null
+        "checked": "2026-10-12"
       }
     },
     {
@@ -39,7 +39,7 @@
       "url": "https://drnx64.github.io/morphe-track-patches/",
       "hushtumblr": {
         "status": "not-listed",
-        "checked": null
+        "checked": "2026-10-12"
       }
     },
     {
@@ -48,7 +48,7 @@
       "url": "https://github.com/Jman-Github/ReVanced-Patch-Bundles",
       "hushtumblr": {
         "status": "not-listed",
-        "checked": null
+        "checked": "2026-10-12"
       }
     },
     {
@@ -57,10 +57,478 @@
       "url": "https://rushiforai.github.io/morphe-archive/",
       "hushtumblr": {
         "status": "not-listed",
-        "checked": null
+        "checked": "2026-10-12"
       }
     }
   ],
-  "entries": [],
-  "outOfScope": []
+  "entries": [
+    {
+      "id": "revanced-patches",
+      "repository": "https://gitlab.com/ReVanced/revanced-patches",
+      "lineage": "revanced-patches",
+      "upstream": null,
+      "kind": "revanced-patches",
+      "packages": [
+        "com.tumblr"
+      ],
+      "targetVersions": {
+        "com.tumblr": []
+      },
+      "patchCounts": {
+        "com.tumblr": 7
+      },
+      "features": [
+        "Disable dashboard ads",
+        "Disable Ad-Free Banner",
+        "Disable Tumblr TV",
+        "Disable blog notification reminder",
+        "Disable gift message popup",
+        "Disable in-app update",
+        "Fix old versions"
+      ],
+      "branches": [
+        {
+          "name": "main",
+          "commit": "015fe10a23ea5b919a3fda6e7da2c176517ae75d"
+        },
+        {
+          "name": "dev",
+          "commit": "12487bc071590ab5d844049ba08c59c534e3dcf9"
+        },
+        {
+          "name": "feat/music-announcements",
+          "commit": "fc540ddab29fd1f74349ba9acbac6fe523693ee2"
+        },
+        {
+          "name": "feat/universal-icon-patch",
+          "commit": "9dca7681ea8a2d2e1ec5f817fa65bbdc6307883a"
+        }
+      ],
+      "watchPaths": [
+        "patches/src/main/kotlin/app/revanced/patches/tumblr",
+        "extensions/tumblr"
+      ],
+      "license": {
+        "spdx": "GPL-3.0",
+        "url": "https://gitlab.com/ReVanced/revanced-patches/-/blob/015fe10a23ea5b919a3fda6e7da2c176517ae75d/LICENSE",
+        "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+      },
+      "contaminatedBy": null,
+      "disposition": "candidate",
+      "reason": "ReVanced's bundle, on GitLab since GitHub blocked its GitHub repository over a DMCA notice in March 2026. It has 7 Tumblr patches that name no Tumblr version: Disable dashboard ads, Disable Ad-Free Banner, Disable Tumblr TV, Disable blog notification reminder, Disable gift message popup, Disable in-app update and Fix old versions. GPL-3.0. The Tumblr code last changed on 2026-02-26, in the ReVanced Patcher v22 update. HushTumblr hasn't ported anything from it. Many GitHub repositories carry byte-for-byte copies of these files from some point in ReVanced's history, so contentHashes holds every version they've had on main and dev, and those copies count as this lineage. feat/music-announcements and feat/universal-icon-patch are pinned too: they carry a December 2024 rewrite of the Tumblr folder and nothing newer.",
+      "archived": false,
+      "forks": [
+        "Aiedevsm/revanced-patches-1",
+        "ALSchwalm/revanced-patches",
+        "anto426/revanced-patches",
+        "arrrnmp/revanced-patches",
+        "asd56yu/revanced-patches",
+        "belgradebc/revanced-patches",
+        "blaxor1/revanced-patches",
+        "Bobocato/revanced-patches",
+        "brskt/revanced-patches",
+        "chandler.bing/ecoscan-80488462-deletion_scheduled-86577065",
+        "chandler.bing/ecoscan-80488462-deletion_scheduled-86675967",
+        "chandler.bing/ecoscan-80488462-deletion_scheduled-86927103",
+        "chandler.bing/ecoscan-80488462-deletion_scheduled-86949965",
+        "chandler.bing/ecoscan-80488462-deletion_scheduled-86981388",
+        "chandler.bing/ecoscan-80488462-deletion_scheduled-87026966",
+        "chandler.bing/ecoscan-80488462-deletion_scheduled-87117622",
+        "chandler.bing/ecoscan-80488462-deletion_scheduled-87193458",
+        "chandler.bing/ecoscan-80488462-deletion_scheduled-87291057",
+        "chandler.bing/ecoscan-80488462-deletion_scheduled-87336999",
+        "chandler.bing/ecoscan-80488462-deletion_scheduled-87382344",
+        "Crafter-Y/revanced-patches",
+        "culpen0/revanced-patches",
+        "dangphuc2470/revanced-patches",
+        "dariovinci200217/revanced-patches",
+        "darkensyde/revanced-patches",
+        "delath/revanced-patches",
+        "drunkbatya/revanced-patches",
+        "dtricks/revanced-patches",
+        "dwismath/revanced-patches",
+        "eathtespagheti/revanced-patches",
+        "elia_vandi/revanced-patches",
+        "francescograzioso1995/revanced-patches",
+        "gajgaje2000/revanced-patches",
+        "gh3ttokill4/revanced-patches",
+        "hank722089/revanced-patches",
+        "hashworks/revanced-patches",
+        "hxreborn/revanced-patches",
+        "Indranil012/revanced-patches",
+        "isdzjfs/revanced-patches",
+        "jakahudoklin/revanced-patches",
+        "joan.comas.fdz/revanced-patches",
+        "joshi33/revanced-patches",
+        "kadirtml01/revanced-patches",
+        "kamilstyrna047/revanced-patches",
+        "kenw2255/revanced-patches",
+        "Leandro-734/revanced-patches",
+        "lfnincao/revanced-patches",
+        "lucas-martinati/revanced-patches",
+        "LulzRose/revanced-patches",
+        "meowtochondria/revanced-patches",
+        "mostafaNazari702/revanced-patches",
+        "munzur63/revanced-patches",
+        "nguyenhoaivan1997/revanced-patches",
+        "nic.silver/revanced-patches",
+        "niftiest/revanced-patches",
+        "nijave/revanced-patches",
+        "nyraa/revanced-patches",
+        "patrickvanc/revanced-patches",
+        "pengleixinkuzi/revanced-patches",
+        "PhateValleyman/revanced-patches",
+        "proivan1711/revanced-patches",
+        "rachel.green.r/ecoscan-80488462-deletion_scheduled-86383433",
+        "rachel.green.r/ecoscan-80488462-deletion_scheduled-86411624",
+        "rachel.green.r/ecoscan-80488462-deletion_scheduled-86447130",
+        "rachel.green.r/ecoscan-80488462-deletion_scheduled-86488202",
+        "rachel.green.r/ecoscan-80488462-deletion_scheduled-86533980",
+        "rachel.green.r/ecoscan-80488462-deletion_scheduled-86653713",
+        "rachel.green.r/ecoscan-80488462-deletion_scheduled-86707754",
+        "rachel.green.r/ecoscan-80488462-deletion_scheduled-86783510",
+        "rachel.green.r/ecoscan-80488462-deletion_scheduled-86849772",
+        "rachel.green.r/ecoscan-80488462-deletion_scheduled-86892377",
+        "rachel.green.r/ecoscan-80488462-deletion_scheduled-87072100",
+        "rachel.green.r/ecoscan-80488462-deletion_scheduled-87246759",
+        "rachel.green.r/ecoscan-80488462-deletion_scheduled-87427817",
+        "rachel.green.r/ecoscan-80488462-deletion_scheduled-87462565",
+        "rachel.green.r/ecoscan-80488462-deletion_scheduled-87487475",
+        "radkawwa/revanced-patches",
+        "RikoDEV/revanced-patches",
+        "rosset.nocpes/revanced-patches",
+        "samolego/revanced-patches",
+        "SayanthD/revanced-patches",
+        "sudo-panda/revanced-patches",
+        "Super_dude/revanced-patches",
+        "tehniatashiq/youtube-liquid-glass",
+        "THE-M0P/revanced-patches",
+        "ToyVo/revanced-patches",
+        "tristan23612/revanced-patches",
+        "tuanhasan1124/revanced-patches",
+        "Ushie/revanced-patches",
+        "Vic-41148/revanced-patches",
+        "xat.king6969/revanced-patches",
+        "XCossale/revanced-patches",
+        "yonggamer/revanced-patches",
+        "yuanleo/revanced-patches",
+        "zappybiby/revanced-patches"
+      ],
+      "contentHashes": [
+        "0088c3aa6b09d1497e8908140a5c048ee52badc4",
+        "00f8c3f3736c8f6bc8a09dfc6696c5f1e30a3fbc",
+        "01ed435e53be167f1922d69ef316749c91bd3eb1",
+        "0454cc9efe51ee5c445036e92743c737527f58f7",
+        "0969e59b4005cd726ff11ddb15e4bb1cdd9956b1",
+        "09972604a66cc00d04cb43e486fef88cbbfd257b",
+        "09faa173461ce1743d1effd4192420b44e853f5a",
+        "0b5e565af09369907d54004bf5889b21785efe3b",
+        "0bb5a69a59a35927fd4be930ec28897e05db5f74",
+        "0cbaac995e92bbf9e5072261891ce5f88241d485",
+        "0dd27b3686a4a28e0c9ee239c8956d3c8e7b7bea",
+        "0ef376ed9eaaa66cc96312f1bb11dd09cf3c2cf9",
+        "11616fcc925e695010879e7d57037ac00960d98f",
+        "1507b5ddc2841dd7eae76280603b3b0eb7cb5567",
+        "17c15a792f54bdd3a84ed09cef013c0d9b9b89c1",
+        "1c9ec2a83672281097a97e668a292db642f51b86",
+        "22ee4015c00a9533e9f7655be1ee606d9b1e416d",
+        "24a0d8a5d9ba95695f5b48ce3feb534b8562b378",
+        "267ab358a90970bbb9d5212820dd0d2ad94f2a0f",
+        "2b08f503c84889bd99b116d5dfa0bb5a513db780",
+        "2f4ce8c1e319549d770fc10363401a0e0fcb5d7e",
+        "317c0adb30f192a5d9be795ab48ae02ab7c26c83",
+        "39d5ee946221593ede22ea417d8b0ffad9baecc3",
+        "3a46c19b268e1149e4f4d234b24a9c65f9cf53e9",
+        "3a69b74a51f88e2662596d6180b041e16e900e1e",
+        "3f4da4b0041cd7429b3124c1035290fa758d6962",
+        "4a33778576ddf7b24834d740df2e94598b03b483",
+        "4a9bbe297ed25aa341a9e750e834a143139359e3",
+        "4c41805026c5118349879889f4fdb498f76ba3ba",
+        "4e66acab4d2676572eb9ac1c20f815e9a1f100a9",
+        "5003a3727083ec92ea1e722250c3e7dc3d888be7",
+        "50791fa5db2175794f5bf53547691a33473d83a0",
+        "5150a0f5c78158957b1fb809ed9eab0788d083c0",
+        "55b67f2fa8a95933af0e5298e48fa5b1cb63edd5",
+        "574f5c383db4cee35d2934e66e029b5f5e979802",
+        "64fa2ed79f3decddfdba80013ecc8e12074ff526",
+        "67e051a7ba961b4a4f9cd60216a3ed906a45e33d",
+        "6b47bc1e553990c53753e6155f5713ceb45e8619",
+        "71bdda79229f7af55654d89401cb438944ad330f",
+        "77202534d7bf2c708121e7da923ce39207656762",
+        "77392950fc6d0a431401842045e21ed1eaf6d05b",
+        "77d31b9f3f8866a4173361765410e4a596698f5a",
+        "7d00f2f1bd6c32db2f248df92608e9eb43403e15",
+        "7f1bc208f8200388afb06ac51554b10b4979c3da",
+        "7f7c0060ac12219d4a0076d1e7a035b6ac68c675",
+        "8c8c6de8ab7d70f774c84fd4d8c5b7e82dd1fa3b",
+        "8cbdaca6e97bbc8df12f88b4ca36f487dfbab07b",
+        "94367009c31b7cf4699a9225e4c807e0233693f9",
+        "97d975c3d786c9a78fb382caa0e6d9d99c1e20c9",
+        "9a0b0e8c3f46a6c6f1ffc806207229211f90026a",
+        "9e4a49e4b591525a5741e0b975bb744bab015592",
+        "9fe883d9e0261dec2f0951c4fef0d4fe2621bb39",
+        "a095e29cf86590d17474ac6e162124b375a7b96b",
+        "a8f59c416843e281a12398f57b293787852d7edd",
+        "a908d7e648ec51dbb80c91a8999bf50494289c3b",
+        "a919124c07d222eebfc97af68c96bad5bd25a6fa",
+        "b6f0174f853c27d0b9e19eb03f34c0115336a77b",
+        "b7737a6c0c95ed1fc31b145c11b261f11064d309",
+        "b8ed3bfc4ef8e7511489d37d8196081bf72d5536",
+        "c166cb83bfab136ba26ef2c1d0d022544f37b78a",
+        "c2da658aad392f7bac408ec4b159a7f0713ee4c9",
+        "c447c2a59c86c84b83ea0f83f41c6cc5e7c1284b",
+        "c4ab799e8594349b52d9c343b84dbf59578cd91e",
+        "c5310ea85e4d6cf0002efd0d651277c66cb34fee",
+        "c65cd0291c9ca5a4d670b6796600a1cbef9d9c49",
+        "c8728227aa5500cec97eda99ccc6fe11f394bc03",
+        "c9664d544e27dfef8d0ec3675d2ef73967a00a37",
+        "cab0a3c302b890edc39a5158c15dbe0dda98554b",
+        "cc63899cc5583c54a1cda8eb85c136378ca59273",
+        "cd678f7cb87f4d33140f9416b85e7b6f60152d0f",
+        "ce554e745fb6eb932f8c509f8a1f340b69c63cc9",
+        "d0274125d1ce2fc0215cebde6f1856be84875178",
+        "d094fb762f1ac68c6a26d9eed185adee0c378ed4",
+        "d51aead2b5f8d5729240272731e0ee779823767d",
+        "dbe75d5f8b85b094bd3e372fb760b1cebc7036f9",
+        "dc5a168a6b04db712cc283aa973533e94ad7249d",
+        "debc95b32408990d419da102c6b5740454e6b1bb",
+        "e073da5f15cde7f37a4f67d9f97d46cec4a83ebb",
+        "e1b0994554cb269380e4807c814a928dd2a7cf54",
+        "e24ca2884a036ddae24f572337872502d1f02db9",
+        "e3d420e93b793d4c1d60461b5b74d38d8d9bd681",
+        "e807ef22b2796e3aa81efd3d0dd70d3455926b4f",
+        "ed5849a77a19b0139fa1635509af16ef95c00843",
+        "f0c15da37e1b34e11db7ea7d7c33bd2f250a7ee5",
+        "f588d02a257b79d43a1b1a0be21f9a305323fd90",
+        "f5b53133a614c9834aab2a90e77d7745b448177c",
+        "f61816e0d8d9cca96c3b5708651a074ddcd705a7",
+        "f82bb846129152fa7e8ec2e7bab7adc4add61a71",
+        "f93597ca1552cdbc33daae42271b92de2f5cef02",
+        "fbd7cf7120948a974a8c01558b2ecae138f25dc3",
+        "fc3d1fc8eb5a9a20aa63d01b3c9ec479d12d4fea",
+        "ff44e1bdb876d6f6a86615deffdadf4981776f2f"
+      ],
+      "mirrors": [],
+      "lastChecked": "2026-10-12"
+    },
+    {
+      "id": "de-vanced",
+      "repository": "https://github.com/RookieEnough/De-Vanced",
+      "lineage": "revanced-patches",
+      "upstream": "https://gitlab.com/ReVanced/revanced-patches",
+      "kind": "morphe-patches",
+      "packages": [
+        "com.tumblr"
+      ],
+      "targetVersions": {
+        "com.tumblr": []
+      },
+      "patchCounts": {
+        "com.tumblr": 7
+      },
+      "features": [
+        "Disable dashboard ads",
+        "Disable Ad-Free Banner",
+        "Disable Tumblr TV",
+        "Disable blog notification reminder",
+        "Disable gift message popup",
+        "Disable in-app update",
+        "Fix old versions"
+      ],
+      "branches": [
+        {
+          "name": "main",
+          "commit": "5cf78f17aae0665c196fb71d63d50726d9ba518e"
+        },
+        {
+          "name": "dev",
+          "commit": "13efbfe0d42139fbd7d2bfdcdcae10d60ccbcbb7"
+        }
+      ],
+      "watchPaths": [
+        "patches/src/main/kotlin/app/morphe/patches/tumblr",
+        "extensions/tumblr"
+      ],
+      "license": {
+        "spdx": "GPL-3.0",
+        "url": "https://github.com/RookieEnough/De-Vanced/blob/5cf78f17aae0665c196fb71d63d50726d9ba518e/LICENSE",
+        "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+      },
+      "contaminatedBy": null,
+      "disposition": "rejected",
+      "reason": "A Morphe bundle forked from Morphe's patch template. From March 2026 it carried ReVanced's 7 Tumblr patches, moved to Morphe's package names, and on 2026-08-12 it removed them as an app maintained elsewhere (pull request 94). Jman's index still lists its v1.1.0 bundle, which has them. Neither branch holds Tumblr code now. GPL-3.0. It adds nothing ReVanced's own entry doesn't cover, and HushTumblr hasn't ported anything from it.",
+      "archived": false,
+      "forks": [
+        "1soka/De-Vanced",
+        "aisgbnok/De-Vanced",
+        "Amsal1/De-Vanced",
+        "bapirex/De-ReVanced",
+        "diestinkvinger/De-Vanced",
+        "EncryptedCicada/De-ReVanced",
+        "Epikaigle/De-Vanced",
+        "ethanm6/De-Vanced",
+        "etherealNest/De-ReVanced",
+        "fireph/De-Vanced",
+        "Hassan0703/De-Vanced",
+        "hassan1395/De-Vanced-Forks",
+        "iamnotbobby/De-Vanced",
+        "iamsubingyawali/De-Vanced",
+        "imjustbackup/De-Vanced",
+        "involvex/De-Vanced",
+        "Kyujiwara/De-Vanced",
+        "Logiquo/De-ReVanced",
+        "lucas-martinati/De-Vanced",
+        "man-with-scars/De-Vanced",
+        "maxcodl/De-ReVanced",
+        "MrHuaweiFan/GmsCore-Patches",
+        "ninjatall12/De-Vanced",
+        "NonCertus/De-Vanced",
+        "partment/De-ReVanced",
+        "Runteryaa/De-ReVanced",
+        "SA-SUJON/De-Vanced",
+        "ShredRum/De-Vanced",
+        "sosmedreceh6/De-ReVanced",
+        "sujunmin/De-Vanced",
+        "TheBeaconCrafter/De-ReVanced",
+        "twistios/De-Vanced",
+        "Untet01/Twee4-De-Vanced",
+        "vancedto/De-ReVanced",
+        "Z1xus/De-ReVanced"
+      ],
+      "contentHashes": [],
+      "mirrors": [],
+      "lastChecked": "2026-10-12"
+    },
+    {
+      "id": "hoomans-morphe-patches",
+      "repository": "https://github.com/arandomhooman/hoomans-morphe-patches",
+      "lineage": "hoomans-morphe-patches",
+      "upstream": null,
+      "kind": "morphe-patches",
+      "packages": [
+        "com.tumblr"
+      ],
+      "targetVersions": {
+        "com.tumblr": [
+          "45.8.0.110"
+        ]
+      },
+      "patchCounts": {
+        "com.tumblr": 8
+      },
+      "features": [
+        "Remove ads",
+        "Disable ad-free banner",
+        "Disable Tumblr TV",
+        "Disable blog notification reminder",
+        "Disable gift message popup",
+        "Disable in-app update",
+        "Disable screenshot sharing",
+        "Enable premium UI"
+      ],
+      "branches": [
+        {
+          "name": "main",
+          "commit": "018277825a611ad61f3a16a70e562291c06f4081"
+        },
+        {
+          "name": "dev",
+          "commit": "09172f23552b3773e117cc355c9c9fc5dd485bde"
+        }
+      ],
+      "watchPaths": [
+        "patches/src/main/kotlin/hooman/morphe/patches/tumblr"
+      ],
+      "license": {
+        "spdx": "GPL-3.0",
+        "url": "https://github.com/arandomhooman/hoomans-morphe-patches/blob/018277825a611ad61f3a16a70e562291c06f4081/LICENSE",
+        "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+      },
+      "contaminatedBy": null,
+      "disposition": "candidate",
+      "reason": "A Morphe bundle of 64 patches for many apps (v1.53.0), 8 of them for Tumblr, all for 45.8.0.110: Remove ads, Disable ad-free banner, Disable Tumblr TV, Disable blog notification reminder, Disable gift message popup, Disable in-app update, Disable screenshot sharing and Enable premium UI. GPL-3.0. Its Tumblr patches sit in the same folders as ReVanced's and cover the same ground, plus screenshot sharing and the premium screens. The Tumblr code last changed on 2026-09-20. HushTumblr hasn't ported anything from it; its own patches for these features were written against 46.5.0.109. contentHashes holds every version its Tumblr files have had, so a copy of them counts as this lineage.",
+      "archived": false,
+      "forks": [
+        "AjinLab/hoomans-morphe-patches",
+        "ameyamg/hoomans-morphe-patches",
+        "angelmelplayle/hoomans-morphe-patches",
+        "fernando100132/hoomans-morphe-patches",
+        "flowerpoweruk/hoomans-morphe-patches2",
+        "g0lxs/g0lxs-morphe-patches",
+        "GoodLight999/hoomans-morphe-patches",
+        "kingbluetooth/hoomans-morphe-patches",
+        "lucas-martinati/hoomans-morphe-patches",
+        "ozeroztas/hoomans-morphe-patches",
+        "ra-rear/hoomans-morphe-patches",
+        "RomanK2311/hoomans-morphe-patches",
+        "sadicii/hoomans-morphe-patches",
+        "VS-X/hoomans-morphe-patches",
+        "waqasrana/hoomans-morphe-patches"
+      ],
+      "contentHashes": [
+        "132bcf4ae834a61b07d8b14d00f89c497b2f0f0f",
+        "13dbe447df3358cfa3f50d80f87d05e4ebeceee5",
+        "1e74fa3994c4e247c97fd98a7f29eb68cb0c746e",
+        "2a54604a12bca711fda31040791a264c0b895df6",
+        "2c0fbc90b52cb0e8d8feec2beadfb04ce21fc07e",
+        "395c18bcb3b7d4e6c9041e3aff28c462ed18c1e3",
+        "3aad7c92c2cb6513ee017ccae452cd151148304c",
+        "43dcb43882db68cccfcd2953a80b97775fec6dfd",
+        "4b1207b2690e3ec82a36ae41c8a68c90bfcd0c5e",
+        "4f547f4bf36ce5154dc5d89a1357dd1fc6effc28",
+        "64feb8199e94f0e9a26bae8b61c3df87f4e0f84d",
+        "679110a23156261de1c9f99e202c47364aa715c3",
+        "82237c45cac6d78a5793bc04eb4ebbb286107e5f",
+        "83bfa4bf8c182c0a069f91af9d954e11f49b3571",
+        "8dcbd19fd3f39760dcd4ca014351340b8f84c952",
+        "931f0e9c6b04d3f61f26bfb50fe4cabc3062b232",
+        "952ad28a494dd644fd78b8012fbb537aaf8b6888",
+        "985bb5a55b23c324a810376c6c1a69f092aecd0f",
+        "9a669c149bee85d128a248a64bf6ef2e8e2cf7c6",
+        "a08e8208e170af48e9df0cc5102b3373cab0b642",
+        "af45a4da8b0ede15880e832e8ceecb0bb5531502",
+        "afe7fdb93a9e1f643649673750d5215f3fc51d3d",
+        "c0ab64a6e3bcd5db5377f4556eefb5e400a5d9ca",
+        "c698d48ccbc02f66351ae8fda931d62f11d85e11",
+        "cbbe56545c138b2ef52b9e870a446f8bd39ebb36"
+      ],
+      "mirrors": [
+        {
+          "repository": "https://github.com/chirag127/morphe-patches",
+          "reason": "Vendors this bundle's Tumblr patches and its patches-list.json under upstream/hooman, byte for byte, beside device-detection patches of its own. Its own patches don't touch Tumblr.",
+          "blobs": [
+            "625e030aa651b03878e1f003ba11ee4a62f6e4bc"
+          ]
+        }
+      ],
+      "lastChecked": "2026-10-12"
+    }
+  ],
+  "outOfScope": [
+    {
+      "repository": "https://github.com/Jman-Github/patch-bundle-registry",
+      "reason": "A registry of patch bundle metadata from the same author as Jman's bundle index. Code search finds Tumblr in its stored copies of other bundles' patch lists, not in any patch code.",
+      "lastChecked": "2026-10-12"
+    },
+    {
+      "repository": "https://github.com/kairusds/yt-revanced-icon",
+      "reason": "Repackages ReVanced's bundle with different icons. Its README and patches.json list ReVanced's Tumblr patches; it has no Tumblr code.",
+      "lastChecked": "2026-10-12"
+    },
+    {
+      "repository": "https://github.com/peter9811/revanced-apks-output",
+      "reason": "Build output for patched apps. Tumblr appears only in a saved copy of ReVanced 5.18.0's patch list.",
+      "lastChecked": "2026-10-12"
+    },
+    {
+      "repository": "https://github.com/sodawithoutsparkles/revanced-troubleshooting-guide",
+      "reason": "A ReVanced troubleshooting guide. Tumblr appears only in the patch lists it keeps for reference.",
+      "lastChecked": "2026-10-12"
+    },
+    {
+      "repository": "https://github.com/user2user1/rvmm-config-gen",
+      "reason": "A config generator for ReVanced builds. Tumblr appears only in a copy of ReVanced's patch list.",
+      "lastChecked": "2026-10-12"
+    }
+  ]
 }
