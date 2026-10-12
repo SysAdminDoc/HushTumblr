@@ -283,8 +283,19 @@ def index(args) -> None:
     if any(dash in description for dash in DASHES):
         fail("The summary has an em or en dash.")
     bundle_path = root / "patches-bundle.json"
-    bundle_text, bundle_newline = read(bundle_path)
-    bundle = json.loads(bundle_text)
+    if bundle_path.exists():
+        if args.first:
+            fail("--first writes the first patches-bundle.json, and there is one already.")
+        bundle_text, bundle_newline = read(bundle_path)
+        bundle = json.loads(bundle_text)
+    elif args.first:
+        # The first release has no index to update. The keys are the ones every index carries,
+        # in its order; Manager reads no signature file, so that URL stays empty.
+        bundle = {"created_at": "", "description": "", "download_url": "", "signature_download_url": "", "version": ""}
+        bundle_newline = "\n"
+    else:
+        fail("patches-bundle.json is missing. Only the first release writes a new one, and "
+             "publish-release.ps1 says --first only when no release came before.")
     bundle.update({
         "created_at": args.created,
         "description": description,
@@ -331,6 +342,8 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument(name, required=True)
     p.add_argument("--runtime", type=int, required=True)
     p.add_argument("--patch", type=int, required=True)
+    p.add_argument("--first", action="store_true",
+                   help="the first release: write patches-bundle.json, which doesn't exist yet")
     p.set_defaults(run=index)
     args = parser.parse_args(argv)
     try:

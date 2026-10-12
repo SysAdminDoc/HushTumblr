@@ -130,6 +130,55 @@ function Get-RemoteMain([string]$Root) {
     return (($lines[0] -split '\s+')[0])
 }
 
+function Test-FirstRelease {
+    <#
+    .SYNOPSIS
+        True only before any release exists: no patches-bundle.json, and no v* tag here or on origin.
+    .DESCRIPTION
+        The rule pre-push.ps1 uses to leave the release facts alone, with origin's tags asked too, so
+        a clone that never fetched its tags can't pass for a first release. -Except leaves out the
+        tag of the release being published, which GitHub made a moment before its index is written.
+        Once any other v* tag exists, here or on origin, this is false for good: deleting the index
+        later can't make a release look like the first.
+    #>
+    param([Parameter(Mandatory = $true)][string]$Root, [string]$Except)
+
+    if (Test-Path -LiteralPath (Join-Path $Root 'patches-bundle.json') -PathType Leaf) { return $false }
+    $global:LASTEXITCODE = 0
+    $local = @(& git -C $Root tag --list 'v*')
+    if ($LASTEXITCODE -ne 0) { throw "git couldn't list the tags here (exit $LASTEXITCODE)." }
+    if (@($local | Where-Object { $_ -cne $Except }).Count -gt 0) { return $false }
+    $global:LASTEXITCODE = 0
+    $remote = @(& git -C $Root ls-remote --tags origin 'refs/tags/v*')
+    if ($LASTEXITCODE -ne 0) {
+        throw "git couldn't ask origin for its tags (exit $LASTEXITCODE), and a first release is only decided with origin's answer."
+    }
+    $names = @($remote | ForEach-Object { ((($_ -split '\s+')[1]) -replace '^refs/tags/', '') -replace '\^\{\}$', '' })
+    return @($names | Where-Object { $_ -cne $Except }).Count -eq 0
+}
+
+function Invoke-ReleaseFactsPrecheck {
+    <#
+    .SYNOPSIS
+        The release facts check prepare and preflight run, skipped only before the first release.
+    .DESCRIPTION
+        validate-release-facts.ps1 starts by reading patches-bundle.json, which only a published
+        release writes, so before the first one it can't pass. pre-push.ps1 skips the check then
+        too. publish writes the first index and checks it with -VerifyPublishedAsset, so nothing
+        goes out unchecked. Test-FirstRelease decides, and never again once a v* tag exists.
+    #>
+    param([Parameter(Mandatory = $true)][string]$Root)
+
+    if (Test-FirstRelease -Root $Root) {
+        Write-ReleaseStep ('the release facts check is skipped: nothing has been released yet (no patches-bundle.json ' +
+            'and no v* tag here or on origin), so there are no release facts to check. publish writes the first index and checks it')
+        return
+    }
+    Invoke-ReleaseNative 'The release facts check' {
+        & (Join-Path $Root 'scripts/validate-release-facts.ps1') -Root $Root -SkipDescriptionTestCount -AllowPublishedIndexLag -SkipTestResults
+    }
+}
+
 function Get-ReleaseStagePath([string]$Root, [string]$Version, [string]$Stage) {
     return Join-Path $Root "build/release-stages/$Version/$Stage.json"
 }

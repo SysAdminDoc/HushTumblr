@@ -6144,7 +6144,11 @@ Write-Host "[scripts] all $($trackedScripts.Count) tracked PowerShell files pars
 # what the stage puts in its environment stays there. No case reaches the network, Gradle, Python
 # or a key: every refusal here comes before the first of them.
 $stageRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('hushtumblr-stages-' + [guid]::NewGuid().ToString('N'))
+$stageOrigin = Join-Path ([System.IO.Path]::GetTempPath()) ('hushtumblr-stages-origin-' + [guid]::NewGuid().ToString('N'))
 $stageRunner = Join-Path ([System.IO.Path]::GetTempPath()) ('hushtumblr-stage-runner-' + [guid]::NewGuid().ToString('N') + '.ps1')
+$factsRunner = Join-Path ([System.IO.Path]::GetTempPath()) ('hushtumblr-facts-runner-' + [guid]::NewGuid().ToString('N') + '.ps1')
+$factsRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('hushtumblr-facts-' + [guid]::NewGuid().ToString('N'))
+$factsOrigin = Join-Path ([System.IO.Path]::GetTempPath()) ('hushtumblr-facts-origin-' + [guid]::NewGuid().ToString('N'))
 $stageShell = (Get-Process -Id $PID).Path
 $stageUtf8 = New-Object System.Text.UTF8Encoding $false
 function Invoke-ReleaseStageCase {
@@ -6190,10 +6194,37 @@ try { & $Script @forward; exit 0 } catch { Write-Output ('REFUSED: ' + $_.Except
     Set-StageFile 'gradle.properties' "version = 0.0.6`n"
     Invoke-StageGit @('add', '--all')
     Invoke-StageGit @('commit', '--quiet', '-m', 'chore: the last release')
+    # origin is a bare repository beside it, so asking it for tags needs no network.
+    & git init --quiet --bare $stageOrigin 2>&1 | Out-Null
+    Invoke-StageGit @('remote', 'add', 'origin', $stageOrigin)
 
     Set-StageFile 'stray.txt' "left over`n"
     Assert-StageRefused (Invoke-ReleaseStageCase prepare) 'clean checkout*stray.txt' 'prepare ran on a tree with changes.'
     Remove-Item -LiteralPath (Join-Path $stageRoot 'stray.txt')
+
+    # Before the first release (no patches-bundle.json, no v* tag here or on origin) prepare takes
+    # the version gradle.properties already holds. A Python that isn't there stops it at the first
+    # step past the version and tag checks, so the case reaches no Python and no Gradle.
+    $pythonBefore = $env:HUSHTUMBLR_PYTHON
+    $env:HUSHTUMBLR_PYTHON = Join-Path $stageRoot 'no-python-here.exe'
+    try {
+        $first = Invoke-ReleaseStageCase prepare -Version 0.0.6
+    } finally {
+        $env:HUSHTUMBLR_PYTHON = $pythonBefore
+    }
+    Assert-StageRefused $first 'HUSHTUMBLR_PYTHON names*which is not there' `
+        "The first release's prepare stopped before the step after its version checks."
+    Assert-True ($first.Text -like '*already says 0.0.6 and nothing has been released yet*keeps the version*' -and
+        $first.Text -notlike "*isn't its prepare commit*") "The first release's prepare refused the version it starts at: $($first.Text)"
+
+    # Once a release exists the same version is refused again: a tag only on origin, as in a
+    # clone that never fetched its tags, then a tag here.
+    Invoke-StageGit @('tag', 'v0.0.6')
+    Invoke-StageGit @('push', '--quiet', 'origin', 'refs/tags/v0.0.6')
+    Invoke-StageGit @('tag', '-d', 'v0.0.6')
+    Assert-StageRefused (Invoke-ReleaseStageCase prepare -Version 0.0.6) "already says 0.0.6, but HEAD*isn't its prepare commit" `
+        'prepare took the version gradle.properties holds while origin had a release tag.'
+    Invoke-StageGit @('tag', 'v0.0.6')
     Assert-StageRefused (Invoke-ReleaseStageCase prepare -Version 0.0.6) "already says 0.0.6, but HEAD*isn't its prepare commit" `
         'prepare took a version gradle.properties already holds.'
     Assert-StageRefused (Invoke-ReleaseStageCase prepare -Version 0.0.5) "0.0.5 isn't newer than 0.0.6" 'prepare went back a version.'
@@ -6228,12 +6259,74 @@ try { & $Script @forward; exit 0 } catch { Write-Output ('REFUSED: ' + $_.Except
     Set-StageFile 'build/pinned-key.asc' "not a key`n"
     Assert-StageRefused (Invoke-ReleaseStageCase publish -Signing) "there is no patches-0.0.7.mpp*Run release.ps1 -Stage build first." `
         'publish ran with no built assets.'
+
+    # The release facts check that prepare and preflight run is skipped only before the first
+    # release. A checkout of its own, whose validate-release-facts.ps1 only says it ran, and the
+    # two functions called in a shell of their own, as the stages call them.
+    [System.IO.File]::WriteAllText($factsRunner, @'
+param([string]$Common, [string]$Root, [string]$Call, [string]$Except)
+. $Common
+try {
+    if ($Call -eq 'first') { Write-Output ('FIRST: ' + (Test-FirstRelease -Root $Root -Except $Except)) } else { Invoke-ReleaseFactsPrecheck -Root $Root }
+    exit 0
+} catch { Write-Output ('REFUSED: ' + $_.Exception.Message); exit 1 }
+'@, $stageUtf8)
+    function Invoke-FactsCase([string]$Call, [string]$Except) {
+        $ErrorActionPreference = 'Continue'
+        $extra = @(if ($Except) { '-Except', $Except })
+        $lines = @(& $stageShell -NoProfile -ExecutionPolicy Bypass -File $factsRunner -Common (Join-Path $PSScriptRoot 'release/release-common.ps1') `
+            -Root $factsRoot -Call $Call @extra 2>&1 | ForEach-Object { "$_" })
+        return [pscustomobject]@{ Code = $LASTEXITCODE; Text = ($lines -join "`n") }
+    }
+    function Invoke-FactsGit([string[]]$Arguments) {
+        $ErrorActionPreference = 'Continue'
+        & git -C $factsRoot @Arguments 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "git $($Arguments -join ' ') failed in the facts scratch repository." }
+    }
+    function Assert-FactsRan($Result, [bool]$Ran, [string]$Message) {
+        $skipped = $Result.Text -like '*release facts check is skipped: nothing has been released yet*'
+        $didRun = $Result.Text -like '*FACTS RAN*'
+        Assert-True ($Result.Code -eq 0 -and $didRun -eq $Ran -and $skipped -ne $Ran) "$Message It said: $($Result.Text)"
+    }
+    New-Item -ItemType Directory -Path (Join-Path $factsRoot 'scripts') -Force | Out-Null
+    [System.IO.File]::WriteAllText((Join-Path $factsRoot 'scripts/validate-release-facts.ps1'), "Write-Host 'FACTS RAN'`nexit 0`n", $stageUtf8)
+    [System.IO.File]::WriteAllText((Join-Path $factsRoot 'gradle.properties'), "version = 0.0.1`n", $stageUtf8)
+    Invoke-FactsGit @('init', '--quiet')
+    Invoke-FactsGit @('config', 'user.name', 'Release facts contract')
+    Invoke-FactsGit @('config', 'user.email', 'facts@example.invalid')
+    Invoke-FactsGit @('config', 'commit.gpgsign', 'false')
+    Invoke-FactsGit @('add', '--all')
+    Invoke-FactsGit @('commit', '--quiet', '-m', 'chore: start')
+    & git init --quiet --bare $factsOrigin 2>&1 | Out-Null
+    Invoke-FactsGit @('remote', 'add', 'origin', $factsOrigin)
+
+    Assert-FactsRan (Invoke-FactsCase facts) $false 'The facts check ran before the first release, which has no index for it to read.'
+    Assert-True ((Invoke-FactsCase first).Text -like '*FIRST: True*') 'A checkout with no index and no tags was not a first release.'
+    [System.IO.File]::WriteAllText((Join-Path $factsRoot 'patches-bundle.json'), "{}`n", $stageUtf8)
+    Assert-FactsRan (Invoke-FactsCase facts) $true 'The facts check was skipped with a patches-bundle.json in place.'
+    Remove-Item -LiteralPath (Join-Path $factsRoot 'patches-bundle.json')
+    Invoke-FactsGit @('tag', 'v0.0.1')
+    Invoke-FactsGit @('push', '--quiet', 'origin', 'refs/tags/v0.0.1')
+    Invoke-FactsGit @('tag', '-d', 'v0.0.1')
+    Assert-FactsRan (Invoke-FactsCase facts) $true 'The facts check was skipped while origin held a release tag.'
+    # publish leaves out the tag of the release it's publishing, and no other.
+    Assert-True ((Invoke-FactsCase first -Except v0.0.1).Text -like '*FIRST: True*') `
+        "publish didn't take its own new tag for the first release's."
+    Assert-True ((Invoke-FactsCase first -Except v0.0.2).Text -like '*FIRST: False*') `
+        'An earlier release tag on origin still left a first release.'
+    Invoke-FactsGit @('tag', 'v0.0.1')
+    Assert-FactsRan (Invoke-FactsCase facts) $true 'The facts check was skipped with a release tag here.'
+    Remove-Item -LiteralPath $factsOrigin -Recurse -Force
+    Assert-True ((Invoke-FactsCase first).Text -like '*FIRST: False*') 'A local release tag still left a first release.'
+    Invoke-FactsGit @('tag', '-d', 'v0.0.1')
+    Assert-True ((Invoke-FactsCase first).Text -like "*REFUSED: *couldn't ask origin for its tags*") `
+        "A first release was decided without origin's answer."
 } finally {
-    foreach ($path in $stageRoot, $stageRunner) {
+    foreach ($path in $stageRoot, $stageOrigin, $stageRunner, $factsRoot, $factsOrigin, $factsRunner) {
         if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path -Recurse -Force -ErrorAction SilentlyContinue }
     }
 }
-Write-Host '[scripts] release stage order contracts passed'
+Write-Host '[scripts] release stage order and first release contracts passed'
 
 # --- tracked files name no machine -----------------------------------------------------------
 #

@@ -11,7 +11,10 @@
                  Tooling bullets only, naming any other bullet it finds), cuts it as the release,
                  bumps gradle.properties and the README badge, regenerates patches-list.json and
                  runs the release facts check. Then commits "release: prepare X.Y.Z". A failure
-                 puts the four files back.
+                 puts the four files back. Before the first release (no patches-bundle.json and
+                 no v* tag here or on origin) the version may already be the one asked for, and
+                 the facts check, which needs the index, is skipped here and in preflight;
+                 publish writes the first index and checks it.
       preflight  The quick checks the release gate would otherwise reach late: the release text
                  tests, every tracked PowerShell file parsing, what the later stages need (the
                  declared fixtures, the desktop CLI, the signing inputs, gh, the hook), the facts
@@ -76,12 +79,6 @@ function Assert-Prepared {
     return $commit
 }
 
-function Invoke-FactsPrecheck {
-    Invoke-ReleaseNative 'The release facts check' {
-        & (Join-Path $Root 'scripts/validate-release-facts.ps1') -Root $Root -SkipDescriptionTestCount -AllowPublishedIndexLag -SkipTestResults
-    }
-}
-
 switch ($Stage) {
     'prepare' {
         Assert-ReleaseClean $Root
@@ -95,9 +92,16 @@ switch ($Stage) {
         if ($branch -cne 'main') { throw "Releases are cut on main, and this checkout is on $branch." }
         $current = Get-BundleVersion -Root $Root
         if ($current -eq $Version) {
-            throw "gradle.properties already says $Version, but HEAD $head isn't its prepare commit. Put it back to the last release first."
+            # The first release ships the version the project started at, so there's nothing to bump.
+            # Once any release exists (Test-FirstRelease), the same version is refused as before.
+            if (-not (Test-FirstRelease -Root $Root)) {
+                throw "gradle.properties already says $Version, but HEAD $head isn't its prepare commit. Put it back to the last release first."
+            }
+            Write-ReleaseStep ("gradle.properties already says $Version and nothing has been released yet (no patches-bundle.json " +
+                'and no v* tag here or on origin), so this first release keeps the version and still cuts the CHANGELOG')
+        } elseif ([version]$Version -le [version]$current) {
+            throw "$Version isn't newer than $current, the version in gradle.properties."
         }
-        if ([version]$Version -le [version]$current) { throw "$Version isn't newer than $current, the version in gradle.properties." }
         if (Get-ReleaseGitText -Root $Root -Arguments @('tag', '--list', $tag)) { throw "The tag $tag already exists here." }
         $global:LASTEXITCODE = 0
         $remoteTag = @(& git -C $Root ls-remote --tags origin "refs/tags/$tag")
@@ -128,7 +132,7 @@ switch ($Stage) {
             Invoke-ReleaseGradle -Root $Root -Tasks @(':patches:generatePatchesList') -Job 'release patch list'
             $catalogVersion = [string](Get-Content -LiteralPath (Join-Path $Root 'patches-list.json') -Raw | ConvertFrom-Json).version
             if ($catalogVersion -cne $tag) { throw "patches-list.json says $catalogVersion after the patch list was generated, not $tag." }
-            Invoke-FactsPrecheck
+            Invoke-ReleaseFactsPrecheck -Root $Root
 
             $changed = @(& git -C $Root status --porcelain --untracked-files=all | ForEach-Object { $_.Substring(3) })
             $unexpected = @($changed | Where-Object { $changedByPrepare -notcontains $_ })
@@ -184,7 +188,7 @@ switch ($Stage) {
         if (-not (Test-Path -LiteralPath $hookPath -PathType Leaf)) { throw 'The pre-push hook is not installed. Run scripts/install-hooks.ps1 first.' }
         Write-ReleaseStep "signing with $($signing.Fingerprint) from $($signing.GpgHome)"
 
-        Invoke-FactsPrecheck
+        Invoke-ReleaseFactsPrecheck -Root $Root
         # The gate's quick pass (pre-push.ps1): everything but the fixture suite and the bundle.
         Invoke-ReleaseGradle -Root $Root -Job 'release preflight' -Tasks @(
             ':patches:buildDependencyReport', ':extensions:tumblr:test', ':patches:test',

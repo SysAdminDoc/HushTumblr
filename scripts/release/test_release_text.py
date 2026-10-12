@@ -227,10 +227,44 @@ class ReleaseTextTest(unittest.TestCase):
 
     # --- index -----------------------------------------------------------------------------------
 
-    def index(self, summary="New this time: Hide ads covers the shopping row.", runtime=705, patch=186):
+    def index(self, summary="New this time: Hide ads covers the shopping row.", runtime=705, patch=186, first=False):
         return self.run_tool("index", "--version", "0.0.7", "--created", "2026-10-11T04:00:00",
                              "--summary", self.file("summary.txt", summary),
-                             "--runtime", str(runtime), "--patch", str(patch))
+                             "--runtime", str(runtime), "--patch", str(patch), *(["--first"] if first else []))
+
+    def test_the_first_index_writes_patches_bundle_json(self):
+        (self.root / "patches-bundle.json").unlink()
+        self.cut()
+        code, err = self.index(first=True)
+        self.assertEqual(code, 0, err)
+        written = self.text("patches-bundle.json")
+        self.assertTrue(written.endswith("}\n") and "\r\n" not in written)
+        bundle = json.loads(written)
+        # The same keys in the same order as every later index, so the next release only updates it.
+        self.assertEqual(list(bundle), list(INDEX))
+        self.assertEqual(bundle["version"], "0.0.7")
+        self.assertEqual(bundle["created_at"], "2026-10-11T04:00:00")
+        self.assertEqual(bundle["signature_download_url"], "")
+        self.assertEqual(bundle["download_url"],
+                         "https://github.com/SysAdminDoc/HushTumblr/releases/download/v0.0.7/patches-0.0.7.mpp")
+        self.assertTrue(bundle["description"].startswith(
+            "HushTumblr v0.0.7: 3 patches for Tumblr 46.5.0.109, which needs Android 8"))
+        self.assertIn("Needs Morphe Manager 1.34.0 or newer", bundle["description"])
+        self.assertIn("The latest release is [v0.0.7](https://github.com/SysAdminDoc/HushTumblr/releases/tag/v0.0.7), "
+                      "with 3 patches.", self.text("README.md"))
+
+    def test_only_the_first_index_may_be_written_from_nothing(self):
+        self.cut()
+        before = self.text("patches-bundle.json")
+        code, err = self.index(first=True)
+        self.assertEqual(code, 1)
+        self.assertIn("there is one already", err)
+        self.assertEqual(self.text("patches-bundle.json"), before)
+        (self.root / "patches-bundle.json").unlink()
+        code, err = self.index()
+        self.assertEqual(code, 1)
+        self.assertIn("patches-bundle.json is missing", err)
+        self.assertFalse((self.root / "patches-bundle.json").exists())
 
     def test_index_points_the_bundle_readme_and_form_at_the_release(self):
         self.cut()

@@ -12,6 +12,9 @@
       3. The index: patches-bundle.json, the README sentence, the bug form and the GitHub
          description, held to the hosted bundle by validate-release-facts.ps1
          -VerifyPublishedAsset before anything is committed. A failure puts the files back.
+         The first release writes patches-bundle.json new. The README sentence ("The latest
+         release is [vX.Y.Z](...), with N patches.") and the add-source link have to be in the
+         README already: the index rewrites the sentence and the check requires both.
       4. The commit "release: publish the X.Y.Z index to Morphe Manager", pushed right away
          through the pre-push hook. 0.0.5's sat on this machine for most of a day (#3).
       5. verify-published-index.ps1, which asks GitHub what Manager is offered now.
@@ -126,9 +129,16 @@ if ($indexed) {
     # The release gate wrote these in this checkout, and the index push holds the description to them.
     $runtime = Get-ReleaseTestCount -Root $Root -Folders @('extensions/tumblr/build/test-results/testDebugUnitTest')
     $patch = Get-ReleaseTestCount -Root $Root -Folders @('patches/build/test-results/test', 'patches/build/test-results/fixtureTest')
+    # No release before this one: there's no patches-bundle.json to update, so the index writes it.
+    $firstIndex = Test-FirstRelease -Root $Root -Except $tag
+    $indexArguments = @('index', '--version', $Version, '--created', $created,
+        '--summary', $Summary, '--runtime', [string]$runtime, '--patch', [string]$patch)
+    if ($firstIndex) {
+        Write-ReleaseStep "nothing was released before $tag, so this writes the first patches-bundle.json"
+        $indexArguments += '--first'
+    }
     try {
-        Invoke-ReleaseText -Root $Root -What 'The index' -Arguments @('index', '--version', $Version, '--created', $created,
-            '--summary', $Summary, '--runtime', [string]$runtime, '--patch', [string]$patch)
+        Invoke-ReleaseText -Root $Root -What 'The index' -Arguments $indexArguments
         $description = [string](Get-Content -LiteralPath (Join-Path $Root 'patches-bundle.json') -Raw | ConvertFrom-Json).description
         $facts = [regex]::Match($description, '^HushTumblr v\d+\.\d+\.\d+: (\d+) patches for Tumblr (\d+(?:\.\d+)+),')
         if (-not $facts.Success) { throw "The new index description doesn't start the way release_text.py writes it: $description" }
@@ -155,7 +165,11 @@ if ($indexed) {
     } catch {
         Write-ReleaseStep 'putting patches-bundle.json, the README and the bug form back'
         & git -C $Root reset --quiet -- @indexFiles
-        & git -C $Root checkout --quiet HEAD -- @indexFiles
+        # The first index has no earlier patches-bundle.json to go back to, and git checkout
+        # refuses every path when one of them isn't in HEAD, so the new file is removed instead.
+        $restore = @($indexFiles | Where-Object { -not ($firstIndex -and $_ -ceq 'patches-bundle.json') })
+        & git -C $Root checkout --quiet HEAD -- @restore
+        if ($firstIndex) { Remove-Item -LiteralPath (Join-Path $Root 'patches-bundle.json') -Force -ErrorAction SilentlyContinue }
         throw
     }
     $head = Get-ReleaseGitText -Root $Root -Arguments @('rev-parse', 'HEAD')
