@@ -867,7 +867,11 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         field.setId(android.R.id.edit);
         field.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         field.setImeOptions(EditorInfo.IME_FLAG_NO_FULLSCREEN | EditorInfo.IME_FLAG_NO_EXTRACT_UI);
-        field.setMinLines(3);
+        int editorHeight = context.getResources().getDisplayMetrics().heightPixels / 4;
+        field.setMinHeight(Math.min(editorHeight,
+                Math.round(96 * context.getResources().getDisplayMetrics().density)));
+        field.setMaxHeight(editorHeight);
+        field.setVerticalScrollBarEnabled(true);
         field.setHint(L10n.t("One word or phrase a line"));
         field.setText(wordsDraft == null ? setting.savedValue() : wordsDraft);
         if (wordsDraft != null) field.setSelection(Math.min(wordsSelectionStart, field.length()),

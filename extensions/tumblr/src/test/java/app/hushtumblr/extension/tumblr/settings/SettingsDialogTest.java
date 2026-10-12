@@ -139,6 +139,24 @@ public class SettingsDialogTest {
     }
 
     @Test
+    public void longWordListsScrollWithinTheEditorInsteadOfHidingItsButtons() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        HushTumblrPreferenceFragment page = pageOf(show(controller.get()));
+        click(page.findPreference(HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW));
+        AlertDialog editor = ShadowAlertDialog.getLatestAlertDialog();
+        EditText field = editor.findViewById(android.R.id.edit);
+        String draft = "x".repeat(SettingsBackup.MAX_BYTES);
+        field.setText(draft);
+        field.measure(View.MeasureSpec.makeMeasureSpec(360, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        assertTrue("word list height " + field.getMeasuredHeight() + " grew beyond viewport "
+                + field.getResources().getDisplayMetrics().heightPixels + ", max " + field.getMaxHeight(), field.getMeasuredHeight()
+                <= field.getResources().getDisplayMetrics().heightPixels / 4);
+        assertEquals(draft, field.getText().toString());
+        assertTrue(field.isVerticalScrollBarEnabled());
+    }
+
+    @Test
     public void aSuccessfulWordsSaveClearsTheRecreationDraft() {
         PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
         HushTumblrPreferenceFragment page = pageOf(show(controller.get()));

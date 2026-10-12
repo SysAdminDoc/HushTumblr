@@ -103,7 +103,7 @@ Fix push notifications looks at the address and package of Firebase's own reques
 
 The About and Licenses screens link to `github.com`, `gitlab.com` and `www.gnu.org`, and Support HushTumblr on the settings home links to `ko-fi.com`. The optional setup guide links to password and data help at `help.tumblr.com`. All of these open in your browser, and only when you tap one.
 
-Word rules ignore case and compare NFC-normalized text. Letters, digits, combining marks and connector punctuation keep a word together; punctuation and emoji can separate words. This does not remove accents or apply language-specific segmentation. Both word lists share the settings backup size limit. A refused Save keeps your draft.
+Word rules ignore case and compare NFC-normalized text. Letters, digits, combining marks and connector punctuation keep a word together; punctuation and emoji can separate words. This does not remove accents or apply language-specific segmentation. Both word lists share the settings backup size limit. Long lists scroll inside the editor. A refused Save keeps your draft.
 
 Muted post IDs stay in a bounded private file on this device, separated by Tumblr account. They aren't included in portable settings backups or diagnostics. The Feed page can clear or manage the current account's list. Unknown account or post identity leaves a post visible.
 
