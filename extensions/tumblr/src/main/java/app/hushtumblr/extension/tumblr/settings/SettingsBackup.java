@@ -551,8 +551,8 @@ public final class SettingsBackup {
         // A version 1 file has no text section, so the text settings stay as they are. A later
         // file may leave it out too, and then the same holds.
         boolean carriesText = (Integer) schema >= TEXT_SCHEMA;
-        Object text = carriesText ? root.opt(TEXT_NAME) : null;
-        if (text != null && !(text instanceof JSONObject)) {
+        Object textSection = carriesText ? root.opt(TEXT_NAME) : null;
+        if (textSection != null && !(textSection instanceof JSONObject)) {
             throw new Rejected(Reason.FORMAT, "No text settings");
         }
 
@@ -590,8 +590,8 @@ public final class SettingsBackup {
         }
         Map<StringSetting, String> texts = new LinkedHashMap<>();
         List<StringSetting> skipped = new ArrayList<>();
-        if (text != null) {
-            JSONObject named = (JSONObject) text;
+        if (textSection != null) {
+            JSONObject named = (JSONObject) textSection;
             for (Iterator<String> names = named.keys(); names.hasNext(); ) {
                 String name = names.next();
                 StringSetting setting = textSetting(name);
