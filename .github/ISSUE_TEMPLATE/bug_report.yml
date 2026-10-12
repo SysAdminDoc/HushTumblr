@@ -69,12 +69,42 @@ body:
       description: Every patch but Spoof signature for Google sign-in is selected by default. That one is only in your build if you picked it in Expert mode.
       multiple: true
       options:
+        - Dark background color
         - Disable analytics
+        - Disable update prompts
         - Fix push notifications
+        - Hide ads
         - Hide advertising ID
+        - Hide Blaze prompts
+        - Hide hashtags
+        - Hide note counts
+        - Hide photo posts
+        - Hide posts with these words
+        - Hide reblogs
+        - Hide suggested blogs
+        - Hide suggested communities
+        - Hide text posts
+        - Hide the ad-free banner
+        - Hide the comment button
+        - Hide the Communities tab
+        - Hide the diamond and TumblrMart
+        - Hide the Explore tab
+        - Hide the Follow button
+        - Hide the like button
+        - Hide the Notifications tab
+        - Hide the reblog button
+        - Hide the Save button
+        - Hide the share button
+        - Hide Tumblr TV
+        - Hide unread dots
+        - Hide video posts
+        - Hide Watch it rows
         - HushTumblr settings
         - Remove ad tracking permissions
+        - Reorder the bottom bar
+        - Skip review prompts
         - Spoof signature for Google sign-in
+        - Turn off screenshot sharing
     validations:
       required: true
   - type: dropdown
@@ -118,7 +148,7 @@ body:
     attributes:
       label: Diagnostic report
       description: |
-        This answers most of our questions, so please add it if you can. It works with Debug logging off and then still names your build, the patches in it and what each one has counted. For the most detail, long-press the Tumblr icon, tap HushTumblr, turn on Debug logging, do the thing that goes wrong, then come back, tap Export diagnostic report and pick Save full report. If the screen opens on category pages, these controls are under More settings, then Pause, backup and diagnostics. That saves a text file in Download/Morphe on your phone. Drag it into this box. If you can't get the file off your phone, pick Copy quick report instead and paste the shorter report here.
+        This answers most of our questions, so please add it if you can. It works with Debug logging off and then still names your build, the patches in it and what each one has counted. For the most detail, long-press the Tumblr icon, tap HushTumblr, turn on Debug logging, do the thing that goes wrong, then come back, tap Export diagnostic report and pick Save full report. If the screen opens on category pages, these controls are under More settings, then Pause, backup and diagnostics. That saves a text file in Download/Morphe on your phone, or on Android 9 and older in Android/data/com.tumblr/files/Download/Morphe. Drag it into this box. If you can't get the file off your phone, pick Copy quick report instead and paste the shorter report here.
         The report leaves out links, long ID numbers, cookies, sign-in tokens and Authorization headers, JSON included. It can't spot a name, phone number or message written anywhere else, so read it and remove anything private before you post it.
   - type: textarea
     id: additional_context
