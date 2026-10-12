@@ -2,10 +2,10 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-0.0.1-446B93" alt="Version 0.0.1">
-  <img src="https://img.shields.io/badge/status-in%20development-D4A72C" alt="In development">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License GPL-3.0"></a>
   <img src="https://img.shields.io/badge/platform-Android%208%2B-3DDC84" alt="Platform Android 8+">
-  <img src="https://img.shields.io/badge/target-Tumblr%2046.5.0.109-001935" alt="Development target Tumblr 46.5.0.109">
+  <img src="https://img.shields.io/badge/Tumblr-46.5.0.109-001935" alt="Tumblr 46.5.0.109">
+  <img src="https://img.shields.io/badge/for-Morphe%20Manager%201.34.0%2B-8A2BE2" alt="For Morphe Manager 1.34.0 or newer">
 </p>
 
 <p>
@@ -18,11 +18,11 @@
 
 Morphe patches for Tumblr on Android. The goal is a quieter dashboard, with controls over ads, suggested content and the parts of Tumblr you don't use.
 
-**HushTumblr is in development.** Version 0.0.1 is the initial source scaffold. There's no published patch bundle yet, and builds and device testing are still pending. Nothing here has been tested on a phone, and the plans below aren't features yet.
+The latest release is [v0.0.1](https://github.com/SysAdminDoc/HushTumblr/releases/tag/v0.0.1), with 36 patches. Add this repo to Morphe Manager as a patch source and it'll offer each new release when it comes out.
 
-## Current target
+## Supported version
 
-| | Development target |
+| | Supported |
 |---|---|
 | App | Tumblr for Android |
 | Package | `com.tumblr` |
@@ -32,20 +32,11 @@ Morphe patches for Tumblr on Android. The goal is a quieter dashboard, with cont
 | Architecture | Any (the bundle carries ARM64, 32-bit ARM and x86 builds) |
 | Input | Tumblr's split APK bundle (`.apkm`) |
 
-This is the version the source is being adapted for. It isn't a compatibility guarantee yet. Other Tumblr versions haven't been verified.
-
-## What's planned
-
-| Area | Planned controls |
-|---|---|
-| Feed filters | Hide reblogs. Hide video, photo or text posts. Hide posts with words you choose. |
-| Appearance | Pick your own background color, AMOLED black included. Rearrange the bottom bar's tabs. |
-
-Each of these has to be checked against Tumblr itself before it's described as available. The first device run also needs to check sign-in and notifications.
+Every patch is checked against this exact build. Other Tumblr versions aren't supported, and Morphe Manager will call them unsupported.
 
 ## Patches
 
-There are 36 patches so far, all for Tumblr 46.5.0.109. None of them has been built or tried on a phone yet.
+There are 36 patches so far, all for Tumblr 46.5.0.109.
 
 | Patch | What it does |
 |---|---|
@@ -100,15 +91,30 @@ Fix push notifications looks at the address and package of Firebase's own reques
 
 The About and Licenses screens link to `github.com`, `gitlab.com` and `www.gnu.org`, and Support HushTumblr on the settings home links to `ko-fi.com`. The optional setup guide links to password and data help at `help.tumblr.com`. All of these open in your browser, and only when you tap one.
 
-## Installation
+## Install
 
-There isn't an installable HushTumblr release or a live patch-source link yet. Once a build has passed its checks, this section will contain the supported Tumblr download and the steps for adding HushTumblr to [Morphe Manager](https://github.com/MorpheApp/morphe-manager).
+1. Install [Morphe Manager](https://github.com/MorpheApp/morphe-manager) 1.34.0 or newer.
+2. Add HushTumblr as a patch source: https://morphe.software/add-source?github=SysAdminDoc%2FHushTumblr
+3. Get Tumblr 46.5.0.109 from [APKMirror](https://www.apkmirror.com/apk/tumblr-inc/tumblr/tumblr-social-media-art-46-5-0-109-release/). Take the bundle, a .apkm file with version code 1460500109. It carries every kind of phone processor, so there's only one to pick.
+4. Pick that file in Morphe Manager, keep the default patch selection and patch. Hide ads, Disable analytics, Hide advertising ID and Fix push notifications start on. Everything else waits until you turn on its switch in HushTumblr settings.
+5. Only Spoof signature for Google sign-in is left out. If you need it, turn on **Settings → Advanced → Expert mode** in Morphe Manager and pick it before you patch.
+
+A patched Tumblr can't install over the stock one, because Android only accepts an update signed with the same key. Uninstall stock Tumblr first. Your blogs, posts and follows are in your account and come back when you sign in, but drafts kept only on the phone don't.
+
+## Signing in
+
+Sign in with your email and Tumblr password. Google's sign-in button checks the [app's signing certificate](https://developers.google.com/android/guides/client-auth), and a patched Tumblr carries your own key, so use your email instead. If you joined through Google and never set a Tumblr password, set one first from Tumblr's password reset page, using the email on your account.
+
+## Keep your signing key
+
+Morphe Manager signs the patched Tumblr with a key it makes on your phone. Android installs an update over your patched Tumblr only when the update carries that same key.
+
+- **Back it up right after your first patch.** In Morphe Manager, open Settings, then System, then Import & export, then Signing key, and tap Export. Keep the `Morphe.keystore` file somewhere private, because anyone who has it can sign an APK your phone will accept as an update.
+- **On a new phone, import it before you patch anything.** Without your exported copy, nothing you patched earlier can be updated in place.
 
 ## Building from source
 
 The project uses Kotlin patches and a Java Android extension. It inherits the Hush build setup and needs JDK 21, the Android SDK, and access to the Morphe packages on GitHub Packages. Set `GITHUB_ACTOR` to your GitHub username and `GITHUB_TOKEN` to a token with `read:packages` access.
-
-The intended build sequence is below. It hasn't been verified for this initial Tumblr scaffold yet.
 
 ```powershell
 .\gradlew.bat :patches:generatePatchesList
@@ -142,7 +148,7 @@ Tumblr patches written for this project come from reading Tumblr itself. Every s
 
 ## Release signing key
 
-Releases will sign their `SHA256SUMS.txt` with the HushTumblr release key. Its fingerprint is `2143 368A A5CE 6E5D FFEA  79CF BBC1 3768 83CF 3AB4`, and the public key is [keys/hushtumblr-release.asc](keys/hushtumblr-release.asc). `scripts/verify-release-checksums.ps1` checks a download against it offline.
+Each release signs its `SHA256SUMS.txt` with the HushTumblr release key. Its fingerprint is `2143 368A A5CE 6E5D FFEA  79CF BBC1 3768 83CF 3AB4`, and the public key is [keys/hushtumblr-release.asc](keys/hushtumblr-release.asc). `scripts/verify-release-checksums.ps1` checks a download against it offline.
 
 ## Artwork
 

@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* **Tumblr:** HushTumblr 0.0.1 starts from HushPinterest and targets Tumblr 46.5.0.109 (version code 1460500109) on Android 8.0 or newer. Nothing has been released yet, and none of it has been tried on a phone.
+* **Tumblr:** First release. HushTumblr 0.0.1 starts from HushPinterest and supports Tumblr 46.5.0.109 (version code 1460500109) on Android 8.0 or newer, with 36 patches.
 * **Tumblr:** Six patches carry over and now point at Tumblr: HushTumblr settings, Disable analytics, Hide advertising ID, Remove ad tracking permissions, Fix push notifications and Spoof signature for Google sign-in.
 * **Tumblr:** HushTumblr settings has a row of its own at the end of Tumblr's Settings screen, and still opens from a long-press on the Tumblr icon and from Tumblr's App info page. The row's title is the one string HushTumblr adds to Tumblr's resources.
 * **Tumblr:** Patch descriptions now point at Tumblr settings > HushTumblr for each switch.
