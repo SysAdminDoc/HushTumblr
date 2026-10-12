@@ -251,7 +251,7 @@ public class L10nTest {
         String shown = L10n.t(mirrored, KEY);
         char override = (char) 0x202E;
         char mark = (char) 0x200F;
-        assertEquals("one override per word: " + shown, 2, count(shown, override));
+        assertEquals("one override per word: " + shown, KEY.split(" ").length, count(shown, override));
         assertEquals("it has to open with a right-to-left mark, or the line runs left to right", mark, shown.charAt(0));
         String formatted = L10n.f(mirrored, "Full report saved to %1$s", "Download/HushTumblr");
         assertTrue(formatted, formatted.contains("Download/HushTumblr"));
