@@ -252,6 +252,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         // The preview is drawn over this page's window. It stays unanswered, and the page that
         // replaces this one shows it again.
         SettingsBackupPreference.closePreview(this);
+        Preference guide = findPreference(SetupGuidancePreference.KEY);
+        if (guide instanceof SetupGuidancePreference) ((SetupGuidancePreference) guide).closeDialog();
         if (manageMutedPosts != null) manageMutedPosts.closeDialogs();
         manageMutedPosts = null;
         rememberWordsDraft();
@@ -879,21 +881,63 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                 Math.round(96 * context.getResources().getDisplayMetrics().density)));
         field.setMaxHeight(editorHeight);
         field.setVerticalScrollBarEnabled(true);
+        field.setOnTouchListener((view, event) -> {
+            int action = event.getActionMasked();
+            boolean finished = action == android.view.MotionEvent.ACTION_UP
+                    || action == android.view.MotionEvent.ACTION_CANCEL;
+            // The draft scrolls under a finger before the surrounding help and error text does.
+            view.getParent().requestDisallowInterceptTouchEvent(!finished
+                    && (view.canScrollVertically(-1) || view.canScrollVertically(1)));
+            return false;
+        });
         field.setHint(L10n.t("One word or phrase a line"));
         field.setText(wordsDraft == null ? setting.savedValue() : wordsDraft);
         if (wordsDraft != null) field.setSelection(Math.min(wordsSelectionStart, field.length()),
                 Math.min(wordsSelectionEnd, field.length()));
         LinearLayout editor = new LinearLayout(context);
+        editor.setOrientation(LinearLayout.VERTICAL);
         int inset = Math.round(24 * context.getResources().getDisplayMetrics().density);
         editor.setPaddingRelative(inset, 0, inset, 0);
+        TextView explanation = new TextView(context);
+        explanation.setText(editingAllowedWords
+                ? L10n.t("Allowed words keep a post when the word filter would hide it. Other filters still apply.")
+                : L10n.t("Match whole words or phrases in the fields you chose. Case doesn't matter."));
+        explanation.setTextSize(14);
+        explanation.setTextColor(ScreenColors.DEFAULT.summary);
+        explanation.setPaddingRelative(0, 0, 0, Math.round(12 * context.getResources().getDisplayMetrics().density));
+        editor.addView(explanation);
+        TextView label = new TextView(context);
+        label.setText(L10n.t("One word or phrase a line"));
+        label.setTextSize(14);
+        label.setTextColor(ScreenColors.DEFAULT.title);
+        label.setLabelFor(android.R.id.edit);
+        label.setPaddingRelative(0, 0, 0, Math.round(6 * context.getResources().getDisplayMetrics().density));
+        editor.addView(label);
         editor.addView(field, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+        TextView feedback = new TextView(context);
+        feedback.setText(L10n.t("Changes are saved only when you tap Save."));
+        feedback.setTextSize(14);
+        feedback.setTextColor(ScreenColors.DEFAULT.summary);
+        feedback.setPaddingRelative(0, Math.round(8 * context.getResources().getDisplayMetrics().density), 0, 0);
+        feedback.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
+        editor.addView(feedback);
+        field.addTextChangedListener(new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence text, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence text, int start, int before, int count) {
+                if (field.getError() != null) {
+                    field.setError(null);
+                    feedback.setText(L10n.t("Changes are saved only when you tap Save."));
+                }
+            }
+            @Override public void afterTextChanged(android.text.Editable text) { }
+        });
+        android.widget.ScrollView body = new android.widget.ScrollView(context);
+        body.addView(editor, new android.widget.ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
         AlertDialog dialog = show(new AlertDialog.Builder(context)
                 .setTitle(row.getTitle())
-                .setMessage(editingAllowedWords
-                        ? L10n.t("Allowed words keep a post when the word filter would hide it. Other filters still apply.")
-                        : L10n.t("Posts matching a hidden word in the selected fields are hidden. Case doesn't matter, and only whole words count."))
-                .setView(editor)
+                .setView(body)
                 .setPositiveButton(L10n.t("Save"), null)
                 .setNegativeButton(L10n.t("Cancel"), null));
         if (dialog == null) return;
@@ -931,12 +975,14 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             if (error != null) {
                 rememberWordsDraft();
                 field.setError(error);
+                feedback.setText(error);
                 Utils.showToastLong(error);
                 return;
             }
             row.setSummary(wordsSummary(setting.savedValue()));
             clearWordsDraft();
             dialog.dismiss();
+            Utils.showToastShort(L10n.t("Words saved"));
         });
     }
 
@@ -980,7 +1026,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                 .setTitle(L10n.t("Tap a tab to move it up"))
                 .setAdapter(labels, null)
                 .setNeutralButton(L10n.t("Tumblr's order"), null)
-                .setPositiveButton(L10n.t("OK"), null));
+                .setPositiveButton(L10n.t("Done"), null));
         if (dialog == null) return;
         dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(ignored -> {
             if (!dialog.isShowing() || !isAdded()) return;
@@ -996,6 +1042,12 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         dialog.getListView().setOnItemClickListener((parent, view, position, id) -> {
             if (!dialog.isShowing() || !isAdded()) return;
             String movedTab = order.get(position);
+            if (position == 0) {
+                String first = L10n.f("%1$s is already first.", tabLabel(movedTab));
+                dialog.getListView().announceForAccessibility(first);
+                Utils.showToastShort(first);
+                return;
+            }
             focusedTab[0] = movedTab;
             List<String> moved = BottomBarTabs.movedUp(order, position);
             boolean saved = saveTabOrder(BottomBarTabs.join(moved));
@@ -1220,7 +1272,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
      * The theme every row and dialog on this screen is built with, over Tumblr's own: dark
      * Material, which the black page reads on whatever the host activity's theme is.
      */
-    static Context themed(Context base) {
+    public static Context themed(Context base) {
         // Tumblr omits supportsRtl. Only views built for this screen opt in; the host stays intact.
         ApplicationInfo settingsInfo = new ApplicationInfo(base.getApplicationInfo());
         settingsInfo.flags |= ApplicationInfo.FLAG_SUPPORTS_RTL;

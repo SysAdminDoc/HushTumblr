@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+* **Tumblr:** Settings controls now show focus and disabled states consistently. Search and word fields have clearer boundaries, and dialog actions wrap without losing their touch targets at large text sizes.
+* **Tumblr:** Word editors keep a label above the list, explain when changes are saved and show save errors beside the draft. Long explanations and errors scroll with the editor while Save and Cancel stay within reach.
+* **Tumblr:** The muted-post manager keeps Undo in its own window. Failed changes leave the list available to retry, empty lists explain how to mute a post, and switching accounts closes the old list. Undo also respects Android's accessibility timeout.
+* **Tumblr:** A release check that can't save its result now reports the failure instead of showing an earlier success. Closing settings also closes the setup guide and disables its old actions.
 * **Tumblr:** HushTumblr settings and their dialogs now mirror navigation for right-to-left languages, even when Tumblr's own layouts don't support it.
 * **Tumblr:** Moving a tab keeps TalkBack focus on that tab and announces its new position. Reset and refused saves keep focus aligned with the saved order.
 * **Tumblr:** Hide ads also removes paid Blaze posts from blogs you don't follow. It keeps your own posts and posts from blogs you follow.

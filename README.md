@@ -1,7 +1,7 @@
 ![HushTumblr. Tumblr, on your terms.](assets/readme-hero.png)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.0.3-92BFFF" alt="Version 0.0.3">
+  <img src="https://img.shields.io/badge/version-0.0.4-92BFFF" alt="Version 0.0.4">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License GPL-3.0"></a>
   <img src="https://img.shields.io/badge/platform-Android%208%2B-3DDC84" alt="Platform Android 8+">
   <img src="https://img.shields.io/badge/Tumblr-46.5.0.109-001935" alt="Tumblr 46.5.0.109">
@@ -22,9 +22,11 @@ The latest release is [v0.0.1](https://github.com/SysAdminDoc/HushTumblr/release
 
 ## Settings
 
-The v0.0.3 source adds more feed controls and fixes saving, importing and restoring settings. Search and the category pages use dark cards with pale blue controls and room for descriptions. Your saved choices stay the same.
+The v0.0.4 source adds more feed controls and improves saving, importing and restoring settings. Search and the category pages use dark cards with pale blue controls and room for descriptions. Your saved choices stay the same.
 
 Settings mirror for right-to-left languages. Local post muting is available from Tumblr's redesigned post menu, with Undo to bring the post back.
+
+Word editors keep your draft if saving fails and show the problem beside it. Muted posts can be restored from the manager's own Undo control. Controls show focus and disabled states throughout settings. Dialog actions stay within reach at large text sizes.
 
 ![HushTumblr settings overview, Feed and Privacy pages](assets/settings-preview.png)
 

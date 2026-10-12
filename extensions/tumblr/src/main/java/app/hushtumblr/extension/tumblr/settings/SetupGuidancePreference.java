@@ -14,9 +14,6 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.ColorStateList;
-import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.RippleDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.DialogPreference;
@@ -39,6 +36,7 @@ import app.hushtumblr.extension.shared.Utils;
 /** Optional guidance. Reading it changes no settings, accounts or stored app data. */
 @SuppressWarnings("deprecation")
 public final class SetupGuidancePreference extends DialogPreference {
+    static final String KEY = "action_setup_guidance";
     /** Tumblr's help center, where its password and data export articles are found by searching. */
     private static final String PASSWORD_HELP = "https://help.tumblr.com/";
     private static final String DATA_HELP = "https://help.tumblr.com/";
@@ -48,7 +46,7 @@ public final class SetupGuidancePreference extends DialogPreference {
     public SetupGuidancePreference(Context context) {
         super(HushTumblrPreferenceFragment.themed(context));
         host = activity(context);
-        setKey("action_setup_guidance");
+        setKey(KEY);
         setPersistent(false);
         setTitle(L10n.t(context, "Setup and backup guide"));
         setSummary(L10n.t(context, "Optional help with sign-in, supported links, patch choices and backups."));
@@ -96,6 +94,12 @@ public final class SetupGuidancePreference extends DialogPreference {
     @Override public void onDismiss(DialogInterface dismissed) {
         // Android queues this callback. An earlier opening can't close a replacement dialog.
         if (getDialog() == dismissed) super.onDismiss(dismissed);
+    }
+
+    /** Closing the parent window must make its help actions inert immediately. */
+    void closeDialog() {
+        if (session != null) session.close();
+        if (getDialog() != null) getDialog().dismiss();
     }
 
     @Override protected void onPrepareForRemoval() {
@@ -239,14 +243,7 @@ public final class SetupGuidancePreference extends DialogPreference {
             button.setMaxLines(Integer.MAX_VALUE);
             button.setEllipsize(null);
             button.setGravity(Gravity.CENTER);
-            button.setTextColor(ScreenColors.DEFAULT.secondaryActionText());
-            button.setMinHeight(dp(48));
-            button.setPaddingRelative(dp(12), dp(8), dp(12), dp(8));
-            GradientDrawable surface = new GradientDrawable();
-            surface.setColor(ScreenColors.DEFAULT.card);
-            surface.setStroke(dp(1), ScreenColors.DEFAULT.outline);
-            surface.setCornerRadius(dp(8));
-            button.setBackground(new RippleDrawable(ColorStateList.valueOf(ScreenColors.half(ScreenColors.DEFAULT.accent)), surface, null));
+            ScreenColors.DEFAULT.secondaryAction(button);
             LinearLayout.LayoutParams size = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             size.bottomMargin = dp(8);
             content.addView(button, size);
