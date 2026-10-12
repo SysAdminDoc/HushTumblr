@@ -790,7 +790,8 @@ function Test-ManifestDelta {
         # input asks for them, and so does the application's ad services configuration property.
         # The application keeps every other attribute and child, its other properties included.
         foreach ($permission in @('com.google.android.gms.permission.AD_ID',
-                'android.permission.ACCESS_ADSERVICES_AD_ID', 'android.permission.ACCESS_ADSERVICES_ATTRIBUTION')) {
+                'android.permission.ACCESS_ADSERVICES_AD_ID', 'android.permission.ACCESS_ADSERVICES_ATTRIBUTION',
+                'android.permission.ACCESS_ADSERVICES_TOPICS')) {
             $policies.Add("permission-removed $permission")
             [void]$expected.permissions.Remove($permission)
         }

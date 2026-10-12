@@ -31,6 +31,7 @@ metadata-added {"owner":"application","declaration":{"tag":"meta-data","attribut
 permission-removed com.google.android.gms.permission.AD_ID
 permission-removed android.permission.ACCESS_ADSERVICES_AD_ID
 permission-removed android.permission.ACCESS_ADSERVICES_ATTRIBUTION
+permission-removed android.permission.ACCESS_ADSERVICES_TOPICS
 component-removed {"owner":"application","declaration":{"tag":"property","attributes":{"android:name":"android.adservices.AD_SERVICES_CONFIG"},"children":[]}}
 
 # Two application metadata entries are added, naming Tumblr's own signing certificate for

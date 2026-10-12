@@ -4360,7 +4360,8 @@ try {
         $adTracking = $releaseNames -ccontains 'Remove ad tracking permissions'
         if ($adTracking -and -not $Patched) {
             foreach ($permission in @('com.google.android.gms.permission.AD_ID',
-                    'android.permission.ACCESS_ADSERVICES_AD_ID', 'android.permission.ACCESS_ADSERVICES_ATTRIBUTION')) {
+                    'android.permission.ACCESS_ADSERVICES_AD_ID', 'android.permission.ACCESS_ADSERVICES_ATTRIBUTION',
+                    'android.permission.ACCESS_ADSERVICES_TOPICS')) {
                 $lines += @('      E: uses-permission (line=11)', "        A: $androidName`"$permission`" (Raw: `"$permission`")")
             }
         }

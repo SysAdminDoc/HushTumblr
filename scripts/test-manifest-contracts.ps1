@@ -12,7 +12,7 @@ function Assert-Manifest([bool]$condition, [string]$message) {
 }
 function Copy-Manifest($facts) { return $facts | ConvertTo-Json -Depth 12 | ConvertFrom-Json }
 $adPermissions = @('com.google.android.gms.permission.AD_ID', 'android.permission.ACCESS_ADSERVICES_AD_ID',
-    'android.permission.ACCESS_ADSERVICES_ATTRIBUTION')
+    'android.permission.ACCESS_ADSERVICES_ATTRIBUTION', 'android.permission.ACCESS_ADSERVICES_TOPICS')
 $consentDefaults = @('google_analytics_default_allow_analytics_storage', 'google_analytics_default_allow_ad_storage',
     'google_analytics_default_allow_ad_user_data', 'google_analytics_default_allow_ad_personalization_signals')
 $spoofSource = [IO.File]::ReadAllText((Join-Path $PSScriptRoot '../patches/src/main/kotlin/app/morphe/patches/tumblr/privacy/GoogleSignInSpoofPatch.kt'))
@@ -166,7 +166,7 @@ foreach ($build in @('46.5.0.109')) {
         'The parser lost a nonexported component or nested declaration.'
     Assert-Manifest ($stock.queries.Count -eq 4) 'The parser lost a vendor query block.'
     Assert-Manifest (($stock.components -join '') -like '*com.tumblr.AccountProvider*') 'Relative component names were not qualified.'
-    Assert-Manifest (@($adPermissions | Where-Object { $stock.permissions -ccontains $_ }).Count -eq 3 -and
+    Assert-Manifest (@($adPermissions | Where-Object { $stock.permissions -ccontains $_ }).Count -eq 4 -and
         ($stock.components -join '') -like '*android.adservices.AD_SERVICES_CONFIG*') 'The parser lost an ad permission or property.'
     foreach ($scenario in @(
             @{ label = 'default'; names = @($settings, $analytics, $adTracking); features = @('settings', 'analytics', 'adtracking') },
@@ -198,9 +198,9 @@ foreach ($build in @('46.5.0.109')) {
 $stock = Fixture-Facts
 $patched = Fixture-Facts -features @('settings', 'analytics', 'adtracking', 'signature')
 $valid = Check-Manifest $stock $patched $all
-# Settings 3, Analytics 8 added and 4 consent values replaced, ad tracking 3 permissions and the
+# Settings 3, Analytics 8 added and 4 consent values replaced, ad tracking 4 permissions and the
 # application declaration replaced once, and the 2 signature metadata entries.
-Assert-Manifest ($valid.Entries.Count -eq 22) "The expected full delta is not readable as 22 exact entries: $($valid.Entries.Count)."
+Assert-Manifest ($valid.Entries.Count -eq 23) "The expected full delta is not readable as 23 exact entries: $($valid.Entries.Count)."
 Assert-Manifest (@($valid.Delta.metadataAdded | Where-Object { $_ -clike '*SPOOFED_PACKAGE_SIGNATURE*' -or $_ -clike '*"fake-signature"*' }).Count -eq 2) `
     'The full delta does not add both signature metadata entries.'
 $applicationChanges = @($valid.Entries | Where-Object { $_ -like 'component-*' -and $_ -like '*"tag":"application"*' })
