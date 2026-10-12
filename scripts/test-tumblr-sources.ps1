@@ -513,7 +513,6 @@ Assert-True (Test-SourceLedger -Ledger ($fixtureLedgerText | ConvertFrom-Json) -
 
 # What each forge and index answers. A case changes one answer and puts it back.
 function New-FakeAnswers {
-    $tick = [string][char]96 * 3
     $answers = [ordered]@{
         official = @{ Status = 200; Content = '{"patches":[{"name":"Example","compatiblePackages":{"com.google.android.youtube":["20.1"]}}]}' }
         directory = @{ Status = 200; Content = (@{
@@ -521,15 +520,26 @@ function New-FakeAnswers {
                 patches = @(@{ name = 'Hide ads'; compatiblePackagesKey = 0 }) })
             compatibilities = @(@{ packageName = 'com.tumblr'; targets = @(@{ version = '46.4.0.110' }) }) } | ConvertTo-Json -Depth 8) }
         awesome = @{ Status = 200; Content = '{"fixture-owner/alpha-patches":{"com.tumblr":"0123"},"SysAdminDoc/hushfeed":{"com.zhiliaoapp.musically":"4567"}}' }
-        tracker = @{ Status = 200; Content = (@{
-            'sysadmindoc:stable' = @{ repo_url = 'https://github.com/SysAdminDoc/HushTumblr'; apps = @(@{ package = 'com.tumblr'; patches = @(@{ name = 'Hide ads' }) }) }
-            'alpha:stable' = @{ repo_url = 'https://github.com/fixture-owner/alpha-patches'; apps = @(@{ package = 'com.tumblr'; patches = @(@{ name = 'Hide ads' }) }) }
-        } | ConvertTo-Json -Depth 8) }
-        jmanSources = @{ Status = 200; Content = '{"alpha-stable":{"patches":"https://api.github.com/repos/fixture-owner/alpha-patches"},"gamma-stable":{"patches":"https://gitlab.com/api/v4/projects/fixture-group%2Fgamma-patches"}}' }
-        jmanCatalog = @{ Status = 200; Content = ("# Catalog`n| [Alpha](#alpha) | 1 | 1 | Generated |`n### X Alpha Bundle Patch List:`n" +
-            "| **Name** | **Description** | **Compatible Apps** | **Compatible Versions** |`n|---|---|---|---|`n" +
-            "| ${tick}Hide ads${tick} | ${tick}Removes ads.${tick} | ${tick}Tumblr${tick} | ${tick}46.4.0.110${tick} |`n" +
-            "### X Gamma Bundle Patch List:`n| ${tick}Open links outside${tick} | ${tick}d${tick} | ${tick}Tumblr${tick} | ${tick}Any${tick} |`n") }
+        # Written out, not converted from a hashtable: the tracker keeps one bundle under two
+        # spellings of its owner's name (ImmortalZeus:dev and immortalzeus:dev, 2026-10-11), keys
+        # that differ only by case, which a hashtable can't hold and ConvertFrom-Json refused.
+        tracker = @{ Status = 200; Content = ('{"sysadmindoc:stable":{"repo_url":"https://github.com/SysAdminDoc/HushTumblr",' +
+            '"apps":[{"package":"com.tumblr","patches":[{"name":"Hide ads"}]}]},' +
+            '"alpha:stable":{"repo_url":"https://github.com/fixture-owner/alpha-patches","apps":[{"package":"com.tumblr","patches":[{"name":"Hide ads"}]}]},' +
+            '"Alpha:stable":{"repo_url":"https://github.com/Fixture-Owner/alpha-patches","apps":[{"package":"com.tumblr","patches":[{"name":"Hide ads"}]}]}}') }
+        # Jman's index as the database it became in October 2026: a manifest naming the snapshot,
+        # the snapshot's sources (spelled as API addresses here, which still name their
+        # repositories) and its bundles, an older version of alpha's among them.
+        jmanManifest = @{ Status = 200; Content = '{"schema_version":1,"snapshot":"snapshots/fixture01"}' }
+        jmanSources = @{ Status = 200; Content = (ConvertTo-Json -Depth 4 -InputObject @(
+            @{ id = 'alpha01'; url = 'https://api.github.com/repos/fixture-owner/alpha-patches' }
+            @{ id = 'gamma01'; url = 'https://gitlab.com/api/v4/projects/fixture-group%2Fgamma-patches' }
+            @{ id = 'feed01'; url = 'https://github.com/SysAdminDoc/hushfeed' })) }
+        jmanBundles = @{ Status = 200; Content = (ConvertTo-Json -Depth 4 -InputObject @(
+            @{ id = 'b1'; source_id = 'alpha01'; packages = @('com.tumblr') }
+            @{ id = 'b2'; source_id = 'alpha01'; packages = @('com.tumblr') }
+            @{ id = 'b3'; source_id = 'gamma01'; packages = @('com.example.other', 'com.tumblr') }
+            @{ id = 'b4'; source_id = 'feed01'; packages = @('com.zhiliaoapp.musically') })) }
         archive = @{ Status = 200; Content = '{"name":"patches-list.json"}' }
         searchHits = @(
             @{ repository = @{ full_name = 'fixture-owner/alpha-patches' }; path = 'patches/Alpha.kt'; sha = $blobKnown }
@@ -582,8 +592,9 @@ $fakeForge = @{ Answers = (New-FakeAnswers); Requests = (New-Object System.Colle
             '^https://morphe-patches\.software/data/bundles\.json$' { $answer = $a.directory; break }
             '^https://raw\.githubusercontent\.com/nvbangg/awesome-morphe/main/data/hashes\.json$' { $answer = $a.awesome; break }
             '^https://raw\.githubusercontent\.com/drnx64/morphe-track-patches/main/data/bundles\.json$' { $answer = $a.tracker; break }
-            '^https://raw\.githubusercontent\.com/Jman-Github/ReVanced-Patch-Bundles/bundles/patch-bundles/bundle-sources\.json$' { $answer = $a.jmanSources; break }
-            '^https://raw\.githubusercontent\.com/Jman-Github/ReVanced-Patch-Bundles/bundles/patch-bundles/PATCH-LIST-CATALOG\.md$' { $answer = $a.jmanCatalog; break }
+            '^https://raw\.githubusercontent\.com/Jman-Github/ReVanced-Patch-Bundles/bundles/database/manifest\.json$' { $answer = $a.jmanManifest; break }
+            '^https://raw\.githubusercontent\.com/Jman-Github/ReVanced-Patch-Bundles/bundles/database/snapshots/fixture01/sources\.json$' { $answer = $a.jmanSources; break }
+            '^https://raw\.githubusercontent\.com/Jman-Github/ReVanced-Patch-Bundles/bundles/database/snapshots/fixture01/app-bundles\.json$' { $answer = $a.jmanBundles; break }
             '^https://api\.github\.com/repos/rushiforai/morphe-archive/contents/examplepatches/SysAdminDoc/HushTumblr/patches-list\.json$' { $answer = $a.archive; break }
             '^https://api\.github\.com/search/code\?q=([^&]+)&per_page=100&page=1$' {
                 $query = [Uri]::UnescapeDataString($Matches[1])
@@ -859,9 +870,19 @@ $fakeForge = @{ Answers = (New-FakeAnswers); Requests = (New-Object System.Colle
     Assert-Drift 'license-added' '*beta-module*now has a licence (MIT*' 'An unlicensed source that gained a licence'
     $fakeForge.Answers = New-FakeAnswers
 
-    $tick = [string][char]96 * 3
-    $fakeForge.Answers.jmanCatalog.Content += "### X Delta Bundle Patch List:`n| ${tick}Hide replies${tick} | ${tick}d${tick} | ${tick}Tumblr${tick} | ${tick}Any${tick} |`n"
-    Assert-Drift 'index-unresolved' "*Jman's catalog lists Tumblr patches under 'Delta'*" 'A Jman section no repository stands behind'
+    # A Jman bundle no repository stands behind: a source sources.json doesn't have, and one on a
+    # forge the census can't read.
+    $fakeForge.Answers.jmanBundles.Content = ConvertTo-Json -Depth 4 -InputObject @(@($fakeForge.Answers.jmanBundles.Content | ConvertFrom-Json) +
+        [pscustomobject]@{ id = 'b9'; source_id = 'delta01'; packages = @('com.tumblr') })
+    Assert-Drift 'index-unresolved' "*Jman's index lists a Tumblr bundle from source 'delta01' and sources.json has no such source*" `
+        'A Jman bundle from a source the index does not have'
+    $fakeForge.Answers = New-FakeAnswers
+    $fakeForge.Answers.jmanSources.Content = ConvertTo-Json -Depth 4 -InputObject @(@($fakeForge.Answers.jmanSources.Content | ConvertFrom-Json) +
+        [pscustomobject]@{ id = 'reseam01'; url = 'https://git.reseam.app/reseam/patches' })
+    $fakeForge.Answers.jmanBundles.Content = ConvertTo-Json -Depth 4 -InputObject @(@($fakeForge.Answers.jmanBundles.Content | ConvertFrom-Json) +
+        [pscustomobject]@{ id = 'b8'; source_id = 'reseam01'; packages = @('com.tumblr') })
+    Assert-Drift 'index-unresolved' "*source 'reseam01' at https://git.reseam.app/reseam/patches, which is not a GitHub or GitLab repository*" `
+        'A Jman bundle on a forge the census cannot read'
     $fakeForge.Answers = New-FakeAnswers
 
     # An index still spelling a source by its old name is that source, not an addition.

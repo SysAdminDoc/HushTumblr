@@ -232,6 +232,25 @@ function ConvertFrom-SourceJson {
     }
 }
 
+function ConvertFrom-SourceJsonDictionary {
+    <#
+        A JSON object read as a case-sensitive dictionary, for an index whose keys can differ only by
+        case. ConvertFrom-Json makes PowerShell objects, whose property names ignore case, so two
+        such keys fail the whole read. Nested objects come back as dictionaries too, which take the
+        same dot access as the objects the other readers get.
+    #>
+    param([string]$Text, [string]$What)
+    try {
+        if ($PSVersionTable.PSVersion.Major -ge 6) { return , ($Text | ConvertFrom-Json -AsHashtable) }
+        Add-Type -AssemblyName System.Web.Extensions
+        $serializer = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+        $serializer.MaxJsonLength = [int]::MaxValue
+        return , $serializer.DeserializeObject($Text)
+    } catch {
+        throw "$What did not answer JSON: $($_.Exception.Message)"
+    }
+}
+
 function Get-JsonItems {
     # The elements of a parsed JSON array, one at a time, the same way in both editions: Windows
     # PowerShell hands a top-level array over as one object, PowerShell 7 one element at a time.
@@ -440,11 +459,14 @@ Invoke-Source 'Awesome Morphe' {
 }
 
 Invoke-Source 'Morphe Patch Tracker' {
-    $tracker = Get-SourceJson -Uri 'https://raw.githubusercontent.com/drnx64/morphe-track-patches/main/data/bundles.json' -What 'the Morphe Patch Tracker'
+    # Keyed by owner:branch as each listing spells the owner, so one bundle can be there twice under
+    # keys that differ only by case (ImmortalZeus:dev and immortalzeus:dev, 2026-10-11).
+    $answer = Invoke-SourceRequest -Uri 'https://raw.githubusercontent.com/drnx64/morphe-track-patches/main/data/bundles.json'
+    if ($answer.Status -ne 200) { throw "the Morphe Patch Tracker answered HTTP $($answer.Status)." }
+    $tracker = ConvertFrom-SourceJsonDictionary -Text $answer.Content -What 'the Morphe Patch Tracker'
     $seen = @{}
     $listed['morphe-patch-tracker'] = $false
-    foreach ($property in $tracker.PSObject.Properties) {
-        $bundle = $property.Value
+    foreach ($bundle in @($tracker.Values)) {
         $key = ConvertTo-SourceKey ([string]$bundle.repo_url)
         if ($key -and $key -eq $selfKey) { $listed['morphe-patch-tracker'] = $true }
         $apps = @(Get-JsonItems $bundle.apps | Where-Object { $packages -contains $_.package })
@@ -457,46 +479,41 @@ Invoke-Source 'Morphe Patch Tracker' {
 }
 
 Invoke-Source 'Jman''s bundle index' {
-    $bundleSources = Get-SourceJson -Uri 'https://raw.githubusercontent.com/Jman-Github/ReVanced-Patch-Bundles/bundles/patch-bundles/bundle-sources.json' `
-        -What 'Jman''s bundle-sources.json'
-    $byName = @{}
+    # A database since October 2026, when bundle-sources.json and the patch list catalog went away:
+    # the manifest names the current snapshot, whose sources.json gives each source's repository
+    # and app-bundles.json each bundle's packages, every published version of a bundle among them.
+    $database = 'https://raw.githubusercontent.com/Jman-Github/ReVanced-Patch-Bundles/bundles/database'
+    $manifest = Get-SourceJson -Uri "$database/manifest.json" -What 'Jman''s database manifest'
+    $snapshot = [string](Get-SourceProperty $manifest 'snapshot')
+    if ($snapshot -notmatch '^snapshots/[A-Za-z0-9_-]+$') { throw "Jman's database manifest names no snapshot it can be read from: '$snapshot'." }
+    $sources = Get-SourceJson -Uri "$database/$snapshot/sources.json" -What 'Jman''s sources.json'
+    $bySource = @{}
     $listed['jman-bundles'] = $false
-    foreach ($property in $bundleSources.PSObject.Properties) {
-        $key = ConvertTo-SourceKey ([string](Get-SourceProperty $property.Value 'patches'))
+    foreach ($source in (Get-JsonItems $sources)) {
+        $url = [string](Get-SourceProperty $source 'url')
+        $key = ConvertTo-SourceKey $url
         if ($key -and $key -eq $selfKey) { $listed['jman-bundles'] = $true }
-        $name = ($property.Name -replace '-(stable|dev|latest)$', '').ToLowerInvariant()
-        if ($key -and -not $byName.ContainsKey($name)) { $byName[$name] = $key }
+        $bySource[[string](Get-SourceProperty $source 'id')] = [pscustomobject]@{ Key = $key; Url = $url }
     }
-    $catalog = Invoke-SourceRequest -Uri 'https://raw.githubusercontent.com/Jman-Github/ReVanced-Patch-Bundles/bundles/patch-bundles/PATCH-LIST-CATALOG.md'
-    if ($catalog.Status -ne 200) { throw "Jman's patch list catalog answered HTTP $($catalog.Status)." }
-    $appPackages = @{ 'tumblr' = 'com.tumblr'; 'com.tumblr' = 'com.tumblr' }
-    $section = $null
+    $bundles = Get-SourceJson -Uri "$database/$snapshot/app-bundles.json" -What 'Jman''s app-bundles.json'
     $found = @{}
-    foreach ($line in ($catalog.Content -split "`r?`n")) {
-        if ($line.StartsWith('### ') -and $line -match 'Bundle Patch List:\s*$') {
-            $section = (($line -replace '^###\s+\S+\s+', '') -replace '\s+Bundle Patch List:\s*$', '').Trim()
+    $unresolved = @{}
+    foreach ($bundle in (Get-JsonItems $bundles)) {
+        $apps = @(Get-JsonItems (Get-SourceProperty $bundle 'packages') | Where-Object { $packages -contains $_ })
+        if ($apps.Count -eq 0) { continue }
+        $sourceId = [string](Get-SourceProperty $bundle 'source_id')
+        $source = $bySource[$sourceId]
+        if ($null -eq $source -or -not $source.Key) {
+            if (-not $unresolved.ContainsKey($sourceId)) {
+                $unresolved[$sourceId] = $true
+                $why = if ($null -eq $source) { 'and sources.json has no such source' } else { "at $($source.Url), which is not a GitHub or GitLab repository" }
+                Add-Finding -Kind 'index-unresolved' -Repository $null `
+                    -Detail "Jman's index lists a Tumblr bundle from source '$sourceId' $why" -Evidence $null
+            }
             continue
         }
-        if ($null -eq $section -or -not $line.StartsWith('|')) { continue }
-        $cells = $line.Split('|')
-        if ($cells.Count -lt 5) { continue }
-        $name = $cells[1].Replace([string][char]96, '').Trim()
-        foreach ($app in ($cells[3].Replace([string][char]96, '').Trim() -split ',\s*')) {
-            $package = $appPackages[$app.Trim().ToLowerInvariant()]
-            if (-not $package) { continue }
-            if (-not $found.ContainsKey($section)) { $found[$section] = @{ Packages = @{}; Features = New-Object System.Collections.Generic.List[string] } }
-            $found[$section].Packages[$package] = $true
-            if ($name -and -not $found[$section].Features.Contains($name)) { $found[$section].Features.Add($name) }
-        }
-    }
-    foreach ($sectionName in $found.Keys) {
-        $key = $byName[$sectionName.ToLowerInvariant()]
-        if (-not $key) {
-            Add-Finding -Kind 'index-unresolved' -Repository $null `
-                -Detail "Jman's catalog lists Tumblr patches under '$sectionName', and bundle-sources.json names no repository for it" -Evidence $null
-            continue
-        }
-        Add-Candidate -Key $key -Source 'Jman''s bundle index' -Packages @($found[$sectionName].Packages.Keys) -Features @($found[$sectionName].Features)
+        Add-Candidate -Key $source.Key -Source 'Jman''s bundle index' -Packages $apps
+        $found[$source.Key] = $true
     }
     "$($found.Count) Tumblr bundles; HushTumblr " + $(if ($listed['jman-bundles']) { 'listed' } else { 'not listed' })
 }
