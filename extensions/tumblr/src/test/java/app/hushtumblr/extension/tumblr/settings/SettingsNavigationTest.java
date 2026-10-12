@@ -424,10 +424,16 @@ public class SettingsNavigationTest {
         assertEquals("a restart owed elsewhere was said here", categoryCount("Links"), list().getCount());
     }
 
-    /** The switches that only answer Tumblr's feature flags, which Tumblr reads once a run. */
-    private static final List<BooleanSetting> FLAG_BACKED = Arrays.asList(Settings.DISABLE_ANALYTICS,
-            Settings.HIDE_AD_FREE_BANNER, Settings.HIDE_TUMBLR_TV, Settings.HIDE_COMMUNITIES_TAB,
-            Settings.HIDE_BLAZE_PROMPTS, Settings.TURN_OFF_SCREENSHOT_SHARING, Settings.DISABLE_UPDATE_PROMPTS);
+    /**
+     * The switches that only answer Tumblr's feature flags, which Tumblr reads once a run. A method,
+     * not a static field: naming Settings while this class loads sets Setting up before the rule
+     * hands the extension its context, and in a fresh sandbox that fails Setting for every test.
+     */
+    private static List<BooleanSetting> flagBacked() {
+        return Arrays.asList(Settings.DISABLE_ANALYTICS, Settings.HIDE_AD_FREE_BANNER, Settings.HIDE_TUMBLR_TV,
+                Settings.HIDE_COMMUNITIES_TAB, Settings.HIDE_BLAZE_PROMPTS, Settings.TURN_OFF_SCREENSHOT_SHARING,
+                Settings.DISABLE_UPDATE_PROMPTS);
+    }
 
     /**
      * A flag-backed switch owes a restart like any other restart-needing one: its page shows the
@@ -435,7 +441,7 @@ public class SettingsNavigationTest {
      * back to what the running Tumblr has, it owes nothing and the line goes.
      */
     @Test public void aFlagBackedSwitchGetsTheSharedRestartLineAndToastInsteadOfASentence() {
-        for (BooleanSetting setting : FLAG_BACKED) {
+        for (BooleanSetting setting : flagBacked()) {
             assertTrue(setting.key, setting.rebootApp);
             Preference row = page.findPreference(setting.key);
             assertNotNull(setting.key, row);
