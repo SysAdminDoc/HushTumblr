@@ -78,9 +78,12 @@ public final class DarkBackground {
 
     /**
      * Puts the style over [theme] when the switch is on and [theme] is the Dark palette's. True when
-     * it did. Off, paused, on another palette, or without the style, the theme is left alone.
+     * it did. Off, paused, before the settings are ready, on another palette, or without the style,
+     * the theme is left alone. The readiness check is here, where the switch is read, so an entry
+     * added later can't reach the switch without it.
      */
     static boolean paint(Resources.Theme theme, Resources resources, String packageName) {
+        if (!Utils.settingsReady()) return false;
         if (!PatchFamily.Capability.THEME_BACKGROUND.installed()) return false;
         HookStatus.invoked(FamilyNames.DARK_BACKGROUND);
         if (!Settings.DARK_BACKGROUND.get()) return false;
