@@ -6,9 +6,12 @@
 package app.hushtumblr.extension.tumblr.timeline;
 
 import com.tumblr.rumblr.model.BlazedPost;
+import com.tumblr.rumblr.model.Display;
+import com.tumblr.rumblr.model.SponsoredState;
 import com.tumblr.rumblr.model.TimelineObject;
 import com.tumblr.rumblr.model.TimelineObjectType;
 import com.tumblr.rumblr.model.Timelineable;
+import com.tumblr.rumblr.model.post.DisplayType;
 import com.tumblr.rumblr.model.post.blocks.ImageBlock;
 import com.tumblr.rumblr.model.post.blocks.TextBlock;
 import com.tumblr.rumblr.model.post.blocks.VideoBlock;
@@ -33,6 +36,16 @@ public final class TimelineItems {
     /** A plain post Tumblr is asked to label Sponsored. */
     public static TimelineObject sponsoredPost() {
         return new TimelineObject(new Item(TimelineObjectType.POST), true);
+    }
+
+    /**
+     * A plain post the server tells Tumblr to show with a display block saying [sponsored] and the
+     * display type [type], either left out when null. A paid Blaze post is a post served as
+     * sponsored this way.
+     */
+    public static TimelineObject postServed(SponsoredState sponsored, DisplayType type) {
+        return new TimelineObject(new Item(TimelineObjectType.POST), false,
+                sponsored == null ? null : new Display(sponsored), type);
     }
 
     /** An item whose payload throws when its kind is read. */

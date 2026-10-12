@@ -33,9 +33,10 @@ import app.hushtumblr.extension.tumblr.settings.Settings;
  * logging. With every switch off, paused, or before HushTumblr has its settings, the list goes
  * through untouched.
  *
- * <p>The rumblr model keeps its names, so the item's kind and its Sponsored label are read by name.
- * A carousel's own items are the one renamed getter, read through {@link #carouselItems}. Anything
- * that can't be read is kept: a filter that guesses could take a post out.
+ * <p>The rumblr model keeps its names, so the item's kind, its Sponsored label and how Tumblr is told
+ * to show it are read by name. A carousel's own items are the one renamed getter, read through
+ * {@link #carouselItems}. Anything that can't be read is kept: a filter that guesses could take a
+ * post out.
  *
  * <p>Suggestion cards often come after a {@code TITLE} item carrying their heading ("Check out these
  * blogs"). A heading goes with the item right after it, and one that ends a page goes too while a
@@ -52,6 +53,12 @@ public final class TimelineFilter {
 
     /** The kind of a heading item, whose text the server sends. */
     static final String TITLE = "TITLE";
+
+    /**
+     * The constant name Tumblr's {@code SponsoredState} and {@code DisplayType} both give a paid
+     * placement.
+     */
+    static final String SPONSORED = "SPONSORED";
 
     /**
      * The kinds of item that are an ad or a paid placement whatever else they carry, by the constant
@@ -231,14 +238,15 @@ public final class TimelineFilter {
     }
 
     /**
-     * True when [item] is a timeline object Tumblr marks as an ad: by its kind, or by the Sponsored
-     * label Tumblr is asked to draw on it. One that can't be read is kept.
+     * True when [item] is a timeline object Tumblr marks as an ad: by its kind, by the Sponsored
+     * label Tumblr is asked to draw on it, or as a paid placement. One that can't be read is kept.
      */
     static boolean isAd(Object item) {
         Model found = modelFor(item, FamilyNames.HIDE_ADS);
         if (found == null) return false;
         try {
-            return AD_TYPES.contains(found.typeOf(item)) || Boolean.TRUE.equals(found.sponsored.invoke(item));
+            return AD_TYPES.contains(found.typeOf(item)) || Boolean.TRUE.equals(found.sponsored.invoke(item))
+                    || found.isPaidPlacement(item);
         } catch (Throwable failure) {
             HookStatus.threw(FamilyNames.HIDE_ADS, "timeline item", failure);
             return false;
@@ -332,33 +340,59 @@ public final class TimelineFilter {
         } catch (Throwable failure) {
             unreadable = type;
             HookStatus.missingMember(family, "method", TIMELINE_OBJECT,
-                    "getData, isShowSponsoredLabel or Timelineable.getTimelineObjectType");
+                    "getData, isShowSponsoredLabel, getDisplay, getDisplayType, Display.getSponsored"
+                            + " or Timelineable.getTimelineObjectType");
             return null;
         }
         model = found;
         return found;
     }
 
-    /** The three model methods the filter reads, all names Tumblr keeps. */
+    /** The model methods the filter reads, all names Tumblr keeps. */
     static final class Model {
         final Class<?> objectType;
         final Method data;
         final Method sponsored;
+        final Method display;
+        final Method displayType;
+        final Method sponsoredState;
         final Method kind;
 
-        private Model(Class<?> objectType, Method data, Method sponsored, Method kind) {
+        private Model(Class<?> objectType, Method data, Method sponsored, Method display, Method displayType,
+                Method sponsoredState, Method kind) {
             this.objectType = objectType;
             this.data = data;
             this.sponsored = sponsored;
+            this.display = display;
+            this.displayType = displayType;
+            this.sponsoredState = sponsoredState;
             this.kind = kind;
         }
 
         static Model of(Class<?> objectType) throws ReflectiveOperationException {
             Method data = objectType.getMethod("getData");
             Method sponsored = objectType.getMethod("isShowSponsoredLabel");
+            Method display = objectType.getMethod("getDisplay");
+            Method displayType = objectType.getMethod("getDisplayType");
+            Method sponsoredState = display.getReturnType().getMethod("getSponsored");
             Class<?> timelineable = Class.forName(TIMELINEABLE, false, objectType.getClassLoader());
             Method kind = timelineable.getMethod("getTimelineObjectType");
-            return new Model(objectType, data, sponsored, kind);
+            return new Model(objectType, data, sponsored, display, displayType, sponsoredState, kind);
+        }
+
+        /**
+         * Whether Tumblr serves [item] as a paid placement: its {@code Display} says it's sponsored,
+         * or its {@code DisplayType} is SPONSORED. Tumblr reads those two to treat a card as an ad
+         * (the ad menu with its "Why am I seeing this ad?" page, the close button, and the Blaze
+         * follow and action buttons of a paid Blaze post). A paid Blaze post comes as a plain post
+         * served this way, and its "Sponsored with Blaze" line is text the server sends with the
+         * post. The same post shown because you follow its blog, or on its own blog, isn't served
+         * this way and stays.
+         */
+        boolean isPaidPlacement(Object item) throws ReflectiveOperationException {
+            Object shown = display.invoke(item);
+            Object state = shown == null ? null : sponsoredState.invoke(shown);
+            return SPONSORED.equals(nameOf(state)) || SPONSORED.equals(nameOf(displayType.invoke(item)));
         }
 
         /** The constant name of [item]'s kind, such as POST or GEMINI_AD, or null when it has none. */
@@ -370,8 +404,13 @@ public final class TimelineFilter {
         /** The constant name of the kind of an item's [payload], or null when it has none. */
         @Nullable
         String kindOf(@Nullable Object payload) throws ReflectiveOperationException {
-            Object type = payload == null ? null : kind.invoke(payload);
-            return type instanceof Enum ? ((Enum<?>) type).name() : null;
+            return nameOf(payload == null ? null : kind.invoke(payload));
+        }
+
+        /** The constant name of [value] when it's an enum constant, or null. */
+        @Nullable
+        private static String nameOf(@Nullable Object value) {
+            return value instanceof Enum ? ((Enum<?>) value).name() : null;
         }
     }
 }

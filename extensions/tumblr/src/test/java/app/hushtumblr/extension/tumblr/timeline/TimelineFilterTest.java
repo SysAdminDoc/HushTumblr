@@ -10,7 +10,10 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import com.tumblr.rumblr.model.SponsoredState;
+import com.tumblr.rumblr.model.TimelineObject;
 import com.tumblr.rumblr.model.TimelineObjectType;
+import com.tumblr.rumblr.model.post.DisplayType;
 
 import org.junit.After;
 import org.junit.Before;
@@ -78,6 +81,49 @@ public class TimelineFilterTest {
         List<?> shown = TimelineFilter.filter(page);
         assertEquals(1, shown.size());
         assertSame(page.get(1), shown.get(0));
+    }
+
+    /**
+     * A paid Blaze post is a plain post the server tells Tumblr to show as sponsored, by its display
+     * type, its display block or both, and Tumblr draws the server's "Sponsored with Blaze" line on
+     * it. Each way goes and the posts around it stay in order, and with the switch off it stays.
+     */
+    @Test
+    public void aPostServedAsAPaidPlacementIsTakenOut() {
+        List<TimelineObject> paid = Arrays.asList(
+                TimelineItems.postServed(null, DisplayType.SPONSORED),
+                TimelineItems.postServed(SponsoredState.UNKNOWN, DisplayType.SPONSORED),
+                TimelineItems.postServed(SponsoredState.NOT_SPONSORED, DisplayType.SPONSORED),
+                TimelineItems.postServed(SponsoredState.SPONSORED, null),
+                TimelineItems.postServed(SponsoredState.SPONSORED, DisplayType.NORMAL));
+        for (TimelineObject item : paid) {
+            List<Object> page = Arrays.asList(TimelineItems.post(), item, TimelineItems.post());
+            assertEquals(Arrays.asList(page.get(0), page.get(2)), TimelineFilter.filter(page));
+        }
+        String report = String.join("\n", HookStatus.report(""));
+        assertTrue(report, report.contains("ad removed 5"));
+
+        Settings.HIDE_ADS.save(false);
+        List<Object> page = Arrays.asList(TimelineItems.post(), paid.get(0), TimelineItems.post());
+        assertSame(page, TimelineFilter.filter(page));
+    }
+
+    /**
+     * A post served any other way stays: one from a blog you follow, a recommendation, Tumblr's own
+     * promotion, and one whose display block says it isn't sponsored. Whether the post is blazed
+     * doesn't come into it, so the same post on its own blog or from a blog you follow stays too.
+     */
+    @Test
+    public void aPostServedAnyOtherWayStays() {
+        List<Object> page = Arrays.asList(
+                TimelineItems.postServed(null, null),
+                TimelineItems.postServed(null, DisplayType.NORMAL),
+                TimelineItems.postServed(SponsoredState.NOT_SPONSORED, null),
+                TimelineItems.postServed(SponsoredState.UNKNOWN, DisplayType.NORMAL),
+                TimelineItems.postServed(SponsoredState.NOT_SPONSORED, DisplayType.RECOMMENDATION),
+                TimelineItems.postServed(null, DisplayType.IN_HOUSE),
+                TimelineItems.postServed(SponsoredState.UNKNOWN, DisplayType.TRACK_SILENTLY));
+        assertSame(page, TimelineFilter.filter(page));
     }
 
     /** A page with nothing to take out comes back as the very list Tumblr built. */

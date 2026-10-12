@@ -16,8 +16,9 @@ import app.morphe.patches.tumblr.misc.settings.settingsPatch
 import app.morphe.patches.tumblr.timeline.timelineListHookPatch
 
 /**
- * Turns on the extension's ad rule. The timeline hook takes each ad item, Blaze post and sponsored
- * post out of a page before Tumblr shows it, and the feature switch hook answers false for the
+ * Turns on the extension's ad rule. The timeline hook takes each ad item, and each post the server
+ * serves as sponsored (a paid "Sponsored with Blaze" post among them), out of a page before Tumblr
+ * shows it, and the feature switch hook answers false for the
  * flags that make Tumblr ask its ad networks for ads (the rule's flag list is in `FeatureSwitches`).
  */
 @Suppress("unused")
