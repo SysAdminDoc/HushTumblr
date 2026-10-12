@@ -1543,7 +1543,8 @@ Write-Host '[scripts] advisory gate contracts passed'
 # no patches-bundle.json to copy, and its README and CHANGELOG can't yet name a release. The
 # fixtures then start from what that release writes: an index with the catalog's version, patch
 # count and newest build at its pinned code, the Manager floor and the release asset's address; the
-# README's sentence naming the latest release and its Morphe add-source link; and a dated CHANGELOG
+# README's Manager floor badge, its install steps, and its sentence naming the latest release with the
+# Morphe add-source link, each only where the README doesn't hold it yet; and a dated CHANGELOG
 # heading with one bullet Morphe Manager scopes to Tumblr. Everything else is this checkout's own
 # text. Once the index is committed, the three are copied like every other release file and have
 # to carry those facts themselves.
@@ -1574,10 +1575,31 @@ function Get-ReleaseFileText([string]$Relative) {
     switch ($Relative) {
         'patches-bundle.json' { $seedIndexText }
         'README.md' {
-            [System.IO.File]::ReadAllText((Join-Path $Root 'README.md')).TrimEnd() + "`n`n" +
-                "The latest release is [v$seedVersion](https://github.com/SysAdminDoc/HushTumblr/releases/tag/v$seedVersion), " +
-                "with $(@($catalog.patches).Count) patches. Add it to Morphe Manager from " +
-                "[its add-source page](https://morphe.software/add-source?github=SysAdminDoc%2FHushTumblr).`n"
+            # A README from before the first release can lack its whole install section: this one
+            # says there's nothing to install yet, so it has no Manager floor badge and no install
+            # step either. Each piece the first release's README carries is added only when it's
+            # missing, so a README that already holds one is checked as written.
+            $readme = [System.IO.File]::ReadAllText((Join-Path $Root 'README.md'))
+            if ($readme -notmatch 'Morphe%20Manager%20') {
+                $badged = ([regex]'(?m)^([ \t]*)(<img src="https://img\.shields\.io/badge/version-[^\r\n]*)(?=\r?\n)').Replace($readme,
+                    ("`${1}`${2}`n`${1}<img src=`"https://img.shields.io/badge/for-Morphe%20Manager%20$seedFloor%2B-8A2BE2`" " +
+                        "alt=`"For Morphe Manager $seedFloor or newer`">"), 1)
+                if ($badged -ceq $readme) { throw 'The README has no version badge line to seed the Manager floor badge beside.' }
+                $readme = $badged
+            }
+            $readme = $readme.TrimEnd()
+            if ($readme -notmatch '(?m)^\d+\.\s+Install \[Morphe Manager\]') {
+                $readme += "`n`n## Install`n`n" +
+                    "1. Install [Morphe Manager](https://github.com/MorpheApp/morphe-manager) $seedFloor or newer.`n" +
+                    "2. Add HushTumblr as a patch source: https://morphe.software/add-source?github=SysAdminDoc%2FHushTumblr"
+            }
+            if ($readme -notmatch '(?i)\blatest (?:published )?release is\b') {
+                $readme += "`n`n" +
+                    "The latest release is [v$seedVersion](https://github.com/SysAdminDoc/HushTumblr/releases/tag/v$seedVersion), " +
+                    "with $(@($catalog.patches).Count) patches. Add it to Morphe Manager from " +
+                    "[its add-source page](https://morphe.software/add-source?github=SysAdminDoc%2FHushTumblr)."
+            }
+            $readme + "`n"
         }
         'CHANGELOG.md' {
             ([regex]'(?m)^## ').Replace([System.IO.File]::ReadAllText((Join-Path $Root 'CHANGELOG.md')),
