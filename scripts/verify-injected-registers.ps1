@@ -122,6 +122,44 @@ function Get-SignerDigests {
         ForEach-Object { ($_ -replace '^.*certificate SHA-256 digest: ', '').Trim() } | Sort-Object -Unique)
 }
 
+# The split bundle a merged universal APK came from, or null: the APK has to fail apksigner, a bundle
+# of the same name has to sit beside it, and every classes*.dex of the APK has to be byte-identical to
+# the one of the same name in the bundle's base.apk, with neither side holding a dex the other lacks.
+function Get-SignedBundleFor {
+    param([string]$Apk)
+    if ([System.IO.Path]::GetExtension($Apk).ToLowerInvariant() -ne '.apk') { return $null }
+    $stem = Join-Path (Split-Path -Parent $Apk) ([System.IO.Path]::GetFileNameWithoutExtension($Apk))
+    $bundle = @('.apkm', '.xapk', '.apks' | ForEach-Object { "$stem$_" } |
+        Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }) | Select-Object -First 1
+    if (-not $bundle) { return $null }
+    $apksigner = Join-Path (Split-Path -Parent $Aapt2) 'apksigner.bat'
+    $ErrorActionPreference = 'Continue'
+    & $apksigner verify $Apk *> $null
+    if ($LASTEXITCODE -eq 0) { return $null }
+    $ErrorActionPreference = 'Stop'
+    $base = Get-BaseApk -Apk $bundle -Destination (Join-Path $work 'signed-form-base.apk')
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $digests = {
+        param([string]$Path)
+        $zip = [System.IO.Compression.ZipFile]::OpenRead($Path)
+        try {
+            $map = @{}
+            foreach ($entry in @($zip.Entries | Where-Object { $_.FullName -match '^classes\d*\.dex$' })) {
+                $stream = $entry.Open()
+                $sha = [System.Security.Cryptography.SHA256]::Create()
+                try { $map[$entry.FullName] = [BitConverter]::ToString($sha.ComputeHash($stream)) }
+                finally { $sha.Dispose(); $stream.Dispose() }
+            }
+            return $map
+        } finally { $zip.Dispose() }
+    }
+    $merged = & $digests $Apk
+    $signed = & $digests $base
+    if ($merged.Count -eq 0 -or $merged.Count -ne $signed.Count) { return $null }
+    foreach ($name in $merged.Keys) { if ($signed[$name] -ne $merged[$name]) { return $null } }
+    return $bundle
+}
+
 # DexDiff over the pair, with Continue only in here, as in Get-SignerDigests. Called inside the try
 # below, a java that can't start throws out of here into the script's Stop. Called outside one, it
 # wouldn't, and this would read the exit code apksigner left, so the code starts at -1. Each of the
@@ -230,6 +268,15 @@ if (-not (Test-Path -LiteralPath $CleanApk -PathType Leaf)) { throw "No clean AP
 # A distributor's split bundle for Tumblr (an .xapk or .apkm). Its base APK holds the manifest, Tumblr's
 # signature and the app's own classes*.dex, which is what the device half verifies.
 $cleanBase = Get-BaseApk -Apk $CleanApk -Destination (Join-Path $work 'clean-base.apk')
+# Tumblr ships only the split bundle, so a universal APK kept beside it is a merge whose v2 and v3
+# signature blocks no longer verify. Its signed form is the same-named bundle's base.apk, taken only
+# when every classes*.dex of the merge is byte-identical to base.apk's, as Fixtures.signedForm holds
+# the Kotlin fixture tests. An APK that doesn't verify and isn't such a merge still fails below.
+$signedBundle = Get-SignedBundleFor -Apk $CleanApk
+if ($signedBundle) {
+    $cleanBase = Get-BaseApk -Apk $signedBundle -Destination (Join-Path $work 'clean-base.apk')
+    Write-Host "[registers] $(Split-Path -Leaf $CleanApk) is a merge of $(Split-Path -Leaf $signedBundle); its signer is read from that bundle's base.apk, whose dex it carries unchanged"
+}
 
 # The clean side has to be Tumblr's own build of the version that was patched, not a patched build
 # or another version: two patched files differ from each other, both halves report differences,
