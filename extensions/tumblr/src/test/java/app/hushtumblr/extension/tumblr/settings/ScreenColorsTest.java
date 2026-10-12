@@ -115,6 +115,7 @@ public class ScreenColorsTest {
         parts.put("switch off, against its card", new int[]{c.switchOff, c.card});
         // The thumb shows where the switch is, so it needs 3:1 against the track it sits on.
         parts.put("switch off's thumb, against its track", new int[]{c.offThumb(), c.switchOff});
+        parts.put("switch on's thumb, against its track", new int[]{c.onAccent, c.accent});
         parts.put("chevron of a row a tap opens something from, against its card", new int[]{c.summary, c.card});
         return parts;
     }
@@ -141,11 +142,11 @@ public class ScreenColorsTest {
     @Test
     public void theBlackPagesRatios() {
         ScreenColors page = ScreenColors.DEFAULT;
-        assertEquals(19.24, contrast(page.title, page.background), 0.01);
-        assertEquals(9.50, contrast(page.summary, page.background), 0.01);
-        assertEquals(8.58, contrast(page.heading, page.background), 0.01);
-        assertEquals(4.85, contrast(page.onAccent, page.accent), 0.01);
-        assertEquals(3.34, contrast(page.offThumb(), page.switchOff), 0.01);
+        assertEquals(19.54, contrast(page.title, page.background), 0.01);
+        assertEquals(9.29, contrast(page.summary, page.background), 0.01);
+        assertEquals(11.12, contrast(page.heading, page.background), 0.01);
+        assertEquals(9.36, contrast(page.onAccent, page.accent), 0.01);
+        assertEquals(3.45, contrast(page.offThumb(), page.switchOff), 0.01);
     }
 
     /**
@@ -275,22 +276,21 @@ public class ScreenColorsTest {
     }
 
     /**
-     * From 2x text Samsung builds a switch row from tw_preference_switch_large, which puts a 16dp
-     * end padding on the icon itself and leaves out the -4dp start margin preference_material gives
-     * the icon's frame, which it nests in a line of its own. On an S25 the padding squeezed the
-     * glyph to a third of its box and the text started 11px right of its neighbors'. Painted, both
-     * shapes draw a full 24dp icon inside its line and start their text at the same place.
+     * Samsung's nested large-text layout and the standard layout give an action the same
+     * 42dp icon tile, with a 24dp glyph. Their text starts at the same edge.
      */
     @Test
-    public void samsungsLargeTextSwitchRowKeepsItsIconAndTextEdge() {
+    public void samsungsLargeTextActionRowKeepsItsIconAndTextEdge() {
         android.content.Context context = RuntimeEnvironment.getApplication();
-        android.preference.Preference preference = new android.preference.Preference(context);
-        preference.setTitle("Hide advertising ID");
-        preference.setIcon(new ColorDrawable(Color.WHITE));
         int dp = Math.round(context.getResources().getDisplayMetrics().density);
-        int[] textStart = new int[2];
-        for (int shape = 0; shape < 2; shape++) {
-            boolean samsungLarge = shape == 1;
+        int[] textStart = new int[4];
+        for (int shape = 0; shape < 4; shape++) {
+            boolean samsungLarge = shape % 2 == 1;
+            boolean isSwitch = shape >= 2;
+            android.preference.Preference preference = isSwitch ? new android.preference.SwitchPreference(context)
+                    : new android.preference.Preference(context);
+            preference.setTitle("Hide advertising ID");
+            preference.setIcon(new ColorDrawable(Color.WHITE));
             android.widget.LinearLayout row = new android.widget.LinearLayout(context);
             row.setOrientation(samsungLarge ? android.widget.LinearLayout.VERTICAL : android.widget.LinearLayout.HORIZONTAL);
             android.widget.LinearLayout line = samsungLarge ? new android.widget.LinearLayout(context) : row;
@@ -329,15 +329,18 @@ public class ScreenColorsTest {
             row.layout(0, 0, 1080, row.getMeasuredHeight());
 
             String which = samsungLarge ? "the large-text row" : "the standard row";
-            assertEquals(which + " pads its icon", 0, icon.getPaddingStart() + icon.getPaddingEnd()
+            assertEquals(which + " pads its icon", 36 * dp, icon.getPaddingStart() + icon.getPaddingEnd()
                     + icon.getPaddingTop() + icon.getPaddingBottom());
-            assertEquals(which + "'s icon box", 24 * dp, icon.getWidth());
+            assertEquals(which + "'s icon visibility", isSwitch ? View.GONE : View.VISIBLE, frame.getVisibility());
+            if (!isSwitch) assertEquals(which + "'s icon box", 42 * dp, icon.getWidth());
             assertTrue(which + " moves its icon past the edge of the line that clips it", frame.getLeft() >= 0);
             int x = 0;
             for (View at = title; at != row; at = (View) at.getParent()) x += at.getLeft();
             textStart[shape] = x;
         }
         assertEquals("the large-text row's text starts somewhere else", textStart[0], textStart[1]);
+        assertEquals("the large-text switch reserves an icon gap", textStart[2], textStart[3]);
+        assertEquals("switch text doesn't use its icon's space", 32 * dp, textStart[2]);
     }
 
     private static SettingsDialog show(Activity activity) {

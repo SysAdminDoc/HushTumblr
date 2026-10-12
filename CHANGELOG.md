@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+* **Tumblr:** Refreshed every HushTumblr settings page with navy cards, pale blue controls and larger page titles. Navigation has outlined icon tiles, and switch descriptions have more room.
+* **Tumblr:** Backup and diagnostic actions now have separate cards. The words editor, tab order list and other dialogs use the same colors as the settings pages. Search, recovery and enlarged text follow the new design too.
+* **Tumblr:** Kept the existing settings, defaults and saved choices. Added current settings screenshots to the README.
+
 ## 0.0.1 (2026-10-12)
 
 * **Tumblr:** First release. HushTumblr 0.0.1 starts from HushPinterest and supports Tumblr 46.5.0.109 (version code 1460500109) on Android 8.0 or newer, with 36 patches.

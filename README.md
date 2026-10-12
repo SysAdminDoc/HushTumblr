@@ -1,7 +1,7 @@
 ![HushTumblr. Tumblr, on your terms.](assets/readme-hero.png)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.0.1-446B93" alt="Version 0.0.1">
+  <img src="https://img.shields.io/badge/version-0.0.2-92BFFF" alt="Version 0.0.2">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License GPL-3.0"></a>
   <img src="https://img.shields.io/badge/platform-Android%208%2B-3DDC84" alt="Platform Android 8+">
   <img src="https://img.shields.io/badge/Tumblr-46.5.0.109-001935" alt="Tumblr 46.5.0.109">
@@ -19,6 +19,12 @@
 Morphe patches for Tumblr on Android. The goal is a quieter dashboard, with controls over ads, suggested content and the parts of Tumblr you don't use.
 
 The latest release is [v0.0.1](https://github.com/SysAdminDoc/HushTumblr/releases/tag/v0.0.1), with 36 patches. Add this repo to Morphe Manager as a patch source and it'll offer each new release when it comes out.
+
+## Settings
+
+The v0.0.2 source has a refreshed settings screen. Search and the category pages use the same dark cards, with pale blue controls and more room for descriptions. Your saved choices stay the same.
+
+![HushTumblr settings overview, Feed and Privacy pages](assets/settings-preview.png)
 
 ## Supported version
 

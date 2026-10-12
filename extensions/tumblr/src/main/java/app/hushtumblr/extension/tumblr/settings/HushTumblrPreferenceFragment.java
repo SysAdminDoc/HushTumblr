@@ -49,12 +49,14 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AbsListView;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -402,17 +404,15 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                         + "advertising ID with ad tracking limited, as if you deleted your ad ID in Android "
                         + "settings."), SettingsIcons.BLOCK);
             if (build.contains(PatchFamily.REMOVE_AD_TRACKING_PERMISSIONS)) {
-                privacy.addPreference(mark(info(context, L10n.t("Remove ad tracking permissions"),
+                privacy.addPreference(info(context, L10n.t("Remove ad tracking permissions"),
                         L10n.t("Tumblr can no longer use Google's ad ID permission or Android's ad services. "
-                            + "This was set when you patched. Patch again without it to bring them back.")),
-                        SettingsIcons.ABOUT));
+                            + "This was set when you patched. Patch again without it to bring them back.")));
             }
             if (build.contains(PatchFamily.SPOOF_SIGNATURE)) {
-                privacy.addPreference(mark(info(context, L10n.t("Spoof signature for Google sign-in"),
+                privacy.addPreference(info(context, L10n.t("Spoof signature for Google sign-in"),
                         L10n.t("Tells Android this is the original Tumblr, so Google sign-in can work with "
                             + "microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. "
-                            + "This was set when you patched. Patch again without it to take it out.")),
-                        SettingsIcons.ABOUT));
+                            + "This was set when you patched. Patch again without it to take it out.")));
             }
         }
 
@@ -751,16 +751,22 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
 
     private void showWords(Context context, Preference row) {
         EditText field = new EditText(context);
+        field.setId(android.R.id.edit);
         field.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         field.setImeOptions(EditorInfo.IME_FLAG_NO_FULLSCREEN | EditorInfo.IME_FLAG_NO_EXTRACT_UI);
         field.setMinLines(3);
         field.setHint(L10n.t("One word or phrase a line"));
         field.setText(TextSettings.HIDDEN_WORDS.savedValue());
+        LinearLayout editor = new LinearLayout(context);
+        int inset = Math.round(24 * context.getResources().getDisplayMetrics().density);
+        editor.setPaddingRelative(inset, 0, inset, 0);
+        editor.addView(field, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
         show(new AlertDialog.Builder(context)
                 .setTitle(L10n.t("Words to hide"))
                 .setMessage(L10n.t("Posts with any of these in their text, tags or summary are hidden. Case doesn't "
                         + "matter, and only whole words count."))
-                .setView(field)
+                .setView(editor)
                 .setPositiveButton(L10n.t("Save"), (dialog, which) -> {
                     String words = field.getText().toString().trim();
                     TextSettings.HIDDEN_WORDS.save(words);

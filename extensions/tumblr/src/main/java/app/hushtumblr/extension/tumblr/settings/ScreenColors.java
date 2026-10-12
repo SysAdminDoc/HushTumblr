@@ -84,23 +84,22 @@ final class ScreenColors {
 
     private ScreenColors() {
         background = Color.BLACK;
-        dialog = 0xFF11151D;
-        title = 0xFFF3F5F9;
-        summary = 0xFFA6AFBE;
-        heading = 0xFF6AA7FF;
-        accent = 0xFF236BE7;
-        switchOff = 0xFF858D9C;
-        card = 0xFF11151D;
-        outline = 0xFF252B36;
-        onAccent = Color.WHITE;
+        dialog = 0xFF101722;
+        title = 0xFFF4F7FB;
+        summary = 0xFF9EAEC2;
+        heading = 0xFF92BFFF;
+        accent = 0xFF92BFFF;
+        switchOff = 0xFF788698;
+        card = 0xFF101722;
+        outline = 0xFF243044;
+        onAccent = 0xFF0B192B;
     }
 
     /**
-     * The thumb of a switch that's off, read against its track: the white that fills the on thumb
-     * clears the 3:1 a control's state needs there.
+     * A light thumb distinguishes an off switch from the dark thumb on its blue on track.
      */
     int offThumb() {
-        return onAccent;
+        return title;
     }
 
     /**
@@ -114,8 +113,7 @@ final class ScreenColors {
     }
 
     /**
-     * The text of a dialog's outlined actions, such as Cancel. The black page's accent reads at
-     * 3.4:1 on its dialog, under the 4.5:1 text needs, so these take the heading colour.
+     * The text of a dialog's secondary actions, such as Cancel.
      */
     int secondaryActionText() {
         return heading;
@@ -127,7 +125,7 @@ final class ScreenColors {
         if (title != null) {
             title.setTextColor(dimmedWhenDisabled(this.title));
             title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
-            title.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
+            title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
             if (title.getParent() instanceof View) {
                 View text = (View) title.getParent();
                 text.setPadding(0, 0, 0, 0);
@@ -139,6 +137,7 @@ final class ScreenColors {
             summary.setTextColor(dimmedWhenDisabled(this.summary));
             summary.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
             summary.setLineSpacing(dp(row, 2), 1);
+            summary.setPadding(0, dp(row, 4), 0, 0);
         }
         View widget = row.findViewById(android.R.id.switch_widget);
         if (widget instanceof Switch) {
@@ -151,9 +150,9 @@ final class ScreenColors {
             thumb.setColor(Color.WHITE);
             GradientDrawable track = new GradientDrawable();
             track.setCornerRadius(dp(row, 12));
-            track.setSize(dp(row, 42), dp(row, 24));
+            track.setSize(dp(row, 44), dp(row, 24));
             track.setColor(Color.WHITE);
-            toggle.setThumbDrawable(thumb);
+            toggle.setThumbDrawable(new InsetDrawable(thumb, dp(row, 2)));
             toggle.setTrackDrawable(track);
             toggle.setSwitchMinWidth(dp(row, 44));
             toggle.setThumbTintList(new ColorStateList(states, new int[]{half(onAccent), half(offThumb()), onAccent, offThumb()}));
@@ -162,28 +161,28 @@ final class ScreenColors {
         paintChevron(row, preference);
         ImageView icon = row.findViewById(android.R.id.icon);
         if (icon != null && preference.getIcon() != null) {
+            boolean toggle = preference instanceof TwoStatePreference;
+            icon.setVisibility(toggle ? View.GONE : View.VISIBLE);
             ViewGroup.LayoutParams imageSize = icon.getLayoutParams();
-            imageSize.width = dp(row, 24);
-            imageSize.height = dp(row, 24);
+            imageSize.width = dp(row, 42);
+            imageSize.height = dp(row, 42);
             icon.setLayoutParams(imageSize);
-            // From 2x text Samsung lays a switch row out from tw_preference_switch_large, which puts
-            // the 16dp gap on the icon itself and nests the icon's frame in a line of its own, without
-            // the frame's -4dp start margin. The padding squeezed the glyph to a third of its box and
-            // the missing margin moved the row's text.
-            icon.setPadding(0, 0, 0, 0);
+            // Override Samsung's nested large-text icon frame as well as the standard layout.
+            icon.setPadding(dp(row, 9), dp(row, 9), dp(row, 9), dp(row, 9));
+            icon.setBackground(surface(0xFF172335, 8, row));
             if (icon.getParent() instanceof ViewGroup) {
                 ViewGroup frame = (ViewGroup) icon.getParent();
-                frame.setPaddingRelative(0, 0, dp(row, 16), 0);
+                frame.setVisibility(toggle ? View.GONE : View.VISIBLE);
+                frame.setPaddingRelative(0, 0, dp(row, 14), 0);
                 ViewGroup.LayoutParams size = frame.getLayoutParams();
-                size.width = dp(row, 40);
+                size.width = dp(row, 56);
                 frame.setLayoutParams(size);
-                // The -4dp goes on the row's own child, which may draw into the row's padding. On the
-                // nested frame it would push the glyph past its line's edge, where the line clips it.
+                // Both layout variants start the text at the same edge.
                 View line = frame;
                 while (line.getParent() instanceof View && line.getParent() != row) line = (View) line.getParent();
                 if (line.getParent() == row) {
                     startMargin(frame, 0);
-                    startMargin(line, -dp(row, 4));
+                    startMargin(line, 0);
                 }
             }
         }
@@ -196,7 +195,7 @@ final class ScreenColors {
 
     /** Group boundaries follow the visible rows, including a filtered search result. */
     void paintSurface(View row, Preference preference, boolean first, boolean last) {
-        float radius = dp(row, 10);
+        float radius = dp(row, 12);
         GradientDrawable surface = new GradientDrawable();
         surface.setColor(card);
         surface.setStroke(dp(row, 1), outline);
@@ -210,10 +209,30 @@ final class ScreenColors {
         row.setBackground(preference.isSelectable()
                 ? new RippleDrawable(ColorStateList.valueOf(half(accent)), inset, null) : inset);
         // Explicit padding after the inset background prevents its padding from moving the text.
-        int vertical = preference.getIcon() == null ? 20 : 12;
-        row.setPaddingRelative(dp(row, 34), dp(row, vertical + (first ? 6 : 0)),
-                dp(row, 34), dp(row, vertical + (last ? 6 : 0)));
-        row.setMinimumHeight(dp(row, 72));
+        int vertical = 12;
+        row.setPaddingRelative(dp(row, 32), dp(row, vertical + (first ? 6 : 0)),
+                dp(row, 32), dp(row, vertical + (last ? 6 : 0)));
+        row.setMinimumHeight(dp(row, 66));
+    }
+
+    /** An outlined surface shared by navigation icons and the back button. */
+    GradientDrawable surface(int fill, int radius, View view) {
+        GradientDrawable surface = new GradientDrawable();
+        surface.setColor(fill);
+        surface.setCornerRadius(dp(view, radius));
+        surface.setStroke(dp(view, 1), outline);
+        return surface;
+    }
+
+    /** A filled action with a 48dp touch target. */
+    void primaryAction(Button button) {
+        RippleDrawable background = new RippleDrawable(ColorStateList.valueOf(half(onAccent)),
+                surface(accent, 8, button), null);
+        background.setLayerInsetRelative(0, 0, dp(button, 6), 0, dp(button, 6));
+        button.setBackground(background);
+        button.setTextColor(onAccent);
+        button.setTypeface(Typeface.create("sans-serif-medium", 0));
+        button.setPaddingRelative(dp(button, 14), 0, dp(button, 14), 0);
     }
 
     /** A section title. */
@@ -437,7 +456,7 @@ final class ScreenColors {
         if (window != null) {
             GradientDrawable panel = new GradientDrawable();
             panel.setColor(this.dialog);
-            panel.setCornerRadius(dp(window.getDecorView(), 10));
+            panel.setCornerRadius(dp(window.getDecorView(), 12));
             panel.setStroke(dp(window.getDecorView(), 1), outline);
             window.setBackgroundDrawable(panel);
             int width = Math.min(dialog.getContext().getResources().getDisplayMetrics().widthPixels
@@ -457,8 +476,8 @@ final class ScreenColors {
         // one on show there: AlertDialog's own sits GONE above it, and findViewById finds that first.
         if (window != null) paintMessages(window.getDecorView());
         android.widget.ListView choices = dialog.getListView();
-        if (choices != null && choices.getChoiceMode() == android.widget.ListView.CHOICE_MODE_SINGLE
-                && choices.getAdapter() != null && !(choices.getAdapter() instanceof DialogChoices)) {
+        if (choices != null && choices.getAdapter() != null
+                && !(choices.getAdapter() instanceof DialogChoices) && !(choices.getAdapter() instanceof ChoiceCards)) {
             int selected = choices.getCheckedItemPosition();
             choices.setAdapter(new DialogChoices(choices.getAdapter(), this));
             if (selected >= 0) choices.setItemChecked(selected, true);
@@ -492,6 +511,7 @@ final class ScreenColors {
      * own teal, so they take the accent the buttons have.
      */
     void paintField(EditText field) {
+        field.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
         field.setHintTextColor(summary);
         GradientDrawable outline = new GradientDrawable();
         outline.setColor(dialog);

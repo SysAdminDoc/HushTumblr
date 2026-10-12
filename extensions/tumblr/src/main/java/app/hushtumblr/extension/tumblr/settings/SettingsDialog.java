@@ -75,6 +75,7 @@ public final class SettingsDialog extends DialogFragment {
     static volatile RuntimeException failNextMount;
 
     private TextView pageTitle;
+    private LinearLayout titleBar;
     private LinearLayout searchBox;
     private EditText search;
     private TextView results;
@@ -145,16 +146,18 @@ public final class SettingsDialog extends DialogFragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle savedInstanceState) {
+        ScreenColors palette = ScreenColors.DEFAULT;
         LinearLayout root = new LinearLayout(getContext());
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(ScreenColors.DEFAULT.background);
 
         LinearLayout bar = new LinearLayout(getContext());
+        titleBar = bar;
         bar.setOrientation(LinearLayout.HORIZONTAL);
         bar.setGravity(Gravity.CENTER_VERTICAL);
         int pad = dp(16);
         // Start and end, not left and right: in a right-to-left language the bar is mirrored.
-        bar.setPaddingRelative(dp(4), dp(12), pad, dp(12));
+        bar.setPaddingRelative(dp(12), dp(36), pad, dp(16));
 
         android.widget.ImageButton back = new android.widget.ImageButton(getContext());
         android.graphics.drawable.Drawable arrow = SettingsIcons.icon(getContext(), SettingsIcons.BACK, Color.WHITE);
@@ -162,7 +165,11 @@ public final class SettingsDialog extends DialogFragment {
         arrow.setLayoutDirection(rightToLeft() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
         back.setImageDrawable(arrow);
         back.setPadding(dp(12), dp(12), dp(12), dp(12));
-        back.setBackgroundColor(Color.TRANSPARENT);
+        android.graphics.drawable.RippleDrawable backSurface = new android.graphics.drawable.RippleDrawable(
+                android.content.res.ColorStateList.valueOf(ScreenColors.half(palette.accent)),
+                palette.surface(palette.card, 8, back), null);
+        backSurface.setLayerInsetRelative(0, dp(4), dp(4), dp(4), dp(4));
+        back.setBackground(backSurface);
         back.setMinimumWidth(dp(48));
         back.setMinimumHeight(dp(48));
         back.setContentDescription(L10n.t(getContext(), "Back"));
@@ -187,8 +194,8 @@ public final class SettingsDialog extends DialogFragment {
         title.setText("HushTumblr");
         title.setTextColor(Color.WHITE);
         title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24);
-        title.setPaddingRelative(dp(8), 0, 0, 0);
+        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 28);
+        title.setPaddingRelative(dp(16), 0, 0, 0);
         HushTumblrPreferenceFragment.markHeading(title);
         bar.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         root.addView(bar);
@@ -222,7 +229,7 @@ public final class SettingsDialog extends DialogFragment {
         searchBox.setGravity(Gravity.CENTER_VERTICAL);
         android.graphics.drawable.GradientDrawable surface = new android.graphics.drawable.GradientDrawable();
         surface.setColor(palette.card);
-        surface.setCornerRadius(dp(10));
+        surface.setCornerRadius(dp(12));
         surface.setStroke(dp(1), palette.outline);
         searchBox.setBackground(surface);
         searchBox.setPaddingRelative(dp(16), 0, 0, 0);
@@ -295,6 +302,8 @@ public final class SettingsDialog extends DialogFragment {
         mountedQuery = query;
         if (mountFailed) return;
         pageTitle.setText(title);
+        pageTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, title.length() > 26 ? 24 : 28);
+        titleBar.setPaddingRelative(dp(12), dp(36), dp(16), dp(home ? 16 : 6));
         searchBox.setVisibility(home ? View.VISIBLE : View.GONE);
         settingSearch = true;
         if (!search.getText().toString().equals(query)) search.setText(query);

@@ -29,6 +29,8 @@ import android.util.Base64;
 final class SettingsIcons {
     private SettingsIcons() { }
 
+    static final String COFFEE = "iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAQAAAD9CzEMAAAAxUlEQVRYw+2VsQ2EMAxFf8UCNAiJCZgoU6XJDpmCLWAChK66BtpIucakA+xcotNJfm6//aQ4SgBFKU/8sl7wGGoKIiLed4pYpHxtwfYskO6M3a8CFTCv9VZb4OsKWE9FroD92OUuuXiDCv5QsFNDz0r3lN75gplaDCttKD3zBZZaVrSP2RYrpS1fMCIkhUF3metg0viAEQKc+It3ENFgEo2f0ABShUsHdV8BTj7+3IXFguNy9IEFVnb2yq+JhUoF+QJFyeUDWv9JxdQE/U8AAAAASUVORK5CYII=";
+
     static Drawable icon(Context context, String encoded, int color) {
         byte[] bytes = Base64.decode(encoded, Base64.DEFAULT);
         android.graphics.Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);

@@ -905,6 +905,18 @@ public class SettingsNavigationTest {
         AlertDialog notice = (AlertDialog) org.robolectric.shadows.ShadowDialog.getLatestDialog();
         captureDialog("dialog-licenses", notice);
         notice.dismiss();
+        page.navigation.navigate("Feed");
+        Preference words = page.findPreference(HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW);
+        words.getOnPreferenceClickListener().onPreferenceClick(words);
+        AlertDialog editor = (AlertDialog) org.robolectric.shadows.ShadowDialog.getLatestDialog();
+        captureDialog("dialog-words", editor);
+        editor.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();
+        page.navigation.navigate("Interface");
+        Preference tabs = page.findPreference(HushTumblrPreferenceFragment.TAB_ORDER_ROW);
+        tabs.getOnPreferenceClickListener().onPreferenceClick(tabs);
+        AlertDialog order = (AlertDialog) org.robolectric.shadows.ShadowDialog.getLatestDialog();
+        captureDialog("dialog-tab-order", order);
+        order.dismiss();
     }
 
     @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)

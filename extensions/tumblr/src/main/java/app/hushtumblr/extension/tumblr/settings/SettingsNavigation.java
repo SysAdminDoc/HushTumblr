@@ -121,7 +121,7 @@ final class SettingsNavigation extends BaseAdapter {
         browse.setTitle(L10n.t("Browse settings"));
         more = link(context, L10n.t("More settings"), L10n.t("Links, updates, backup and more"), SettingsIcons.SETTINGS);
         more.setOnPreferenceClickListener(ignored -> { navigate(MORE); return true; });
-        support = link(context, L10n.t("Support HushTumblr"), L10n.t("Buy me a coffee on Ko-fi"), SettingsIcons.OPENING);
+        support = link(context, L10n.t("Support HushTumblr"), L10n.t("Buy me a coffee on Ko-fi"), SettingsIcons.COFFEE);
         support.setKey(HushTumblrPreferenceFragment.SUPPORT);
         support.setOnPreferenceClickListener(row -> { HushTumblrPreferenceFragment.openSupport(row.getContext()); return true; });
         empty = new HushTumblrPreferenceFragment.Row(context);
@@ -184,7 +184,7 @@ final class SettingsNavigation extends BaseAdapter {
         Preference row = new HushTumblrPreferenceFragment.Row(context);
         row.setTitle(title);
         row.setSummary(summary);
-        row.setIcon(SettingsIcons.icon(context, icon, palette().summary));
+        row.setIcon(SettingsIcons.icon(context, icon, palette().heading));
         row.setPersistent(false);
         return row;
     }
@@ -419,15 +419,21 @@ final class SettingsNavigation extends BaseAdapter {
             Object group = group(item);
             boolean first = position == 0 || group(getItem(position - 1)) != group;
             boolean last = position + 1 == getCount() || group(getItem(position + 1)) != group;
+            if ("Pause, backup and diagnostics".equals(route) && item != pageStatus) first = last = true;
             palette().paintSurface(row, item, first, last);
             if (MORE.equals(route)) {
-                row.setMinimumHeight(dp(56));
-                row.setPaddingRelative(dp(34), dp(12), dp(34), dp(12));
+                row.setMinimumHeight(dp(66));
             }
         }
         if (item == screen.getPreference(0)) {
             TextView title = row.findViewById(android.R.id.title);
-            if (title != null) title.setTypeface(android.graphics.Typeface.create("sans-serif-medium", 0));
+            if (title != null) title.setTextSize(18);
+            android.widget.ImageView icon = row.findViewById(android.R.id.icon);
+            if (icon != null) {
+                icon.setBackground(null);
+                icon.setPadding(dp(5), dp(5), dp(5), dp(5));
+            }
+            row.setMinimumHeight(dp(84));
         }
         if (item == screen.getPreference(0)) bindStatus(row);
         if (item == pageStatus) {
@@ -462,13 +468,11 @@ final class SettingsNavigation extends BaseAdapter {
         action.setText(paused != nextPaused ? L10n.t("Undo") : nextPaused ? L10n.t("Resume") : L10n.t("Pause"));
         action.setAllCaps(false);
         action.setTextSize(14);
-        action.setTextColor(palette().heading);
-        action.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        palette().primaryAction(action);
         action.setMinWidth(dp(48));
         action.setMinHeight(dp(48));
         action.setMinimumWidth(dp(48));
         action.setMinimumHeight(dp(48));
-        action.setPadding(0, 0, 0, 0);
         action.setOnClickListener(ignored -> {
             if (pageStatusAction) pageStatusHeight = Math.max(pageStatusHeight, row.getHeight());
             if (nextPaused) {

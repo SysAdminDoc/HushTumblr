@@ -26,7 +26,7 @@ import android.widget.BaseAdapter;
 import android.widget.CheckedTextView;
 import android.widget.ListAdapter;
 
-/** Styles the framework's real single-choice rows without replacing their selection behavior. */
+/** Styles framework choice and tab-order rows without replacing their selection behavior. */
 final class DialogChoices extends BaseAdapter {
     private final ListAdapter source;
     private final ScreenColors colors;
@@ -49,6 +49,18 @@ final class DialogChoices extends BaseAdapter {
 
     @Override public View getView(int position, View recycled, ViewGroup parent) {
         View row = source.getView(position, recycled, parent);
+        if (row instanceof android.widget.TextView && !(row instanceof CheckedTextView)) {
+            android.widget.TextView text = (android.widget.TextView) row;
+            float density = row.getResources().getDisplayMetrics().density;
+            text.setTextColor(colors.title);
+            text.setTextSize(16);
+            text.setSingleLine(false);
+            text.setMaxLines(Integer.MAX_VALUE);
+            text.setMinimumHeight(Math.round(56 * density));
+            text.setPaddingRelative(Math.round(24 * density), Math.round(12 * density),
+                    Math.round(24 * density), Math.round(12 * density));
+            text.setBackgroundColor(colors.card);
+        }
         if (row instanceof CheckedTextView) {
             CheckedTextView choice = (CheckedTextView) row;
             float density = row.getResources().getDisplayMetrics().density;
