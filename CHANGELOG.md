@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* **Tumblr:** Saving a word list during an import now checks and saves the combined size in one step. Older backups ignore unsupported allowed-word fields instead of rejecting the whole file.
 * **Tooling:** Gallery cleanup is checked against the captions it owns, including recycling while the feature is paused. The verifier rejects unowned removals and escaped caption references.
 * **Tumblr:** Failed saves keep the words draft and the earlier tab order. The words editor also keeps its draft and selection when the settings page is recreated. Import and Undo refresh the list summaries and retain any required restart notice.
 * **Tumblr:** Settings backups check the complete file size before replacing an export. Oversized saved lists stay available to edit, and a refused Save keeps the draft. Diagnostic choices close with their settings page.

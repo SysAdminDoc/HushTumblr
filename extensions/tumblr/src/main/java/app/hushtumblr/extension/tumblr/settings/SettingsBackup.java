@@ -472,6 +472,14 @@ public final class SettingsBackup {
         checkTextBudget(Collections.singletonMap(setting, value));
     }
 
+    /** A worker import cannot replace the other list between validation and this saved edit. */
+    static boolean saveText(StringSetting setting, String value) throws Rejected {
+        synchronized (Setting.class) {
+            checkTextBudget(setting, value);
+            return setting.save(value);
+        }
+    }
+
     private static void checkTextBudget(Map<StringSetting, String> replacements) throws Rejected {
         synchronized (Setting.class) {
             try {
@@ -671,7 +679,7 @@ public final class SettingsBackup {
             for (Iterator<String> names = named.keys(); names.hasNext(); ) {
                 String name = names.next();
                 StringSetting setting = textSetting(name);
-                if (setting == null) {
+                if (setting == null || (Integer) schema < 3 && setting == TextSettings.ALLOWED_WORDS) {
                     unknown++;
                     continue;
                 }

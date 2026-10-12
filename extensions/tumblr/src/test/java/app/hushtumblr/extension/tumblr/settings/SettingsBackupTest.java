@@ -1534,6 +1534,43 @@ public class SettingsBackupTest {
     }
 
     @Test
+    public void aWorkerImportBetweenAWordPreflightAndSaveCannotExceedTheCombinedBudget() throws Exception {
+        for (StringSetting edited : Arrays.asList(TextSettings.HIDDEN_WORDS, TextSettings.ALLOWED_WORDS)) {
+            TextSettings.HIDDEN_WORDS.save("");
+            TextSettings.ALLOWED_WORDS.save("");
+            StringSetting imported = edited == TextSettings.HIDDEN_WORDS
+                    ? TextSettings.ALLOWED_WORDS : TextSettings.HIDDEN_WORDS;
+            String draft = "h".repeat(40000), otherWords = "a".repeat(40000);
+            SettingsBackup.checkTextBudget(edited, draft);
+            SettingsBackup.Snapshot file = new SettingsBackup.Snapshot(Collections.emptyMap(),
+                    Collections.singletonMap(imported, otherWords), Collections.emptyList(), 0);
+            java.util.concurrent.ExecutorService worker = java.util.concurrent.Executors.newSingleThreadExecutor();
+            try {
+                // This is the interleaving formerly possible after the editor's separate budget check.
+                assertEquals(Integer.valueOf(0), worker.submit(() -> SettingsBackup.apply(file)).get(5, TimeUnit.SECONDS));
+            } finally {
+                worker.shutdownNow();
+            }
+            long revision = edited.savedWriteRevision();
+            try {
+                SettingsBackup.saveText(edited, draft);
+                fail("a stale preflight allowed two oversized lists to be saved");
+            } catch (SettingsBackup.Rejected refused) {
+                assertEquals(SettingsBackup.Reason.SIZE, refused.reason);
+            }
+            assertEquals("", edited.savedValue());
+            assertEquals("", edited.persistedValue());
+            assertEquals(revision, edited.savedWriteRevision());
+            assertEquals(otherWords, imported.persistedValue());
+            assertEquals(SettingsBackup.UndoState.AVAILABLE, SettingsBackup.undoState());
+            assertTrue(SettingsBackup.saveText(edited, "shorter"));
+            SettingsBackup.Snapshot exported = SettingsBackup.parse(SettingsBackup.create());
+            assertEquals("shorter", exported.texts.get(edited));
+            assertEquals(otherWords, exported.texts.get(imported));
+        }
+    }
+
+    @Test
     public void theWholeUtf8EnvelopeRoundTripsAtItsSizeBoundary() throws Exception {
         for (BooleanSetting setting : SettingsBackup.ALLOWLIST) setting.save(false);
         TextSettings.TAB_ORDER.save(app.hushtumblr.extension.tumblr.ui.BottomBarTabs.join(
@@ -2242,6 +2279,67 @@ public class SettingsBackupTest {
         assertFalse(Settings.WORDS_REBLOG_TRAIL.savedValue());
         assertFalse(Settings.WORDS_TAGS.savedValue());
         assertEquals("café", TextSettings.ALLOWED_WORDS.savedValue());
+    }
+
+    @Test
+    public void schemaTwoAllowedWordsAreUnknownAndLeaveUnrelatedWordChoicesAlone() throws Exception {
+        Settings.WORDS_TAGS.save(false);
+        TextSettings.ALLOWED_WORDS.save("earlier exception");
+        for (Object value : new Object[]{JSONObject.NULL, 42, "new exception"}) {
+            JSONObject file = new JSONObject().put("format", SettingsBackup.FORMAT).put("schema", 2)
+                    .put("settings", new JSONObject())
+                    .put("text", new JSONObject().put(TextSettings.ALLOWED_WORDS.key, value));
+            SettingsBackup.Snapshot snapshot = SettingsBackup.parse(file.toString());
+            assertEquals(1, snapshot.unknown);
+            assertTrue(snapshot.skipped.isEmpty());
+            assertTrue(snapshot.texts.isEmpty());
+            assertEquals(0, SettingsBackup.apply(snapshot));
+            assertEquals("earlier exception", TextSettings.ALLOWED_WORDS.persistedValue());
+            assertFalse(Settings.WORDS_TAGS.savedValue());
+        }
+    }
+
+    @Test
+    public void legacyWordImportsResetExceptionsDespiteUnknownAllowedWordValues() throws Exception {
+        for (boolean textOnly : new boolean[]{false, true}) {
+            for (Object value : new Object[]{JSONObject.NULL, 42, "new exception"}) {
+                Settings.WORDS_TAGS.save(false);
+                TextSettings.ALLOWED_WORDS.save("earlier exception");
+                JSONObject switches = new JSONObject();
+                JSONObject texts = new JSONObject().put(TextSettings.ALLOWED_WORDS.key, value);
+                if (textOnly) texts.put(TextSettings.HIDDEN_WORDS.key, "old hidden words");
+                else switches.put(Settings.HIDE_POSTS_WITH_WORDS.key, true);
+                SettingsBackup.Snapshot snapshot = SettingsBackup.parse(new JSONObject()
+                        .put("format", SettingsBackup.FORMAT).put("schema", 2)
+                        .put("settings", switches).put("text", texts).toString());
+                assertEquals(1, snapshot.unknown);
+                assertTrue(snapshot.skipped.isEmpty());
+                assertEquals("", snapshot.texts.get(TextSettings.ALLOWED_WORDS));
+                SettingsBackup.apply(snapshot);
+                assertEquals("", TextSettings.ALLOWED_WORDS.persistedValue());
+                assertTrue(Settings.WORDS_TAGS.savedValue());
+            }
+        }
+    }
+
+    @Test
+    public void modernMalformedAllowedWordsAreSkippedWithoutResettingWordChoices() throws Exception {
+        Settings.WORDS_TAGS.save(false);
+        TextSettings.ALLOWED_WORDS.save("earlier exception");
+        for (Object value : new Object[]{JSONObject.NULL, 42}) {
+            TextSettings.HIDDEN_WORDS.save("earlier hidden words");
+            SettingsBackup.Snapshot snapshot = SettingsBackup.parse(new JSONObject()
+                    .put("format", SettingsBackup.FORMAT).put("schema", 3)
+                    .put("settings", new JSONObject().put(Settings.HIDE_POSTS_WITH_WORDS.key, true))
+                    .put("text", new JSONObject().put(TextSettings.HIDDEN_WORDS.key, "new hidden words")
+                            .put(TextSettings.ALLOWED_WORDS.key, value)).toString());
+            assertEquals(0, snapshot.unknown);
+            assertEquals(Collections.singletonList(TextSettings.ALLOWED_WORDS), snapshot.skipped);
+            SettingsBackup.apply(snapshot);
+            assertEquals("new hidden words", TextSettings.HIDDEN_WORDS.persistedValue());
+            assertEquals("earlier exception", TextSettings.ALLOWED_WORDS.persistedValue());
+            assertFalse(Settings.WORDS_TAGS.savedValue());
+        }
     }
 
     @Test

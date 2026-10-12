@@ -909,14 +909,13 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             String words = field.getText().toString().trim();
             String error = null;
             try {
-                SettingsBackup.checkTextBudget(setting, words);
+                if (!SettingsBackup.saveText(setting, words)) {
+                    error = L10n.t("Couldn't save the words. Your earlier list is unchanged. Try again.");
+                }
             } catch (SettingsBackup.Rejected refused) {
                 error = refused.reason == SettingsBackup.Reason.SIZE
                         ? L10n.t("This list is too large for a settings backup. Shorten it before saving. Your draft is still here.")
                         : L10n.t("Couldn't save the words. Your earlier list is unchanged. Try again.");
-            }
-            if (error == null && !setting.save(words)) {
-                error = L10n.t("Couldn't save the words. Your earlier list is unchanged. Try again.");
             }
             if (error != null) {
                 rememberWordsDraft();
