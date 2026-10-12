@@ -18,8 +18,13 @@
 package app.morphe
 
 import app.morphe.patches.shared.compat.AppCompatibilities
+import com.android.apksig.ApkVerifier
 import com.reandroid.apk.ApkModule
 import java.io.File
+import java.security.MessageDigest
+import java.util.zip.ZipFile
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Assume.assumeTrue
 
@@ -76,8 +81,10 @@ internal object Fixtures {
 
     /**
      * The Tumblr builds of every version the bundle declares: `tumblr-<version>-<code>.apk`, the
-     * universal APK with every density and ABI in one file, signed with Tumblr's key. The `.apkm`
-     * beside it is the split bundle a user downloads. A declared version with none of them fails.
+     * universal APK with every density and ABI in one file. The `.apkm` beside it is the split
+     * bundle a user downloads, signed with Tumblr's key. Tumblr ships no universal APK, so this one
+     * is merged from that bundle and carries no signature that verifies; [signedForm] stands it on
+     * the bundle's. A declared version with none of them fails.
      */
     fun declaredBuilds(): List<File> =
         AppCompatibilities.tumblr().single().targets.mapNotNull { it.version }.distinct().flatMap { version ->
@@ -102,6 +109,78 @@ internal object Fixtures {
      * the text into a document of its own and can edit that freely.
      */
     fun manifest(apk: File): String = manifests[apk]
+
+    /** A signed APK and the name a failure gives it. */
+    class Signed(val name: String, val file: File)
+
+    private val signedForms = FixtureCache { apk -> readSignedForm(apk) }
+
+    /**
+     * The signed APK that vouches for the universal [apk], for a check of who signed it.
+     *
+     * An APK that verifies vouches for itself. One that doesn't has to be the merge of the APKMirror
+     * bundle of the same name beside it: merging rewrites the resource table and the manifest, so
+     * no signature survives it. Its code has to be that bundle's byte for byte, every dex file the
+     * same as base.apk's and every native library the same as its split's, and then the bundle's
+     * base.apk, signed by Tumblr, stands for it. An APK that doesn't verify and isn't such a merge
+     * fails, so a re-signed or edited build can't pass for Tumblr's.
+     */
+    fun signedForm(apk: File): Signed = signedForms[apk]
+
+    private fun readSignedForm(apk: File): Signed {
+        val result = ApkVerifier.Builder(apk).build().verify()
+        if (result.isVerified) return Signed(apk.name, apk)
+        val bundle = File(apk.parentFile, apk.nameWithoutExtension + ".apkm")
+        if (!bundle.isFile) {
+            fail("${apk.name} does not verify (${result.errors}), and no ${bundle.name} beside it holds the signed " +
+                "build it could have been merged from.")
+        }
+        val base = File.createTempFile("fixture-signed-base", ".apk").apply { deleteOnExit() }
+        val expectedLibraries = sortedMapOf<String, String>()
+        ZipFile(bundle).use { zip ->
+            val apks = zip.entries().asSequence().filter { it.name.endsWith(".apk") }.toList()
+            val baseEntry = apks.singleOrNull { it.name == "base.apk" }
+                ?: throw AssertionError("${bundle.name} holds no base.apk")
+            zip.getInputStream(baseEntry).use { input -> base.outputStream().use { input.copyTo(it) } }
+            for (entry in apks) {
+                val split = if (entry === baseEntry) base else File.createTempFile("fixture-split", ".apk")
+                try {
+                    if (split !== base) zip.getInputStream(entry).use { input -> split.outputStream().use { input.copyTo(it) } }
+                    val libraries = ZipFile(split).use { digests(it) { name -> name.startsWith("lib/") } }
+                    for ((name, digest) in libraries) {
+                        assertTrue("${bundle.name}: $name is in two of its APKs", expectedLibraries.put(name, digest) == null)
+                    }
+                } finally {
+                    if (split !== base) split.delete()
+                }
+            }
+        }
+        val signedCode = ZipFile(base).use { digests(it, ::isDex) }
+        assertTrue("${bundle.name}!base.apk holds no dex", signedCode.isNotEmpty())
+        val (mergedCode, mergedLibraries) = ZipFile(apk).use { digests(it, ::isDex) to digests(it) { name -> name.startsWith("lib/") } }
+        assertEquals("${apk.name} does not verify, and its dex files aren't ${bundle.name}'s base.apk's",
+            signedCode, mergedCode)
+        assertEquals("${apk.name} does not verify, and its native libraries aren't ${bundle.name}'s",
+            expectedLibraries, mergedLibraries)
+        return Signed("${bundle.name}!base.apk", base)
+    }
+
+    private fun isDex(name: String): Boolean = Regex("classes\\d*\\.dex").matches(name)
+
+    /** The SHA-256 of every entry of [zip] whose name [accept] takes, by name. */
+    private fun digests(zip: ZipFile, accept: (String) -> Boolean): Map<String, String> =
+        zip.entries().asSequence().filter { !it.isDirectory && accept(it.name) }.associate { entry ->
+            val digest = MessageDigest.getInstance("SHA-256")
+            zip.getInputStream(entry).use { input ->
+                val buffer = ByteArray(1 shl 16)
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read < 0) break
+                    digest.update(buffer, 0, read)
+                }
+            }
+            entry.name to digest.digest().joinToString("") { "%02x".format(it) }
+        }.toSortedMap()
 }
 
 /**

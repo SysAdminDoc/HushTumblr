@@ -40,8 +40,10 @@ class GoogleSignInSpoofManifestTest {
     @Test
     fun `both constants are the certificate each declared build is signed with`() {
         assertEquals("the certificate hashes to the SHA-1 beside it", TUMBLR_CERTIFICATE_SHA1, sha1OfHex(TUMBLR_CERTIFICATE_DER))
-        for (build in Fixtures.declaredBuilds()) {
-            val result = ApkVerifier.Builder(build).build().verify()
+        for (declared in Fixtures.declaredBuilds()) {
+            // The build itself when it verifies, or the base.apk of the bundle it was merged from.
+            val build = Fixtures.signedForm(declared)
+            val result = ApkVerifier.Builder(build.file).build().verify()
             assertTrue("${build.name} does not verify: ${result.errors}", result.isVerified)
             // Every scheme's signers, so a build signed differently under one of them can't pass.
             val certificates = (result.signerCertificates +

@@ -38,8 +38,10 @@ import org.junit.experimental.categories.Category
  * downloaded the genuine release.
  *
  * Each declared version is kept twice: the universal `.apk` the other fixture tests read and the
- * APKMirror `.apkm` split bundle a user downloads. Both are signed with Tumblr's key, so both are
- * checked: the universal APK directly, the bundle split by split.
+ * APKMirror `.apkm` split bundle a user downloads. The bundle is checked split by split. The
+ * universal APK is checked directly when it verifies; Tumblr ships none, so the one kept is merged
+ * from the bundle, and it's checked through [Fixtures.signedForm]: its code must be the bundle's
+ * byte for byte, and the bundle's base.apk carries the signature.
  */
 @Category(FixtureTests::class)
 class AppCompatibilitiesMatchFixturesTest {
@@ -160,9 +162,15 @@ class AppCompatibilitiesMatchFixturesTest {
         }
     }
 
-    /** A universal APK as it is, or every split a bundle holds, each copied out to a temp file. */
+    /**
+     * A universal APK's signed form (itself, or the base.apk of the bundle it was merged from), or
+     * every split a bundle holds, each copied out to a temp file.
+     */
     private fun apksIn(fixture: File, check: (String, File) -> Unit) {
-        if (fixture.extension == "apk") return check(fixture.name, fixture)
+        if (fixture.extension == "apk") {
+            val signed = Fixtures.signedForm(fixture)
+            return check(signed.name, signed.file)
+        }
         ZipFile(fixture).use { zip ->
             val apks = zip.entries().asSequence().filter { it.name.endsWith(".apk") }.toList()
             assertTrue("${fixture.name} holds no APK", apks.isNotEmpty())
