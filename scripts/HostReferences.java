@@ -94,7 +94,12 @@ public class HostReferences {
             // getDefault() is API 20 in the pinned library. Let the DEX header choose its
             // opcode table, or DEX 039 method handles become NOPs and escape the checks.
             MultiDexContainer<? extends DexFile> container = DexFileFactory.loadDexContainer(input, null);
+            // Only the app's own classes*.dex at the archive root are on its class path. Tumblr also
+            // carries Audience Network's dex under assets/, which that SDK loads with a class loader
+            // of its own, and which declares its own kotlin.Metadata and Guava Strings.
             List<String> entries = new ArrayList<>(container.getDexEntryNames());
+            if (entries.stream().anyMatch(name -> name.matches("classes\\d*\\.dex")))
+                entries.removeIf(name -> !name.matches("classes\\d*\\.dex"));
             Collections.sort(entries);
             for (String entry : entries) for (ClassDef c : container.getEntry(entry).getDexFile().getClasses()) {
                 Type type = new Type(c.getType(), c.getAccessFlags(), c.getSuperclass(), new ArrayList<>(c.getInterfaces()));
