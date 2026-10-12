@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.0.1 (2026-10-12)
 
 * **Tumblr:** First release. HushTumblr 0.0.1 starts from HushPinterest and supports Tumblr 46.5.0.109 (version code 1460500109) on Android 8.0 or newer, with 36 patches.
 * **Tumblr:** Six patches carry over and now point at Tumblr: HushTumblr settings, Disable analytics, Hide advertising ID, Remove ad tracking permissions, Fix push notifications and Spoof signature for Google sign-in.
