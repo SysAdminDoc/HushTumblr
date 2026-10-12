@@ -54,6 +54,9 @@ class PostFooterFixtureTest {
                 context.resolveNotesTitle() to NOTES_TITLE_HOOK,
             )
             val textsBefore = texts.map { (site, _) -> site.method.instructionList().map { it.opcode } }
+            assertEquals("${build.name}: the community comment count is handed over with its text", true,
+                texts.first().first.count != null)
+            assertEquals("${build.name}: the notes title has no count of its own", null, texts.last().first.count)
 
             hideNoteCountsPatch.execute(context)
 
@@ -69,15 +72,22 @@ class PostFooterFixtureTest {
                 val (site, hook) = pair
                 val where = "${site.method.definingClass}->${site.method.name}"
                 val text = context.bodyOf(site.method)
-                assertEquals("$where: two instructions added", textsBefore[index].size + 2, text.size)
+                val added = if (site.count == null) 2 else 4
+                assertEquals("$where: $added instructions added", textsBefore[index].size + added, text.size)
                 assertEquals("$where: right after the text is written", Opcode.MOVE_RESULT_OBJECT, text[site.at - 1].opcode)
                 assertEquals(where, site.register, (text[site.at - 1] as OneRegisterInstruction).registerA)
                 assertEquals("$where: the extension is handed the text", hook, text[site.at].call())
                 assertEquals(where, listOf(site.register), text[site.at].namedRegisters())
                 assertEquals("$where: its answer is the text", Opcode.MOVE_RESULT_OBJECT, text[site.at + 1].opcode)
                 assertEquals(where, site.register, (text[site.at + 1] as OneRegisterInstruction).registerA)
+                site.count?.let { count ->
+                    assertEquals("$where: then the count Tumblr bolds", TEXT_COUNT_HOOK, text[site.at + 2].call())
+                    assertEquals(where, listOf(count), text[site.at + 2].namedRegisters())
+                    assertEquals("$where: its answer is the count", Opcode.MOVE_RESULT_OBJECT, text[site.at + 3].opcode)
+                    assertEquals(where, count, (text[site.at + 3] as OneRegisterInstruction).registerA)
+                }
                 assertEquals("$where: Tumblr's own code around it", textsBefore[index],
-                    text.filterIndexed { at, _ -> at != site.at && at != site.at + 1 }.map { it.opcode })
+                    text.filterIndexed { at, _ -> at !in site.at until site.at + added }.map { it.opcode })
             }
             assertSwitchedOn(context, build.name, "hideNoteCounts", "noteCounts")
         }

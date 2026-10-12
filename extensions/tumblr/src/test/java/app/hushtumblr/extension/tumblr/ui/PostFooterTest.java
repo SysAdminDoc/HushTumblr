@@ -131,6 +131,23 @@ public class PostFooterTest {
     }
 
     @Test
+    public void theBoldedCountGoesBlankOnlyWhenItsTextWentToTheWord() {
+        PostFooter.communityCommentsText("3 comments");
+        assertEquals("the text is Tumblr's, so is its count", "3", PostFooter.textCount("3"));
+
+        Settings.HIDE_NOTE_COUNTS.save(true);
+        assertEquals("Comments", PostFooter.communityCommentsText("1,234 comments"));
+        assertEquals("nothing for Tumblr's bold to land on", "", PostFooter.textCount("1,234"));
+
+        PostFooter.communityCommentsText(null);
+        assertEquals("no text, nothing swapped", "5", PostFooter.textCount("5"));
+
+        PatchFamilyForTests.capabilities(EnumSet.of(PatchFamily.Capability.LIKE_BUTTON));
+        assertEquals("4 comments", PostFooter.communityCommentsText("4 comments"));
+        assertEquals("its hook isn't in this build", "4", PostFooter.textCount("4"));
+    }
+
+    @Test
     public void aMissingTumblrWordFallsBackToHushTumblrs() {
         assertEquals("Notes", PostFooter.tumblrLabel(null, PostFooter.NOTES_LABEL, () -> "Notes"));
         Context context = RuntimeEnvironment.getApplication();

@@ -39,6 +39,7 @@ private const val PATCH = "Hide note counts"
 internal const val NOTE_COUNT_HOOK = "$POST_FOOTER->noteCount(I)I"
 internal const val COMMUNITY_COMMENTS_TEXT_HOOK = "$POST_FOOTER->communityCommentsText(Ljava/lang/String;)Ljava/lang/String;"
 internal const val NOTES_TITLE_HOOK = "$POST_FOOTER->notesTitle(Ljava/lang/String;)Ljava/lang/String;"
+internal const val TEXT_COUNT_HOOK = "$POST_FOOTER->textCount(Ljava/lang/String;)Ljava/lang/String;"
 
 /** Compose's source note for the function that writes a community post's comment count. */
 internal const val COMMUNITY_COMMENTS_TEXT = "com.tumblr.ui.widget.postcontrol.rememberFormattedComments ("
@@ -50,8 +51,12 @@ private const val NOTE_COUNT_PLURAL = "note_count_show"
 private const val STRING = "Ljava/lang/String;"
 private const val CHAR_SEQUENCE = "Ljava/lang/CharSequence;"
 
-/** Where a count text hook goes: in front of instruction [at], on the text in [register]. */
-internal class CountTextSite(val method: MutableMethod, val at: Int, val register: Int)
+/**
+ * Where a count text hook goes: in front of instruction [at], on the text in [register]. [count] is
+ * the register of the count Tumblr bolds inside that text, when it does, which `PostFooter.textCount`
+ * blanks right after whenever the text went to a word.
+ */
+internal class CountTextSite(val method: MutableMethod, val at: Int, val register: Int, val count: Int? = null)
 
 /**
  * Hands the method that turns a like, reblog or comment count into the footer's text the count
@@ -99,12 +104,19 @@ val hideNoteCountsPatch = bytecodePatch(
             """,
         )
         for ((site, hook) in texts) {
+            // The count Tumblr bolds inside the text follows it, so the bold never lands on the word.
+            val bolded = site.count?.let { register ->
+                """
+                    invoke-static/range { v$register .. v$register }, $TEXT_COUNT_HOOK
+                    move-result-object v$register
+                """
+            }.orEmpty()
             site.method.addInstructions(
                 site.at,
                 """
                     invoke-static {v${site.register}}, $hook
                     move-result-object v${site.register}
-                """,
+                """ + bolded,
             )
         }
         enableCapability("noteCounts")
@@ -153,9 +165,16 @@ internal fun BytecodePatchContext.resolveCountFormatter(): MutableMethod {
  * The function is the one whose source note starts with [COMMUNITY_COMMENTS_TEXT]. It reads the
  * [COMMUNITY_COMMENTS_PLURAL] plural and hands it to a call that answers the text; the hook goes
  * right after that answer is moved into its register (index 61 in 46.5.0.109), where nothing jumps.
+ *
+ * The plural's one argument is the formatted count (v27, packed at 55), and Tumblr later bolds as
+ * many characters at the start of the text as that count has (its `String.length()` at 104). The
+ * count is handed over right after the text, so it goes blank with it: the first thing after the
+ * hook to name that register has to be that `length()` read, so nothing else sees the blank count.
+ * Found by reading Tumblr 46.5.0.109 (2026-10-11).
  */
 internal fun BytecodePatchContext.resolveCommunityCommentsText(): CountTextSite {
     requireExtensionHook(PATCH, COMMUNITY_COMMENTS_TEXT_HOOK)
+    requireExtensionHook(PATCH, TEXT_COUNT_HOOK)
     val writer = classDefByStrings(COMMUNITY_COMMENTS_TEXT, StringComparisonType.STARTS_WITH)
         .filter { !it.type.startsWith(EXTENSION_ROOT) }
         .distinctBy { it.type }
@@ -165,7 +184,19 @@ internal fun BytecodePatchContext.resolveCommunityCommentsText(): CountTextSite 
     val plural = body.indexOfFirst { it.readsPlural(COMMUNITY_COMMENTS_PLURAL) }
     requireShape(PATCH, plural >= 0, "the community comment count isn't written with $COMMUNITY_COMMENTS_PLURAL")
     val written = (plural + 1 until body.size).firstOrNull { body[it].methodRef()?.returnType == STRING }
-    return writer.textSiteAfter(written, "the community comment count")
+    val site = writer.textSiteAfter(written, "the community comment count")
+
+    val packed = (plural + 1 until site.at)
+        .filter { body[it].opcode == Opcode.FILLED_NEW_ARRAY || body[it].opcode == Opcode.FILLED_NEW_ARRAY_RANGE }
+        .singleOrNull()?.let { body[it].namedRegisters().singleOrNull() }
+    requireShape(PATCH, packed != null, "the community comment count isn't the plural's one argument")
+    val count = packed!!
+    val measured = (site.at until body.size).firstOrNull { count in body[it].namedRegisters() }
+    requireShape(PATCH, measured != null && body[measured].measuresString() &&
+        (site.at until measured).none { writesRegister(body[it], count) },
+        "the community comment count isn't measured for its bold right after the text")
+    requireShape(PATCH, count <= 255, "the community comment count is in v$count, past what its answer can be moved to")
+    return CountTextSite(site.method, site.at, site.register, count)
 }
 
 /**
@@ -219,6 +250,10 @@ private fun Method.textSiteAfter(written: Int?, what: String): CountTextSite {
 /** An `sget` of the plural resource named [name], from whichever R class holds it. */
 private fun Instruction.readsPlural(name: String): Boolean =
     opcode == Opcode.SGET && fieldRef()?.let { it.name == name && it.definingClass.endsWith("R\$plurals;") } == true
+
+/** A call of `String.length()`. */
+private fun Instruction.measuresString(): Boolean =
+    methodRef()?.let { it.definingClass == STRING && it.name == "length" && it.parameterTypes.isEmpty() } == true
 
 /** A call of `Activity.setTitle(CharSequence)`. */
 private fun Instruction.setsTitle(): Boolean =

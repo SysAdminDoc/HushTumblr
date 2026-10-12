@@ -47,8 +47,9 @@ import app.hushtumblr.extension.tumblr.settings.Settings;
  * the reactions, which stand in for likes there. Each button switch's community hook goes at the end
  * of the method that binds that footer and sets its own controls GONE, with the same answer the
  * Compose button got. The community comment button writes "3 comments" rather than a bare number, so
- * {@link #communityCommentsText} swaps that text for Tumblr's own "Comments", and {@link #notesTitle}
- * does the same for the count at the top of a post's notes.
+ * {@link #communityCommentsText} swaps that text for Tumblr's own "Comments" ({@link #textCount}
+ * blanks the count Tumblr bolds in it along with it), and {@link #notesTitle} does the same for the
+ * count at the top of a post's notes.
  */
 public final class PostFooter {
     private PostFooter() {}
@@ -72,6 +73,9 @@ public final class PostFooter {
 
     /** The longest label taken from Tumblr; anything longer isn't the word wanted. */
     private static final int LONGEST_LABEL = 40;
+
+    /** Whether the last count text on this thread went to a word, for {@link #textCount}. */
+    private static final ThreadLocal<Boolean> SWAPPED = new ThreadLocal<>();
 
     /**
      * Injected at the start of the method that turns a like, reblog or comment count into its text.
@@ -103,6 +107,16 @@ public final class PostFooter {
     }
 
     /**
+     * Injected right after {@link #communityCommentsText}, on the count Tumblr bolds at the start of
+     * that text. Tumblr bolds as many characters as the count has, which on Tumblr's word would land
+     * on part of it or run past its end, so the count is blank whenever the text just went to the
+     * word. The count itself otherwise. Never throws.
+     */
+    public static String textCount(String count) {
+        return Boolean.TRUE.equals(SWAPPED.get()) ? "" : count;
+    }
+
+    /**
      * Injected where a post's notes screen has written its "12 notes" title. Tumblr's own "Notes" in
      * its place while Hide note counts is on. The title itself otherwise. Never throws.
      */
@@ -110,18 +124,29 @@ public final class PostFooter {
         return countFree(title, NOTES_LABEL, () -> L10n.t("Notes"), "notes count hidden");
     }
 
-    /** [text], or Tumblr's [label] (HushTumblr's [own] word when this build lacks it) while counts are hidden. */
+    /**
+     * [text], or Tumblr's [label] (HushTumblr's [own] word when this build lacks it) while counts are
+     * hidden. Remembers on this thread which it answered, for {@link #textCount}.
+     */
     private static String countFree(String text, String label, Supplier<String> own, String counted) {
-        if (text == null || !Utils.settingsReady()) return text;
+        String word = wordFor(text, label, own, counted);
+        SWAPPED.set(word != null);
+        return word != null ? word : text;
+    }
+
+    /** The word that goes in place of [text] while counts are hidden, or null to leave [text] alone. */
+    @Nullable
+    private static String wordFor(String text, String label, Supplier<String> own, String counted) {
+        if (text == null || !Utils.settingsReady()) return null;
         try {
-            if (!PatchFamily.Capability.NOTE_COUNTS.installed()) return text;
+            if (!PatchFamily.Capability.NOTE_COUNTS.installed()) return null;
             HookStatus.invoked(FamilyNames.HIDE_NOTE_COUNTS);
-            if (!Settings.HIDE_NOTE_COUNTS.get()) return text;
+            if (!Settings.HIDE_NOTE_COUNTS.get()) return null;
             HookStatus.counted(FamilyNames.HIDE_NOTE_COUNTS, counted);
             return tumblrLabel(Utils.getContext(), label, own);
         } catch (Throwable failure) {
             HookStatus.threw(FamilyNames.HIDE_NOTE_COUNTS, "count text", failure);
-            return text;
+            return null;
         }
     }
 
