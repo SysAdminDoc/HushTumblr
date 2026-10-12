@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* **Tumblr:** HushTumblr settings and their dialogs now mirror navigation for right-to-left languages, even when Tumblr's own layouts don't support it.
 * **Tumblr:** Moving a tab keeps TalkBack focus on that tab and announces its new position. Reset and refused saves keep focus aligned with the saved order.
 * **Tumblr:** Hide ads also removes paid Blaze posts from blogs you don't follow. It keeps your own posts and posts from blogs you follow.
 * **Tooling:** Expanded compiled-code checks to cover every patch family and its original fallback. Altered hooks are rejected before a device build.

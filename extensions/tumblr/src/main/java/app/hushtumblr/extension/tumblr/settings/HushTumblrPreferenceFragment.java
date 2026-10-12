@@ -24,6 +24,7 @@ import android.app.Dialog;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
@@ -44,6 +45,7 @@ import android.text.style.StyleSpan;
 import android.text.util.Linkify;
 import android.util.TypedValue;
 import android.view.ContextThemeWrapper;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.accessibility.AccessibilityEvent;
@@ -194,6 +196,11 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
     }
 
     @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle savedInstanceState) {
+        return super.onCreateView(inflater.cloneInContext(themed(inflater.getContext())), parent, savedInstanceState);
+    }
+
+    @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         ListView list = view.findViewById(android.R.id.list);
@@ -213,7 +220,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         showSupportedLinks();
         if (restoreWordsEditor && getContext() != null) {
             Preference row = findPreference(editingAllowedWords ? ALLOWED_WORDS_ROW : HIDDEN_WORDS_ROW);
-            if (row != null) showWords(getContext(), row);
+            if (row != null) showWords(themed(getContext()), row);
         }
     }
 
@@ -1214,7 +1221,12 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
      * Material, which the black page reads on whatever the host activity's theme is.
      */
     static Context themed(Context base) {
-        return new ContextThemeWrapper(base, ScreenColors.THEME);
+        // Tumblr omits supportsRtl. Only views built for this screen opt in; the host stays intact.
+        ApplicationInfo settingsInfo = new ApplicationInfo(base.getApplicationInfo());
+        settingsInfo.flags |= ApplicationInfo.FLAG_SUPPORTS_RTL;
+        return new ContextThemeWrapper(base, ScreenColors.THEME) {
+            @Override public ApplicationInfo getApplicationInfo() { return settingsInfo; }
+        };
     }
 
     /** The recovery page draws on the same page as the rows, so it gets the same theme. */

@@ -22,6 +22,7 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Build;
@@ -116,7 +117,7 @@ public final class SettingsDialog extends DialogFragment {
         // What the framework's own onCreateDialog builds, with Back first taking the list back to
         // where it was before a section jump. Dialog's back callback on Android 13 and newer ends
         // in onBackPressed as well, so this covers the gesture and the key alike.
-        Dialog dialog = new Dialog(getActivity(), getTheme()) {
+        Dialog dialog = new Dialog(HushTumblrPreferenceFragment.themed(getActivity()), getTheme()) {
             @Override
             public void dismiss() {
                 try {
@@ -159,11 +160,12 @@ public final class SettingsDialog extends DialogFragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle savedInstanceState) {
         ScreenColors palette = ScreenColors.DEFAULT;
-        LinearLayout root = new LinearLayout(getContext());
+        Context context = inflater.getContext();
+        LinearLayout root = new LinearLayout(context);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(ScreenColors.DEFAULT.background);
 
-        LinearLayout bar = new LinearLayout(getContext());
+        LinearLayout bar = new LinearLayout(context);
         titleBar = bar;
         bar.setOrientation(LinearLayout.HORIZONTAL);
         bar.setGravity(Gravity.CENTER_VERTICAL);
@@ -171,8 +173,8 @@ public final class SettingsDialog extends DialogFragment {
         // Start and end, not left and right: in a right-to-left language the bar is mirrored.
         bar.setPaddingRelative(dp(12), dp(36), pad, dp(16));
 
-        android.widget.ImageButton back = new android.widget.ImageButton(getContext());
-        android.graphics.drawable.Drawable arrow = SettingsIcons.icon(getContext(), SettingsIcons.BACK, Color.WHITE);
+        android.widget.ImageButton back = new android.widget.ImageButton(context);
+        android.graphics.drawable.Drawable arrow = SettingsIcons.icon(context, SettingsIcons.BACK, Color.WHITE);
         arrow.setBounds(0, 0, dp(24), dp(24));
         arrow.setLayoutDirection(rightToLeft() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
         back.setImageDrawable(arrow);
@@ -201,7 +203,7 @@ public final class SettingsDialog extends DialogFragment {
         });
         bar.addView(back, new LinearLayout.LayoutParams(dp(48), dp(48)));
 
-        TextView title = new TextView(getContext());
+        TextView title = new TextView(context);
         pageTitle = title;
         title.setText("HushTumblr");
         title.setTextColor(Color.WHITE);
@@ -214,7 +216,7 @@ public final class SettingsDialog extends DialogFragment {
 
         buildSearch(root);
 
-        container = new FrameLayout(getContext());
+        container = new FrameLayout(context);
         container.setId(CONTAINER_ID);
         root.addView(container, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
@@ -237,7 +239,8 @@ public final class SettingsDialog extends DialogFragment {
 
     private void buildSearch(LinearLayout root) {
         ScreenColors palette = ScreenColors.DEFAULT;
-        searchBox = new LinearLayout(getContext());
+        Context context = root.getContext();
+        searchBox = new LinearLayout(context);
         searchBox.setGravity(Gravity.CENTER_VERTICAL);
         android.graphics.drawable.GradientDrawable surface = new android.graphics.drawable.GradientDrawable();
         surface.setColor(palette.card);
@@ -245,11 +248,11 @@ public final class SettingsDialog extends DialogFragment {
         surface.setStroke(dp(1), palette.outline);
         searchBox.setBackground(surface);
         searchBox.setPaddingRelative(dp(16), 0, 0, 0);
-        ImageView icon = new ImageView(getContext());
-        icon.setImageDrawable(SettingsIcons.icon(getContext(), SettingsIcons.SEARCH, palette.summary));
+        ImageView icon = new ImageView(context);
+        icon.setImageDrawable(SettingsIcons.icon(context, SettingsIcons.SEARCH, palette.summary));
         icon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         searchBox.addView(icon, new LinearLayout.LayoutParams(dp(24), dp(24)));
-        search = new EditText(getContext());
+        search = new EditText(context);
         search.setHint(L10n.t("Search settings"));
         search.setContentDescription(L10n.t("Search settings"));
         search.setSingleLine(true);
@@ -262,8 +265,8 @@ public final class SettingsDialog extends DialogFragment {
         search.setPaddingRelative(dp(12), dp(12), 0, dp(12));
         search.setMinimumHeight(dp(52));
         searchBox.addView(search, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        android.widget.ImageButton clear = new android.widget.ImageButton(getContext());
-        clear.setImageDrawable(SettingsIcons.icon(getContext(), SettingsIcons.CLOSE, palette.summary));
+        android.widget.ImageButton clear = new android.widget.ImageButton(context);
+        clear.setImageDrawable(SettingsIcons.icon(context, SettingsIcons.CLOSE, palette.summary));
         clear.setBackgroundColor(Color.TRANSPARENT);
         clear.setPadding(dp(12), dp(12), dp(12), dp(12));
         clear.setContentDescription(L10n.t("Clear search"));
@@ -291,7 +294,7 @@ public final class SettingsDialog extends DialogFragment {
         root.addView(searchBox, layout);
         // Typed letters alone tell a screen reader nothing about the list below, so the count is
         // spoken from a polite live region, once the typing has settled.
-        results = new TextView(getContext());
+        results = new TextView(context);
         results.setTextColor(palette.summary);
         results.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
         results.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
@@ -402,6 +405,7 @@ public final class SettingsDialog extends DialogFragment {
     /** Built without the child manager, which is the part that just failed. */
     private void showMountRecovery() {
         if (container == null) return;
+        Context context = container.getContext();
         if (recovery != null) container.removeView(recovery);
         pageTitle.setText("HushTumblr");
         searchBox.setVisibility(View.GONE);
@@ -409,22 +413,22 @@ public final class SettingsDialog extends DialogFragment {
         hideKeyboard();
         results.removeCallbacks(showFound);
         results.setVisibility(View.GONE);
-        recovery = new ScrollView(getContext());
+        recovery = new ScrollView(context);
         recovery.setTag(MOUNT_ERROR);
         recovery.setBackgroundColor(ScreenColors.DEFAULT.background);
         recovery.setFillViewport(true);
-        LinearLayout content = new LinearLayout(getContext());
+        LinearLayout content = new LinearLayout(context);
         content.setOrientation(LinearLayout.VERTICAL);
         recovery.addView(content, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
-        LinearLayout message = new LinearLayout(getContext());
+        LinearLayout message = new LinearLayout(context);
         message.setOrientation(LinearLayout.VERTICAL);
-        TextView title = new TextView(getContext());
+        TextView title = new TextView(context);
         title.setId(android.R.id.title);
         title.setText(L10n.t(getContext(), "HushTumblr settings couldn't open"));
         HushTumblrPreferenceFragment.markHeading(title);
         message.addView(title);
-        TextView summary = new TextView(getContext());
+        TextView summary = new TextView(context);
         summary.setId(android.R.id.summary);
         summary.setText(L10n.t(getContext(), "Try again, or go back to Tumblr."));
         message.addView(summary);
@@ -457,7 +461,7 @@ public final class SettingsDialog extends DialogFragment {
     }
 
     private Button recoveryButton(String tag, String label, boolean primary) {
-        Button button = new Button(getContext());
+        Button button = new Button(container.getContext());
         button.setTag(tag);
         button.setText(label);
         button.setAllCaps(false);
