@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* **Tumblr:** Hide ads also removes paid Blaze posts from blogs you don't follow. It keeps your own posts and posts from blogs you follow.
 * **Tooling:** Expanded compiled-code checks to cover every patch family and its original fallback. Altered hooks are rejected before a device build.
 * **Tumblr:** Long word lists now scroll inside the editor, keeping Save and Cancel within reach.
 * **Tumblr:** Saving a word list during an import now checks and saves the combined size in one step. Older backups ignore unsupported allowed-word fields instead of rejecting the whole file.
