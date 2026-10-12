@@ -64,10 +64,18 @@ patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/AccountIdentityPatch.
 # Ltj8 is the public invoke()Object callback interface extending Lvj8. Lb6l.a is its native
 # public static final Unit singleton. Lrbk's FROM_CACHE/PAGINATION construction and f() branch
 # prove replacement for TimelineFragment.i6 and its local-only X6 renderer.
+# PostCardHeader.H2's exact private 29-register, 210-instruction menu ABI binds Lgbl,
+# Ly6k, Ljgd, Lim2 and Lzbk to its native arguments. Checked control flow preserves the
+# builder, clicked card, context and Ljgd callback before the bottomsheet finalizer.
+# TimelineFragment$a implements Ljgd and retains its final timeline owner through its
+# sole constructor write. Exact-target fixtures and compiled-code refusals cover both menus.
 patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lb6l;
 patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lcom/tumblr/components/bottomsheet/b;
 patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lcom/tumblr/ui/fragment/c;
 patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Ldca;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lgbl;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lim2;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Ljgd;
 patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lju1;
 patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lpxa;
 patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lrbk;
@@ -77,6 +85,8 @@ patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt
 patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lvgi;
 patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lvj8;
 patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Ly9g;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Ly6k;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lzbk;
 patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lzve;
 
 # Shared Post JSON presence. Leba's 178-register reader has exactly one successful Post
