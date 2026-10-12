@@ -814,9 +814,17 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
     /** What the tab order [saved] does, for its row's summary. */
     static String tabOrderSummary(String saved) {
         if (BottomBarTabs.parse(saved).isEmpty()) return L10n.t("The bottom bar keeps Tumblr's order.");
+        return L10n.f("Tabs go in this order: %1$s. Restart Tumblr to see the change.", tabsShown(saved));
+    }
+
+    /**
+     * The tabs of the order [saved] by their labels, joined the way the text's language writes a
+     * list. The row's summary and the settings file preview both say the order this way.
+     */
+    static String tabsShown(String saved) {
         List<String> labels = new ArrayList<>();
         for (String name : BottomBarTabs.choices(saved)) labels.add(L10n.isolate(tabLabel(name)));
-        return L10n.f("Tabs go in this order: %1$s. Restart Tumblr to see the change.", String.join(", ", labels));
+        return L10n.join(labels);
     }
 
     /** What the tab order list calls the tab named [name] in Tumblr's tab enum. */
@@ -847,7 +855,15 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
     static String wordsSummary(String saved) {
         List<String> words = PostRules.wordList(saved);
         if (words.isEmpty()) return L10n.t("The list is empty. Tap to add words or phrases.");
-        return L10n.f("Looks for: %1$s", L10n.isolate(String.join(", ", words)));
+        return L10n.f("Looks for: %1$s", wordsShown(words));
+    }
+
+    /**
+     * The person's own [words] as one isolated run, comma separated as they'd type them. The row's
+     * summary and the settings file preview both show the list this way.
+     */
+    static String wordsShown(List<String> words) {
+        return L10n.isolate(String.join(", ", words));
     }
 
     /** Fixed project pages. Neither a release's body nor its html_url can choose the destination. */

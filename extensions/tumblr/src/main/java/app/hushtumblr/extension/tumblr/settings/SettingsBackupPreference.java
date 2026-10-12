@@ -48,7 +48,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -449,14 +448,10 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
     static String textShown(StringSetting setting, String value) {
         if (setting == TextSettings.TAB_ORDER) {
             if (BottomBarTabs.parse(value).isEmpty()) return L10n.t("Tumblr's order");
-            List<String> labels = new ArrayList<>();
-            for (String name : BottomBarTabs.choices(value)) {
-                labels.add(L10n.isolate(HushTumblrPreferenceFragment.tabLabel(name)));
-            }
-            return String.join(", ", labels);
+            return HushTumblrPreferenceFragment.tabsShown(value);
         }
         List<String> words = PostRules.wordList(value);
-        return words.isEmpty() ? L10n.t("None") : L10n.isolate(String.join(", ", words));
+        return words.isEmpty() ? L10n.t("None") : HushTumblrPreferenceFragment.wordsShown(words);
     }
 
     private static String switchValue(boolean value) {
