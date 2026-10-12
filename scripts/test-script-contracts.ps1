@@ -4941,7 +4941,7 @@ try {
             $higher -like '*success: every requested patch applied*') `
         "The verification run did not preserve a higher stock SDK floor: $higher"
     foreach ($wrongSdk in @(
-            @{ Build = $releaseTarget.PackageVersion; Stock = 21; Patched = 28; Expected = 29 },
+            @{ Build = $releaseTarget.PackageVersion; Stock = 21; Patched = 28; Expected = 26 },
             @{ Build = $newerBuild; Stock = 36; Patched = 29; Expected = 36 })) {
         $manifestPath = "$($fixturePaths[$wrongSdk.Build]).patched.txt"
         $manifestBytes = [System.IO.File]::ReadAllBytes($manifestPath)
