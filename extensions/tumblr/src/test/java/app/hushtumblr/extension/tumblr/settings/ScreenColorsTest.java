@@ -113,6 +113,7 @@ public class ScreenColorsTest {
         Map<String, int[]> parts = new LinkedHashMap<>();
         parts.put("switch on, against its card", new int[]{c.accent, c.card});
         parts.put("switch off, against its card", new int[]{c.switchOff, c.card});
+        parts.put("text field boundary, against its surface", new int[]{c.switchOff, c.dialog});
         // The thumb shows where the switch is, so it needs 3:1 against the track it sits on.
         parts.put("switch off's thumb, against its track", new int[]{c.offThumb(), c.switchOff});
         parts.put("switch on's thumb, against its track", new int[]{c.onAccent, c.accent});

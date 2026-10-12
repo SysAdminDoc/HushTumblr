@@ -17,11 +17,7 @@
 package app.hushtumblr.extension.tumblr.settings;
 
 import android.content.Context;
-import android.content.res.ColorStateList;
 import android.graphics.Typeface;
-import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.InsetDrawable;
-import android.graphics.drawable.RippleDrawable;
 import android.text.SpannableStringBuilder;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -97,13 +93,7 @@ final class ChoiceCards extends BaseAdapter {
             setGravity(Gravity.CENTER_VERTICAL);
             int side = dp(context, SIDE_INSET_DP);
             int gap = dp(context, GAP_INSET_DP);
-            GradientDrawable surface = new GradientDrawable();
-            // The shared row surface, with its outline separating it from the dialog.
-            surface.setColor(colors.card);
-            surface.setStroke(dp(context, 1), colors.outline);
-            surface.setCornerRadius(dp(context, 12));
-            setBackground(new RippleDrawable(ColorStateList.valueOf(ScreenColors.half(colors.accent)),
-                    new InsetDrawable(surface, side, gap, side, gap), null));
+            setBackground(colors.insetInteractive(this, colors.card, 12, SIDE_INSET_DP, GAP_INSET_DP));
             // Set after the background, which puts its insets in as the padding.
             setPaddingRelative(side + dp(context, 16), gap + dp(context, 12),
                     side + dp(context, 16), gap + dp(context, 12));

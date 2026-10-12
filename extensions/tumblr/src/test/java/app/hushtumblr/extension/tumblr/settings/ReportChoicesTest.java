@@ -239,7 +239,7 @@ public class ReportChoicesTest {
             Rect insets = new Rect();
             inset.getPadding(insets);
             assertEquals(new Rect(dp(16), dp(4), dp(16), dp(4)), insets);
-            assertTrue(inset.getDrawable() instanceof GradientDrawable);
+            assertTrue(inset.getDrawable().getCurrent() instanceof GradientDrawable);
             assertTrue("less than 48 dp to tap", card.getHeight() - 2 * dp(4) >= dp(48));
             // The text sits inside the card's surface, clear of its edge.
             Rect surface = new Rect(dp(16), dp(4), card.getWidth() - dp(16), card.getHeight() - dp(4));

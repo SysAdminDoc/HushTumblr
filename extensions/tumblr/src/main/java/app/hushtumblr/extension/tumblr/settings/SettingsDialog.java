@@ -23,7 +23,6 @@ import android.app.DialogFragment;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.Context;
-import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
@@ -174,19 +173,19 @@ public final class SettingsDialog extends DialogFragment {
         bar.setPaddingRelative(dp(12), dp(36), pad, dp(16));
 
         android.widget.ImageButton back = new android.widget.ImageButton(context);
-        android.graphics.drawable.Drawable arrow = SettingsIcons.icon(context, SettingsIcons.BACK, Color.WHITE);
+        android.graphics.drawable.Drawable arrow = SettingsIcons.icon(context, SettingsIcons.BACK, palette.title);
         arrow.setBounds(0, 0, dp(24), dp(24));
         arrow.setLayoutDirection(rightToLeft() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
         back.setImageDrawable(arrow);
+        back.setImageTintList(ScreenColors.dimmedWhenDisabled(palette.title));
         back.setPadding(dp(12), dp(12), dp(12), dp(12));
-        android.graphics.drawable.RippleDrawable backSurface = new android.graphics.drawable.RippleDrawable(
-                android.content.res.ColorStateList.valueOf(ScreenColors.half(palette.accent)),
-                palette.surface(palette.card, 8, back), null);
+        android.graphics.drawable.RippleDrawable backSurface = palette.interactive(back, palette.card, 8);
         backSurface.setLayerInsetRelative(0, dp(4), dp(4), dp(4), dp(4));
         back.setBackground(backSurface);
         back.setMinimumWidth(dp(48));
         back.setMinimumHeight(dp(48));
         back.setContentDescription(L10n.t(getContext(), "Back"));
+        back.setTooltipText(L10n.t(getContext(), "Back"));
         // A screen reader calls it a button, as it would the back arrow of any other screen.
         back.setAccessibilityDelegate(new View.AccessibilityDelegate() {
             @Override
@@ -206,7 +205,7 @@ public final class SettingsDialog extends DialogFragment {
         TextView title = new TextView(context);
         pageTitle = title;
         title.setText("HushTumblr");
-        title.setTextColor(Color.WHITE);
+        title.setTextColor(palette.title);
         title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 28);
         title.setPaddingRelative(dp(16), 0, 0, 0);
@@ -245,7 +244,7 @@ public final class SettingsDialog extends DialogFragment {
         android.graphics.drawable.GradientDrawable surface = new android.graphics.drawable.GradientDrawable();
         surface.setColor(palette.card);
         surface.setCornerRadius(dp(12));
-        surface.setStroke(dp(1), palette.outline);
+        surface.setStroke(dp(1), palette.switchOff);
         searchBox.setBackground(surface);
         searchBox.setPaddingRelative(dp(16), 0, 0, 0);
         ImageView icon = new ImageView(context);
@@ -262,14 +261,21 @@ public final class SettingsDialog extends DialogFragment {
         search.setBackground(null);
         search.setTextColor(palette.title);
         search.setHintTextColor(palette.summary);
+        palette.paintSelection(search);
+        search.setOnFocusChangeListener((view, focused) ->
+                surface.setStroke(dp(focused ? 2 : 1), focused ? palette.accent : palette.switchOff));
         search.setPaddingRelative(dp(12), dp(12), 0, dp(12));
         search.setMinimumHeight(dp(52));
         searchBox.addView(search, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         android.widget.ImageButton clear = new android.widget.ImageButton(context);
         clear.setImageDrawable(SettingsIcons.icon(context, SettingsIcons.CLOSE, palette.summary));
-        clear.setBackgroundColor(Color.TRANSPARENT);
+        clear.setImageTintList(ScreenColors.dimmedWhenDisabled(palette.summary));
+        android.graphics.drawable.RippleDrawable clearSurface = palette.interactive(clear, palette.card, 8);
+        clearSurface.setLayerInsetRelative(0, dp(4), dp(4), dp(4), dp(4));
+        clear.setBackground(clearSurface);
         clear.setPadding(dp(12), dp(12), dp(12), dp(12));
         clear.setContentDescription(L10n.t("Clear search"));
+        clear.setTooltipText(L10n.t("Clear search"));
         clear.setVisibility(View.INVISIBLE);
         clear.setOnClickListener(ignored -> search.setText(""));
         searchBox.addView(clear, new LinearLayout.LayoutParams(dp(48), dp(48)));

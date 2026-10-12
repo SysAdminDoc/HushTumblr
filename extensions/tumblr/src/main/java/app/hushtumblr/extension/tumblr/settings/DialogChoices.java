@@ -18,8 +18,6 @@ package app.hushtumblr.extension.tumblr.settings;
 
 import android.content.res.ColorStateList;
 import android.database.DataSetObserver;
-import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.StateListDrawable;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -52,34 +50,33 @@ final class DialogChoices extends BaseAdapter {
         if (row instanceof android.widget.TextView && !(row instanceof CheckedTextView)) {
             android.widget.TextView text = (android.widget.TextView) row;
             float density = row.getResources().getDisplayMetrics().density;
-            text.setTextColor(colors.title);
+            text.setTextColor(ScreenColors.dimmedWhenDisabled(colors.title));
             text.setTextSize(16);
             text.setSingleLine(false);
             text.setMaxLines(Integer.MAX_VALUE);
             text.setMinimumHeight(Math.round(56 * density));
             text.setPaddingRelative(Math.round(24 * density), Math.round(12 * density),
                     Math.round(24 * density), Math.round(12 * density));
-            text.setBackgroundColor(colors.card);
+            text.setBackground(colors.interactive(text, colors.card, 0));
         }
         if (row instanceof CheckedTextView) {
             CheckedTextView choice = (CheckedTextView) row;
             float density = row.getResources().getDisplayMetrics().density;
-            choice.setTextColor(colors.title);
+            choice.setTextColor(ScreenColors.dimmedWhenDisabled(colors.title));
             choice.setTextSize(16);
             choice.setSingleLine(false);
             choice.setMaxLines(Integer.MAX_VALUE);
             choice.setMinHeight(Math.round(48 * density));
-            ColorStateList indicator = new ColorStateList(new int[][]{{android.R.attr.state_checked}, {}},
-                    new int[]{colors.accent, colors.summary});
+            ColorStateList indicator = new ColorStateList(new int[][]{
+                    {-android.R.attr.state_enabled, android.R.attr.state_checked}, {-android.R.attr.state_enabled},
+                    {android.R.attr.state_checked}, {}},
+                    new int[]{ScreenColors.half(colors.accent), ScreenColors.half(colors.summary), colors.accent, colors.summary});
             choice.setCheckMarkTintList(indicator);
             // Material's framework layout uses a start drawable for its radio indicator.
             for (android.graphics.drawable.Drawable drawable : choice.getCompoundDrawablesRelative()) {
                 if (drawable != null) drawable.mutate().setTintList(indicator);
             }
-            StateListDrawable background = new StateListDrawable();
-            background.addState(new int[]{android.R.attr.state_checked}, new ColorDrawable((colors.accent & 0xFFFFFF) | 0x22000000));
-            background.addState(new int[]{}, new ColorDrawable(android.graphics.Color.TRANSPARENT));
-            choice.setBackground(background);
+            choice.setBackground(colors.choiceSurface(choice));
             // Rounding both sides up at densities such as 450dpi exceeds the measured 48dp row.
             int verticalPadding = (int) (8 * density);
             choice.setPaddingRelative(Math.round(20 * density), verticalPadding,
