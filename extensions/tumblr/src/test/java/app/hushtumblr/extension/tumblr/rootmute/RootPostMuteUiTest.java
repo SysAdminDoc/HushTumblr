@@ -168,6 +168,56 @@ public class RootPostMuteUiTest {
         assertNull(find(controller.get().findViewById(android.R.id.content), Button.class));
     }
 
+    @Test public void aNativeMenuCallbackUsesItsOwnTimelineAndKeepsDirectHostsWorking() {
+        app.hushtumblr.extension.tumblr.timeline.HushRootPost selected = () -> "11";
+        FakeTimeline owner = new FakeTimeline(List.of(selected));
+        HushRootMenuHost callback = () -> owner;
+        RootPostMuteAction action = RootPostMenu.action(selected, controller.get(), callback);
+        assertNotNull(action);
+        assertNotNull(RootPostMenu.action(selected, controller.get(), owner));
+        action.run();
+        assertTrue(owner.items.isEmpty());
+        assertEquals(java.util.Set.of("11"), RootPostMutes.capture().roots);
+    }
+
+    @Test public void aCallbackCannotSupplyAnAbsentForeignOrUnreadableTimeline() {
+        app.hushtumblr.extension.tumblr.timeline.HushRootPost selected = () -> "11";
+        assertNull(RootPostMenu.action(selected, controller.get(), new Object()));
+        assertNull(RootPostMenu.action(selected, controller.get(), (HushRootMenuHost) () -> null));
+        assertNull(RootPostMenu.action(selected, controller.get(), (HushRootMenuHost) () -> new FakeTimeline(List.of())));
+        assertNull(RootPostMenu.action(selected, controller.get(), (HushRootMenuHost) () -> { throw new IllegalStateException(); }));
+        assertTrue(RootPostMutes.capture().roots.isEmpty());
+    }
+
+    @Test public void theCallbackMenuKeepsAccountPauseFamilyAndCanonicalRootGates() {
+        app.hushtumblr.extension.tumblr.timeline.HushRootPost selected = () -> "11";
+        HushRootMenuHost callback = () -> new FakeTimeline(List.of(selected));
+        assertNull(RootPostMenu.action(selected, null, callback));
+        assertNull(RootPostMenu.action((app.hushtumblr.extension.tumblr.timeline.HushRootPost) () -> null, controller.get(), callback));
+        Settings.MUTE_ROOT_POSTS.save(false);
+        assertNull(RootPostMenu.action(selected, controller.get(), callback));
+        Settings.MUTE_ROOT_POSTS.save(true);
+        PauseForTests.pause(app.hushtumblr.extension.shared.settings.HushTumblrPause.Reason.SWITCH);
+        assertNull(RootPostMenu.action(selected, controller.get(), callback));
+        PauseForTests.resume();
+        PatchFamilyForTests.capabilities(EnumSet.noneOf(PatchFamily.Capability.class));
+        assertNull(RootPostMenu.action(selected, controller.get(), callback));
+        PatchFamilyForTests.capabilities(EnumSet.of(PatchFamily.Capability.ROOT_POST_MUTES));
+        RootPostMutes.logout();
+        assertNull(RootPostMenu.action(selected, controller.get(), callback));
+    }
+
+    @Test public void anAccountChangeAfterCallbackMenuCreationMakesItsActionInert() {
+        app.hushtumblr.extension.tumblr.timeline.HushRootPost selected = () -> "11";
+        FakeTimeline owner = new FakeTimeline(List.of(selected));
+        RootPostMuteAction action = RootPostMenu.action(selected, controller.get(), (HushRootMenuHost) () -> owner);
+        assertNotNull(action);
+        account("account-b");
+        action.run();
+        assertEquals(List.of(selected), owner.items);
+        assertTrue(RootPostMutes.capture().roots.isEmpty());
+    }
+
     private static final class FakeTimeline implements HushLocalTimeline {
         List<Object> items;
         int applies;

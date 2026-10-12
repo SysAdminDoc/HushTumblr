@@ -15,14 +15,24 @@ public final class RootPostMenu {
     private RootPostMenu() {}
 
     public static void add(Object builder, Object post, Context context, Object host) {
-        if (!RootPostMutes.enabled() || RootPostMutes.capture() == null || !(host instanceof HushLocalTimeline) || context == null) return;
         try {
-            String root = root(post);
-            HushLocalTimeline timeline = (HushLocalTimeline) host;
-            if (RootPostMuteStore.validRoot(root) && RootPostLocalTimeline.contains(timeline, root))
-                addNative(builder, L10n.t("Mute this post locally"), new RootPostMuteAction(root, context, timeline));
+            RootPostMuteAction action = action(post, context, host);
+            if (action != null) addNative(builder, L10n.t("Mute this post locally"), action);
         } catch (Throwable unreadable) {
             // A changed native model or menu leaves Tumblr's menu intact, without logging IDs.
+        }
+    }
+
+    static RootPostMuteAction action(Object post, Context context, Object host) {
+        if (!RootPostMutes.enabled() || RootPostMutes.capture() == null || context == null) return null;
+        try {
+            HushLocalTimeline timeline = host instanceof HushRootMenuHost ? ((HushRootMenuHost) host).hushTimelineOwner()
+                    : host instanceof HushLocalTimeline ? (HushLocalTimeline) host : null;
+            String root = root(post);
+            return timeline != null && RootPostMuteStore.validRoot(root) && RootPostLocalTimeline.contains(timeline, root)
+                    ? new RootPostMuteAction(root, context, timeline) : null;
+        } catch (Throwable unreadable) {
+            return null;
         }
     }
 

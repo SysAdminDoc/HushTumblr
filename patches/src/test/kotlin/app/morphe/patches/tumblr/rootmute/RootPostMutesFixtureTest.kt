@@ -21,10 +21,15 @@ import app.morphe.patches.tumblr.timeline.POST
 import app.morphe.patches.tumblr.timeline.postJsonPresencePatch
 import app.morphe.util.ControlFlow
 import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction20t
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.ThreeRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.WideLiteralInstruction
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.experimental.categories.Category
@@ -33,6 +38,7 @@ import org.junit.experimental.categories.Category
 class RootPostMutesFixtureTest {
     private val owners = setOf(POST, POST.removeSuffix(";") + "JsonAdapter;", ROOT_POST_WRAPPER, ROOT_MENU_OWNER,
         LOCAL_TIMELINE, ROOT_TIMELINE_OBJECT, "Lrbk;", "Lvgi;", "Ltj8;", "Lb6l;",
+        "Lcom/tumblr/ui/widget/PostCardHeader;", "Lcom/tumblr/ui/fragment/TimelineFragment\$a;",
         "Lcom/tumblr/components/bottomsheet/b\$a;", "Lcom/tumblr/components/bottomsheet/b\$b;")
 
     @Test
@@ -91,6 +97,133 @@ class RootPostMutesFixtureTest {
             assertEquals("Lb6l;->a:Lb6l;", unit[0].fieldRef().toString())
             for (name in listOf("muteRootPosts", "rootPostMutes")) assertEquals(1,
                 (context.mutableClassDefBy(SETTINGS_STATUS).methods.single { it.name == name }.instructionList().first() as NarrowLiteralInstruction).narrowLiteral)
+        }
+    }
+
+    @Test
+    fun `redesigned header menus include the local action before native finalization`() {
+        for (build in Fixtures.declaredBuilds()) {
+            val context = PatchContexts.of(ExtensionDex.classes() + FixtureDex.classes(build, owners).values)
+            postJsonPresencePatch.execute(context)
+            val plan = context.resolveRootPostMutes()
+            val before = ControlFlow.of(plan.header.method)
+            muteRootPostsPatch.execute(context)
+            val menu = plan.header.method
+            val body = menu.instructionList()
+            assertEquals(1, body.count { it.methodRef()?.toString() == ROOT_MENU_HOOK })
+            assertEquals(listOf(11, 3, 2, plan.header.scratch), (body[165] as FiveRegisterInstruction)
+                .let { listOf(it.registerC, it.registerD, it.registerE, it.registerF) })
+            assertEquals(24, (body[164] as TwoRegisterInstruction).registerB)
+            assertEquals("Lcom/tumblr/components/bottomsheet/b\$b;->h()Lcom/tumblr/components/bottomsheet/b;", body[166].methodRef().toString())
+            assertEquals(listOf(165), ControlFlow.of(menu).normal.indices.filter { 166 in ControlFlow.of(menu).normal[it] })
+            assertNativePreserved(before, ControlFlow.of(menu), 164, 2)
+            val callback = context.mutableClassDefBy(ROOT_MENU_CALLBACK)
+            assertTrue(HUSH_ROOT_MENU_HOST in callback.interfaces)
+            val bridge = callback.methods.single { it.name == "hushTimelineOwner" }
+            assertEquals(HUSH_LOCAL_TIMELINE, bridge.returnType)
+            assertEquals(listOf(Opcode.IGET_OBJECT, Opcode.RETURN_OBJECT), bridge.instructionList().map { it.opcode })
+            assertEquals("$ROOT_MENU_CALLBACK->a:$LOCAL_TIMELINE", bridge.instructionList()[0].fieldRef().toString())
+        }
+    }
+
+    @Test
+    fun `owned blog native menus include the same account gated local action`() {
+        for (build in Fixtures.declaredBuilds()) {
+            val context = PatchContexts.of(ExtensionDex.classes() + FixtureDex.classes(build, owners).values)
+            postJsonPresencePatch.execute(context)
+            val plan = context.resolveRootPostMutes()
+            val before = ControlFlow.of(plan.owned.method)
+            muteRootPostsPatch.execute(context)
+            val menu = plan.owned.method
+            val body = menu.instructionList()
+            assertEquals(1, body.count { it.methodRef()?.toString() == ROOT_MENU_HOOK })
+            assertEquals(listOf(10, 2, plan.owned.scratch, 0), (body[236] as FiveRegisterInstruction)
+                .let { listOf(it.registerC, it.registerD, it.registerE, it.registerF) })
+            assertEquals("$ROOT_MENU_CALLBACK->a:$LOCAL_TIMELINE", body[233].fieldRef().toString())
+            assertEquals("Landroidx/fragment/app/Fragment;->requireContext()Landroid/content/Context;", body[234].methodRef().toString())
+            assertEquals(listOf(239, 273), body.indices.filter {
+                body[it].methodRef()?.toString() == "Lcom/tumblr/components/bottomsheet/b\$b;->h()Lcom/tumblr/components/bottomsheet/b;"
+            })
+            assertNativePreserved(before, ControlFlow.of(menu), 233, 4)
+        }
+    }
+
+    @Test
+    fun `a redesigned menu with a replaced callback refuses every menu mutation`() {
+        for (build in Fixtures.declaredBuilds()) {
+            val context = PatchContexts.of(ExtensionDex.classes() + FixtureDex.classes(build, owners).values)
+            context.mutableClassDefBy(ROOT_HEADER).methods.single { it.name == "H2" }
+                .replaceInstruction(163, "move-object/from16 v24, v23")
+            assertThrows(PatchException::class.java) { postJsonPresencePatch.execute(context); muteRootPostsPatch.execute(context) }
+            assertUnchanged(context)
+        }
+    }
+
+    @Test
+    fun `a redesigned menu with another card refuses before installing bridges`() {
+        for (build in Fixtures.declaredBuilds()) {
+            val context = PatchContexts.of(ExtensionDex.classes() + FixtureDex.classes(build, owners).values)
+            context.mutableClassDefBy(ROOT_HEADER).methods.single { it.name == "H2" }
+                .replaceInstruction(1, "move-object/from16 v3, v23")
+            assertThrows(PatchException::class.java) { postJsonPresencePatch.execute(context); muteRootPostsPatch.execute(context) }
+            assertUnchanged(context)
+        }
+    }
+
+    @Test
+    fun `a callback retaining another fragment refuses before installing menu hooks`() {
+        for (build in Fixtures.declaredBuilds()) {
+            val context = PatchContexts.of(ExtensionDex.classes() + FixtureDex.classes(build, owners).values)
+            context.mutableClassDefBy(ROOT_MENU_CALLBACK).methods.single { it.name == "<init>" }
+                .replaceInstruction(0, "iput-object p0, p0, $ROOT_MENU_CALLBACK->a:$LOCAL_TIMELINE")
+            assertThrows(PatchException::class.java) { postJsonPresencePatch.execute(context); muteRootPostsPatch.execute(context) }
+            assertUnchanged(context)
+        }
+    }
+
+    @Test
+    fun `an owned blog menu with another builder refuses before installing menu hooks`() {
+        for (build in Fixtures.declaredBuilds()) {
+            val context = PatchContexts.of(ExtensionDex.classes() + FixtureDex.classes(build, owners).values)
+            context.mutableClassDefBy(ROOT_MENU_CALLBACK).methods.single { it.name == "a" }
+                .replaceInstruction(269, "invoke-virtual { v11 }, Lcom/tumblr/components/bottomsheet/b\$b;->h()Lcom/tumblr/components/bottomsheet/b;")
+            assertThrows(PatchException::class.java) { postJsonPresencePatch.execute(context); muteRootPostsPatch.execute(context) }
+            assertUnchanged(context)
+        }
+    }
+
+    @Test
+    fun `neither owned blog finalizer may bypass the common local action site`() {
+        for (build in Fixtures.declaredBuilds()) for (finalizer in listOf(235, 269)) {
+            val context = PatchContexts.of(ExtensionDex.classes() + FixtureDex.classes(build, owners).values)
+            val menu = context.mutableClassDefBy(ROOT_MENU_CALLBACK).methods.single { it.name == "a" }
+            val body = menu.implementation!!
+            body.replaceInstruction(232, BuilderInstruction20t(Opcode.GOTO_16, body.newLabelForIndex(finalizer)))
+            assertThrows(PatchException::class.java) { postJsonPresencePatch.execute(context); muteRootPostsPatch.execute(context) }
+            assertUnchanged(context)
+        }
+    }
+
+    private fun assertNativePreserved(before: ControlFlow, after: ControlFlow, at: Int, count: Int) {
+        val kept = after.instructions.take(at) + after.instructions.drop(at + count)
+        assertEquals(before.instructions.size, kept.size)
+        before.instructions.zip(kept).forEach { (old, actual) ->
+            assertEquals(old.opcode, actual.opcode)
+            if (old is ReferenceInstruction) assertEquals(old.reference.toString(), (actual as ReferenceInstruction).reference.toString())
+            if (old is OneRegisterInstruction) assertEquals(old.registerA, (actual as OneRegisterInstruction).registerA)
+            if (old is TwoRegisterInstruction) assertEquals(old.registerB, (actual as TwoRegisterInstruction).registerB)
+            if (old is ThreeRegisterInstruction) assertEquals(old.registerC, (actual as ThreeRegisterInstruction).registerC)
+            if (old is FiveRegisterInstruction) assertEquals(listOf(old.registerCount, old.registerC, old.registerD, old.registerE, old.registerF, old.registerG),
+                (actual as FiveRegisterInstruction).let { listOf(it.registerCount, it.registerC, it.registerD, it.registerE, it.registerF, it.registerG) })
+            if (old is RegisterRangeInstruction) assertEquals(listOf(old.startRegister, old.registerCount),
+                (actual as RegisterRangeInstruction).let { listOf(it.startRegister, it.registerCount) })
+            if (old is WideLiteralInstruction) assertEquals(old.wideLiteral, (actual as WideLiteralInstruction).wideLiteral)
+        }
+        for (old in before.instructions.indices) {
+            val index = if (old < at) old else old + count
+            fun target(value: Int) = if (value <= at) value else value + count
+            assertEquals(before.normal[old].map(::target), after.normal[index])
+            assertEquals(before.exceptional[old].map(::target), after.exceptional[index])
         }
     }
 
@@ -187,6 +320,11 @@ class RootPostMutesFixtureTest {
         assertFalse(HUSH_ROOT_POST in context.mutableClassDefBy(POST).interfaces)
         assertFalse(HUSH_LOCAL_TIMELINE in context.mutableClassDefBy(LOCAL_TIMELINE).interfaces)
         assertFalse("Ltj8;" in context.mutableClassDefBy(ROOT_ACTION).interfaces)
+        assertFalse(HUSH_ROOT_MENU_HOST in context.mutableClassDefBy(ROOT_MENU_CALLBACK).interfaces)
+        assertFalse(context.mutableClassDefBy(ROOT_HEADER).methods.single { it.name == "H2" }.instructionList()
+            .any { it.methodRef()?.toString() == ROOT_MENU_HOOK })
+        assertFalse(context.mutableClassDefBy(ROOT_MENU_CALLBACK).methods.single { it.name == "a" }.instructionList()
+            .any { it.methodRef()?.toString() == ROOT_MENU_HOOK })
         assertFalse(context.mutableClassDefBy(ROOT_MENU_OWNER).methods.single { it.name == "y" }.instructionList()
             .any { it.methodRef()?.toString() == ROOT_MENU_HOOK })
         for (name in listOf("muteRootPosts", "rootPostMutes")) assertEquals(0,

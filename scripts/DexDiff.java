@@ -4045,6 +4045,18 @@ public class DexDiff {
             }
             if (!menuGood) fail(menuReason);
             found &= menuGood;
+            String menuOwner = timeline.substring(0, timeline.length() - 1) + "$a;", header = "Lcom/tumblr/ui/widget/PostCardHeader;",
+                    menuHost = root.substring(0, root.lastIndexOf('/') + 1) + "HushRootMenuHost;";
+            preserveClass(menuOwner); preserveClass(header);
+            boolean hostGood = rootMenuHost(menuOwner, menuHost, timeline, local);
+            if (!hostGood) fail("root menu owner bridge changed");
+            found &= hostGood;
+            boolean headerGood = rootHeaderMenu(header, menuHook, builder, concrete);
+            if (!headerGood) fail("root redesigned menu hook changed");
+            found &= headerGood;
+            boolean ownedGood = rootOwnedMenu(menuOwner, timeline, menuHook, builder, concrete);
+            if (!ownedGood) fail("root owned menu hook changed");
+            found &= ownedGood;
             boolean localGood = localTimeline(timeline, local, mode, list);
             if (!localGood) fail(localReason);
             found &= localGood;
@@ -4072,6 +4084,123 @@ public class DexDiff {
             if (!callbackGood) fail(callbackReason);
             found &= callbackGood;
             capability(c.callee, found);
+        }
+
+        /** The native callback exposes only the final owner assigned from its constructor argument. */
+        boolean rootMenuHost(String owner, String face, String timeline, String local) {
+            String field = owner + "->a:" + timeline, key = owner + "->hushTimelineOwner()" + local;
+            ClassDef nativeOwner = clean.classes.get(owner), bridge = patched.classes.get(face);
+            Method declaration = patched.methods.get(face + "->hushTimelineOwner()" + local), getter = actual(key);
+            List<Instruction> b = getter == null ? List.of() : instructions(getter);
+            List<Method> declarations = new ArrayList<>();
+            if (bridge != null) bridge.getMethods().forEach(declarations::add);
+            boolean good = nativeOwner != null && nativeOwner.getInterfaces().contains("Ljgd;") && implementsBridge(owner, face)
+                    && hasField(clean, owner, "a", timeline, AccessFlags.FINAL.getValue(), AccessFlags.STATIC.getValue())
+                    && hasField(patched, owner, "a", timeline, AccessFlags.FINAL.getValue(), AccessFlags.STATIC.getValue())
+                    && bridge != null && declarations.size() == 1 && declaration != null && AccessFlags.PUBLIC.isSet(declaration.getAccessFlags())
+                    && AccessFlags.ABSTRACT.isSet(declaration.getAccessFlags()) && !clean.methods.containsKey(key)
+                    && getter != null && !isStatic(getter) && AccessFlags.PUBLIC.isSet(getter.getAccessFlags())
+                    && getter.getImplementation().getRegisterCount() == 2 && b.size() == 2
+                    && fieldIs(b.get(0), Opcode.IGET_OBJECT, field, 0, 1) && movesTo(b.get(1), 0, Opcode.RETURN_OBJECT);
+            for (FeatureIndex index : List.of(clean, patched)) {
+                Method ctor = index.methods.get(owner + "-><init>(" + timeline + ")V");
+                List<Instruction> cb = ctor == null ? List.of() : instructions(ctor);
+                good &= ctor != null && !isStatic(ctor) && ctor.getImplementation().getRegisterCount() == 2 && cb.size() == 3
+                        && fieldIs(cb.get(0), Opcode.IPUT_OBJECT, field, 1, 0)
+                        && callIs(cb.get(1), Opcode.INVOKE_DIRECT, "Ljava/lang/Object;-><init>()V", 0) && cb.get(2).getOpcode() == Opcode.RETURN_VOID;
+                ClassDef host = index.classes.get(owner); int writes = 0;
+                if (host != null) for (Method m : host.getMethods()) for (Instruction i : instructions(m))
+                    if (i.getOpcode() == Opcode.IPUT_OBJECT && field.equals(String.valueOf(reference(i)))) {
+                        writes++; good &= ctor != null && m.toString().equals(ctor.toString());
+                    }
+                good &= writes == 1;
+            }
+            return good;
+        }
+
+        /** Both redesigned post menu inputs and the scratch callback retain their native provenance. */
+        boolean rootHeaderMenu(String owner, String hook, String builder, String concrete) {
+            String reason = "root redesigned menu hook changed";
+            Method old = nativeMethod(owner + "->H2(Lgbl;Lzve;Ly6k;Ljgd;Lim2;Lzbk;Lpxa;Lju1;)V", reason);
+            if (old == null) return false;
+            List<Instruction> before = instructions(old);
+            boolean good = !isStatic(old) && AccessFlags.PRIVATE.isSet(old.getAccessFlags()) && old.getImplementation().getRegisterCount() == 29 && before.size() == 210
+                    && moveIs(get(before, 0), Opcode.MOVE_OBJECT_FROM16, 1, 20) && moveIs(get(before, 1), Opcode.MOVE_OBJECT_FROM16, 3, 22)
+                    && callIs(get(before, 5), Opcode.INVOKE_VIRTUAL, "Landroid/view/View;->getContext()Landroid/content/Context;", 1)
+                    && movesTo(get(before, 6), 5, Opcode.MOVE_RESULT_OBJECT) && fieldIsType(get(before, 24), Opcode.NEW_INSTANCE, concrete, 11, -1)
+                    && callIs(get(before, 25), Opcode.INVOKE_DIRECT, concrete + "-><init>(Landroid/content/Context;)V", 11, 5)
+                    && moveIs(get(before, 159), Opcode.MOVE_OBJECT, 2, 5)
+                    && callIs(get(before, 164), Opcode.INVOKE_VIRTUAL, builder + "->h()Lcom/tumblr/components/bottomsheet/b;", 11)
+                    && !writtenBetween(before, 2, 164, 3) && !writtenBetween(before, 7, 159, 5) && !writtenBetween(before, 25, 164, 11)
+                    && !writtenBetween(before, 160, 164, 2) && !overwritten(old, 24, 164)
+                    && rootMenuSources(old, 164, 0, 1, 5, 6, 24, 25, 159);
+            Method m = actual(old); List<Integer> sites = calls(m, hook, 1);
+            if (m == null || sites.size() != 1) return false;
+            int at = sites.get(0); List<Instruction> body = instructions(m);
+            int scratch = firstRegister(get(body, at - 1));
+            boolean injected = moveIs(get(body, at - 1), Opcode.MOVE_OBJECT_FROM16, scratch, 24)
+                    && scratch >= 0 && scratch < 16 && !List.of(2, 3, 11).contains(scratch) && deadAt(old, 164, scratch)
+                    && callIs(get(body, at), Opcode.INVOKE_STATIC, hook, 11, 3, 2, scratch);
+            if (injected) {
+                remove(m, at - 1, at + 1); anchor(m, at - 1, 164, reason);
+                labelAnchors.add(new Anchor(m, at - 1, 164, reason)); vouch(m, at, List.of(11, 3, 2, scratch));
+            }
+            return good && injected;
+        }
+
+        /** One hook precedes the two native owned-blog finalizers, using that same callback's context. */
+        boolean rootOwnedMenu(String owner, String timeline, String hook, String builder, String concrete) {
+            String reason = "root owned menu hook changed", field = owner + "->a:" + timeline;
+            Method old = nativeMethod(owner + "->a(Lzve;ZZZLjava/lang/String;)V", reason);
+            if (old == null) return false;
+            List<Instruction> before = instructions(old);
+            boolean good = !isStatic(old) && AccessFlags.PUBLIC.isSet(old.getAccessFlags()) && old.getImplementation().getRegisterCount() == 26 && before.size() == 321
+                    && moveIs(get(before, 0), Opcode.MOVE_OBJECT_FROM16, 0, 20) && moveIs(get(before, 1), Opcode.MOVE_OBJECT_FROM16, 2, 21)
+                    && fieldIsType(get(before, 68), Opcode.NEW_INSTANCE, concrete, 10, -1) && fieldIs(get(before, 69), Opcode.IGET_OBJECT, field, 12, 0)
+                    && callIs(get(before, 70), Opcode.INVOKE_VIRTUAL, "Landroidx/fragment/app/Fragment;->requireContext()Landroid/content/Context;", 12)
+                    && movesTo(get(before, 71), 12, Opcode.MOVE_RESULT_OBJECT)
+                    && callIs(get(before, 72), Opcode.INVOKE_DIRECT, concrete + "-><init>(Landroid/content/Context;)V", 10, 12)
+                    && movesTo(get(before, 233), 1, Opcode.CONST_STRING) && reference(before.get(233)) instanceof StringReference title && title.getString().equals("timelineBottomSheet")
+                    && movesTo(get(before, 234), 8, Opcode.IF_EQZ) && target(old, 234) == 269
+                    && callIs(get(before, 235), Opcode.INVOKE_VIRTUAL, builder + "->h()Lcom/tumblr/components/bottomsheet/b;", 10)
+                    && callIs(get(before, 269), Opcode.INVOKE_VIRTUAL, builder + "->h()Lcom/tumblr/components/bottomsheet/b;", 10)
+                    && !writtenBetween(before, 2, 233, 0) && !writtenBetween(before, 2, 233, 2) && !writtenBetween(before, 69, 233, 10)
+                    && rootMenuSources(old, 233, 0, 1, 68, 69, 70, 71, 72) && rootMenuSources(old, 235, 233) && rootMenuSources(old, 269, 233);
+            Method m = actual(old); List<Integer> sites = calls(m, hook, 1);
+            if (m == null || sites.size() != 1) return false;
+            int at = sites.get(0); List<Instruction> body = instructions(m);
+            int scratch = firstRegister(get(body, at - 3));
+            boolean injected = scratch >= 0 && scratch < 16 && !List.of(0, 2, 10).contains(scratch) && deadAt(old, 233, scratch)
+                    && fieldIs(get(body, at - 3), Opcode.IGET_OBJECT, field, scratch, 0)
+                    && callIs(get(body, at - 2), Opcode.INVOKE_VIRTUAL, "Landroidx/fragment/app/Fragment;->requireContext()Landroid/content/Context;", scratch)
+                    && movesTo(get(body, at - 1), scratch, Opcode.MOVE_RESULT_OBJECT) && callIs(get(body, at), Opcode.INVOKE_STATIC, hook, 10, 2, scratch, 0);
+            List<Integer> finalizers = callSites(body, builder + "->h()Lcom/tumblr/components/bottomsheet/b;");
+            injected &= finalizers.size() == 2;
+            for (int finalizer : finalizers) injected &= rootMenuSources(m, finalizer, at - 3);
+            if (injected) {
+                remove(m, at - 3, at + 1); anchor(m, at - 3, 233, reason);
+                labelAnchors.add(new Anchor(m, at - 3, 233, reason)); vouch(m, at, List.of(10, 2, scratch, 0));
+            }
+            return good && injected;
+        }
+
+        static boolean moveIs(Instruction i, Opcode op, int to, int from) {
+            return i instanceof TwoRegisterInstruction t && i.getOpcode() == op && t.getRegisterA() == to && t.getRegisterB() == from;
+        }
+
+        /** No branch or handler may reach a menu hook before any required native input is established. */
+        boolean rootMenuSources(Method method, int at, int... sources) {
+            FeatureFlow graph = flow(method);
+            for (int source : sources) {
+                BitSet seen = new BitSet(); Deque<Integer> work = new ArrayDeque<>(List.of(0));
+                while (!work.isEmpty()) {
+                    int next = work.poll();
+                    if (next == source || seen.get(next)) continue;
+                    if (next == at) return false;
+                    seen.set(next); work.addAll(graph.normal.get(next)); work.addAll(graph.handlers.get(next));
+                }
+            }
+            return true;
         }
 
         boolean rootCardStub(String menu, String face, String timelineObject, String payload) {

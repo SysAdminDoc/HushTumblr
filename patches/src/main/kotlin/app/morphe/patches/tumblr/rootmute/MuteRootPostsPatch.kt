@@ -35,7 +35,9 @@ import app.morphe.patches.tumblr.misc.settings.settingsPatch
 import app.morphe.patches.tumblr.timeline.POST
 import app.morphe.patches.tumblr.timeline.postJsonPresencePatch
 import app.morphe.patches.tumblr.timeline.timelineListHookPatch
+import app.morphe.util.ControlFlow
 import app.morphe.util.addInstructionsAtControlFlowLabel
+import app.morphe.util.writesRegister
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
@@ -51,10 +53,13 @@ import com.android.tools.smali.dexlib2.immutable.ImmutableField
 private const val PATCH = "Mute posts locally"
 internal const val ROOT_POST_WRAPPER = "Lv81;"
 internal const val ROOT_MENU_OWNER = "Lu9g;"
+internal const val ROOT_HEADER = "Lcom/tumblr/ui/widget/PostCardHeader;"
+internal const val ROOT_MENU_CALLBACK = "Lcom/tumblr/ui/fragment/TimelineFragment\$a;"
 internal const val ROOT_MENU = "$EXTENSION_PACKAGE/rootmute/RootPostMenu;"
 internal const val ROOT_ACTION = "$EXTENSION_PACKAGE/rootmute/RootPostMuteAction;"
 internal const val HUSH_ROOT_POST = "$EXTENSION_PACKAGE/timeline/HushRootPost;"
 internal const val HUSH_LOCAL_TIMELINE = "$EXTENSION_PACKAGE/rootmute/HushLocalTimeline;"
+internal const val HUSH_ROOT_MENU_HOST = "$EXTENSION_PACKAGE/rootmute/HushRootMenuHost;"
 internal const val LOCAL_TIMELINE = "Lcom/tumblr/ui/fragment/TimelineFragment;"
 internal const val ROOT_TIMELINE_OBJECT = "Lcom/tumblr/rumblr/model/TimelineObject;"
 internal const val ROOT_MENU_HOOK = "$ROOT_MENU->add(Ljava/lang/Object;Ljava/lang/Object;Landroid/content/Context;Ljava/lang/Object;)V"
@@ -92,8 +97,9 @@ val muteRootPostsPatch = bytecodePatch(
 }
 
 internal data class RootBridgePlan(val owner: String, val getters: List<String>)
+internal data class RootMenuPlan(val method: MutableMethod, val at: Int, val scratch: Int)
 internal data class RootPostMutesPlan(val menu: MutableMethod, val at: Int, val scratch: List<Int>, val roots: List<RootBridgePlan>,
-    val wrapperConstructor: MutableMethod, val captureScratch: Int)
+    val wrapperConstructor: MutableMethod, val captureScratch: Int, val header: RootMenuPlan, val owned: RootMenuPlan)
 
 internal fun BytecodePatchContext.resolveRootPostMutes(): RootPostMutesPlan {
     requireExtensionHook(PATCH, ROOT_MENU_HOOK)
@@ -175,8 +181,11 @@ internal fun BytecodePatchContext.resolveRootPostMutes(): RootPostMutesPlan {
     menu.requireParameterIntact(PATCH, 0, listOf(at))
     menu.requireParameterIntact(PATCH, 7, listOf(at))
     val scratch = menu.freeLocalsAt(PATCH, at, 2, reads = listOf(10, 11, 17, 24))
+    requireRootMenuHost()
+    val header = rootHeaderMenu()
+    val owned = rootOwnedMenu()
     return RootPostMutesPlan(menu, at, scratch, listOf(RootBridgePlan(POST, native), RootBridgePlan(ROOT_POST_WRAPPER, emptyList())),
-        wrapperConstructor, captureScratch)
+        wrapperConstructor, captureScratch, header, owned)
 }
 
 internal fun BytecodePatchContext.applyRootPostMutes(plan: RootPostMutesPlan) {
@@ -221,6 +230,12 @@ internal fun BytecodePatchContext.applyRootPostMutes(plan: RootPostMutesPlan) {
         addInstructions(0, "sget-object v0, $MODE->FROM_CACHE:$MODE\n" +
             "invoke-virtual { p0, v0, p1 }, $LOCAL_TIMELINE->i6($MODE$LIST)V\nreturn-void")
     })
+    val menuHost = mutableClassDefBy(ROOT_MENU_CALLBACK)
+    menuHost.interfaces.add(HUSH_ROOT_MENU_HOST)
+    menuHost.methods.add(ImmutableMethod(ROOT_MENU_CALLBACK, "hushTimelineOwner", emptyList(), HUSH_LOCAL_TIMELINE,
+        AccessFlags.PUBLIC.value, null, null, MutableMethodImplementation(2)).toMutable().apply {
+        addInstructions(0, "iget-object v0, p0, $ROOT_MENU_CALLBACK->a:$LOCAL_TIMELINE\nreturn-object v0")
+    })
     mutableClassDefBy(ROOT_ACTION).interfaces.add(CALLBACK)
     writeStub(ROOT_MENU, "addNative", 3, "check-cast p0, $MENU_BUILDER\n" +
         "invoke-virtual { p0, p1, p2 }, $MENU_BUILDER->c($STRING$CALLBACK)$MENU_BUILDER\nreturn-void")
@@ -254,6 +269,111 @@ internal fun BytecodePatchContext.applyRootPostMutes(plan: RootPostMutesPlan) {
         move-object/from16 v${plan.scratch[1]}, p0
         invoke-static { v11, v${plan.scratch[0]}, v10, v${plan.scratch[1]} }, $ROOT_MENU_HOOK
     """)
+    plan.header.method.addInstructionsAtControlFlowLabel(plan.header.at, """
+        move-object/from16 v${plan.header.scratch}, p4
+        invoke-static { v11, v3, v2, v${plan.header.scratch} }, $ROOT_MENU_HOOK
+    """)
+    plan.owned.method.addInstructionsAtControlFlowLabel(plan.owned.at, """
+        iget-object v${plan.owned.scratch}, v0, $ROOT_MENU_CALLBACK->a:$LOCAL_TIMELINE
+        invoke-virtual { v${plan.owned.scratch} }, Landroidx/fragment/app/Fragment;->requireContext()Landroid/content/Context;
+        move-result-object v${plan.owned.scratch}
+        invoke-static { v10, v2, v${plan.owned.scratch}, v0 }, $ROOT_MENU_HOOK
+    """)
+}
+
+private fun BytecodePatchContext.requireRootMenuHost() {
+    val face = classDefByOrNull(HUSH_ROOT_MENU_HOST)
+    requireShape(PATCH, face != null && AccessFlags.INTERFACE.isSet(face.accessFlags) && face.methods.count() == 1
+        && face.methods.single().let { it.name == "hushTimelineOwner" && it.hasShape(emptyList(), HUSH_LOCAL_TIMELINE)
+            && AccessFlags.PUBLIC.isSet(it.accessFlags) && AccessFlags.ABSTRACT.isSet(it.accessFlags) },
+        "the native menu owner interface changed")
+    val owner = classDefByOrNull(ROOT_MENU_CALLBACK)
+    requireShape(PATCH, owner != null && "Ljgd;" in owner.interfaces && HUSH_ROOT_MENU_HOST !in owner.interfaces
+        && owner.methods.none { it.name == "hushTimelineOwner" }
+        && owner.fields.any { it.name == "a" && it.type == LOCAL_TIMELINE && AccessFlags.FINAL.isSet(it.accessFlags)
+            && !AccessFlags.STATIC.isSet(it.accessFlags) }, "the native menu callback no longer retains its immutable timeline owner")
+    val constructor = rootMethod(ROOT_MENU_CALLBACK, "<init>", listOf(LOCAL_TIMELINE), "V")
+    val body = constructor.instructionList()
+    requireShape(PATCH, constructor.implementation!!.registerCount == 2 && body.size == 3
+        && body[0].opcode == Opcode.IPUT_OBJECT && body[0].fieldRef().toString() == "$ROOT_MENU_CALLBACK->a:$LOCAL_TIMELINE"
+        && (body[0] as TwoRegisterInstruction).let { it.registerA == 1 && it.registerB == 0 }
+        && body[1].opcode == Opcode.INVOKE_DIRECT && body[1].methodRef().toString() == "Ljava/lang/Object;-><init>()V"
+        && (body[1] as FiveRegisterInstruction).let { it.registerCount == 1 && it.registerC == 0 }
+        && body[2].opcode == Opcode.RETURN_VOID
+        && owner!!.methods.flatMap { method -> method.instructionList().map { method to it } }.filter {
+            it.second.opcode == Opcode.IPUT_OBJECT && it.second.fieldRef().toString() == "$ROOT_MENU_CALLBACK->a:$LOCAL_TIMELINE"
+        }.let { it.size == 1 && it.single().first.toString() == constructor.toString() },
+        "the native menu callback owner constructor changed")
+}
+
+private fun BytecodePatchContext.rootHeaderMenu(): RootMenuPlan {
+    val method = rootMethod(ROOT_HEADER, "H2", listOf("Lgbl;", "Lzve;", "Ly6k;", "Ljgd;", "Lim2;", "Lzbk;", "Lpxa;", "Lju1;"), "V")
+    val body = method.instructionList()
+    requireShape(PATCH, !method.isStatic() && AccessFlags.PRIVATE.isSet(method.accessFlags)
+        && method.implementation!!.registerCount == 29 && body.size == 210
+        && body[0].opcode == Opcode.MOVE_OBJECT_FROM16 && (body[0] as TwoRegisterInstruction).let { it.registerA == 1 && it.registerB == 20 }
+        && body[1].opcode == Opcode.MOVE_OBJECT_FROM16 && (body[1] as TwoRegisterInstruction).let { it.registerA == 3 && it.registerB == 22 }
+        && body[5].opcode == Opcode.INVOKE_VIRTUAL && body[5].methodRef().toString() == "Landroid/view/View;->getContext()Landroid/content/Context;"
+        && (body[5] as FiveRegisterInstruction).let { it.registerCount == 1 && it.registerC == 1 }
+        && body[6].opcode == Opcode.MOVE_RESULT_OBJECT && (body[6] as OneRegisterInstruction).registerA == 5
+        && body[24].opcode == Opcode.NEW_INSTANCE && (body[24] as OneRegisterInstruction).registerA == 11
+        && (body[24] as ReferenceInstruction).reference.toString() == MENU_CONCRETE
+        && body[25].opcode == Opcode.INVOKE_DIRECT && body[25].methodRef().toString() == "$MENU_CONCRETE-><init>(Landroid/content/Context;)V"
+        && (body[25] as FiveRegisterInstruction).let { it.registerCount == 2 && it.registerC == 11 && it.registerD == 5 }
+        && body[159].opcode == Opcode.MOVE_OBJECT && (body[159] as TwoRegisterInstruction).let { it.registerA == 2 && it.registerB == 5 }
+        && body[164].opcode == Opcode.INVOKE_VIRTUAL && body[164].methodRef().toString() == "$MENU_BUILDER->h()Lcom/tumblr/components/bottomsheet/b;"
+        && (body[164] as FiveRegisterInstruction).let { it.registerCount == 1 && it.registerC == 11 }
+        && (2 until 164).none { writesRegister(body[it], 3) }
+        && (7 until 159).none { writesRegister(body[it], 5) }
+        && (25 until 164).none { writesRegister(body[it], 11) }
+        && (160 until 164).none { writesRegister(body[it], 2) }, "the redesigned post menu no longer finalizes its current card builder and context")
+    method.requireParameterIntact(PATCH, 3, listOf(164))
+    requireMenuSources(method, 164, listOf(0, 1, 5, 6, 24, 25, 159))
+    return RootMenuPlan(method, 164, method.freeLocalsAt(PATCH, 164, 1, reads = listOf(2, 3, 11, 24)).single())
+}
+
+private fun BytecodePatchContext.rootOwnedMenu(): RootMenuPlan {
+    val method = rootMethod(ROOT_MENU_CALLBACK, "a", listOf("Lzve;", "Z", "Z", "Z", STRING), "V")
+    val body = method.instructionList()
+    val flow = ControlFlow.of(method)
+    requireShape(PATCH, !method.isStatic() && AccessFlags.PUBLIC.isSet(method.accessFlags)
+        && method.implementation!!.registerCount == 26 && body.size == 321
+        && body[0].opcode == Opcode.MOVE_OBJECT_FROM16 && (body[0] as TwoRegisterInstruction).let { it.registerA == 0 && it.registerB == 20 }
+        && body[1].opcode == Opcode.MOVE_OBJECT_FROM16 && (body[1] as TwoRegisterInstruction).let { it.registerA == 2 && it.registerB == 21 }
+        && body[68].opcode == Opcode.NEW_INSTANCE && (body[68] as OneRegisterInstruction).registerA == 10
+        && (body[68] as ReferenceInstruction).reference.toString() == MENU_CONCRETE
+        && body[69].opcode == Opcode.IGET_OBJECT && body[69].fieldRef().toString() == "$ROOT_MENU_CALLBACK->a:$LOCAL_TIMELINE"
+        && (body[69] as TwoRegisterInstruction).let { it.registerA == 12 && it.registerB == 0 }
+        && body[70].opcode == Opcode.INVOKE_VIRTUAL && body[70].methodRef().toString() == "Landroidx/fragment/app/Fragment;->requireContext()Landroid/content/Context;"
+        && (body[70] as FiveRegisterInstruction).let { it.registerCount == 1 && it.registerC == 12 }
+        && body[71].opcode == Opcode.MOVE_RESULT_OBJECT && (body[71] as OneRegisterInstruction).registerA == 12
+        && body[72].opcode == Opcode.INVOKE_DIRECT && body[72].methodRef().toString() == "$MENU_CONCRETE-><init>(Landroid/content/Context;)V"
+        && (body[72] as FiveRegisterInstruction).let { it.registerCount == 2 && it.registerC == 10 && it.registerD == 12 }
+        && body[233].stringRef() == "timelineBottomSheet" && (body[233] as OneRegisterInstruction).registerA == 1
+        && body[234].opcode == Opcode.IF_EQZ && (body[234] as OneRegisterInstruction).registerA == 8 && 269 in flow.normal[234]
+        && listOf(235, 269).all { body[it].opcode == Opcode.INVOKE_VIRTUAL
+            && body[it].methodRef().toString() == "$MENU_BUILDER->h()Lcom/tumblr/components/bottomsheet/b;"
+            && (body[it] as FiveRegisterInstruction).let { call -> call.registerCount == 1 && call.registerC == 10 } }
+        && (2 until 233).none { writesRegister(body[it], 0) || writesRegister(body[it], 2) }
+        && (69 until 233).none { writesRegister(body[it], 10) }, "the owned blog post menu no longer finalizes its current card and owner builder")
+    requireMenuSources(method, 233, listOf(0, 1, 68, 69, 70, 71, 72))
+    for (finalizer in listOf(235, 269)) requireMenuSources(method, finalizer, listOf(233))
+    return RootMenuPlan(method, 233, method.freeLocalsAt(PATCH, 233, 1, reads = listOf(0, 2, 10)).single())
+}
+
+/** Every normal or exceptional path to the hook must first establish these native inputs. */
+private fun requireMenuSources(method: MutableMethod, at: Int, sources: List<Int>) {
+    val flow = ControlFlow.of(method)
+    for (source in sources) {
+        val pending = ArrayDeque<Int>().apply { add(0) }
+        val seen = mutableSetOf<Int>()
+        while (pending.isNotEmpty()) {
+            val next = pending.removeFirst()
+            if (next == source || !seen.add(next)) continue
+            requireShape(PATCH, next != at, "the post menu can bypass a native card, context or builder source")
+            pending.addAll(flow.normal[next] + flow.exceptional[next])
+        }
+    }
 }
 
 private fun BytecodePatchContext.rootGetter(key: String, result: String): String {

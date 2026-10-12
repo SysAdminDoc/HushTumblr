@@ -28,6 +28,8 @@ public final class RootMuteDexFixture {
     private static final String ROOT = BASE + "rootmute/RootPostMutes;", MENU = BASE + "rootmute/RootPostMenu;";
     private static final String ACTION = BASE + "rootmute/RootPostMuteAction;", ROOT_BRIDGE = BASE + "timeline/HushRootPost;";
     private static final String LOCAL_BRIDGE = BASE + "rootmute/HushLocalTimeline;", LOCAL = "Lcom/tumblr/ui/fragment/TimelineFragment;";
+    private static final String MENU_HOST = BASE + "rootmute/HushRootMenuHost;", MENU_OWNER = "Lcom/tumblr/ui/fragment/TimelineFragment$a;";
+    private static final String HEADER = "Lcom/tumblr/ui/widget/PostCardHeader;";
     private static final String ITEM = "Lcom/tumblr/rumblr/model/TimelineObject;", MODE = "Lrbk;", CALLBACK = "Ltj8;", UNIT = "Lb6l;";
     private static final String BUILDER = "Lcom/tumblr/components/bottomsheet/b$b;", CONCRETE = "Lcom/tumblr/components/bottomsheet/b$a;";
     private static final String SHEET = "Lcom/tumblr/components/bottomsheet/b;", UTILS = "Lapp/hushtumblr/extension/shared/Utils;";
@@ -183,6 +185,7 @@ public final class RootMuteDexFixture {
     }
 
     private static void menus(Map<String, ClassDef> classes, boolean patched, String fault) {
+        additionalMenus(classes, patched, fault);
         List<Instruction> menu = AccountDexFixture.nops(228);
         menu.set(0, move(0, 17)); menu.set(12, call(Opcode.INVOKE_VIRTUAL, "Landroidx/fragment/app/Fragment;", "requireContext", CONTEXT, new int[]{0}));
         menu.set(13, result(10)); menu.set(14, type(Opcode.NEW_INSTANCE, 11, CONCRETE));
@@ -227,6 +230,62 @@ public final class RootMuteDexFixture {
                                 code(call(Opcode.INVOKE_STATIC, UTILS, "settingsReady", "Z", new int[]{}), end())),
                         method(ACTION, "invoke", OBJECT, PUBLIC, 2, code(call(Opcode.INVOKE_VIRTUAL, ACTION, "run", "V", new int[]{1}),
                                 call(Opcode.INVOKE_STATIC, MENU, "unit", OBJECT, new int[]{}), result(0), returns(0))))));
+    }
+
+    private static void additionalMenus(Map<String, ClassDef> classes, boolean patched, String fault) {
+        List<Instruction> header = AccountDexFixture.nops(210);
+        header.set(0, move(1, 20)); header.set(1, move(3, 22));
+        header.set(5, call(Opcode.INVOKE_VIRTUAL, "Landroid/view/View;", "getContext", CONTEXT, new int[]{1}));
+        header.set(6, result(5)); header.set(24, type(Opcode.NEW_INSTANCE, 11, CONCRETE));
+        header.set(25, call(Opcode.INVOKE_DIRECT, CONCRETE, "<init>", "V", new int[]{11, 5}, CONTEXT));
+        header.set(158, integer(8, 0)); header.set(159, new ImmutableInstruction12x(Opcode.MOVE_OBJECT, 2, 5));
+        header.set(160, new ImmutableInstruction21t(Opcode.IF_EQZ, 8, 1)); header.set(161, move(5, 21));
+        header.set(164, call(Opcode.INVOKE_VIRTUAL, BUILDER, "h", SHEET, new int[]{11}));
+        header.set(165, result(14)); header.set(209, end());
+        boolean headerHook = patched && !fault.equals("missing-redesigned-hook");
+        if (headerHook) header.addAll(fault.equals("late-redesigned-hook") ? 166 : 164, code(
+                move(0, fault.equals("wrong-redesigned-callback") ? 23 : 24),
+                call(Opcode.INVOKE_STATIC, MENU, "add", "V", new int[]{11, fault.equals("wrong-redesigned-card") ? 1 : 3,
+                        fault.equals("wrong-redesigned-context") ? 5 : 2, 0}, OBJECT, OBJECT, CONTEXT, OBJECT)));
+        header.set(160, new ImmutableInstruction21t(Opcode.IF_EQZ, 8,
+                offset(header, 160, headerHook && fault.equals("bypassed-redesigned-hook") ? 166 : 164)));
+        classes.put(HEADER, clazz(HEADER, "Landroid/view/View;", List.of(), List.of(), List.of(method(HEADER, "H2", "V",
+                AccessFlags.PRIVATE.getValue(), 29, header, "Lgbl;", "Lzve;", "Ly6k;", "Ljgd;", "Lim2;", "Lzbk;", "Lpxa;", "Lju1;"))));
+
+        List<Instruction> owned = AccountDexFixture.nops(321);
+        owned.set(0, move(0, 20)); owned.set(1, move(2, 21));
+        owned.set(68, type(Opcode.NEW_INSTANCE, 10, CONCRETE)); owned.set(69, field(Opcode.IGET_OBJECT, 12, 0, MENU_OWNER, "a", LOCAL));
+        owned.set(70, call(Opcode.INVOKE_VIRTUAL, "Landroidx/fragment/app/Fragment;", "requireContext", CONTEXT, new int[]{12}));
+        owned.set(71, result(12)); owned.set(72, call(Opcode.INVOKE_DIRECT, CONCRETE, "<init>", "V", new int[]{10, 12}, CONTEXT));
+        owned.set(73, integer(8, 0)); owned.set(74, integer(3, 0)); owned.set(75, integer(1, 0));
+        owned.set(153, integer(6, 0)); owned.set(154, new ImmutableInstruction21t(Opcode.IF_EQZ, 6, 1));
+        owned.set(232, new ImmutableInstruction20t(Opcode.GOTO_16, 1)); owned.set(233, string(1, "timelineBottomSheet"));
+        owned.set(234, new ImmutableInstruction21t(Opcode.IF_EQZ, 8, 1));
+        owned.set(235, call(Opcode.INVOKE_VIRTUAL, BUILDER, "h", SHEET, new int[]{10})); owned.set(236, result(13)); owned.set(268, end());
+        owned.set(269, call(Opcode.INVOKE_VIRTUAL, BUILDER, "h", SHEET, new int[]{10})); owned.set(270, result(2)); owned.set(275, end()); owned.set(320, end());
+        boolean ownedHook = patched && !fault.equals("missing-owned-hook");
+        if (ownedHook) owned.addAll(fault.equals("late-owned-hook") ? 235 : 233, code(
+                field(Opcode.IGET_OBJECT, 1, 0, MENU_OWNER, fault.equals("wrong-owned-owner") ? "other" : "a", LOCAL),
+                call(Opcode.INVOKE_VIRTUAL, "Landroidx/fragment/app/Fragment;", "requireContext", CONTEXT, new int[]{1}), result(1),
+                call(Opcode.INVOKE_STATIC, MENU, "add", "V", new int[]{10, fault.equals("wrong-owned-card") ? 3 : 2,
+                        fault.equals("wrong-owned-context") ? 12 : 1, fault.equals("wrong-owned-callback") ? 3 : 0}, OBJECT, OBJECT, CONTEXT, OBJECT)));
+        int shifted = ownedHook ? 4 : 0, branch = fault.equals("late-owned-hook") ? 234 : 234 + shifted;
+        owned.set(branch, new ImmutableInstruction21t(Opcode.IF_EQZ, 8, offset(owned, branch, 269 + shifted)));
+        owned.set(154, new ImmutableInstruction21t(Opcode.IF_EQZ, 6, offset(owned, 154, 276 + shifted)));
+        int commonTarget = ownedHook && fault.equals("bypassed-owned-hook") ? 233 + shifted : 233;
+        if (patched && fault.equals("first-owned-finalizer-bypass")) commonTarget = 235 + shifted;
+        if (patched && fault.equals("second-owned-finalizer-bypass")) commonTarget = 269 + shifted;
+        owned.set(232, new ImmutableInstruction20t(Opcode.GOTO_16, offset(owned, 232, commonTarget)));
+        List<Method> methods = new ArrayList<>(List.of(method(MENU_OWNER, "<init>", "V", AccessFlags.CONSTRUCTOR.getValue(), 2,
+                code(field(Opcode.IPUT_OBJECT, patched && fault.equals("wrong-menu-owner-constructor") ? 0 : 1, 0, MENU_OWNER, "a", LOCAL),
+                        call(Opcode.INVOKE_DIRECT, OBJECT, "<init>", "V", new int[]{0}), end()), LOCAL),
+                method(MENU_OWNER, "a", "V", PUBLIC, 26, owned, "Lzve;", "Z", "Z", "Z", STRING)));
+        if (patched && !fault.equals("missing-menu-owner-getter")) methods.add(method(MENU_OWNER, "hushTimelineOwner", LOCAL_BRIDGE, PUBLIC, 2,
+                code(field(Opcode.IGET_OBJECT, 0, 1, MENU_OWNER, fault.equals("wrong-menu-owner-field") ? "other" : "a", LOCAL), returns(0))));
+        classes.put(MENU_OWNER, clazz(MENU_OWNER, patched && !fault.equals("missing-menu-owner-interface") ? List.of("Ljgd;", MENU_HOST) : List.of("Ljgd;"),
+                List.of(member(MENU_OWNER, "a", LOCAL, patched && fault.equals("mutable-menu-owner") ? 0 : AccessFlags.FINAL.getValue()),
+                        member(MENU_OWNER, "other", LOCAL, AccessFlags.FINAL.getValue())), methods));
+        if (patched) classes.put(MENU_HOST, contract(MENU_HOST, new String[]{"hushTimelineOwner"}, new String[]{LOCAL_BRIDGE}, new String[][]{new String[0]}));
     }
 
     private static Map<String, ClassDef> classes(boolean patched, String fault) {
@@ -288,6 +347,13 @@ public final class RootMuteDexFixture {
         fixture(root, "missing-callback-interface", "root callback bridge changed");
         fixture(root, "wrong-callback-unit", "root callback bridge changed");
         fixture(root, "wrong-card-payload", "root callback bridge changed");
+        for (String fault : List.of("missing-menu-owner-interface", "missing-menu-owner-getter", "wrong-menu-owner-field", "mutable-menu-owner", "wrong-menu-owner-constructor"))
+            fixture(root, fault, "root menu owner bridge changed");
+        for (String fault : List.of("missing-redesigned-hook", "wrong-redesigned-card", "wrong-redesigned-context", "wrong-redesigned-callback", "late-redesigned-hook", "bypassed-redesigned-hook"))
+            fixture(root, fault, "root redesigned menu hook changed");
+        for (String fault : List.of("missing-owned-hook", "wrong-owned-card", "wrong-owned-context", "wrong-owned-callback", "wrong-owned-owner", "late-owned-hook", "bypassed-owned-hook",
+                "first-owned-finalizer-bypass", "second-owned-finalizer-bypass"))
+            fixture(root, fault, "root owned menu hook changed");
         Files.write(root.resolve("root-mute-cases.txt"), CASES, StandardCharsets.UTF_8);
     }
 }

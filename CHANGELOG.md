@@ -13,7 +13,7 @@
 * **Tumblr:** Settings backups check the complete file size before replacing an export. Oversized saved lists stay available to edit, and a refused Save keeps the draft. Diagnostic choices close with their settings page.
 * **Tumblr:** Word matching recognizes canonically equivalent text and checks whole words by Unicode code point. Added field choices and allowed words. Those exceptions affect the word filter only. Hide reblogs can optionally keep reblogs with their own tags.
 * **Tumblr:** Added activity filters for likes, reblogs, replies, follows, mentions, asks and boops. They start off and leave push notification choices alone. Post timestamps and visible image descriptions also start off.
-* **Tumblr:** Added a private mute list for originals and their reblogs, with Undo and account-specific management. Optional mature-content reveal keeps Tumblr's age and account restrictions.
+* **Tumblr:** Added private post muting to the native post menus, including the redesigned menu and your own blog's menu. It removes originals and their reblogs, with Undo and account-specific management. Optional mature-content reveal keeps Tumblr's age and account restrictions.
 * **Tumblr:** Optional mutual markers use a follower cache for your primary blog. Unknown relationships and sideblogs keep their existing headers.
 * **Tumblr:** The installation steps point to the published 0.0.1 bundle. New source features wait for the next release.
 * **Tooling:** Updated the checked Gradle wrapper to 9.8.1. Build and release entry points reject an affected, incomplete or mismatched wrapper before it runs.
