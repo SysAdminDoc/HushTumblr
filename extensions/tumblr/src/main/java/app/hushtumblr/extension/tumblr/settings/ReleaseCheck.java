@@ -226,6 +226,9 @@ public final class ReleaseCheck {
 
     private static final AtomicBoolean running = new AtomicBoolean();
 
+    /** A failed write belongs to this process's latest try, never to the durable release cache. */
+    private static volatile boolean saveFailed;
+
     @Nullable
     private static volatile WeakReference<Listener> listener;
 
@@ -313,8 +316,10 @@ public final class ReleaseCheck {
 
     /** One try, on a worker: its time is kept first, then what it found. */
     static void run(long now) {
+        saveFailed = false;
         // A time that can't be kept would let every start try again, so there's no request then.
         if (!Stored.CHECKED_AT.save(now)) {
+            saveFailed = true;
             Logger.printInfo(() -> "Release check: the time of this try couldn't be kept, so it didn't ask");
             return;
         }
@@ -335,6 +340,7 @@ public final class ReleaseCheck {
         try {
             Setting.saveAll(found);
         } catch (IOException | RuntimeException failure) {
+            saveFailed = true;
             Logger.printException(() -> "Release check: what it found couldn't be kept", failure);
         }
     }
@@ -644,6 +650,7 @@ public final class ReleaseCheck {
     /** What the Check now row says: a try on its way, the last one's answer, or what a tap does. */
     static String checkNowSummary() {
         if (running.get()) return checkingSummary();
+        if (saveFailed) return L10n.t("Couldn't save the release check. Try again.");
         Result result = null;
         for (Result each : Result.values()) {
             if (each.name().equals(Stored.RESULT.get())) result = each;

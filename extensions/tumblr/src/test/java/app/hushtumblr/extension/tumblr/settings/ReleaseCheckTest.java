@@ -45,6 +45,7 @@ import org.robolectric.shadows.ShadowToast;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.HttpCookie;
@@ -101,14 +102,16 @@ public class ReleaseCheckTest {
             + "both Android lints.\n\nRequires Morphe Manager 1.32.0 or newer.\n";
 
     private static final String NEWER = "HushTumblr " + L10n.isolate("0.2.0") + " is out. Update it in Morphe Manager.";
+    private static final String SAVE_ERROR = "Couldn't save the release check. Try again.";
 
     private final ReleaseCheck.Transport original = ReleaseCheck.transport;
     private final long originalDeadline = ReleaseCheck.deadlineMs;
     private FakeGitHub github;
 
     @Before
-    public void start() {
+    public void start() throws ReflectiveOperationException {
         ReleaseCheckForTests.forget();
+        clearSaveFailure();
         github = new FakeGitHub();
         ReleaseCheck.transport = github;
         ReleaseCheck.versionForTests = "0.1.8";
@@ -116,8 +119,9 @@ public class ReleaseCheckTest {
     }
 
     @After
-    public void restore() {
+    public void restore() throws ReflectiveOperationException {
         ReleaseCheckForTests.forget();
+        clearSaveFailure();
         ReleaseCheck.transport = original;
         ReleaseCheck.deadlineMs = originalDeadline;
         ReleaseCheck.versionForTests = null;
@@ -295,21 +299,70 @@ public class ReleaseCheckTest {
         assertEquals(NEWER, ReleaseCheck.statusLine());
     }
 
-    /** An answer the store can't keep leaves the last one on the card, as a restart would find it. */
+    @Test
+    public void aFailedAttemptTimeShowsSaveErrorInsteadOfThePreviousSuccess() {
+        github.then(Reply.release("v0.1.8", NOTES_0_1_8));
+        ReleaseCheck.run(NOW);
+        assertEquals("You have the newest HushTumblr release.", ReleaseCheck.checkNowSummary());
+
+        for (FailingStore.Fault fault : FailingStore.Fault.values()) {
+            if (fault == FailingStore.Fault.NONE) continue;
+            try (FailingStore ignored = FailingStore.install(fault)) {
+                ReleaseCheck.run(NOW + DAY);
+            }
+            assertEquals(fault.name(), L10n.t(SAVE_ERROR), ReleaseCheck.checkNowSummary());
+            assertEquals("a failed timestamp must prevent the request", 1, github.asked.size());
+            assertEquals(NOW, (long) Stored.CHECKED_AT.persistedValue());
+            assertEquals("OK", Stored.RESULT.persistedValue());
+            assertEquals("0.1.8", Stored.NEWEST.persistedValue());
+            assertEquals("14.38.0,14.25.0", Stored.TARGETS.persistedValue());
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "de")
+    public void aFirstCheckWithUnsavableTimeShowsALocalizedSaveError() {
+        try (FailingStore ignored = FailingStore.install(FailingStore.Fault.LOST)) {
+            ReleaseCheck.run(NOW);
+        }
+        assertTrue(github.asked.isEmpty());
+        assertEquals(0L, (long) Stored.CHECKED_AT.persistedValue());
+        assertEquals("", Stored.RESULT.persistedValue());
+        String localized = L10n.t(SAVE_ERROR);
+        assertFalse("the save-error feedback has no German translation", SAVE_ERROR.equals(localized));
+        assertEquals(localized, ReleaseCheck.checkNowSummary());
+    }
+
+    /** An answer the store can't keep leaves the durable release on the card, with an honest row. */
     @Test
     public void anAnswerTheStoreCanNotKeepLeavesTheLastOneOnTheCard() {
         github.then(Reply.release("v0.2.0", NOTES_0_1_8));
         ReleaseCheck.run(NOW);
         assertEquals(NEWER, ReleaseCheck.statusLine());
 
-        github.then(Reply.release("v0.3.0", "Supports Tumblr 14.40.0."));
-        // The first editor keeps the time of the try; the second is the answer's one commit.
-        try (FailingStore ignored = FailingStore.install(FailingStore.Fault.NONE, FailingStore.Fault.COMMIT_THROWS)) {
-            ReleaseCheck.run(NOW + DAY);
+        long at = NOW;
+        for (FailingStore.Fault fault : FailingStore.Fault.values()) {
+            if (fault == FailingStore.Fault.NONE) continue;
+            github.then(Reply.release("v0.3.0", "Supports Tumblr 14.40.0."));
+            // The first editor keeps the time of the try; the second is the answer's one commit.
+            at += DAY;
+            try (FailingStore ignored = FailingStore.install(FailingStore.Fault.NONE, fault)) {
+                ReleaseCheck.run(at);
+            }
+            assertEquals(fault.name(), L10n.t(SAVE_ERROR), ReleaseCheck.checkNowSummary());
+            assertEquals(at, (long) Stored.CHECKED_AT.persistedValue());
+            assertEquals("OK", Stored.RESULT.persistedValue());
+            assertEquals("0.2.0", Stored.NEWEST.persistedValue());
+            assertEquals("the bundle and its target set roll back together", "14.38.0,14.25.0",
+                    Stored.TARGETS.persistedValue());
+            assertEquals(NEWER, ReleaseCheck.statusLine());
         }
-        assertEquals(NOW + DAY, (long) Stored.CHECKED_AT.get());
-        assertEquals("0.2.0", Stored.NEWEST.get());
-        assertEquals("the bundle and its target set roll back together", "14.38.0,14.25.0", Stored.TARGETS.get());
+
+        // Saving a network failure replaces the transient save error as well as saving a success.
+        github.then(Reply.failing(new UnknownHostException("offline")));
+        ReleaseCheck.run(at + DAY);
+        assertEquals("OFFLINE", Stored.RESULT.persistedValue());
+        assertEquals("Couldn't reach GitHub. Try again later.", ReleaseCheck.checkNowSummary());
         assertEquals(NEWER, ReleaseCheck.statusLine());
     }
 
@@ -641,7 +694,76 @@ public class ReleaseCheckTest {
         }
     }
 
+    @Test
+    public void aFullWorkerQueueKeepsTheSaveErrorUntilARetryActuallyRuns() throws Exception {
+        try (FailingStore ignored = FailingStore.install(FailingStore.Fault.LOST)) {
+            ReleaseCheck.run(NOW);
+        }
+        assertEquals(L10n.t(SAVE_ERROR), ReleaseCheck.checkNowSummary());
+        try (WorkerPoolForTests full = WorkerPoolForTests.fill()) {
+            assertFalse(ReleaseCheck.checkNow());
+            assertFalse(ReleaseCheck.isRunning());
+            assertEquals(L10n.t(SAVE_ERROR), ReleaseCheck.checkNowSummary());
+        }
+        ReleaseCheckForTests.settle();
+        assertTrue(github.asked.isEmpty());
+        github.then(Reply.release("v0.2.0", null));
+        assertTrue(ReleaseCheck.checkNow());
+        ReleaseCheckForTests.settle();
+        assertEquals(NEWER, ReleaseCheck.checkNowSummary());
+    }
+
     // ---- The screen ----------------------------------------------------------------------------
+
+    @Test
+    public void checkNowShowsSaveErrorsAcrossReopeningAndRecoversOnRetry() {
+        github.then(Reply.release("v0.1.8", NOTES_0_1_8));
+        ReleaseCheck.run(NOW);
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            Preference checkNow = open(controller).findPreference(HushTumblrPreferenceFragment.CHECK_NOW);
+            assertEquals("You have the newest HushTumblr release.", String.valueOf(checkNow.getSummary()));
+            try (FailingStore ignored = FailingStore.install(FailingStore.Fault.LOST)) {
+                checkNow.getOnPreferenceClickListener().onPreferenceClick(checkNow);
+                ReleaseCheckForTests.settle();
+            }
+            assertEquals(L10n.t(SAVE_ERROR), String.valueOf(checkNow.getSummary()));
+            assertEquals("the failed timestamp must prevent another request", 1, github.asked.size());
+        }
+
+        github.then(Reply.release("v0.2.0", null));
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            Preference checkNow = open(controller).findPreference(HushTumblrPreferenceFragment.CHECK_NOW);
+            assertEquals(L10n.t(SAVE_ERROR), String.valueOf(checkNow.getSummary()));
+            try (FailingStore ignored = FailingStore.install(FailingStore.Fault.NONE, FailingStore.Fault.LOST)) {
+                checkNow.getOnPreferenceClickListener().onPreferenceClick(checkNow);
+                ReleaseCheckForTests.settle();
+            }
+            assertEquals(L10n.t(SAVE_ERROR), String.valueOf(checkNow.getSummary()));
+            assertEquals("OK", Stored.RESULT.persistedValue());
+            assertEquals("0.1.8", Stored.NEWEST.persistedValue());
+
+            CountDownLatch hold = new CountDownLatch(1);
+            github.onRequest = () -> {
+                try {
+                    assertTrue(hold.await(10, TimeUnit.SECONDS));
+                } catch (InterruptedException interrupted) {
+                    throw new AssertionError(interrupted);
+                }
+            };
+            github.then(Reply.release("v0.2.0", null));
+            try {
+                checkNow.getOnPreferenceClickListener().onPreferenceClick(checkNow);
+                assertEquals("Checking GitHub now.", String.valueOf(checkNow.getSummary()));
+            } finally {
+                hold.countDown();
+            }
+            ReleaseCheckForTests.settle();
+            assertEquals(NEWER, String.valueOf(checkNow.getSummary()));
+            assertEquals("0.2.0", Stored.NEWEST.persistedValue());
+        }
+        assertFalse(Settings.CHECK_FOR_RELEASES.savedValue());
+        assertEquals(3, github.asked.size());
+    }
 
     @Test
     public void everyBuildHasTheSwitchAndCheckNowAboveThePauseRow() {
@@ -960,6 +1082,12 @@ public class ReleaseCheckTest {
     }
 
     // ---- Helpers -------------------------------------------------------------------------------
+
+    private static void clearSaveFailure() throws ReflectiveOperationException {
+        Field failed = ReleaseCheck.class.getDeclaredField("saveFailed");
+        failed.setAccessible(true);
+        failed.setBoolean(null, false);
+    }
 
     private static java.net.URL url(String text) {
         try {
