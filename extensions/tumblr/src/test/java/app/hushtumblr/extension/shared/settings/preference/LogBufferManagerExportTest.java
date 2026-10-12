@@ -71,6 +71,26 @@ public class LogBufferManagerExportTest {
                 preference.fullReportSummary());
     }
 
+    /**
+     * Before Android 10 the Downloads collection can't be written without the storage permission,
+     * and MediaStore.Downloads doesn't exist, so the report goes to the host's own Download folder
+     * on shared storage. The row names that folder, and the path handed back is where it went.
+     */
+    @Test @Config(sdk = {26, 28}) public void beforeAndroid10TheReportGoesToTheHostsOwnDownloadFolder() throws Exception {
+        Context context = RuntimeEnvironment.getApplication();
+        String folder = "Android/data/" + context.getPackageName() + "/files/" + Environment.DIRECTORY_DOWNLOADS + "/Morphe";
+        ExportDiagnosticReportPreference preference = new ExportDiagnosticReportPreference(context);
+        assertEquals("Save the full report in " + app.hushtumblr.extension.shared.L10n.isolate(folder) + ".",
+                preference.fullReportSummary());
+
+        String report = "MORPHE DIAGNOSTIC REPORT\nschema: 1\n";
+        String saved = LogBufferManager.writeToFile(context, report);
+        assertTrue(saved, saved.startsWith(folder + "/morphe-diagnostics-") && saved.endsWith(".txt"));
+        java.io.File written = new java.io.File(new java.io.File(
+                context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "Morphe"), saved.substring(folder.length() + 1));
+        assertEquals(report, new String(java.nio.file.Files.readAllBytes(written.toPath()), StandardCharsets.UTF_8));
+    }
+
     @Test @Config(sdk = {29, 30}) public void theSavedLocationUsesTheProvidersFolderAndName() throws Exception {
         Context context = RuntimeEnvironment.getApplication();
         Downloads downloads = Robolectric.setupContentProvider(Downloads.class, MediaStore.AUTHORITY);

@@ -73,12 +73,12 @@ public class ExportDiagnosticReportPreference extends Preference {
     public CharSequence destinationSummary() {
         return L10n.f(getContext(), "Copy a quick report or save the full one to %1$s. Links, IDs, cookies "
                 + "and sign-in tokens are left out. Check it for other private text before you share it.",
-                L10n.isolate(LogBufferManager.fileExportDirectory()));
+                L10n.isolate(LogBufferManager.fileExportDirectory(getContext())));
     }
 
     /** The full-file choice's description for a bundle that draws its own rows. */
     public CharSequence fullReportSummary() {
-        return L10n.f(getContext(), "Save the full report in %1$s.", L10n.isolate(LogBufferManager.fileExportDirectory()));
+        return L10n.f(getContext(), "Save the full report in %1$s.", L10n.isolate(LogBufferManager.fileExportDirectory(getContext())));
     }
 
     /** The two choices, quick copy first, full file second. */

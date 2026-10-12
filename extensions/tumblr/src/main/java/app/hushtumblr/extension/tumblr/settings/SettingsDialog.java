@@ -128,8 +128,9 @@ public final class SettingsDialog extends DialogFragment {
             window.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(ScreenColors.DEFAULT.background));
             window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
             // With three-button navigation Android lays a grey scrim under the buttons; the
-            // screen is black edge to edge, so the scrim only shows as a grey band.
-            window.setNavigationBarContrastEnforced(false);
+            // screen is black edge to edge, so the scrim only shows as a grey band. The scrim and
+            // the call to turn it off both came with Android 10.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.setNavigationBarContrastEnforced(false);
             window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         }
         return dialog;
@@ -188,7 +189,7 @@ public final class SettingsDialog extends DialogFragment {
         title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24);
         title.setPaddingRelative(dp(8), 0, 0, 0);
-        title.setAccessibilityHeading(true);
+        HushTumblrPreferenceFragment.markHeading(title);
         bar.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         root.addView(bar);
 
@@ -400,7 +401,7 @@ public final class SettingsDialog extends DialogFragment {
         TextView title = new TextView(getContext());
         title.setId(android.R.id.title);
         title.setText(L10n.t(getContext(), "HushTumblr settings couldn't open"));
-        title.setAccessibilityHeading(true);
+        HushTumblrPreferenceFragment.markHeading(title);
         message.addView(title);
         TextView summary = new TextView(getContext());
         summary.setId(android.R.id.summary);

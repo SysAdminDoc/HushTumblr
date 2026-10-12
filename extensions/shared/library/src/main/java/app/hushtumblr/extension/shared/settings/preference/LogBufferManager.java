@@ -241,20 +241,27 @@ public final class LogBufferManager {
         }
     }
 
-    /** The writer's folder in the shared Downloads collection. */
-    public static String fileExportDirectory() {
-        return Environment.DIRECTORY_DOWNLOADS + "/Morphe";
+    /**
+     * The writer's folder, as a file manager shows it. On Android 10 and newer that's Download/Morphe
+     * in the shared Downloads collection. Before Android 10 that collection can only be written with
+     * the storage permission, which the host may not hold, so the report goes to the host's own
+     * Download folder on shared storage, which needs none and which a file manager can open.
+     */
+    public static String fileExportDirectory(Context context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) return Environment.DIRECTORY_DOWNLOADS + "/Morphe";
+        return "Android/data/" + context.getPackageName() + "/files/" + Environment.DIRECTORY_DOWNLOADS + "/Morphe";
     }
 
     static String writeToFile(Context context, String exportText) throws Exception {
         if (context == null) throw new IOException("Application context unavailable");
         String fileName = "morphe-diagnostics-" + fileTimestamp() + "-"
                 + Long.toHexString(System.nanoTime()) + ".txt";
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return writeToOwnFolder(context, fileName, exportText);
         ContentResolver resolver = context.getContentResolver();
         ContentValues values = new ContentValues();
         values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
         values.put(MediaStore.MediaColumns.MIME_TYPE, "text/plain");
-        values.put(MediaStore.MediaColumns.RELATIVE_PATH, fileExportDirectory());
+        values.put(MediaStore.MediaColumns.RELATIVE_PATH, fileExportDirectory(context));
         values.put(MediaStore.MediaColumns.IS_PENDING, 1);
         Uri pendingUri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
         if (pendingUri == null) throw new IOException("Could not create report file");
@@ -273,6 +280,25 @@ public final class LogBufferManager {
             deleteIncomplete(resolver, pendingUri, error);
             throw error;
         }
+    }
+
+    /**
+     * Before Android 10: the report as a file in the host's own Download folder on shared storage,
+     * named as {@link #fileExportDirectory} shows it. A write that fails leaves no partial file.
+     */
+    private static String writeToOwnFolder(Context context, String fileName, String exportText) throws IOException {
+        File downloads = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+        if (downloads == null) throw new IOException("Shared storage is unavailable");
+        File folder = new File(downloads, "Morphe");
+        if (!folder.isDirectory() && !folder.mkdirs()) throw new IOException("Could not create report folder");
+        File file = new File(folder, fileName);
+        try {
+            writeText(new FileOutputStream(file), exportText);
+        } catch (IOException | RuntimeException error) {
+            if (file.exists() && !file.delete()) error.addSuppressed(new IOException("Could not remove incomplete report"));
+            throw error;
+        }
+        return fileExportDirectory(context) + "/" + fileName;
     }
 
     private static String providerLocation(ContentResolver resolver, Uri uri) throws IOException {

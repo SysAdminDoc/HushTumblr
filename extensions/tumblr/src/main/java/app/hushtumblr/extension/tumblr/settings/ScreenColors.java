@@ -30,6 +30,7 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.InsetDrawable;
 import android.graphics.drawable.RippleDrawable;
+import android.os.Build;
 import android.preference.Preference;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceGroup;
@@ -504,7 +505,12 @@ final class ScreenColors {
         paintCursorAndHandles(field);
     }
 
+    /**
+     * Gives a field's cursor and selection handles the accent. Android 10 brought the calls that set
+     * them, so before it they keep the framework's teal: a look, nothing a reader loses.
+     */
     private void paintCursorAndHandles(EditText field) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return;
         Drawable cursor = field.getTextCursorDrawable();
         if (cursor != null) {
             cursor = cursor.mutate();

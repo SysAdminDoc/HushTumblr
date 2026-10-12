@@ -169,7 +169,8 @@ public class Utils {
 
     /**
      * The host's version code, or -1 when the package manager can't say. Tumblr ships several
-     * builds under one version name, and the code is what tells them apart in a report.
+     * builds under one version name, and the code is what tells them apart in a report. Before
+     * Android 9 there's no long code to ask for, and the int field holds the whole code.
      */
     @SuppressWarnings("deprecation")
     public static long getAppVersionCode() {
@@ -177,7 +178,7 @@ public class Utils {
         if (code < 0) {
             try {
                 PackageInfo info = getPackageInfo();
-                code = info.getLongVersionCode();
+                code = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P ? info.getLongVersionCode() : info.versionCode;
                 versionCode = code;
             } catch (Exception ex) {
                 Logger.printException(() -> "Failed to get package info", ex);

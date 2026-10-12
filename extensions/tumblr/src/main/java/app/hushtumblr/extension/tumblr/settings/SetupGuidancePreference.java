@@ -212,7 +212,7 @@ public final class SetupGuidancePreference extends DialogPreference {
             TextView heading = paragraph(text);
             heading.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
             heading.setTextColor(ScreenColors.DEFAULT.heading);
-            heading.setAccessibilityHeading(true);
+            HushTumblrPreferenceFragment.markHeading(heading);
             heading.setPaddingRelative(0, dp(12), 0, dp(4));
         }
 

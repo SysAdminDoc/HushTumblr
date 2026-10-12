@@ -28,6 +28,7 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceCategory;
@@ -1068,7 +1069,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         @Override
         protected void onBindView(View view) {
             super.onBindView(view);
-            view.setAccessibilityHeading(true);
+            markHeading(view);
             showAllText(view);
             ScreenColors.heading(view);
         }
@@ -1179,6 +1180,15 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             ScreenColors.row(view, this);
             view.setAccessibilityDelegate(new RowSemantics(this, Button.class));
         }
+    }
+
+    /**
+     * Tells a screen reader [view] is a heading, so it can jump between them. Android 8 has no
+     * heading flag to set, so there the title is read as ordinary text; calling for the flag
+     * anyway would end the screen with NoSuchMethodError.
+     */
+    static void markHeading(View view) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) view.setAccessibilityHeading(true);
     }
 
     /**

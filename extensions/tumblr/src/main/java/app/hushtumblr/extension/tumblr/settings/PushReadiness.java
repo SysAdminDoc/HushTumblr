@@ -52,7 +52,9 @@ final class PushReadiness implements LogBufferManager.ReportSection {
         }
         lines.add("notification_permission: " + permission);
         String notifications = "unknown";
-        String delegate = "unknown";
+        // Notification delegates came with Android 10. Asking for one before that throws
+        // NoSuchMethodError, which the RuntimeException catch below would not hold.
+        String delegate = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ? "unknown" : "not available before Android 10";
         NotificationManager manager = context.getSystemService(NotificationManager.class);
         if (manager != null) {
             try {
@@ -60,12 +62,14 @@ final class PushReadiness implements LogBufferManager.ReportSection {
             } catch (RuntimeException unavailable) {
                 // Keep unknown separate from an actual denial.
             }
-            try {
-                String name = manager.getNotificationDelegate();
-                delegate = name == null ? "none (delegation is optional)"
-                        : "com.google.android.gms".equals(name) ? name : "other package (redacted)";
-            } catch (RuntimeException unavailable) {
-                // Do not include exception messages, which can contain private context.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                try {
+                    String name = manager.getNotificationDelegate();
+                    delegate = name == null ? "none (delegation is optional)"
+                            : "com.google.android.gms".equals(name) ? name : "other package (redacted)";
+                } catch (RuntimeException unavailable) {
+                    // Do not include exception messages, which can contain private context.
+                }
             }
         }
         lines.add("notifications: " + notifications);
