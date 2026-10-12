@@ -24,7 +24,7 @@ import app.morphe.patches.tumblr.timeline.timelineListHookPatch
 @Suppress("unused")
 val hideAdsPatch = bytecodePatch(
     name = "Hide ads",
-    description = "Takes ads and paid Blaze posts out of your dashboard and other feeds, and stops Tumblr asking" +
+    description = "Takes ad cards and sponsored posts out of your dashboard and other feeds, and stops Tumblr asking" +
         " its ad networks for more. On by default. Turn it off in Tumblr settings > HushTumblr > Feed.",
     default = true,
 ) {
