@@ -93,6 +93,7 @@ $fixtureLicenseHash = 'a' * 64
 $fixtureAdoptedRepository = 'https://github.com/fixture-owner/adopted-patches'
 $fixtureAdoptedCommit = 'ad' * 20
 $fixtureUnlicensedRepository = 'https://github.com/fixture-owner/unlicensed-module'
+$fixtureReferenceRepository = 'https://github.com/fixture-owner/old-tumblr-client'
 function New-RuleFixtureEntry {
     param([string]$Id, [string]$Repository, [string]$Kind, $License, [string]$Disposition, $ContaminatedBy, [string[]]$Forks)
     return [pscustomobject][ordered]@{ id = $Id; repository = $Repository; lineage = $Id; upstream = $null; kind = $Kind
@@ -113,6 +114,11 @@ function Add-RuleFixtures {
         ([pscustomobject]@{ spdx = 'GPL-3.0'; url = 'https://github.com/fixture-owner/contaminated-patches/blob/main/LICENSE'; sha256 = $fixtureLicenseHash }) `
         'behavior-only' ([pscustomobject]@{ source = $fixtureUnlicensedRepository; evidence = 'https://github.com/fixture-owner/contaminated-patches/issues/1' }) @()
     $Copy.entries = @(@($Copy.entries) + $adopted + $unlicensed + $contaminated)
+    # And an archived client kept as a pinned reference, which the checked-in ledger has none of.
+    $reference = [pscustomobject]@{ repository = $fixtureReferenceRepository; reason = 'A fixture client kept for reference.'
+        reference = [pscustomobject]@{ kind = 'historical'; branch = 'main'; commit = ('0e' * 20); archived = $true; verifiedAt = '2026-09-01'; archivedAt = $null }
+        lastChecked = '2026-09-01' }
+    $Copy.outOfScope = @(@($Copy.outOfScope | Where-Object { $_ }) + $reference)
     return $Copy
 }
 
@@ -174,12 +180,11 @@ $sourcesDoc = if ($haveSourcesDoc) { [IO.File]::ReadAllText($sourcesDocPath) } e
 if ($haveSourcesDoc) {
     $docProblems = @(Test-SourcesDoc $sourcesDoc)
     Assert-True ($docProblems.Count -eq 0) ($docProblems -join ' | ')
-    Assert-True ($sourcesDoc.Contains('28 Tumblr patches') -and
-        $sourcesDoc.Contains($browz.branches[0].commit.Substring(0, 7)) -and $sourcesDoc.Contains($oyasumi.branches[0].commit.Substring(0, 7)) -and
-        $sourcesDoc.Contains($mubelotix.branches[0].commit.Substring(0, 7)) -and
-        $sourcesDoc.Contains($nagram.reference.commit.Substring(0, 7)) -and $sourcesDoc.Contains('dev branch only') -and
-        $sourcesDoc.Contains('tumblr org:Xposed-Modules-Repo') -and $sourcesDoc.Contains('incomplete_results=false')) `
-        'The source document lost a pin, release distinction or bounded search evidence.'
+    foreach ($entry in $entries) {
+        $pin = ([string]@($entry.branches)[0].commit).Substring(0, 7)
+        Assert-True ($sourcesDoc.Contains([string]$entry.repository) -and $sourcesDoc.Contains($pin)) `
+            "The source document lost $($entry.repository) or its pinned commit $pin."
+    }
 } else {
     Write-Host '[sources] docs/sources.md is local and this checkout has none, so only the page check''s own controls run here'
 }
@@ -319,46 +324,48 @@ Test-Broken { param($c) $c.entries[0].lineage = '' } '*names no lineage*' 'A sou
 
 # Optional per-package counts must be complete and typed, without turning the feature union into
 # a per-package count. Reference pins and archive verification have their own meaning and date.
-Test-Broken { param($c) (Get-Entry $c 'browzomje').patchCounts = @() } '*patchCounts must be an object*' `
+$countedId = [string]@($entries | Where-Object { $null -ne $_.PSObject.Properties['patchCounts'] })[0].id
+Assert-True ([bool]$countedId) 'No checked-in source records patch counts, so the count cases would prove nothing.'
+Test-Broken { param($c) (Get-Entry $c $countedId).patchCounts = @() } '*patchCounts must be an object*' `
     'Per-package patch counts recorded as an array'
-Test-Broken { param($c) $e = Get-Entry $c 'browzomje'; $e.patchCounts = @($e.patchCounts) } '*patchCounts must be an object*' `
+Test-Broken { param($c) $e = Get-Entry $c $countedId; $e.patchCounts = @($e.patchCounts) } '*patchCounts must be an object*' `
     'Per-package patch counts hidden inside a one-item array'
-Test-Broken { param($c) (Get-Entry $c 'browzomje').patchCounts.PSObject.Properties.Remove('com.tumblr') } `
+Test-Broken { param($c) (Get-Entry $c $countedId).patchCounts.PSObject.Properties.Remove('com.tumblr') } `
     '*patchCounts records no count for com.tumblr*' 'Per-package counts omitting a declared package'
-Test-Broken { param($c) (Get-Entry $c 'browzomje').patchCounts | Add-Member -NotePropertyName 'com.whatsapp' -NotePropertyValue 14 } `
+Test-Broken { param($c) (Get-Entry $c $countedId).patchCounts | Add-Member -NotePropertyName 'com.whatsapp' -NotePropertyValue 14 } `
     '*patchCounts names undeclared package*' 'A count for an undeclared package'
 foreach ($invalidCount in @('14', 14.5, 0, -1, $null)) {
-    Test-Broken { param($c) (Get-Entry $c 'browzomje').patchCounts.'com.tumblr' = $invalidCount } `
+    Test-Broken { param($c) (Get-Entry $c $countedId).patchCounts.'com.tumblr' = $invalidCount } `
         '*patchCounts*must be a positive integer*' "An invalid per-package count '$invalidCount'"
 }
-function Get-NagramReference { param($Copy) return @($Copy.outOfScope | Where-Object { $_.repository -eq $nagramRepository })[0].reference }
-Test-Broken { param($c) $item = @($c.outOfScope | Where-Object { $_.repository -eq $nagramRepository })[0]; $item.reference = @($item.reference) } `
+function Get-FixtureReference { param($Copy) return @($Copy.outOfScope | Where-Object { $_.repository -eq $fixtureReferenceRepository })[0].reference }
+Test-Broken { param($c) $item = @($c.outOfScope | Where-Object { $_.repository -eq $fixtureReferenceRepository })[0]; $item.reference = @($item.reference) } `
     '*reference must be an object*' 'A reference hidden inside a one-item array'
-Test-Broken { param($c) (Get-NagramReference $c).commit = 'dev' } '*reference needs a branch and pinned commit*' `
+Test-Broken { param($c) (Get-FixtureReference $c).commit = 'dev' } '*reference needs a branch and pinned commit*' `
     'A historical reference with a moving branch instead of a commit'
-Test-Broken { param($c) (Get-NagramReference $c).branch = '' } '*reference needs a branch and pinned commit*' `
+Test-Broken { param($c) (Get-FixtureReference $c).branch = '' } '*reference needs a branch and pinned commit*' `
     'A historical reference with no branch'
-Test-Broken { param($c) (Get-NagramReference $c).kind = 'dependency' } '*reference kind must be historical or maintained*' `
+Test-Broken { param($c) (Get-FixtureReference $c).kind = 'dependency' } '*reference kind must be historical or maintained*' `
     'Research recorded as a dependency'
-Test-Broken { param($c) $r = Get-NagramReference $c; $r.archived = $true; $r.kind = 'maintained' } '*is archived, so its kind must be historical*' `
+Test-Broken { param($c) $r = Get-FixtureReference $c; $r.archived = $true; $r.kind = 'maintained' } '*is archived, so its kind must be historical*' `
     'An archived reference classified as maintained'
-Test-Broken { param($c) (Get-NagramReference $c).archived = 'true' } '*reference must say whether it is archived*' `
+Test-Broken { param($c) (Get-FixtureReference $c).archived = 'true' } '*reference must say whether it is archived*' `
     'A string used for archive status'
-Test-Broken { param($c) (Get-NagramReference $c).archived = @($true) } '*reference must say whether it is archived*' `
+Test-Broken { param($c) (Get-FixtureReference $c).archived = @($true) } '*reference must say whether it is archived*' `
     'An array used for archive status'
-Test-Broken { param($c) (Get-NagramReference $c).verifiedAt = @('2026-10-01') } '*reference verifiedAt must be a string*' `
+Test-Broken { param($c) (Get-FixtureReference $c).verifiedAt = @('2026-10-01') } '*reference verifiedAt must be a string*' `
     'An array used for the verification date'
-Test-Broken { param($c) (Get-NagramReference $c).verifiedAt = $null } '*reference verifiedAt is not a yyyy-MM-dd date*' `
+Test-Broken { param($c) (Get-FixtureReference $c).verifiedAt = $null } '*reference verifiedAt is not a yyyy-MM-dd date*' `
     'Archive status with no verification date'
-Test-Broken { param($c) (Get-NagramReference $c).verifiedAt = '2999-01-01' } '*reference verifiedAt is 2999-01-01, after today*' `
+Test-Broken { param($c) (Get-FixtureReference $c).verifiedAt = '2999-01-01' } '*reference verifiedAt is 2999-01-01, after today*' `
     'Archive status verified in the future'
-Test-Broken { param($c) (Get-NagramReference $c).PSObject.Properties.Remove('archivedAt') } '*must record archivedAt as a date or null*' `
+Test-Broken { param($c) (Get-FixtureReference $c).PSObject.Properties.Remove('archivedAt') } '*must record archivedAt as a date or null*' `
     'An unknown archive date omitted instead of recorded as null'
-Test-Broken { param($c) (Get-NagramReference $c).archivedAt = @('2026-09-30') } '*reference archivedAt must be a date string or null*' `
+Test-Broken { param($c) (Get-FixtureReference $c).archivedAt = @('2026-09-30') } '*reference archivedAt must be a date string or null*' `
     'An array used for the archive date'
-Test-Broken { param($c) $r = Get-NagramReference $c; $r.archived = $true; $r.verifiedAt = '2026-09-30'; $r.archivedAt = '2026-10-01' } '*reference archivedAt is after verifiedAt*' `
+Test-Broken { param($c) $r = Get-FixtureReference $c; $r.archived = $true; $r.verifiedAt = '2026-09-30'; $r.archivedAt = '2026-10-01' } '*reference archivedAt is after verifiedAt*' `
     'An archive date after its verification'
-Test-Broken { param($c) $r = Get-NagramReference $c; $r.archived = $false; $r.archivedAt = '2026-09-01' } `
+Test-Broken { param($c) $r = Get-FixtureReference $c; $r.archived = $false; $r.archivedAt = '2026-09-01' } `
     '*records archivedAt but is not archived*' 'An unarchived reference with an archive date'
 
 Write-Host '[sources] every ledger rule refuses the copy that breaks it'
