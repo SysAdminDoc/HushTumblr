@@ -14,6 +14,7 @@ import app.morphe.patches.tumblr.misc.extension.requireStatusMethod
 import app.morphe.patches.tumblr.misc.extension.tumblrExtensionPatch
 import app.morphe.patches.tumblr.misc.settings.settingsPatch
 import app.morphe.patches.tumblr.timeline.timelineListHookPatch
+import app.morphe.patches.tumblr.timeline.paidPostBridgePatch
 
 /**
  * Turns on the extension's ad rule. The timeline hook takes each ad item, and each post the server
@@ -29,13 +30,15 @@ val hideAdsPatch = bytecodePatch(
     default = true,
 ) {
     category("Ads")
-    dependsOn(settingsPatch, tumblrExtensionPatch, timelineListHookPatch, featureSwitchHookPatch)
+    dependsOn(settingsPatch, tumblrExtensionPatch, timelineListHookPatch, featureSwitchHookPatch, paidPostBridgePatch)
     compatibleWith(*AppCompatibilities.tumblr())
 
     execute {
         requireStatusMethod("hideAds")
         requireStatusMethod("timelineAds")
+        requireStatusMethod("paidPostHeader")
         enableCapability("timelineAds")
+        enableCapability("paidPostHeader")
         enableStatus("hideAds")
     }
 }

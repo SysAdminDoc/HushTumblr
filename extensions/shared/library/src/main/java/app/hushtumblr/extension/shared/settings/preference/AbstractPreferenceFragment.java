@@ -182,6 +182,19 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
      * @param valueBefore the setting's value before this change was applied.
      */
     protected boolean noteRestartPending(Setting<?> setting, Object valueBefore) {
+        boolean pending = recordRestartPending(setting, valueBefore);
+        onRestartPendingChanged();
+        return pending;
+    }
+
+    /** Records only committed bulk changes, including changes made without a live settings page. */
+    public static void recordRestartPendingChanges(Map<Setting<?>, Object> valuesBefore) {
+        for (Map.Entry<Setting<?>, Object> entry : valuesBefore.entrySet()) {
+            recordRestartPending(entry.getKey(), entry.getValue());
+        }
+    }
+
+    private static boolean recordRestartPending(Setting<?> setting, Object valueBefore) {
         if (setting == null || !setting.rebootApp) return false;
         Object running;
         synchronized (runningValues) {
@@ -191,7 +204,6 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
         boolean pending = !Objects.equals(running, setting.savedValue());
         if (pending) restartPending.add(setting.key);
         else restartPending.remove(setting.key);
-        onRestartPendingChanged();
         return pending;
     }
 

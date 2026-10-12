@@ -2520,6 +2520,7 @@ try {
     $deadSuiteCopy = Join-Path $hookRoot 'pre-push-dead-suite.ps1'
     $verifierRoutes = [ordered]@{
         'scripts/test-injected-registers.ps1' = @('BadDexFixture.java', 'DexDiff.java', 'FeatureDexFixture.java', 'SelectorDexFixture.java',
+            'AccountDexFixture.java', 'MatureDexFixture.java', 'RootMuteDexFixture.java', 'MutualDexFixture.java',
             'HostReferences.java', 'HostReferenceFixture.java', 'host-reference-contracts.txt', 'test-host-references.ps1',
             'patch-for-device.ps1', 'injected-mutation-contracts.txt',
             'injected-register-contracts.ps1', 'injected-register-removal-allowlist.txt', 'script-wiring.ps1',

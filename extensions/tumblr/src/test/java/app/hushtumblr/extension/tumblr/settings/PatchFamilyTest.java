@@ -340,8 +340,14 @@ public class PatchFamilyTest {
                 "Hide advertising ID coverage: Hide advertising ID",
                 "Fix push notifications coverage: Fix push notifications"),
                 coverageLines(running));
-        assertTrue(PatchFamily.reportLines(EnumSet.of(PatchFamily.HIDE_ADVERTISING_ID), false)
-                .stream().anyMatch(line -> line.startsWith("not in this build: ") && line.endsWith(", Fix push notifications")));
+        Set<String> absent = new HashSet<>(Arrays.asList(PatchFamily.reportLines(
+                        EnumSet.of(PatchFamily.HIDE_ADVERTISING_ID), false).stream()
+                .filter(line -> line.startsWith("not in this build: ")).findFirst().orElseThrow(AssertionError::new)
+                .substring("not in this build: ".length()).split(", ")));
+        Set<String> expectedAbsent = Arrays.stream(PatchFamily.values())
+                .filter(family -> family != PatchFamily.HIDE_ADVERTISING_ID).map(family -> family.patchName)
+                .collect(Collectors.toSet());
+        assertEquals(expectedAbsent, absent);
 
         // A simulated permanent change remains disclosed alongside its runtime switch.
         PatchFamily.staysWhilePausedForTests = Collections.singletonMap(PatchFamily.HIDE_ADVERTISING_ID,
@@ -356,6 +362,30 @@ public class PatchFamilyTest {
         assertEquals("Fix push notifications: disabled while paused (saved hushtumblr_fix_push_notifications=off)",
                 paused.get(1));
         assertEquals("Pause must keep patch-time coverage facts", coverageLines(running), coverageLines(paused));
+    }
+
+    @Test
+    public void dependentOptionsCannotReportAFilterOnWhenItsMasterIsOff() {
+        Settings.HIDE_REBLOGS.save(false);
+        Settings.KEEP_TAGGED_REBLOGS.save(true);
+        Settings.HIDE_POSTS_WITH_WORDS.save(false);
+        for (BooleanSetting scope : Arrays.asList(Settings.WORDS_CURRENT_TEXT, Settings.WORDS_REBLOG_TRAIL,
+                Settings.WORDS_TAGS, Settings.WORDS_SUMMARY)) scope.save(true);
+        Set<PatchFamily> build = EnumSet.of(PatchFamily.HIDE_REBLOGS, PatchFamily.HIDE_POSTS_WITH_WORDS);
+        List<String> off = PatchFamily.reportLines(build, false);
+        assertEquals("Hide reblogs: disabled by its switch (hushtumblr_hide_reblogs=off, hushtumblr_keep_tagged_reblogs=on)", off.get(0));
+        assertEquals("Hide posts with these words: disabled by its switch (hushtumblr_hide_posts_with_words=off, "
+                + "hushtumblr_words_current_text=on, hushtumblr_words_reblog_trail=on, hushtumblr_words_tags=on, "
+                + "hushtumblr_words_summary=on)", off.get(1));
+        Settings.HIDE_REBLOGS.save(true);
+        Settings.HIDE_POSTS_WITH_WORDS.save(true);
+        List<String> on = PatchFamily.reportLines(build, false);
+        assertTrue(on.get(0), on.get(0).startsWith("Hide reblogs: on ("));
+        assertTrue(on.get(1), on.get(1).startsWith("Hide posts with these words: on ("));
+        List<String> paused = PatchFamily.reportLines(build, true);
+        for (int i = 0; i < 2; i++) assertEquals(on.get(i).replace(": on (", ": disabled while paused (saved "), paused.get(i));
+        assertTrue(Settings.KEEP_TAGGED_REBLOGS.savedValue());
+        assertTrue(Settings.WORDS_REBLOG_TRAIL.savedValue());
     }
 
     @Test

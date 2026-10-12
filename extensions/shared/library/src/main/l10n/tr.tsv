@@ -201,7 +201,7 @@ Ad tracking	Reklam takibi
 Android sends tumblr.com links to a patched Tumblr only after you select those addresses for it. Selecting them sends their links here. Your other link settings stay as they are.	Android, tumblr.com bağlantılarını yamalı Tumblr'a ancak bu adresleri onun için seçtikten sonra gönderir. Adresleri seçersen bağlantıları buraya gelir. Diğer bağlantı ayarların aynı kalır.
 Export settings saves HushTumblr's switches. It doesn't include your Tumblr account, posts, downloaded files or Morphe Manager's signing key. Keep the settings file and a backup of Manager's signing key somewhere you can find them.	Ayarları dışa aktar, HushTumblr'ın anahtarlarını kaydeder. Tumblr hesabın, gönderilerin, indirilen dosyalar ve Morphe Manager'ın imza anahtarı dahil değildir. Ayar dosyasını ve Manager'ın imza anahtarının yedeğini bulabileceğin bir yerde sakla.
 If you joined through Google or don't know your Tumblr password, ask for a password reset on Tumblr's login screen. Enter the email already linked to that account, then use the reset link sent to your email to set a Tumblr password. It's separate from your Google password.	Google üzerinden kaydolduysanız veya Tumblr parolanızı bilmiyorsanız, Tumblr'ın giriş ekranından parola sıfırlama isteyin. Bu hesaba zaten bağlı e-posta adresini girin, ardından e-postanıza gönderilen bağlantıyla bir Tumblr parolası belirleyin. Bu parola Google parolanızdan ayrıdır.
-Lets a patched Tumblr sign up for push notifications when Google would turn it away. A change applies the next time Tumblr starts.	Google geri çevirecekken yamalı Tumblr'ın anlık bildirimlere kaydolmasını sağlar. Değişiklik, Tumblr bir sonraki açılışında geçerli olur.
+Lets a patched Tumblr sign up for push notifications when Google would turn it away.	Google geri çevirecekken yamalı Tumblr'ın anlık bildirimlere kaydolmasını sağlar.
 Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.	Tumblr ayarlarını hesap sekmenizdeki dişli simgesinden açın. HushTumblr bunların hiçbirini değiştirmez.
 Push alerts	Anlık uyarılar
 Tumblr and the ad companies inside it see an empty advertising ID with ad tracking limited, as if you deleted your ad ID in Android settings.	Tumblr ve içindeki reklam şirketleri, reklam takibi sınırlı olarak boş bir reklam kimliği görür. Reklam kimliğini Android ayarlarından silmişsin gibi olur.
@@ -250,22 +250,22 @@ Takes the Follow button out of the header of posts from blogs you don't follow y
 Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.	Panondaki ve diğer akışlardaki gönderilerin altındaki etiketleri kaldırır, kaynak bağlantısını bırakır.
 # context: the switch for Tumblr's Premium diamond and TumblrMart button on the Interface page. TumblrMart and Premium are Tumblr's names; keep them. The last two are parts named in "This build handles %1$s."
 Hide the diamond and TumblrMart	Elmas ve TumblrMart'ı gizle
-Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.	Panonun, Keşfet'in ve bildirimlerin üstündeki Premium elmasını ve TumblrMart düğmesini gizler. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Hides the Premium diamond on your dashboard, Explore and notifications when you return to them. Open screens keep their TumblrMart button until Tumblr restarts.	Panoya, Keşfet ekranına ve bildirimlere döndüğünüzde Premium elmasını gizler. Açık ekranlar Tumblr yeniden başlatılana kadar TumblrMart düğmesini korur.
 the Premium diamond	Premium elması
 TumblrMart buttons	TumblrMart düğmeleri
 # context: the footer under a post, with its like, reblog, comment, share and Save buttons and their counts. Use the words Tumblr shows in your language for notes and for each button.
 Hide note counts	Not sayılarını gizle
 Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.	Gönderilerin altındaki beğeni, RB ve yorum sayılarını kaldırır, düğmeler kalır.
 Hide the like button	Beğen düğmesini gizle
-Takes the like button out of the footer under posts, and the reactions off community posts. Restart Tumblr to see the change.	Gönderilerin altındaki beğen düğmesini ve topluluk gönderilerindeki tepkileri kaldırır. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Takes the like button out of the footer under posts, and the reactions off community posts.	Gönderilerin altındaki beğen düğmesini ve topluluk gönderilerindeki tepkileri kaldırır.
 Hide the reblog button	RB düğmesini gizle
-Takes the reblog button out of the footer under posts. Restart Tumblr to see the change.	Gönderilerin altındaki RB düğmesini kaldırır. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Takes the reblog button out of the footer under posts.	Gönderilerin altındaki RB düğmesini kaldırır.
 Hide the comment button	Yorum düğmesini gizle
-Takes the comment button out of the footer under posts. Restart Tumblr to see the change.	Gönderilerin altındaki yorum düğmesini kaldırır. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Takes the comment button out of the footer under posts.	Gönderilerin altındaki yorum düğmesini kaldırır.
 Hide the share button	Paylaş düğmesini gizle
-Takes the share button out of the footer under posts. Restart Tumblr to see the change.	Gönderilerin altındaki paylaş düğmesini kaldırır. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Takes the share button out of the footer under posts.	Gönderilerin altındaki paylaş düğmesini kaldırır.
 Hide the Save button	Kaydet düğmesini gizle
-Takes the Save button out of the footer under posts, when Tumblr shows one. Restart Tumblr to see the change.	Tumblr gösterdiğinde gönderilerin altındaki kaydet düğmesini kaldırır. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Takes the Save button out of the footer under posts, when Tumblr shows one.	Tumblr gösterdiğinde gönderilerin altındaki kaydet düğmesini kaldırır.
 # context: the bottom bar's unread badges, the small dots and numbers on the Dashboard, Communities and Notifications tabs, one switch per tab. Use Tumblr's own names for the tabs in your language.
 Hide unread dots	Okunmadı noktalarını gizle
 Hide the Dashboard count	Pano sayacını gizle
@@ -284,28 +284,27 @@ Takes posts with pictures and no video, the reblogged part included, out of your
 Hide text posts	Metin gönderilerini gizle
 Takes posts with no pictures or video, the reblogged part included, out of your dashboard and other feeds.	Yeniden bloglanan kısım dahil, resim ya da video olmayan gönderileri panondan ve diğer akışlardan kaldırır.
 Hide posts with these words	Bu kelimeleri içeren gönderileri gizle
-Takes posts out of your dashboard and other feeds when their text, tags or summary has a word from the list below.	Metninde, etiketlerinde ya da özetinde aşağıdaki listeden bir kelime olan gönderileri panondan ve diğer akışlardan kaldırır.
+Takes posts out of your feeds when a hidden word matches one of the selected fields below.	Gizlenen bir sözcük aşağıdaki seçili alanlardan biriyle eşleştiğinde gönderileri akışlarınızdan kaldırır.
 Words to hide	Gizlenecek kelimeler
 One word or phrase a line	Her satıra bir kelime ya da ifade
-Posts with any of these in their text, tags or summary are hidden. Case doesn't matter, and only whole words count.	Metninde, etiketlerinde ya da özetinde bunlardan biri olan gönderiler gizlenir. Büyük ya da küçük harf fark etmez, yalnızca tam kelimeler sayılır.
 Save	Kaydet
 The list is empty. Tap to add words or phrases.	Liste boş. Kelime ya da ifade eklemek için dokun.
 Looks for: %1$s	Aranan: %1$s
 # context: Dark background color turns the background of Tumblr's Dark Mode palette (Settings > Appearance) black, or a dark color chosen when the app was patched. Use Tumblr's own name for the Dark Mode palette in your language.
 Dark background color	Koyu arka plan rengi
-Makes the Dark Mode palette's background black, or the dark color picked when patching. Restart Tumblr to see the change.	Karanlık Mod paletinin arka planını siyah ya da yama sırasında seçilen koyu renk yapar. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.	Yeni açılan Karanlık Mod ekranlarını siyah veya yama sırasında seçilen koyu renkte gösterir. Açık ekranlar Tumblr yeniden başlatılana kadar renklerini korur.
 # context: the bottom bar's tabs. Hide the Explore tab and Hide the Notifications tab take one tab's button off the bar; Reorder the bottom bar puts the tabs in an order chosen in a list where a tap moves a tab one place up. Use Tumblr's own names for the tabs in your language.
 Hide the Explore tab	Keşfet sekmesini gizle
-Takes the Explore and search button off the bottom bar. Restart Tumblr to see the change.	Keşfet ve arama düğmesini alt çubuktan kaldırır. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Takes the Explore and search button off the bottom bar.	Keşfet ve arama düğmesini alt çubuktan kaldırır.
 Hide the Notifications tab	Bildirimler sekmesini gizle
-Takes the Notifications button off the bottom bar. Restart Tumblr to see the change.	Bildirimler düğmesini alt çubuktan kaldırır. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Takes the Notifications button off the bottom bar.	Bildirimler düğmesini alt çubuktan kaldırır.
 Reorder the bottom bar	Alt çubuğu yeniden sırala
-Puts the bottom bar's tabs in the order set below. Restart Tumblr to see the change.	Alt çubuktaki sekmeleri aşağıda seçilen sıraya koyar. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Puts the bottom bar's tabs in the order set below.	Alt çubuktaki sekmeleri aşağıda seçilen sıraya koyar.
 Tab order	Sekme sırası
 Tap a tab to move it up	Yukarı taşımak için bir sekmeye dokun
 Tumblr's order	Tumblr'ın sırası
 The bottom bar keeps Tumblr's order.	Alt çubuk Tumblr'ın sırasını korur.
-Tabs go in this order: %1$s. Restart Tumblr to see the change.	Sekmeler şu sırada olur: %1$s. Değişikliği görmek için Tumblr'ı yeniden başlat.
+Tabs go in this order: %1$s.	Sekmeler şu sırada olur: %1$s.
 Dashboard	Pano
 Explore	Keşfet
 Tumblr TV	Tumblr TV
@@ -317,3 +316,56 @@ Notes	Notlar
 # context: the import preview of a settings file. The first is what an empty Words to hide list reads as; the second names Words to hide or Tab order when the file's value for it can't be used.
 None	Yok
 %1$s: the value in that file can't be used, so it'll be left out.	%1$s: o dosyadaki değer kullanılamıyor, bu yüzden atlanacak.
+Your saved lists are too large for a settings backup. Shorten them before exporting. The existing file wasn't changed.	Kaydedilen listeler ayar yedeği için çok büyük. Dışa aktarmadan önce kısaltın. Mevcut dosya değiştirilmedi.
+This list is too large for a settings backup. Shorten it before saving. Your draft is still here.	Bu liste ayar yedeği için çok büyük. Kaydetmeden önce kısaltın. Taslağınız hâlâ burada.
+Couldn't save the words. Your earlier list is unchanged. Try again.	Kelimeler kaydedilemedi. Önceki listeniz değişmedi. Tekrar deneyin.
+Couldn't save the tab order. Your earlier order is unchanged. Try again.	Sekme sırası kaydedilemedi. Önceki sıra değişmedi. Tekrar deneyin.
+%1$s moved to position %2$d of %3$d.	%1$s, %3$d sekme içinde %2$d. sıraya taşındı.
+Filter activity notifications	Etkinlik bildirimlerini filtrele
+Hide ask notifications	Soru bildirimlerini gizle
+Hide boop notifications	Boop bildirimlerini gizle
+Hide follow notifications	Takip bildirimlerini gizle
+Hide likes	Beğenileri gizle
+Hide mention notifications	Bahsetme bildirimlerini gizle
+Hide reblog notifications	Yeniden bloglama bildirimlerini gizle
+Hide reply notifications	Yanıt bildirimlerini gizle
+Hides these from newly loaded activity pages. Push notifications keep Tumblr's settings.	Yeni yüklenen etkinlik sayfalarında bunları gizler. Anlık bildirimler Tumblr ayarlarını kullanmaya devam eder.
+Keep tagged reblogs	Etiketli yeniden bloglamaları tut
+When reblogs are hidden, keep ones with tags. Other post filters still apply.	Yeniden bloglamalar gizlenirken etiketli olanları tutar. Diğer gönderi filtreleri uygulanmaya devam eder.
+Match current post text	Geçerli gönderi metninde eşleştir
+Match reblog trail text	Yeniden bloglama zinciri metninde eşleştir
+Match current post tags	Geçerli gönderi etiketlerinde eşleştir
+Match post summaries	Gönderi özetlerinde eşleştir
+Hidden and allowed words use the same selected fields. Other post filters still apply.	Gizlenen ve izin verilen sözcükler aynı seçili alanları kullanır. Diğer gönderi filtreleri uygulanmaya devam eder.
+Allowed words	İzin verilen sözcükler
+Allowed words keep a post when the word filter would hide it. Other filters still apply.	İzin verilen sözcükler, sözcük filtresinin gizleyeceği gönderiyi tutar. Diğer filtreler uygulanmaya devam eder.
+Posts matching a hidden word in the selected fields are hidden. Case doesn't matter, and only whole words count.	Seçili alanlarda gizlenen bir sözcükle eşleşen gönderiler gizlenir. Büyük küçük harf ayrımı yapılmaz ve yalnızca tam sözcükler sayılır.
+Show post timestamps	Gönderi zamanlarını göster
+Shows Tumblr's own timestamps on newly drawn post cards.	Yeni çizilen gönderi kartlarında Tumblr'ın kendi zamanlarını gösterir.
+Restart Tumblr to apply these settings.	Bu ayarları uygulamak için Tumblr'ı yeniden başlat.
+Visible image descriptions	Görünür resim açıklamaları
+Shows author-provided image descriptions below images.	Yazarın sağladığı resim açıklamalarını resimlerin altında gösterir.
+photo image descriptions	fotoğraf açıklamaları
+gallery image descriptions	galeri açıklamaları
+Mute posts locally	Gönderileri bu cihazda sustur
+Add posts to a private list from their menu. Originals and their reblogs stay hidden for this account.	Gönderileri menülerinden özel bir listeye ekleyin. Asıl gönderiler ve yeniden paylaşımları bu hesap için gizli kalır.
+Mute this post locally	Bu gönderiyi bu cihazda sustur
+Manage muted posts	Susturulan gönderileri yönet
+Unmute posts or clear this account's private list	Gönderilerin susturmasını kaldırın veya bu hesabın özel listesini temizleyin
+Couldn't update muted posts	Susturulan gönderiler güncellenemedi
+Post muted locally	Gönderi bu cihazda susturuldu
+Muted posts restored	Susturulan gönderiler geri yüklendi
+Couldn't restore muted posts	Susturulan gönderiler geri yüklenemedi
+Muted posts aren't available for this account yet	Susturulan gönderiler bu hesap için henüz kullanılamıyor
+Stored only on this device for this Tumblr account. Tap a post to unmute it. Up to 500 posts are kept per account.	Yalnızca bu cihazda ve bu Tumblr hesabı için saklanır. Susturmayı kaldırmak için bir gönderiye dokunun. Hesap başına en fazla 500 gönderi saklanır.
+Post	Gönderi
+No muted posts	Susturulan gönderi yok
+Clear muted posts	Susturulan gönderileri temizle
+Post unmuted	Gönderinin susturması kaldırıldı
+Muted posts cleared	Susturulan gönderiler temizlendi
+Reveal allowed mature content	İzin verilen yetişkin içeriğini göster
+Removes the tap-to-reveal blur only when Tumblr confirms this account may view the content.	Dokunarak kaldırılan bulanıklığı yalnızca Tumblr bu hesabın içeriği görebileceğini doğruladığında kaldırır.
+Show mutual markers	Karşılıklı takip işaretlerini göster
+Marks blogs that follow your primary blog when you follow them.	Ana bloğunu takip eden ve senin de takip ettiğin blogları işaretler.
+Mutual	Karşılıklı
+Done	Bitti

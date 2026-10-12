@@ -72,6 +72,7 @@ body:
         - Dark background color
         - Disable analytics
         - Disable update prompts
+        - Filter activity notifications
         - Fix push notifications
         - Hide ads
         - Hide advertising ID
@@ -100,11 +101,16 @@ body:
         - Hide video posts
         - Hide Watch it rows
         - HushTumblr settings
+        - Mute posts locally
         - Remove ad tracking permissions
         - Reorder the bottom bar
+        - Reveal allowed mature content
+        - Show mutual markers
+        - Show post timestamps
         - Skip review prompts
         - Spoof signature for Google sign-in
         - Turn off screenshot sharing
+        - Visible image descriptions
     validations:
       required: true
   - type: dropdown

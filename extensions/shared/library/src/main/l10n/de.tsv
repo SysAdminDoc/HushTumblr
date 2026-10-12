@@ -201,7 +201,7 @@ Ad tracking	Werbe-Tracking
 Android sends tumblr.com links to a patched Tumblr only after you select those addresses for it. Selecting them sends their links here. Your other link settings stay as they are.	Android schickt tumblr.com-Links nur dann an ein gepatchtes Tumblr, wenn du diese Adressen dafür auswählst. Wenn du sie auswählst, kommen ihre Links hierher. Deine anderen Link-Einstellungen bleiben, wie sie sind.
 Export settings saves HushTumblr's switches. It doesn't include your Tumblr account, posts, downloaded files or Morphe Manager's signing key. Keep the settings file and a backup of Manager's signing key somewhere you can find them.	Einstellungen exportieren sichert die Schalter von HushTumblr. Dein Tumblr-Konto, Beiträge, heruntergeladene Dateien und der Signaturschlüssel von Morphe Manager sind nicht enthalten. Bewahre die Einstellungsdatei und eine Sicherung des Signaturschlüssels von Manager an einem Ort auf, den du wiederfindest.
 If you joined through Google or don't know your Tumblr password, ask for a password reset on Tumblr's login screen. Enter the email already linked to that account, then use the reset link sent to your email to set a Tumblr password. It's separate from your Google password.	Wenn du dich über Google registriert hast oder dein Tumblr-Passwort nicht kennst, fordere auf dem Anmeldebildschirm von Tumblr ein neues Passwort an. Gib die E-Mail-Adresse ein, die bereits mit diesem Konto verknüpft ist. Lege dann über den Link in der E-Mail ein Tumblr-Passwort fest. Es ist unabhängig von deinem Google-Passwort.
-Lets a patched Tumblr sign up for push notifications when Google would turn it away. A change applies the next time Tumblr starts.	Lässt ein gepatchtes Tumblr sich für Push-Benachrichtigungen anmelden, wenn Google es sonst abweisen würde. Eine Änderung gilt beim nächsten Start von Tumblr.
+Lets a patched Tumblr sign up for push notifications when Google would turn it away.	Lässt ein gepatchtes Tumblr sich für Push-Benachrichtigungen anmelden, wenn Google es sonst abweisen würde.
 Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.	Öffne Tumblrs Einstellungen über das Zahnrad im Konto-Tab. HushTumblr ändert keine davon.
 Push alerts	Push-Hinweise
 Tumblr and the ad companies inside it see an empty advertising ID with ad tracking limited, as if you deleted your ad ID in Android settings.	Tumblr und die Werbefirmen darin sehen eine leere Werbe-ID mit eingeschränktem Werbe-Tracking, so als hättest du deine Werbe-ID in den Android-Einstellungen gelöscht.
@@ -250,22 +250,22 @@ Takes the Follow button out of the header of posts from blogs you don't follow y
 Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.	Entfernt die Tags unten an Beiträgen in deinem Dashboard und anderen Feeds und lässt den Quellenlink stehen.
 # context: the switch for Tumblr's Premium diamond and TumblrMart button on the Interface page. TumblrMart and Premium are Tumblr's names; keep them. The last two are parts named in "This build handles %1$s."
 Hide the diamond and TumblrMart	Diamant und TumblrMart ausblenden
-Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.	Blendet den Premium-Diamanten und den TumblrMart-Button oben in deinem Dashboard, in Entdecken und in den Mitteilungen aus. Starte Tumblr neu, um die Änderung zu sehen.
+Hides the Premium diamond on your dashboard, Explore and notifications when you return to them. Open screens keep their TumblrMart button until Tumblr restarts.	Blendet den Premium-Diamanten auf Dashboard, Entdecken und Benachrichtigungen aus, wenn du dorthin zurückkehrst. Offene Bildschirme behalten ihren TumblrMart-Button bis zum Neustart von Tumblr.
 the Premium diamond	den Premium-Diamanten
 TumblrMart buttons	TumblrMart-Buttons
 # context: the footer under a post, with its like, reblog, comment, share and Save buttons and their counts. Use the words Tumblr shows in your language for notes and for each button.
 Hide note counts	Anzahl der Anmerkungen ausblenden
 Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.	Nimmt die Zahlen für Likes, Reblogs und Kommentare aus der Leiste unter Beiträgen. Die Buttons bleiben.
 Hide the like button	Like-Button ausblenden
-Takes the like button out of the footer under posts, and the reactions off community posts. Restart Tumblr to see the change.	Nimmt den Like-Button aus der Leiste unter Beiträgen und die Reaktionen von Community-Beiträgen. Starte Tumblr neu, um die Änderung zu sehen.
+Takes the like button out of the footer under posts, and the reactions off community posts.	Nimmt den Like-Button aus der Leiste unter Beiträgen und die Reaktionen von Community-Beiträgen.
 Hide the reblog button	Reblog-Button ausblenden
-Takes the reblog button out of the footer under posts. Restart Tumblr to see the change.	Nimmt den Reblog-Button aus der Leiste unter Beiträgen. Starte Tumblr neu, um die Änderung zu sehen.
+Takes the reblog button out of the footer under posts.	Nimmt den Reblog-Button aus der Leiste unter Beiträgen.
 Hide the comment button	Kommentar-Button ausblenden
-Takes the comment button out of the footer under posts. Restart Tumblr to see the change.	Nimmt den Kommentar-Button aus der Leiste unter Beiträgen. Starte Tumblr neu, um die Änderung zu sehen.
+Takes the comment button out of the footer under posts.	Nimmt den Kommentar-Button aus der Leiste unter Beiträgen.
 Hide the share button	Teilen-Button ausblenden
-Takes the share button out of the footer under posts. Restart Tumblr to see the change.	Nimmt den Teilen-Button aus der Leiste unter Beiträgen. Starte Tumblr neu, um die Änderung zu sehen.
+Takes the share button out of the footer under posts.	Nimmt den Teilen-Button aus der Leiste unter Beiträgen.
 Hide the Save button	Speichern-Button ausblenden
-Takes the Save button out of the footer under posts, when Tumblr shows one. Restart Tumblr to see the change.	Nimmt den Speichern-Button aus der Leiste unter Beiträgen, wenn Tumblr einen zeigt. Starte Tumblr neu, um die Änderung zu sehen.
+Takes the Save button out of the footer under posts, when Tumblr shows one.	Nimmt den Speichern-Button aus der Leiste unter Beiträgen, wenn Tumblr einen zeigt.
 # context: the bottom bar's unread badges, the small dots and numbers on the Dashboard, Communities and Notifications tabs, one switch per tab. Use Tumblr's own names for the tabs in your language.
 Hide unread dots	Ungelesen-Punkte ausblenden
 Hide the Dashboard count	Dashboard-Zähler ausblenden
@@ -284,28 +284,27 @@ Takes posts with pictures and no video, the reblogged part included, out of your
 Hide text posts	Textbeiträge ausblenden
 Takes posts with no pictures or video, the reblogged part included, out of your dashboard and other feeds.	Entfernt Beiträge ohne Bilder und Videos, auch im rebloggten Teil, aus deinem Dashboard und anderen Feeds.
 Hide posts with these words	Beiträge mit diesen Wörtern ausblenden
-Takes posts out of your dashboard and other feeds when their text, tags or summary has a word from the list below.	Entfernt Beiträge aus deinem Dashboard und anderen Feeds, wenn ihr Text, ihre Tags oder ihre Zusammenfassung ein Wort aus der Liste unten enthalten.
+Takes posts out of your feeds when a hidden word matches one of the selected fields below.	Entfernt Posts aus deinen Feeds, wenn ein ausgeblendetes Wort in einem der unten ausgewählten Felder vorkommt.
 Words to hide	Auszublendende Wörter
 One word or phrase a line	Ein Wort oder eine Wortgruppe pro Zeile
-Posts with any of these in their text, tags or summary are hidden. Case doesn't matter, and only whole words count.	Beiträge, deren Text, Tags oder Zusammenfassung eines davon enthält, werden ausgeblendet. Groß- und Kleinschreibung ist egal, und nur ganze Wörter zählen.
 Save	Speichern
 The list is empty. Tap to add words or phrases.	Die Liste ist leer. Tippe, um Wörter oder Wortgruppen hinzuzufügen.
 Looks for: %1$s	Sucht nach: %1$s
 # context: Dark background color turns the background of Tumblr's Dark Mode palette (Settings > Appearance) black, or a dark color chosen when the app was patched. Use Tumblr's own name for the Dark Mode palette in your language.
 Dark background color	Dunkle Hintergrundfarbe
-Makes the Dark Mode palette's background black, or the dark color picked when patching. Restart Tumblr to see the change.	Macht den Hintergrund der Palette Dunkelmodus schwarz oder zu der dunklen Farbe, die beim Patchen gewählt wurde. Starte Tumblr neu, um die Änderung zu sehen.
+Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.	Färbt neu geöffnete Dunkelmodus-Bildschirme schwarz oder in der beim Patchen gewählten dunklen Farbe. Offene Bildschirme behalten ihre Farben bis zum Neustart von Tumblr.
 # context: the bottom bar's tabs. Hide the Explore tab and Hide the Notifications tab take one tab's button off the bar; Reorder the bottom bar puts the tabs in an order chosen in a list where a tap moves a tab one place up. Use Tumblr's own names for the tabs in your language.
 Hide the Explore tab	Entdecken-Tab ausblenden
-Takes the Explore and search button off the bottom bar. Restart Tumblr to see the change.	Entfernt die Schaltfläche für Entdecken und Suche aus der unteren Leiste. Starte Tumblr neu, um die Änderung zu sehen.
+Takes the Explore and search button off the bottom bar.	Entfernt die Schaltfläche für Entdecken und Suche aus der unteren Leiste.
 Hide the Notifications tab	Benachrichtigungen-Tab ausblenden
-Takes the Notifications button off the bottom bar. Restart Tumblr to see the change.	Entfernt die Schaltfläche Benachrichtigungen aus der unteren Leiste. Starte Tumblr neu, um die Änderung zu sehen.
+Takes the Notifications button off the bottom bar.	Entfernt die Schaltfläche Benachrichtigungen aus der unteren Leiste.
 Reorder the bottom bar	Untere Leiste neu ordnen
-Puts the bottom bar's tabs in the order set below. Restart Tumblr to see the change.	Ordnet die Tabs der unteren Leiste in der unten gewählten Reihenfolge an. Starte Tumblr neu, um die Änderung zu sehen.
+Puts the bottom bar's tabs in the order set below.	Ordnet die Tabs der unteren Leiste in der unten gewählten Reihenfolge an.
 Tab order	Tab-Reihenfolge
 Tap a tab to move it up	Tippe auf einen Tab, um ihn nach oben zu schieben
 Tumblr's order	Reihenfolge von Tumblr
 The bottom bar keeps Tumblr's order.	Die untere Leiste behält die Reihenfolge von Tumblr.
-Tabs go in this order: %1$s. Restart Tumblr to see the change.	Die Tabs kommen in dieser Reihenfolge: %1$s. Starte Tumblr neu, um die Änderung zu sehen.
+Tabs go in this order: %1$s.	Die Tabs kommen in dieser Reihenfolge: %1$s.
 Dashboard	Dashboard
 Explore	Entdecken
 Tumblr TV	Tumblr TV
@@ -317,3 +316,56 @@ Notes	Anmerkungen
 # context: the import preview of a settings file. The first is what an empty Words to hide list reads as; the second names Words to hide or Tab order when the file's value for it can't be used.
 None	Keine
 %1$s: the value in that file can't be used, so it'll be left out.	%1$s: Der Wert in dieser Datei ist nicht verwendbar und wird deshalb ausgelassen.
+Your saved lists are too large for a settings backup. Shorten them before exporting. The existing file wasn't changed.	Deine gespeicherten Listen sind zu groß für eine Einstellungssicherung. Kürze sie vor dem Exportieren. Die vorhandene Datei wurde nicht geändert.
+This list is too large for a settings backup. Shorten it before saving. Your draft is still here.	Diese Liste ist zu groß für eine Einstellungssicherung. Kürze sie vor dem Speichern. Dein Entwurf bleibt hier.
+Couldn't save the words. Your earlier list is unchanged. Try again.	Die Wörter konnten nicht gespeichert werden. Deine bisherige Liste ist unverändert. Versuch es erneut.
+Couldn't save the tab order. Your earlier order is unchanged. Try again.	Die Tab-Reihenfolge konnte nicht gespeichert werden. Deine bisherige Reihenfolge ist unverändert. Versuch es erneut.
+%1$s moved to position %2$d of %3$d.	%1$s wurde auf Position %2$d von %3$d verschoben.
+Filter activity notifications	Aktivitätsbenachrichtigungen filtern
+Hide ask notifications	Fragebenachrichtigungen ausblenden
+Hide boop notifications	Boop-Benachrichtigungen ausblenden
+Hide follow notifications	Folgebenachrichtigungen ausblenden
+Hide likes	Likes ausblenden
+Hide mention notifications	Erwähnungen ausblenden
+Hide reblog notifications	Reblog-Benachrichtigungen ausblenden
+Hide reply notifications	Antwortbenachrichtigungen ausblenden
+Hides these from newly loaded activity pages. Push notifications keep Tumblr's settings.	Blendet diese auf neu geladenen Aktivitätsseiten aus. Für Push-Benachrichtigungen gelten weiter Tumblrs Einstellungen.
+Keep tagged reblogs	Reblogs mit Tags behalten
+When reblogs are hidden, keep ones with tags. Other post filters still apply.	Behält Reblogs mit Tags, wenn Reblogs ausgeblendet sind. Andere Beitragsfilter gelten weiter.
+Match current post text	Aktuellen Beitragstext prüfen
+Match reblog trail text	Text der Reblog-Kette prüfen
+Match current post tags	Tags des aktuellen Beitrags prüfen
+Match post summaries	Beitragszusammenfassungen prüfen
+Hidden and allowed words use the same selected fields. Other post filters still apply.	Ausgeblendete und erlaubte Wörter nutzen dieselben gewählten Felder. Andere Beitragsfilter gelten weiter.
+Allowed words	Erlaubte Wörter
+Allowed words keep a post when the word filter would hide it. Other filters still apply.	Erlaubte Wörter behalten einen Beitrag, den der Wortfilter ausblenden würde. Andere Filter gelten weiter.
+Posts matching a hidden word in the selected fields are hidden. Case doesn't matter, and only whole words count.	Beiträge mit einem ausgeblendeten Wort in den gewählten Feldern werden ausgeblendet. Groß- und Kleinschreibung spielt keine Rolle. Nur ganze Wörter zählen.
+Show post timestamps	Beitragszeitstempel anzeigen
+Shows Tumblr's own timestamps on newly drawn post cards.	Zeigt Tumblrs eigene Zeitstempel auf neu dargestellten Beitragskarten.
+Restart Tumblr to apply these settings.	Starte Tumblr neu, um diese Einstellungen anzuwenden.
+Visible image descriptions	Sichtbare Bildbeschreibungen
+Shows author-provided image descriptions below images.	Zeigt Bildbeschreibungen der Verfasser unter den Bildern.
+photo image descriptions	Bildbeschreibungen von Fotos
+gallery image descriptions	Bildbeschreibungen in Galerien
+Mute posts locally	Posts lokal stummschalten
+Add posts to a private list from their menu. Originals and their reblogs stay hidden for this account.	Füge Posts über ihr Menü einer privaten Liste hinzu. Originale und ihre Reblogs bleiben für dieses Konto ausgeblendet.
+Mute this post locally	Diesen Post lokal stummschalten
+Manage muted posts	Stummgeschaltete Posts verwalten
+Unmute posts or clear this account's private list	Posts wieder anzeigen oder die private Liste dieses Kontos leeren
+Couldn't update muted posts	Stummgeschaltete Posts konnten nicht aktualisiert werden
+Post muted locally	Post lokal stummgeschaltet
+Muted posts restored	Stummgeschaltete Posts wiederhergestellt
+Couldn't restore muted posts	Stummgeschaltete Posts konnten nicht wiederhergestellt werden
+Muted posts aren't available for this account yet	Stummgeschaltete Posts sind für dieses Konto noch nicht verfügbar
+Stored only on this device for this Tumblr account. Tap a post to unmute it. Up to 500 posts are kept per account.	Nur auf diesem Gerät für dieses Tumblr-Konto gespeichert. Tippe auf einen Post, um ihn wieder anzuzeigen. Pro Konto werden bis zu 500 Posts gespeichert.
+Post	Post
+No muted posts	Keine stummgeschalteten Posts
+Clear muted posts	Stummgeschaltete Posts löschen
+Post unmuted	Post wieder eingeblendet
+Muted posts cleared	Stummgeschaltete Posts gelöscht
+Reveal allowed mature content	Erlaubte Inhalte für Erwachsene anzeigen
+Removes the tap-to-reveal blur only when Tumblr confirms this account may view the content.	Entfernt die Unschärfe zum Antippen nur, wenn Tumblr bestätigt, dass dieses Konto den Inhalt sehen darf.
+Show mutual markers	Gegenseitige Follows markieren
+Marks blogs that follow your primary blog when you follow them.	Markiert Blogs, die deinem Hauptblog folgen und denen du folgst.
+Mutual	Gegenseitig
+Done	Fertig

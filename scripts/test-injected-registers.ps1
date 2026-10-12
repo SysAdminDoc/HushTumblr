@@ -213,6 +213,17 @@ try {
                 $Node -is [System.Management.Automation.Language.CommandAst] -and
                 $Node.GetCommandName() -eq 'Compare-VerifierTallies'
             } { param($Text) 'Compare-VerifierTallies -Clean $patchedTally -Patched $patchedTally' } }
+        @{ Name = 'a second clean-base extraction before static checks'; Check = $talliesBothSides
+            Text = Edit-ScriptNode $verifierText { param($Node)
+                $Node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
+                $Node.Left.Extent.Text -eq '$cleanBase'
+            } { param($Text) "$Text`nif (`$signedBundle) { $Text }" } }
+        @{ Name = 'the clean APK replaced with the patched APK after static checks'; Check = $talliesBothSides
+            Text = Edit-ScriptNode $verifierText $dexDiffRun { param($Text)
+                "$Text`n`$cleanBase = `$PatchedApk" } }
+        @{ Name = 'the patched APK replaced with the clean APK after static checks'; Check = $talliesBothSides
+            Text = Edit-ScriptNode $verifierText $dexDiffRun { param($Text)
+                "$Text`n`$PatchedApk = `$cleanBase" } }
         @{ Name = 'the verifier call replaced by a log line naming it'; Check = $verifiesPatched
             Text = Edit-ScriptNode $allPatchesText $verifierCall { param($Text)
                 "Write-Host '[verify] skipped verify-injected-registers.ps1 -PatchedApk `$out'" } }
@@ -566,7 +577,11 @@ try {
     $classes = Join-Path $caseRoot 'classes'
     Invoke-Checked -Program $javac -Arguments @('-encoding', 'UTF-8', '-cp', $DesktopJar, '-d', $classes,
         (Join-Path $PSScriptRoot 'DexDiff.java'), (Join-Path $PSScriptRoot 'BadDexFixture.java'),
-        (Join-Path $PSScriptRoot 'FeatureDexFixture.java'), (Join-Path $PSScriptRoot 'ControlFlowFixture.java')) `
+        (Join-Path $PSScriptRoot 'FeatureDexFixture.java'), (Join-Path $PSScriptRoot 'SelectorDexFixture.java'),
+        (Join-Path $PSScriptRoot 'AccountDexFixture.java'), (Join-Path $PSScriptRoot 'MatureDexFixture.java'),
+        (Join-Path $PSScriptRoot 'RootMuteDexFixture.java'),
+        (Join-Path $PSScriptRoot 'MutualDexFixture.java'),
+        (Join-Path $PSScriptRoot 'ControlFlowFixture.java')) `
         -Description 'javac for DexDiff and its fixtures'
     $classPath = $DesktopJar + [System.IO.Path]::PathSeparator + $classes
     Invoke-Checked -Program $Java -Arguments @('-Xmx256m', '-cp', $classPath, 'ControlFlowFixture') `
@@ -661,6 +676,14 @@ try {
     Assert-True (($mutationCaps -join "`n") -ceq ($familyCaps -join "`n")) 'A capability has no mutation rule or has duplicated ownership.'
     Invoke-Checked -Program $Java -Arguments @('-cp', $classPath, 'FeatureDexFixture', $dexDir, $featureContracts) `
         -Description 'FeatureDexFixture'
+    Invoke-Checked -Program $Java -Arguments @('-cp', $classPath, 'SelectorDexFixture', $dexDir, $featureContracts) `
+        -Description 'SelectorDexFixture'
+    Invoke-Checked -Program $Java -Arguments @('-Xmx256m', '-cp', $classPath, 'MatureDexFixture', $dexDir, $featureContracts) `
+        -Description 'MatureDexFixture'
+    Invoke-Checked -Program $Java -Arguments @('-Xmx256m', '-cp', $classPath, 'RootMuteDexFixture', $dexDir, $featureContracts) `
+        -Description 'RootMuteDexFixture'
+    Invoke-Checked -Program $Java -Arguments @('-Xmx256m', '-cp', $classPath, 'MutualDexFixture', $dexDir, $featureContracts) `
+        -Description 'MutualDexFixture'
     $featureApks = @{}
     function Get-FeatureApk([string]$Name) {
         if (-not $featureApks.ContainsKey($Name)) { $featureApks[$Name] = New-DexApk -Name $Name -Entries ([ordered]@{ 'classes.dex' = (Get-Dex $Name) }) }
@@ -688,6 +711,30 @@ try {
         'feature-firebase-wrong-value' = $false
         'feature-firebase-false-capability' = $false
         'feature-shortcuts-branch-good' = $true
+        'feature-paid-post-good' = $true
+        'feature-paid-post-missing' = $false
+        'feature-paid-post-wrong-header' = $false
+        'feature-paid-post-wrong-icon' = $false
+        'feature-paid-post-wrong-null-target' = $false
+        'feature-paid-post-wrong-null-value' = $false
+        'feature-paid-post-false-capability' = $false
+        'feature-post-bridge-good' = $true
+        'feature-post-bridge-missing' = $false
+        'feature-post-bridge-wrong-getter' = $false
+        'feature-post-bridge-missing-trail' = $false
+        'feature-switch-good' = $true
+        'feature-switch-missing' = $false
+        'feature-switch-wrong-value' = $false
+        'feature-review-good' = $true
+        'feature-review-missing' = $false
+        'feature-review-jump-to-injected-return' = $false
+        'feature-activity-good' = $true
+        'feature-activity-missing-hook' = $false
+        'feature-activity-wrong-list' = $false
+        'feature-activity-push-hook' = $false
+        'feature-activity-missing-bridge' = $false
+        'feature-activity-wrong-getter' = $false
+        'feature-activity-wrong-null-target' = $false
     }
     foreach ($family in $families) {
         if ($family.Caps.Count -eq 0) {
@@ -699,12 +746,27 @@ try {
         $featureCases["feature-selected-missing-$($family.Flag)"] = $false
     }
     foreach ($shortcut in $shortcutCalls) { $featureCases["feature-shortcuts-unreachable-$($shortcut.Call)"] = $false }
+    $selectorReasons = @{}
+    foreach ($manifest in 'selector-cases.txt', 'small-selector-cases.txt', 'mature-cases.txt', 'root-mute-cases.txt', 'mutual-cases.txt') {
+        foreach ($line in Get-Content -LiteralPath (Join-Path $dexDir $manifest)) {
+            $values = $line -split '\|', 3
+            Assert-True ($values.Count -eq 3 -and $values[1] -in 'true', 'false') "Invalid selector fixture manifest line $line."
+            Assert-True (-not $featureCases.Contains($values[0])) "Duplicate selector fixture $($values[0])."
+            $featureCases[$values[0]] = $values[1] -eq 'true'
+            if ($values[2]) { $selectorReasons[$values[0]] = $values[2] }
+        }
+    }
     $compiledCases = @(Get-ChildItem -LiteralPath $dexDir -Filter '*.selected' | ForEach-Object { $_.BaseName } | Sort-Object)
     $coveredCases = @($featureCases.Keys | Sort-Object)
     Assert-True (($compiledCases -join "`n") -ceq ($coveredCases -join "`n")) 'A compiled family fixture has no result assertion.'
     foreach ($entry in $featureCases.GetEnumerator()) {
         $name = $entry.Key
-        $result = Invoke-DexDiff -Clean (Get-FeatureApk 'feature-clean') -Patched (Get-FeatureApk $name) `
+        $cleanName = if ($name.StartsWith('feature-selector-')) { 'selector-clean' }
+            elseif ($name.StartsWith('feature-mature-')) { 'mature-clean' }
+            elseif ($name.StartsWith('feature-root-mute-')) { 'root-mute-clean' }
+            elseif ($name.StartsWith('feature-mutual-')) { 'mutual-clean' }
+            else { 'feature-clean' }
+        $result = Invoke-DexDiff -Clean (Get-FeatureApk $cleanName) -Patched (Get-FeatureApk $name) `
             -Allowlist $emptyAllowlist -Name $name -Contracts $featureContracts -Selected (Join-Path $dexDir "$name.selected")
         $findings = Get-Findings $result
         $text = $result.Output -join "`n"
@@ -740,7 +802,27 @@ try {
             'feature-firebase-early' { "doesn't take the certificate header's fingerprint between its answer and its write" }
             'feature-firebase-wrong-value' { "doesn't take the certificate header's fingerprint between its answer and its write" }
             'feature-firebase-false-capability' { 'firebaseCertificate flag is false, clean target requires true' }
+            'feature-paid-post-missing' { 'missing or duplicated compiled method' }
+            'feature-paid-post-wrong-header' { "doesn't return its structured header icon with a null fallback" }
+            'feature-paid-post-wrong-icon' { "doesn't return its structured header icon with a null fallback" }
+            'feature-paid-post-wrong-null-target' { "doesn't return its structured header icon with a null fallback" }
+            'feature-paid-post-wrong-null-value' { "doesn't return its structured header icon with a null fallback" }
+            'feature-paid-post-false-capability' { 'paidPostHeader flag is false, clean target requires true' }
+            'feature-post-bridge-missing' { 'missing or duplicated compiled method' }
+            'feature-post-bridge-wrong-getter' { "doesn't hand back" }
+            'feature-post-bridge-missing-trail' { "doesn't implement" }
+            'feature-switch-missing' { 'has 0 calls' }
+            'feature-switch-wrong-value' { "doesn't take what its rule hands it" }
+            'feature-review-missing' { 'has 0 calls' }
+            'feature-review-jump-to-injected-return' { 'routes an original branch or handler into the middle of an injected block' }
+            'feature-activity-missing-hook' { 'has 0 calls' }
+            'feature-activity-wrong-list' { "doesn't take what its rule hands it" }
+            'feature-activity-push-hook' { 'changed on the excluded push-notification path' }
+            'feature-activity-missing-bridge' { "doesn't extend the activity-notification type bridge" }
+            'feature-activity-wrong-getter' { "doesn't return its activity type name with a null fallback" }
+            'feature-activity-wrong-null-target' { "doesn't return its activity type name with a null fallback" }
         }
+        if ($selectorReasons.ContainsKey($name)) { $hookReason = $selectorReasons[$name] }
         if ($hookReason) {
             Assert-True ($text.Contains($hookReason)) "The hook fixture $name wasn't refused for its own fault ($hookReason).`n$text"
         }

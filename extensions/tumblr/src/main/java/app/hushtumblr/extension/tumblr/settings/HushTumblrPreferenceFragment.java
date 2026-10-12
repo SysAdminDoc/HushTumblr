@@ -45,6 +45,7 @@ import android.text.util.Linkify;
 import android.util.TypedValue;
 import android.view.ContextThemeWrapper;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.inputmethod.EditorInfo;
@@ -81,8 +82,10 @@ import app.hushtumblr.extension.shared.settings.preference.ClearLogBufferPrefere
 import app.hushtumblr.extension.shared.settings.preference.ExportDiagnosticReportPreference;
 import app.hushtumblr.extension.shared.settings.preference.ImmediateAction;
 import app.hushtumblr.extension.shared.settings.preference.LogBufferManager;
+import app.hushtumblr.extension.tumblr.rootmute.RootPostMutePreference;
 import app.hushtumblr.extension.tumblr.timeline.PostRules;
 import app.hushtumblr.extension.tumblr.ui.BottomBarTabs;
+import app.hushtumblr.extension.shared.settings.StringSetting;
 
 /**
  * The preference list, built in code rather than from an XML resource so the bundle adds no
@@ -116,6 +119,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
     static final String SUPPORTED_LINKS = "action_supported_links";
     /** The Words to hide row's key. The list itself is {@link TextSettings#HIDDEN_WORDS}. */
     static final String HIDDEN_WORDS_ROW = "action_hidden_words";
+    static final String ALLOWED_WORDS_ROW = "action_allowed_words";
     static final String TAB_ORDER_ROW = "action_tab_order";
 
     /** Thrown by the next initialize() and then cleared: how a test reaches the recovery page. */
@@ -124,6 +128,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
     /** The first row, which says whether HushTumblr runs now and whether the next start changes that. */
     @Nullable
     private Preference statusCard;
+    @Nullable
+    private RootPostMutePreference manageMutedPosts;
 
     /** The row that asks GitHub for the newest release now, and says what the last try found. */
     @Nullable
@@ -131,6 +137,14 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
 
     /** Where a settings file waiting on the person's answer is kept across the page being rebuilt. */
     static final String PENDING_IMPORT_STATE = "hushtumblr_pending_import";
+    private static final String WORDS_DRAFT_STATE = "hushtumblr_words_draft";
+    @Nullable private AlertDialog wordsDialog;
+    @Nullable private EditText wordsField;
+    @Nullable private String wordsDraft;
+    private int wordsSelectionStart;
+    private int wordsSelectionEnd;
+    private boolean restoreWordsEditor;
+    private boolean editingAllowedWords;
 
     /**
      * A settings file that was read and waits on the person's answer, as
@@ -168,7 +182,14 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        if (savedInstanceState != null) pendingImport = savedInstanceState.getBundle(PENDING_IMPORT_STATE);
+        if (savedInstanceState != null) {
+            pendingImport = savedInstanceState.getBundle(PENDING_IMPORT_STATE);
+            wordsDraft = savedInstanceState.getString(WORDS_DRAFT_STATE);
+            editingAllowedWords = savedInstanceState.getBoolean(WORDS_DRAFT_STATE + "_allowed");
+            wordsSelectionStart = savedInstanceState.getInt(WORDS_DRAFT_STATE + "_start");
+            wordsSelectionEnd = savedInstanceState.getInt(WORDS_DRAFT_STATE + "_end");
+            restoreWordsEditor = wordsDraft != null;
+        }
         super.onCreate(savedInstanceState);
     }
 
@@ -190,6 +211,10 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         super.onResume();
         SettingsBackupPreference.onPageResumed(this);
         showSupportedLinks();
+        if (restoreWordsEditor && getContext() != null) {
+            Preference row = findPreference(editingAllowedWords ? ALLOWED_WORDS_ROW : HIDDEN_WORDS_ROW);
+            if (row != null) showWords(getContext(), row);
+        }
     }
 
     @Override
@@ -197,20 +222,37 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         super.onSaveInstanceState(outState);
         if (pendingImport != null) outState.putBundle(PENDING_IMPORT_STATE, pendingImport);
         if (navigation != null) navigation.save(outState);
+        rememberWordsDraft();
+        if (wordsDraft != null) {
+            outState.putString(WORDS_DRAFT_STATE, wordsDraft);
+            outState.putBoolean(WORDS_DRAFT_STATE + "_allowed", editingAllowedWords);
+            outState.putInt(WORDS_DRAFT_STATE + "_start", wordsSelectionStart);
+            outState.putInt(WORDS_DRAFT_STATE + "_end", wordsSelectionEnd);
+        }
     }
 
     @Override
     public void onDestroyView() {
-        // The preview is drawn over this page's window. It stays unanswered, and the page that
-        // replaces this one shows it again.
-        SettingsBackupPreference.closePreview(this);
-        // The page's other dialogs are drawn over its window too, and would outlive it.
-        for (Dialog dialog : new ArrayList<>(shownDialogs)) dialog.dismiss();
-        shownDialogs.clear();
+        closeOwnedDialogs();
         ReleaseCheck.unwatch(this);
         if (navigation != null) navigation.close();
         navigation = null;
         super.onDestroyView();
+    }
+
+    /** Also called synchronously when the parent window closes, before fragment removal runs. */
+    void closeOwnedDialogs() {
+        // The preview is drawn over this page's window. It stays unanswered, and the page that
+        // replaces this one shows it again.
+        SettingsBackupPreference.closePreview(this);
+        if (manageMutedPosts != null) manageMutedPosts.closeDialogs();
+        manageMutedPosts = null;
+        rememberWordsDraft();
+        // The page's other dialogs are drawn over its window too, and would outlive it.
+        for (Dialog dialog : new ArrayList<>(shownDialogs)) dialog.dismiss();
+        shownDialogs.clear();
+        wordsDialog = null;
+        wordsField = null;
     }
 
     /** A release check ended: the card and the Check now row say what it found. */
@@ -235,6 +277,13 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
     /** Shows what the switches are saved as, after an import wrote them. */
     void refreshSwitches() {
         updateUIToSettingValues();
+        Preference words = findPreference(HIDDEN_WORDS_ROW);
+        if (words != null) words.setSummary(wordsSummary(TextSettings.HIDDEN_WORDS.savedValue()));
+        Preference allowed = findPreference(ALLOWED_WORDS_ROW);
+        if (allowed != null) allowed.setSummary(wordsSummary(TextSettings.ALLOWED_WORDS.savedValue()));
+        Preference tabs = findPreference(TAB_ORDER_ROW);
+        if (tabs != null) tabs.setSummary(tabOrderSummary(TextSettings.TAB_ORDER.savedValue()));
+        onRestartPendingChanged();
     }
 
     @Override
@@ -287,6 +336,18 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             patchToggle(feed, context, build, PatchFamily.HIDE_REBLOGS, Settings.HIDE_REBLOGS, L10n.t("Hide reblogs"),
                     L10n.t("Takes reblogs out of your dashboard and other feeds, and keeps the posts people made "
                         + "themselves."), SettingsIcons.BLOCK);
+            patchToggle(feed, context, build, PatchFamily.HIDE_REBLOGS, Settings.KEEP_TAGGED_REBLOGS,
+                    L10n.t("Keep tagged reblogs"),
+                    L10n.t("When reblogs are hidden, keep ones with tags. Other post filters still apply."),
+                    SettingsIcons.BLOCK);
+            patchToggle(feed, context, build, PatchFamily.MUTE_ROOT_POSTS, Settings.MUTE_ROOT_POSTS,
+                    L10n.t("Mute posts locally"),
+                    L10n.t("Add posts to a private list from their menu. Originals and their reblogs stay hidden for this account."),
+                    SettingsIcons.BLOCK);
+            if (build.contains(PatchFamily.MUTE_ROOT_POSTS)) {
+                manageMutedPosts = new ManageMuteRow(context);
+                feed.addPreference(mark(manageMutedPosts, SettingsIcons.BLOCK));
+            }
             patchToggle(feed, context, build, PatchFamily.HIDE_VIDEO_POSTS, Settings.HIDE_VIDEO_POSTS,
                     L10n.t("Hide video posts"), L10n.t("Takes posts with a video anywhere in them, the reblogged part "
                         + "included, out of your dashboard and other feeds."), SettingsIcons.BLOCK);
@@ -297,9 +358,21 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                     L10n.t("Hide text posts"), L10n.t("Takes posts with no pictures or video, the reblogged part "
                         + "included, out of your dashboard and other feeds."), SettingsIcons.BLOCK);
             patchToggle(feed, context, build, PatchFamily.HIDE_POSTS_WITH_WORDS, Settings.HIDE_POSTS_WITH_WORDS,
-                    L10n.t("Hide posts with these words"), L10n.t("Takes posts out of your dashboard and other feeds "
-                        + "when their text, tags or summary has a word from the list below."), SettingsIcons.BLOCK);
+                    L10n.t("Hide posts with these words"), L10n.t("Takes posts out of your feeds when a hidden word "
+                        + "matches one of the selected fields below."), SettingsIcons.BLOCK);
             if (build.contains(PatchFamily.HIDE_POSTS_WITH_WORDS)) feed.addPreference(mark(wordsRow(context), SettingsIcons.SEARCH));
+            if (build.contains(PatchFamily.HIDE_POSTS_WITH_WORDS)) {
+                feed.addPreference(mark(allowedWordsRow(context), SettingsIcons.SEARCH));
+                String scopeSummary = L10n.t("Hidden and allowed words use the same selected fields. Other post filters still apply.");
+                patchToggle(feed, context, build, PatchFamily.HIDE_POSTS_WITH_WORDS, Settings.WORDS_CURRENT_TEXT,
+                        L10n.t("Match current post text"), scopeSummary, SettingsIcons.SEARCH);
+                patchToggle(feed, context, build, PatchFamily.HIDE_POSTS_WITH_WORDS, Settings.WORDS_REBLOG_TRAIL,
+                        L10n.t("Match reblog trail text"), scopeSummary, SettingsIcons.SEARCH);
+                patchToggle(feed, context, build, PatchFamily.HIDE_POSTS_WITH_WORDS, Settings.WORDS_TAGS,
+                        L10n.t("Match current post tags"), scopeSummary, SettingsIcons.SEARCH);
+                patchToggle(feed, context, build, PatchFamily.HIDE_POSTS_WITH_WORDS, Settings.WORDS_SUMMARY,
+                        L10n.t("Match post summaries"), scopeSummary, SettingsIcons.SEARCH);
+            }
         }
 
         // Parts of each post card. Tags, the Follow button and the counts are read as each card is drawn,
@@ -307,6 +380,19 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         // (PostFooter), since Compose expects a footer to draw the same buttons each time.
         if (!Collections.disjoint(build, PatchFamily.POSTS_PAGE)) {
             PreferenceCategory posts = category(screen, L10n.t("Posts"));
+            patchToggle(posts, context, build, PatchFamily.SHOW_MUTUAL_MARKERS, Settings.SHOW_MUTUAL_MARKERS,
+                    L10n.t("Show mutual markers"),
+                    L10n.t("Marks blogs that follow your primary blog when you follow them."), SettingsIcons.ABOUT);
+            patchToggle(posts, context, build, PatchFamily.SHOW_POST_TIMESTAMPS, Settings.SHOW_POST_TIMESTAMPS,
+                    L10n.t("Show post timestamps"),
+                    L10n.t("Shows Tumblr's own timestamps on newly drawn post cards."), SettingsIcons.ABOUT);
+            patchToggle(posts, context, build, PatchFamily.VISIBLE_ALT_TEXT, Settings.SHOW_IMAGE_DESCRIPTIONS,
+                    L10n.t("Visible image descriptions"),
+                    L10n.t("Shows author-provided image descriptions below images."), SettingsIcons.ABOUT);
+            patchToggle(posts, context, build, PatchFamily.REVEAL_ALLOWED_MATURE_CONTENT,
+                    Settings.REVEAL_ALLOWED_MATURE_CONTENT, L10n.t("Reveal allowed mature content"),
+                    L10n.t("Removes the tap-to-reveal blur only when Tumblr confirms this account may view the content."),
+                    SettingsIcons.ABOUT);
             patchToggle(posts, context, build, PatchFamily.HIDE_HASHTAGS, Settings.HIDE_HASHTAGS,
                     L10n.t("Hide hashtags"), L10n.t("Takes the tags off the bottom of posts in your dashboard "
                         + "and other feeds, and keeps the source link."), SettingsIcons.BLOCK);
@@ -318,20 +404,20 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                         + "under posts, and keeps the buttons."), SettingsIcons.BLOCK);
             patchToggle(posts, context, build, PatchFamily.HIDE_LIKE_BUTTON, Settings.HIDE_LIKE_BUTTON,
                     L10n.t("Hide the like button"), L10n.t("Takes the like button out of the footer under posts, "
-                        + "and the reactions off community posts. Restart Tumblr to see the change."),
+                        + "and the reactions off community posts."),
                     SettingsIcons.BLOCK);
             patchToggle(posts, context, build, PatchFamily.HIDE_REBLOG_BUTTON, Settings.HIDE_REBLOG_BUTTON,
                     L10n.t("Hide the reblog button"), L10n.t("Takes the reblog button out of the footer under "
-                        + "posts. Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+                        + "posts."), SettingsIcons.BLOCK);
             patchToggle(posts, context, build, PatchFamily.HIDE_COMMENT_BUTTON, Settings.HIDE_COMMENT_BUTTON,
                     L10n.t("Hide the comment button"), L10n.t("Takes the comment button out of the footer under "
-                        + "posts. Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+                        + "posts."), SettingsIcons.BLOCK);
             patchToggle(posts, context, build, PatchFamily.HIDE_SHARE_BUTTON, Settings.HIDE_SHARE_BUTTON,
                     L10n.t("Hide the share button"), L10n.t("Takes the share button out of the footer under "
-                        + "posts. Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+                        + "posts."), SettingsIcons.BLOCK);
             patchToggle(posts, context, build, PatchFamily.HIDE_SAVE_BUTTON, Settings.HIDE_SAVE_BUTTON,
                     L10n.t("Hide the Save button"), L10n.t("Takes the Save button out of the footer under posts, "
-                        + "when Tumblr shows one. Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+                        + "when Tumblr shows one."), SettingsIcons.BLOCK);
         }
 
         // Tabs, buttons, prompts and pop-ups. A switch that answers one of Tumblr's own feature flags is
@@ -348,14 +434,11 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                         + "stops Communities tips in the post editor."), SettingsIcons.BLOCK);
             // The bar is built once a run (BottomBarTabs), so these show after a restart.
             patchToggle(ui, context, build, PatchFamily.HIDE_EXPLORE_TAB, Settings.HIDE_EXPLORE_TAB,
-                    L10n.t("Hide the Explore tab"), L10n.t("Takes the Explore and search button off the bottom bar. "
-                        + "Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+                    L10n.t("Hide the Explore tab"), L10n.t("Takes the Explore and search button off the bottom bar."), SettingsIcons.BLOCK);
             patchToggle(ui, context, build, PatchFamily.HIDE_NOTIFICATIONS_TAB, Settings.HIDE_NOTIFICATIONS_TAB,
-                    L10n.t("Hide the Notifications tab"), L10n.t("Takes the Notifications button off the bottom bar. "
-                        + "Restart Tumblr to see the change."), SettingsIcons.BLOCK);
+                    L10n.t("Hide the Notifications tab"), L10n.t("Takes the Notifications button off the bottom bar."), SettingsIcons.BLOCK);
             patchToggle(ui, context, build, PatchFamily.REORDER_TABS, Settings.REORDER_TABS,
-                    L10n.t("Reorder the bottom bar"), L10n.t("Puts the bottom bar's tabs in the order set below. "
-                        + "Restart Tumblr to see the change."), SettingsIcons.INTERFACE);
+                    L10n.t("Reorder the bottom bar"), L10n.t("Puts the bottom bar's tabs in the order set below."), SettingsIcons.INTERFACE);
             if (build.contains(PatchFamily.REORDER_TABS)) ui.addPreference(mark(tabOrderRow(context), SettingsIcons.INTERFACE));
             // One patch, a switch per tab's badge. Read each time Tumblr's unread counts come in
             // (BottomBar), so they need no restart.
@@ -375,9 +458,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                         + "a post after you share it."), SettingsIcons.BLOCK);
             // Not flag-backed, but the TumblrMart button is only placed when its screen is made.
             patchToggle(ui, context, build, PatchFamily.HIDE_TUMBLRMART, Settings.HIDE_TUMBLRMART,
-                    L10n.t("Hide the diamond and TumblrMart"), L10n.t("Hides the Premium diamond and the TumblrMart "
-                        + "button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the "
-                        + "change."), SettingsIcons.BLOCK);
+                    L10n.t("Hide the diamond and TumblrMart"), L10n.t("Hides the Premium diamond on your dashboard, "
+                        + "Explore and notifications when you return to them. Open screens keep their TumblrMart button until Tumblr restarts."), SettingsIcons.BLOCK);
             patchToggle(ui, context, build, PatchFamily.TURN_OFF_SCREENSHOT_SHARING,
                     Settings.TURN_OFF_SCREENSHOT_SHARING, L10n.t("Turn off screenshot sharing"),
                     L10n.t("Stops Tumblr watching for screenshots and offering to save the post as an image."),
@@ -387,8 +469,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                         + "app and then asks for a rating or feedback."), SettingsIcons.BLOCK);
             // Read when a screen's theme is made (DarkBackground), so screens already open keep their colors.
             patchToggle(ui, context, build, PatchFamily.DARK_BACKGROUND, Settings.DARK_BACKGROUND,
-                    L10n.t("Dark background color"), L10n.t("Makes the Dark Mode palette's background black, or the "
-                        + "dark color picked when patching. Restart Tumblr to see the change."), SettingsIcons.INTERFACE);
+                    L10n.t("Dark background color"), L10n.t("Makes newly opened Dark Mode screens black, or the dark "
+                        + "color picked when patching. Open screens keep their colors until Tumblr restarts."), SettingsIcons.INTERFACE);
         }
 
         if (!Collections.disjoint(build, PatchFamily.PRIVACY_PAGE)) {
@@ -428,12 +510,27 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
 
         // Only with the patch: Firebase can refuse a patched Tumblr's sign-up for push notifications
         // unless it names Tumblr's own certificate (PushNotifications).
-        if (build.contains(PatchFamily.FIX_PUSH_NOTIFICATIONS)) {
+        if (build.contains(PatchFamily.FIX_PUSH_NOTIFICATIONS)
+                || build.contains(PatchFamily.FILTER_ACTIVITY_NOTIFICATIONS)) {
             PreferenceCategory notifications = category(screen, L10n.t("Notifications"));
+            String activitySummary = L10n.t("Hides these from newly loaded activity pages. Push notifications keep Tumblr's settings.");
+            patchToggle(notifications, context, build, PatchFamily.FILTER_ACTIVITY_NOTIFICATIONS,
+                    Settings.HIDE_NOTIFICATION_LIKES, L10n.t("Hide likes"), activitySummary, SettingsIcons.BELL);
+            patchToggle(notifications, context, build, PatchFamily.FILTER_ACTIVITY_NOTIFICATIONS,
+                    Settings.HIDE_NOTIFICATION_REBLOGS, L10n.t("Hide reblog notifications"), activitySummary, SettingsIcons.BELL);
+            patchToggle(notifications, context, build, PatchFamily.FILTER_ACTIVITY_NOTIFICATIONS,
+                    Settings.HIDE_NOTIFICATION_REPLIES, L10n.t("Hide reply notifications"), activitySummary, SettingsIcons.BELL);
+            patchToggle(notifications, context, build, PatchFamily.FILTER_ACTIVITY_NOTIFICATIONS,
+                    Settings.HIDE_NOTIFICATION_FOLLOWS, L10n.t("Hide follow notifications"), activitySummary, SettingsIcons.BELL);
+            patchToggle(notifications, context, build, PatchFamily.FILTER_ACTIVITY_NOTIFICATIONS,
+                    Settings.HIDE_NOTIFICATION_MENTIONS, L10n.t("Hide mention notifications"), activitySummary, SettingsIcons.BELL);
+            patchToggle(notifications, context, build, PatchFamily.FILTER_ACTIVITY_NOTIFICATIONS,
+                    Settings.HIDE_NOTIFICATION_ASKS, L10n.t("Hide ask notifications"), activitySummary, SettingsIcons.BELL);
+            patchToggle(notifications, context, build, PatchFamily.FILTER_ACTIVITY_NOTIFICATIONS,
+                    Settings.HIDE_NOTIFICATION_BOOPS, L10n.t("Hide boop notifications"), activitySummary, SettingsIcons.BELL);
             patchToggle(notifications, context, build, PatchFamily.FIX_PUSH_NOTIFICATIONS, Settings.FIX_PUSH_NOTIFICATIONS,
                     L10n.t("Fix push notifications"),
-                    L10n.t("Lets a patched Tumblr sign up for push notifications when Google would turn it away. A "
-                        + "change applies the next time Tumblr starts."), SettingsIcons.BELL);
+                    L10n.t("Lets a patched Tumblr sign up for push notifications when Google would turn it away."), SettingsIcons.BELL);
         }
 
         // In every build: where Tumblr keeps its own controls for what no switch here covers. The
@@ -749,30 +846,101 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         return row;
     }
 
+    private Preference allowedWordsRow(Context context) {
+        Row row = new Row(context);
+        row.setKey(ALLOWED_WORDS_ROW);
+        row.setTitle(L10n.t("Allowed words"));
+        row.setPersistent(false);
+        row.setSummary(wordsSummary(TextSettings.ALLOWED_WORDS.savedValue()));
+        row.setOnPreferenceClickListener(p -> {
+            showWords(context, p);
+            return true;
+        });
+        return row;
+    }
+
     private void showWords(Context context, Preference row) {
+        if (wordsDialog != null && wordsDialog.isShowing()) return;
+        editingAllowedWords = ALLOWED_WORDS_ROW.equals(row.getKey());
+        StringSetting setting = editingAllowedWords ? TextSettings.ALLOWED_WORDS : TextSettings.HIDDEN_WORDS;
         EditText field = new EditText(context);
         field.setId(android.R.id.edit);
         field.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         field.setImeOptions(EditorInfo.IME_FLAG_NO_FULLSCREEN | EditorInfo.IME_FLAG_NO_EXTRACT_UI);
         field.setMinLines(3);
         field.setHint(L10n.t("One word or phrase a line"));
-        field.setText(TextSettings.HIDDEN_WORDS.savedValue());
+        field.setText(wordsDraft == null ? setting.savedValue() : wordsDraft);
+        if (wordsDraft != null) field.setSelection(Math.min(wordsSelectionStart, field.length()),
+                Math.min(wordsSelectionEnd, field.length()));
         LinearLayout editor = new LinearLayout(context);
         int inset = Math.round(24 * context.getResources().getDisplayMetrics().density);
         editor.setPaddingRelative(inset, 0, inset, 0);
         editor.addView(field, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
-        show(new AlertDialog.Builder(context)
-                .setTitle(L10n.t("Words to hide"))
-                .setMessage(L10n.t("Posts with any of these in their text, tags or summary are hidden. Case doesn't "
-                        + "matter, and only whole words count."))
+        AlertDialog dialog = show(new AlertDialog.Builder(context)
+                .setTitle(row.getTitle())
+                .setMessage(editingAllowedWords
+                        ? L10n.t("Allowed words keep a post when the word filter would hide it. Other filters still apply.")
+                        : L10n.t("Posts matching a hidden word in the selected fields are hidden. Case doesn't matter, and only whole words count."))
                 .setView(editor)
-                .setPositiveButton(L10n.t("Save"), (dialog, which) -> {
-                    String words = field.getText().toString().trim();
-                    TextSettings.HIDDEN_WORDS.save(words);
-                    row.setSummary(wordsSummary(words));
-                })
+                .setPositiveButton(L10n.t("Save"), null)
                 .setNegativeButton(L10n.t("Cancel"), null));
+        if (dialog == null) return;
+        wordsDialog = dialog;
+        wordsField = field;
+        restoreWordsEditor = false;
+        dialog.setOnDismissListener(ignored -> {
+            shownDialogs.remove(dialog);
+            if (wordsDialog == dialog) {
+                wordsDialog = null;
+                wordsField = null;
+            }
+        });
+        dialog.setOnCancelListener(ignored -> {
+            if (wordsDialog == dialog) clearWordsDraft();
+        });
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener(ignored -> {
+            if (wordsDialog != dialog || !isAdded()) return;
+            clearWordsDraft();
+            dialog.dismiss();
+        });
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(ignored -> {
+            if (wordsDialog != dialog || !dialog.isShowing() || !isAdded()) return;
+            String words = field.getText().toString().trim();
+            String error = null;
+            try {
+                SettingsBackup.checkTextBudget(setting, words);
+            } catch (SettingsBackup.Rejected refused) {
+                error = refused.reason == SettingsBackup.Reason.SIZE
+                        ? L10n.t("This list is too large for a settings backup. Shorten it before saving. Your draft is still here.")
+                        : L10n.t("Couldn't save the words. Your earlier list is unchanged. Try again.");
+            }
+            if (error == null && !setting.save(words)) {
+                error = L10n.t("Couldn't save the words. Your earlier list is unchanged. Try again.");
+            }
+            if (error != null) {
+                rememberWordsDraft();
+                field.setError(error);
+                Utils.showToastLong(error);
+                return;
+            }
+            row.setSummary(wordsSummary(setting.savedValue()));
+            clearWordsDraft();
+            dialog.dismiss();
+        });
+    }
+
+    private void rememberWordsDraft() {
+        if (wordsField == null || wordsDialog == null || !wordsDialog.isShowing()) return;
+        wordsDraft = wordsField.getText().toString();
+        wordsSelectionStart = Math.max(0, wordsField.getSelectionStart());
+        wordsSelectionEnd = Math.max(0, wordsField.getSelectionEnd());
+        restoreWordsEditor = true;
+    }
+
+    private void clearWordsDraft() {
+        wordsDraft = null;
+        restoreWordsEditor = false;
     }
 
     /** The row that opens the tab order list. Its summary names the order chosen. */
@@ -796,32 +964,79 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
      */
     private void showTabOrder(Context context, Preference row) {
         List<String> order = new ArrayList<>(BottomBarTabs.choices(TextSettings.TAB_ORDER.savedValue()));
+        String[] focusedTab = {order.get(0)};
         ArrayAdapter<String> labels = new ArrayAdapter<>(context, android.R.layout.simple_list_item_1, tabLabels(order));
         AlertDialog dialog = show(new AlertDialog.Builder(context)
                 .setTitle(L10n.t("Tap a tab to move it up"))
                 .setAdapter(labels, null)
-                .setNeutralButton(L10n.t("Tumblr's order"), (shown, which) -> {
-                    TextSettings.TAB_ORDER.save("");
-                    row.setSummary(tabOrderSummary(""));
-                })
+                .setNeutralButton(L10n.t("Tumblr's order"), null)
                 .setPositiveButton(L10n.t("OK"), null));
         if (dialog == null) return;
-        // A click listener of its own, so a tap moves the tab without closing the list.
-        dialog.getListView().setOnItemClickListener((parent, view, position, id) -> {
-            List<String> moved = BottomBarTabs.movedUp(order, position);
+        dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(ignored -> {
+            if (!dialog.isShowing() || !isAdded()) return;
+            saveTabOrder("");
             order.clear();
-            order.addAll(moved);
-            TextSettings.TAB_ORDER.save(BottomBarTabs.join(order));
+            order.addAll(BottomBarTabs.choices(TextSettings.TAB_ORDER.savedValue()));
             labels.clear();
             labels.addAll(tabLabels(order));
             row.setSummary(tabOrderSummary(TextSettings.TAB_ORDER.savedValue()));
+            focusTab(dialog, order, focusedTab[0], false);
         });
+        // A click listener of its own, so a tap moves the tab without closing the list.
+        dialog.getListView().setOnItemClickListener((parent, view, position, id) -> {
+            if (!dialog.isShowing() || !isAdded()) return;
+            String movedTab = order.get(position);
+            focusedTab[0] = movedTab;
+            List<String> moved = BottomBarTabs.movedUp(order, position);
+            boolean saved = saveTabOrder(BottomBarTabs.join(moved));
+            order.clear();
+            order.addAll(BottomBarTabs.choices(TextSettings.TAB_ORDER.savedValue()));
+            labels.clear();
+            labels.addAll(tabLabels(order));
+            row.setSummary(tabOrderSummary(TextSettings.TAB_ORDER.savedValue()));
+            focusTab(dialog, order, movedTab, saved);
+        });
+    }
+
+    private void focusTab(AlertDialog dialog, List<String> order, String tab, boolean announce) {
+        ListView list = dialog.getListView();
+        list.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override public void onGlobalLayout() {
+                list.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                if (!dialog.isShowing() || !isAdded()) return;
+                int position = order.indexOf(tab);
+                View target = list.getChildAt(position - list.getFirstVisiblePosition());
+                if (target != null) {
+                    target.requestFocus();
+                    target.performAccessibilityAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null);
+                }
+                if (announce) list.announceForAccessibility(L10n.f("%1$s moved to position %2$d of %3$d.",
+                        tabLabel(tab), position + 1, order.size()));
+            }
+        });
+        list.setSelection(order.indexOf(tab));
+        list.requestLayout();
+    }
+
+    private boolean saveTabOrder(String value) {
+        try {
+            SettingsBackup.checkTextBudget(TextSettings.TAB_ORDER, value);
+            String before = TextSettings.TAB_ORDER.persistedValue();
+            if (TextSettings.TAB_ORDER.save(value)) {
+                if (noteRestartPending(TextSettings.TAB_ORDER, before)) showRestartDialog(getContext());
+                return true;
+            }
+        } catch (SettingsBackup.Rejected refused) {
+            // No draft or tab names belong in the log.
+        }
+        Utils.showToastLong(L10n.t("Couldn't save the tab order. Your earlier order is unchanged. Try again."));
+        return false;
     }
 
     /** What the tab order [saved] does, for its row's summary. */
     static String tabOrderSummary(String saved) {
         if (BottomBarTabs.parse(saved).isEmpty()) return L10n.t("The bottom bar keeps Tumblr's order.");
-        return L10n.f("Tabs go in this order: %1$s. Restart Tumblr to see the change.", tabsShown(saved));
+        return L10n.f("Tabs go in this order: %1$s.", tabsShown(saved));
     }
 
     /**
@@ -1104,6 +1319,20 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         }
     }
 
+    static final class ManageMuteRow extends RootPostMutePreference {
+        ManageMuteRow(Context context) {
+            super(context);
+        }
+
+        @Override
+        protected void onBindView(View view) {
+            super.onBindView(view);
+            showAllText(view);
+            ScreenColors.row(view, this);
+            view.setAccessibilityDelegate(new RowSemantics(this, Button.class));
+        }
+    }
+
     /** A switch row, which a screen reader calls a switch and reads as on or off. */
     static final class Toggle extends SwitchPreference {
         Toggle(Context context) {
@@ -1119,7 +1348,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         }
     }
 
-    static final class ExportRow extends ExportDiagnosticReportPreference {
+    final class ExportRow extends ExportDiagnosticReportPreference {
         ExportRow(Context context) {
             super(context);
         }
@@ -1142,12 +1371,18 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
          */
         @Override
         protected void onDialogCreated(AlertDialog dialog) {
+            shownDialogs.add(dialog);
             ListView list = dialog.getListView();
             if (list != null) {
                 list.setDivider(null);
                 list.setSelector(new ColorDrawable(Color.TRANSPARENT));
             }
             ScreenColors.dialog(dialog);
+        }
+
+        @Override
+        protected void onDialogDismissed(AlertDialog dialog) {
+            shownDialogs.remove(dialog);
         }
 
         @Override

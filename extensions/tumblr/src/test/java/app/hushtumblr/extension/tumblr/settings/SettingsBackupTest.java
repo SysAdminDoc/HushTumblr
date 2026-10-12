@@ -266,10 +266,27 @@ public class SettingsBackupTest {
                 Settings.HIDE_COMMUNITIES_COUNT,
                 Settings.HIDE_NOTIFICATIONS_COUNT,
                 Settings.HIDE_REBLOGS,
+                Settings.KEEP_TAGGED_REBLOGS,
+                Settings.HIDE_NOTIFICATION_LIKES,
+                Settings.HIDE_NOTIFICATION_REBLOGS,
+                Settings.HIDE_NOTIFICATION_REPLIES,
+                Settings.HIDE_NOTIFICATION_FOLLOWS,
+                Settings.HIDE_NOTIFICATION_MENTIONS,
+                Settings.HIDE_NOTIFICATION_ASKS,
+                Settings.HIDE_NOTIFICATION_BOOPS,
                 Settings.HIDE_VIDEO_POSTS,
                 Settings.HIDE_PHOTO_POSTS,
                 Settings.HIDE_TEXT_POSTS,
                 Settings.HIDE_POSTS_WITH_WORDS,
+                Settings.WORDS_CURRENT_TEXT,
+                Settings.WORDS_REBLOG_TRAIL,
+                Settings.WORDS_TAGS,
+                Settings.WORDS_SUMMARY,
+                Settings.SHOW_POST_TIMESTAMPS,
+                Settings.SHOW_IMAGE_DESCRIPTIONS,
+                Settings.MUTE_ROOT_POSTS,
+                Settings.REVEAL_ALLOWED_MATURE_CONTENT,
+                Settings.SHOW_MUTUAL_MARKERS,
                 Settings.DARK_BACKGROUND,
                 Settings.HIDE_EXPLORE_TAB,
                 Settings.HIDE_NOTIFICATIONS_TAB,
@@ -312,7 +329,7 @@ public class SettingsBackupTest {
         JSONObject root = new JSONObject(text);
         assertEquals(new TreeSet<>(Arrays.asList("format", "schema", "settings", "text")), names(root));
         assertEquals("hushtumblr-settings", root.get("format"));
-        assertEquals(2, root.get("schema"));
+        assertEquals(3, root.get("schema"));
         assertEquals(keys(SettingsBackup.TEXT_ALLOWLIST), names(root.getJSONObject("text")));
         JSONObject switches = root.getJSONObject("settings");
         assertEquals(keys(SettingsBackup.ALLOWLIST), names(switches));
@@ -1450,6 +1467,102 @@ public class SettingsBackupTest {
     // ---- The screen and the picker ------------------------------------------------------------
 
     @Test
+    public void anOversizedStoredListIsRefusedBeforeReplacingAnExportFile() throws Exception {
+        String words = "private words ".repeat(SettingsBackup.MAX_BYTES / 10);
+        TextSettings.HIDDEN_WORDS.save(words);
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            Activity activity = controller.get();
+            HushTumblrPreferenceFragment page = SettingsL10nTest.pageOf(SettingsL10nTest.show(activity));
+            byte[] earlier = "keep the existing file".getBytes(StandardCharsets.UTF_8);
+            Uri uri = SettingsFileProvider.put(AUTHORITY, "too-large.json", earlier);
+            shadowOf(activity).receiveResult(tap(activity, page, EXPORT_ROW).intent, Activity.RESULT_OK,
+                    new Intent().setData(uri));
+            settle();
+            org.junit.Assert.assertArrayEquals(earlier, SettingsFileProvider.get(uri));
+            assertEquals(words, TextSettings.HIDDEN_WORDS.savedValue());
+            assertTrue(ShadowToast.getTextOfLatestToast().contains("too large"));
+        }
+    }
+
+    @Test
+    @Config(sdk = {26, 36})
+    public void exportedUtf8PreservesLoneSurrogatesAndValidPairs() throws Exception {
+        for (String words : new String[]{"x" + (char) 0xd800 + "y", "x" + (char) 0xdc00 + "y",
+                "x" + (char) 0xd83d + (char) 0xde00 + "y",
+                "x" + (char) 0xd800 + (char) 0xd83d + (char) 0xde00 + "y",
+                "x" + (char) 0xd83d + (char) 0xde00 + (char) 0xdc00 + "y"}) {
+            SettingsBackup.checkTextBudget(TextSettings.HIDDEN_WORDS, words);
+            TextSettings.HIDDEN_WORDS.save(words);
+            TextSettings.ALLOWED_WORDS.save(words);
+            byte[] bytes = SettingsBackup.create().getBytes(StandardCharsets.UTF_8);
+            SettingsBackup.Snapshot file = SettingsBackup.parse(new String(bytes, StandardCharsets.UTF_8));
+            assertEquals(words, file.texts.get(TextSettings.HIDDEN_WORDS));
+            assertEquals(words, file.texts.get(TextSettings.ALLOWED_WORDS));
+        }
+    }
+
+    @Test
+    public void theWordsBudgetReservesTabsMissingFromTheCurrentBar() throws Exception {
+        for (BooleanSetting setting : SettingsBackup.ALLOWLIST) setting.save(false);
+        TextSettings.TAB_ORDER.save(app.hushtumblr.extension.tumblr.ui.BottomBarTabs.join(
+                app.hushtumblr.extension.tumblr.ui.BottomBarTabs.TABS));
+        try {
+            ReflectionHelpers.setStaticField(app.hushtumblr.extension.tumblr.ui.BottomBarTabs.class,
+                    "tumblrOrder", Arrays.asList("Dashboard", "Search", "Notifications", "Account"));
+            int low = 0, high = SettingsBackup.MAX_BYTES;
+            while (low < high) {
+                int middle = (low + high + 1) / 2;
+                try {
+                    SettingsBackup.checkTextBudget(TextSettings.HIDDEN_WORDS, "x".repeat(middle));
+                    low = middle;
+                } catch (SettingsBackup.Rejected full) {
+                    assertEquals(SettingsBackup.Reason.SIZE, full.reason);
+                    high = middle - 1;
+                }
+            }
+            String words = "x".repeat(low);
+            assertTrue(words.length() > SettingsBackup.MAX_BYTES / 2);
+            TextSettings.HIDDEN_WORDS.save(words);
+            byte[] bytes = SettingsBackup.create().getBytes(StandardCharsets.UTF_8);
+            assertTrue(bytes.length <= SettingsBackup.MAX_BYTES);
+            assertEquals(words, SettingsBackup.parse(new String(bytes, StandardCharsets.UTF_8))
+                    .texts.get(TextSettings.HIDDEN_WORDS));
+        } finally {
+            ReflectionHelpers.setStaticField(app.hushtumblr.extension.tumblr.ui.BottomBarTabs.class,
+                    "tumblrOrder", null);
+        }
+    }
+
+    @Test
+    public void theWholeUtf8EnvelopeRoundTripsAtItsSizeBoundary() throws Exception {
+        for (BooleanSetting setting : SettingsBackup.ALLOWLIST) setting.save(false);
+        TextSettings.TAB_ORDER.save(app.hushtumblr.extension.tumblr.ui.BottomBarTabs.join(
+                app.hushtumblr.extension.tumblr.ui.BottomBarTabs.TABS));
+        for (String piece : new String[]{"a", "\u00e9", "\u732b", "\ud83d\ude00", "\"", "\\", "\n", "\t", "\u0001",
+                String.valueOf((char) 0xd800), String.valueOf((char) 0xdc00)}) {
+            TextSettings.HIDDEN_WORDS.save("");
+            int overhead = SettingsBackup.create().getBytes(StandardCharsets.UTF_8).length;
+            int unit = piece.length() == 1 && Character.isSurrogate(piece.charAt(0)) ? 6
+                    : JSONObject.quote(piece).getBytes(StandardCharsets.UTF_8).length - 2;
+            String words = "x" + piece.repeat((SettingsBackup.MAX_BYTES - overhead - 2) / unit) + "y";
+            SettingsBackup.checkTextBudget(TextSettings.HIDDEN_WORDS, words);
+            assertTrue(TextSettings.HIDDEN_WORDS.save(words));
+            String file = SettingsBackup.create();
+            int bytes = file.getBytes(StandardCharsets.UTF_8).length;
+            assertTrue(bytes <= SettingsBackup.MAX_BYTES);
+            assertTrue(bytes > SettingsBackup.MAX_BYTES - unit);
+            assertEquals(words, SettingsBackup.parse(file).texts.get(TextSettings.HIDDEN_WORDS));
+            try {
+                SettingsBackup.checkTextBudget(TextSettings.HIDDEN_WORDS, words + "z".repeat(unit));
+                fail("over-budget text was accepted");
+            } catch (SettingsBackup.Rejected refused) {
+                assertEquals(SettingsBackup.Reason.SIZE, refused.reason);
+            }
+            assertEquals(words, TextSettings.HIDDEN_WORDS.savedValue());
+        }
+    }
+
+    @Test
     @Config(sdk = {29, 30, 33, 36})
     public void exportWritesTheFileThroughTheSystemPicker() throws Exception {
         Settings.HIDE_ADVERTISING_ID.save(false);
@@ -1555,7 +1668,8 @@ public class SettingsBackupTest {
 
             preview.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
             settle();
-            assertEquals("Settings imported. 2 switches changed.", ShadowToast.getTextOfLatestToast());
+            assertEquals("Settings imported. 2 switches changed. Restart Tumblr to apply these settings.",
+                    ShadowToast.getTextOfLatestToast());
             assertFalse(Settings.HIDE_ADVERTISING_ID.savedValue());
             assertFalse(Settings.FIX_PUSH_NOTIFICATIONS.savedValue());
             assertFalse("the page still shows the switch on",
@@ -1649,7 +1763,8 @@ public class SettingsBackupTest {
             preview.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
             settle();
             assertFalse(Settings.FIX_PUSH_NOTIFICATIONS.savedValue());
-            assertEquals("Settings imported. 1 switch changed.", ShadowToast.getTextOfLatestToast());
+            assertEquals("Settings imported. 1 switch changed. Restart Tumblr to apply these settings.",
+                    ShadowToast.getTextOfLatestToast());
         }
     }
 
@@ -2065,6 +2180,131 @@ public class SettingsBackupTest {
             export(activity, page, SettingsFileProvider.put(AUTHORITY, "next.json", new byte[0]));
             assertEquals("Settings exported.", ShadowToast.getTextOfLatestToast());
         }
+    }
+
+    @Test
+    public void textOnlyImportAndUndoRefreshTheVisibleSearchSummaries() throws Exception {
+        TextSettings.HIDDEN_WORDS.save("before");
+        String order = app.hushtumblr.extension.tumblr.ui.BottomBarTabs.join(
+                app.hushtumblr.extension.tumblr.ui.BottomBarTabs.movedUp(
+                        app.hushtumblr.extension.tumblr.ui.BottomBarTabs.choices(""), 2));
+        JSONObject file = new JSONObject().put("format", SettingsBackup.FORMAT).put("schema", 2)
+                .put("settings", new JSONObject()).put("text", new JSONObject()
+                        .put(TextSettings.HIDDEN_WORDS.key, "one\ntwo")
+                        .put(TextSettings.TAB_ORDER.key, order));
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            Activity activity = controller.get();
+            HushTumblrPreferenceFragment page = SettingsL10nTest.pageOf(SettingsL10nTest.show(activity));
+            page.navigation.search("Words to hide");
+            Uri uri = SettingsFileProvider.put(AUTHORITY, "text.json", file.toString().getBytes(StandardCharsets.UTF_8));
+            shadowOf(activity).receiveResult(tap(activity, page, IMPORT_ROW).intent, Activity.RESULT_OK,
+                    new Intent().setData(uri));
+            settle();
+            shownPreview().getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+            settle();
+            assertEquals(HushTumblrPreferenceFragment.wordsSummary("one\ntwo"),
+                    page.findPreference(HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW).getSummary());
+            assertEquals(HushTumblrPreferenceFragment.tabOrderSummary(order),
+                    page.findPreference(HushTumblrPreferenceFragment.TAB_ORDER_ROW).getSummary());
+            click(page.findPreference(UNDO_ROW));
+            settle();
+            assertEquals(HushTumblrPreferenceFragment.wordsSummary("before"),
+                    page.findPreference(HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW).getSummary());
+            assertEquals(HushTumblrPreferenceFragment.tabOrderSummary(""),
+                    page.findPreference(HushTumblrPreferenceFragment.TAB_ORDER_ROW).getSummary());
+        }
+    }
+
+    @Test
+    public void importRecordsRestartDebtAndUndoReturnsToTheRunningChoice() throws Exception {
+        AbstractPreferenceFragment.restartPending.clear();
+        SettingsBackup.apply(SettingsBackup.parse(fileWith(Settings.HIDE_TUMBLR_TV, true)));
+        assertTrue(AbstractPreferenceFragment.restartPending.contains(Settings.HIDE_TUMBLR_TV.key));
+        assertEquals(SettingsBackup.UndoResult.UNDONE, SettingsBackup.undo());
+        assertFalse(AbstractPreferenceFragment.restartPending.contains(Settings.HIDE_TUMBLR_TV.key));
+    }
+
+    @Test
+    public void olderWordBackupsRestoreAllFieldsAndNoExceptionsAndUndoRestoresNewChoices() throws Exception {
+        Settings.WORDS_REBLOG_TRAIL.save(false);
+        Settings.WORDS_TAGS.save(false);
+        TextSettings.ALLOWED_WORDS.save("café");
+        JSONObject file = new JSONObject().put("format", SettingsBackup.FORMAT).put("schema", 2)
+                .put("settings", new JSONObject().put(Settings.HIDE_POSTS_WITH_WORDS.key, true))
+                .put("text", new JSONObject().put(TextSettings.HIDDEN_WORDS.key, "cat"));
+        SettingsBackup.apply(SettingsBackup.parse(file.toString()));
+        assertTrue(Settings.WORDS_CURRENT_TEXT.savedValue());
+        assertTrue(Settings.WORDS_REBLOG_TRAIL.savedValue());
+        assertTrue(Settings.WORDS_TAGS.savedValue());
+        assertTrue(Settings.WORDS_SUMMARY.savedValue());
+        assertEquals("", TextSettings.ALLOWED_WORDS.savedValue());
+        assertEquals(SettingsBackup.UndoResult.UNDONE, SettingsBackup.undo());
+        assertFalse(Settings.WORDS_REBLOG_TRAIL.savedValue());
+        assertFalse(Settings.WORDS_TAGS.savedValue());
+        assertEquals("café", TextSettings.ALLOWED_WORDS.savedValue());
+    }
+
+    @Test
+    public void olderReblogBackupsKeepTheirOriginalBehaviorAndUndoRestoresTheException() throws Exception {
+        for (int schema : new int[]{1, 2}) {
+            Settings.KEEP_TAGGED_REBLOGS.save(true);
+            JSONObject file = new JSONObject().put("format", SettingsBackup.FORMAT).put("schema", schema)
+                    .put("settings", new JSONObject().put(Settings.HIDE_REBLOGS.key, true));
+            SettingsBackup.apply(SettingsBackup.parse(file.toString()));
+            assertTrue(Settings.HIDE_REBLOGS.savedValue());
+            assertFalse(Settings.KEEP_TAGGED_REBLOGS.savedValue());
+            assertEquals(SettingsBackup.UndoResult.UNDONE, SettingsBackup.undo());
+            assertTrue(Settings.KEEP_TAGGED_REBLOGS.savedValue());
+        }
+        SettingsBackup.apply(SettingsBackup.parse(new JSONObject().put("format", SettingsBackup.FORMAT)
+                .put("schema", 2).put("settings", new JSONObject().put(Settings.HIDE_ADS.key, true)).toString()));
+        assertTrue(Settings.KEEP_TAGGED_REBLOGS.savedValue());
+    }
+
+    @Test
+    public void newWordChoicesAndTaggedReblogsRoundTripAndUndo() throws Exception {
+        Settings.KEEP_TAGGED_REBLOGS.save(true);
+        Settings.WORDS_CURRENT_TEXT.save(false);
+        TextSettings.ALLOWED_WORDS.save("café\n猫\nquote\"\\");
+        SettingsBackup.Snapshot file = SettingsBackup.parse(SettingsBackup.create());
+        Settings.KEEP_TAGGED_REBLOGS.save(false);
+        Settings.WORDS_CURRENT_TEXT.save(true);
+        TextSettings.ALLOWED_WORDS.save("");
+        SettingsBackup.apply(file);
+        assertTrue(Settings.KEEP_TAGGED_REBLOGS.savedValue());
+        assertFalse(Settings.WORDS_CURRENT_TEXT.savedValue());
+        assertEquals("café\n猫\nquote\"\\", TextSettings.ALLOWED_WORDS.savedValue());
+        assertEquals(SettingsBackup.UndoResult.UNDONE, SettingsBackup.undo());
+        assertFalse(Settings.KEEP_TAGGED_REBLOGS.savedValue());
+        assertTrue(Settings.WORDS_CURRENT_TEXT.savedValue());
+        assertEquals("", TextSettings.ALLOWED_WORDS.savedValue());
+    }
+
+    @Test
+    public void aRolledBackImportAddsNoRestartDebt() throws Exception {
+        for (FailingStore.Fault fault : new FailingStore.Fault[]{FailingStore.Fault.COMMIT_FALSE,
+                FailingStore.Fault.COMMIT_THROWS}) {
+            AbstractPreferenceFragment.restartPending.clear();
+            try (FailingStore ignored = FailingStore.install(fault)) {
+                try {
+                    SettingsBackup.apply(SettingsBackup.parse(fileWith(Settings.HIDE_TUMBLR_TV, true)));
+                    fail("failed import reported success");
+                } catch (SettingsBackup.ApplyFailed expected) {
+                    assertTrue(expected.rolledBack);
+                }
+            }
+            assertFalse(Settings.HIDE_TUMBLR_TV.savedValue());
+            assertFalse(AbstractPreferenceFragment.restartPending.contains(Settings.HIDE_TUMBLR_TV.key));
+        }
+    }
+
+    @Test
+    public void undoRetainsDebtWhenItRestoresAChoiceDifferentFromTheRunningOne() throws Exception {
+        SettingsBackup.apply(SettingsBackup.parse(fileWith(Settings.HIDE_TUMBLR_TV, true)));
+        SettingsBackup.apply(SettingsBackup.parse(fileWith(Settings.HIDE_TUMBLR_TV, false)));
+        assertFalse(AbstractPreferenceFragment.restartPending.contains(Settings.HIDE_TUMBLR_TV.key));
+        assertEquals(SettingsBackup.UndoResult.UNDONE, SettingsBackup.undo());
+        assertTrue(AbstractPreferenceFragment.restartPending.contains(Settings.HIDE_TUMBLR_TV.key));
     }
 
     // ---- Helpers -------------------------------------------------------------------------------

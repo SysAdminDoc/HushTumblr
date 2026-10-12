@@ -22,9 +22,9 @@ import app.morphe.patches.tumblr.misc.settings.settingsPatch
 @Suppress("unused")
 val hidePostsWithWordsPatch = bytecodePatch(
     name = "Hide posts with these words",
-    description = "Takes posts out of your dashboard and other feeds when their text, reblog trail, tags or" +
-        " summary has a word or phrase from your list, ignoring case and matching whole words. Starts" +
-        " off. Turn it on in Tumblr settings > HushTumblr > Feed.",
+    description = "Hides posts matching your word list. Choose whether to check current text, the reblog trail," +
+        " tags or summaries. Allowed words can keep a matching post, but other enabled filters still apply." +
+        " Starts off. Turn it on in Tumblr settings > HushTumblr > Feed.",
     default = true,
 ) {
     category("Feed")

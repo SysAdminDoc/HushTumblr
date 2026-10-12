@@ -114,6 +114,27 @@ public final class TimelineItems {
         return new TimelineObject(new Post(Collections.emptyList(), null, Arrays.asList(tags), summary, null), false);
     }
 
+    /** A plain post whose server header context names [icon], without any timeline Sponsored flag. */
+    public static TimelineObject postWithHeader(String icon, boolean followed, boolean editable) {
+        return postWithHeader(icon, followed, editable, true);
+    }
+
+    public static TimelineObject postWithHeader(String icon, boolean followed, boolean editable, boolean known) {
+        return new TimelineObject(new Post(Collections.emptyList(), null, null, null, null) {
+            @Override public String hushHeaderIcon() { return icon; }
+            @Override public boolean hushFollowed() { return followed; }
+            @Override public boolean hushCanEdit() { return editable; }
+            @Override public boolean hushPaidContextKnown() { return known; }
+        }, false);
+    }
+
+    /** A blazed post displayed organically, with no paid header context. */
+    public static TimelineObject organicBlazedPost() {
+        return new TimelineObject(new Post(Collections.emptyList(), null, null, null, null) {
+            public boolean isBlazed() { return true; }
+        }, false);
+    }
+
     /** A campaign in your own Blaze dashboard's list, carrying [post]'s payload. */
     public static TimelineObject blazed(TimelineObject post) {
         return new TimelineObject(new BlazedPost(post.getData()), false);
@@ -148,7 +169,7 @@ public final class TimelineItems {
     }
 
     /** A post Tumblr's model would carry, as the post bridge patch makes it. */
-    static class Post extends Item implements HushPost {
+    static class Post extends Item implements HushPost, HushPaidPost {
         private final List<?> content;
         private final List<?> trail;
         private final List<?> tags;
@@ -169,6 +190,10 @@ public final class TimelineItems {
         @Override public List<?> hushTags() { return tags; }
         @Override public String hushSummary() { return summary; }
         @Override public String hushRebloggedFrom() { return rebloggedFrom; }
+        @Override public String hushHeaderIcon() { return null; }
+        @Override public boolean hushFollowed() { return false; }
+        @Override public boolean hushCanEdit() { return false; }
+        @Override public boolean hushPaidContextKnown() { return true; }
     }
 
     private static final class Carousel extends Item {

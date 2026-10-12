@@ -7,6 +7,7 @@ package app.hushtumblr.extension.tumblr.timeline;
 
 import androidx.annotation.Nullable;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -50,18 +51,32 @@ public final class PostRules {
     enum Kind { VIDEO, PHOTO, TEXT }
 
     final boolean reblogs;
+    final boolean keepTaggedReblogs;
     final boolean video;
     final boolean photo;
     final boolean text;
-    /** The phrases to look for, lower case. Empty when the switch is off or the list is. */
+    /** The phrases to look for, in NFC and ROOT lower case. Empty when the switch is off or the list is. */
     final List<String> words;
+    final List<String> allowedWords;
+    final boolean wordsCurrentText;
+    final boolean wordsReblogTrail;
+    final boolean wordsTags;
+    final boolean wordsSummary;
 
-    PostRules(boolean reblogs, boolean video, boolean photo, boolean text, List<String> words) {
+    PostRules(boolean reblogs, boolean keepTaggedReblogs, boolean video, boolean photo, boolean text,
+              List<String> words, List<String> allowedWords, boolean wordsCurrentText, boolean wordsReblogTrail,
+              boolean wordsTags, boolean wordsSummary) {
         this.reblogs = reblogs;
+        this.keepTaggedReblogs = keepTaggedReblogs;
         this.video = video;
         this.photo = photo;
         this.text = text;
         this.words = words;
+        this.allowedWords = allowedWords;
+        this.wordsCurrentText = wordsCurrentText;
+        this.wordsReblogTrail = wordsReblogTrail;
+        this.wordsTags = wordsTags;
+        this.wordsSummary = wordsSummary;
     }
 
     /** Which kind each block class is, null for neither, so a class is looked up once. */
@@ -70,6 +85,8 @@ public final class PostRules {
     /** The last word list read and what it parsed to, so a page doesn't parse it again. */
     @Nullable
     private static volatile Parsed parsed;
+    @Nullable
+    private static volatile Parsed allowedParsed;
 
     /** The post switches on now, or null when none is. Throws for TimelineFilter to report. */
     @Nullable
@@ -78,10 +95,16 @@ public final class PostRules {
         boolean video = on(PatchFamily.Capability.VIDEO_POSTS, FamilyNames.HIDE_VIDEO_POSTS, Settings.HIDE_VIDEO_POSTS);
         boolean photo = on(PatchFamily.Capability.PHOTO_POSTS, FamilyNames.HIDE_PHOTO_POSTS, Settings.HIDE_PHOTO_POSTS);
         boolean text = on(PatchFamily.Capability.TEXT_POSTS, FamilyNames.HIDE_TEXT_POSTS, Settings.HIDE_TEXT_POSTS);
-        List<String> words = on(PatchFamily.Capability.POST_WORDS, FamilyNames.HIDE_POSTS_WITH_WORDS,
-                Settings.HIDE_POSTS_WITH_WORDS) ? wordList(TextSettings.HIDDEN_WORDS.get()) : Collections.emptyList();
+        boolean current = Settings.WORDS_CURRENT_TEXT.get(), trail = Settings.WORDS_REBLOG_TRAIL.get();
+        boolean tags = Settings.WORDS_TAGS.get(), summary = Settings.WORDS_SUMMARY.get();
+        boolean wordFilter = on(PatchFamily.Capability.POST_WORDS, FamilyNames.HIDE_POSTS_WITH_WORDS,
+                Settings.HIDE_POSTS_WITH_WORDS);
+        List<String> words = wordFilter && (current || trail || tags || summary)
+                ? wordList(TextSettings.HIDDEN_WORDS.get()) : Collections.emptyList();
         if (!reblogs && !video && !photo && !text && words.isEmpty()) return null;
-        return new PostRules(reblogs, video, photo, text, words);
+        List<String> allowed = words.isEmpty() ? Collections.emptyList() : cachedWordList(TextSettings.ALLOWED_WORDS.get(), true);
+        return new PostRules(reblogs, reblogs && Settings.KEEP_TAGGED_REBLOGS.get(), video, photo, text,
+                words, allowed, current, trail, tags, summary);
     }
 
     /** Whether [capability]'s hook is in and [family]'s switch is on. */
@@ -108,15 +131,16 @@ public final class PostRules {
     String removes(@Nullable Object payload) {
         HushPost post = postOf(payload);
         if (post == null) return null;
-        List<?> trail = post.hushTrail();
-        if (reblogs && isReblog(post, trail)) return FamilyNames.HIDE_REBLOGS;
+        List<?> trail = reblogs || video || photo || text || !words.isEmpty() && wordsReblogTrail ? post.hushTrail() : null;
+        if (reblogs && isReblog(post, trail) && !(keepTaggedReblogs && hasCurrentTags(post))) return FamilyNames.HIDE_REBLOGS;
         if (video || photo || text) {
             Kind kind = kindOf(post, trail);
             if (video && kind == Kind.VIDEO) return FamilyNames.HIDE_VIDEO_POSTS;
             if (photo && kind == Kind.PHOTO) return FamilyNames.HIDE_PHOTO_POSTS;
             if (text && kind == Kind.TEXT) return FamilyNames.HIDE_TEXT_POSTS;
         }
-        if (!words.isEmpty() && hasWord(post, trail, words)) return FamilyNames.HIDE_POSTS_WITH_WORDS;
+        if (!words.isEmpty() && hasWord(post, trail, words) && !hasWord(post, trail, allowedWords))
+            return FamilyNames.HIDE_POSTS_WITH_WORDS;
         return null;
     }
 
@@ -130,6 +154,17 @@ public final class PostRules {
     static boolean isReblog(HushPost post, @Nullable List<?> trail) {
         String from = post.hushRebloggedFrom();
         return (from != null && !from.isEmpty()) || (trail != null && !trail.isEmpty());
+    }
+
+    /** Only tags on this reblog count. A trail entry's tags aren't the current author's contribution. */
+    static boolean hasCurrentTags(HushPost post) {
+        List<?> tags = post.hushTags();
+        if (tags == null) return false;
+        for (Object tag : tags) {
+            if (tag instanceof String && ((String) tag).codePoints()
+                    .anyMatch(point -> !Character.isWhitespace(point) && !Character.isSpaceChar(point))) return true;
+        }
+        return false;
     }
 
     /** The kind of [post] from all of its blocks, or null when it has none. */
@@ -183,26 +218,33 @@ public final class PostRules {
         return kind;
     }
 
-    /** Whether any text block, tag or the summary of [post] holds one of [words] as whole words. */
-    static boolean hasWord(HushPost post, @Nullable List<?> trail, List<String> words) {
-        for (List<?> blocks : blockLists(post, trail)) {
-            for (Object block : blocks) {
-                if (block instanceof HushText && matches(((HushText) block).hushText(), words)) return true;
-            }
+    /** Only selected fields can deny a post or make an exception to that word denial. */
+    private boolean hasWord(HushPost post, @Nullable List<?> trail, List<String> words) {
+        if (words.isEmpty()) return false;
+        if (wordsCurrentText && blocksMatch(post.hushContent(), words)) return true;
+        if (wordsReblogTrail && trail != null) {
+            for (Object entry : trail) if (entry instanceof HushTrail && blocksMatch(((HushTrail) entry).hushContent(), words)) return true;
         }
-        List<?> tags = post.hushTags();
+        List<?> tags = wordsTags ? post.hushTags() : null;
         if (tags != null) {
             for (Object tag : tags) {
                 if (tag != null && matches(tag.toString(), words)) return true;
             }
         }
-        return matches(post.hushSummary(), words);
+        return wordsSummary && matches(post.hushSummary(), words);
     }
 
-    /** Whether [text] holds any of [words], ignoring case, each as whole words. */
+    private static boolean blocksMatch(@Nullable List<?> blocks, List<String> words) {
+        if (blocks != null) for (Object block : blocks) {
+            if (block instanceof HushText && matches(((HushText) block).hushText(), words)) return true;
+        }
+        return false;
+    }
+
+    /** Whether [text] holds any of [words], canonically and ignoring case, each as whole words. */
     static boolean matches(@Nullable String text, List<String> words) {
         if (text == null || text.isEmpty()) return false;
-        String lower = text.toLowerCase(Locale.ROOT);
+        String lower = matchingText(text);
         for (String word : words) {
             if (containsWord(lower, word)) return true;
         }
@@ -210,37 +252,61 @@ public final class PostRules {
     }
 
     /**
-     * Whether [phrase] is in [text] with no letter or digit right before or after it, so "cat"
-     * finds "Cat pics" and "my cat." but not "category". Both are lower case.
+     * Whether [phrase] is in [text] with no word continuation before or after it, so "cat" finds
+     * "Cat pics" and "my cat." but not "category". Both are in NFC and ROOT lower case.
+     * Letters, Unicode digits, combining marks and connector punctuation such as underscores
+     * continue a word. Other punctuation and symbols, including emoji, separate words. This is
+     * a code-point boundary policy, not language-specific segmentation.
      */
     static boolean containsWord(String text, String phrase) {
+        if (phrase.isEmpty()) return false;
         int from = 0;
         while (true) {
             int at = text.indexOf(phrase, from);
             if (at < 0) return false;
             int end = at + phrase.length();
-            boolean starts = at == 0 || !Character.isLetterOrDigit(text.charAt(at - 1));
-            boolean ends = end == text.length() || !Character.isLetterOrDigit(text.charAt(end));
+            boolean starts = at == 0 || !continuesWord(text.codePointBefore(at));
+            boolean ends = end == text.length() || !continuesWord(text.codePointAt(end));
             if (starts && ends) return true;
             from = at + 1;
         }
     }
 
+    private static boolean continuesWord(int point) {
+        if (Character.isLetterOrDigit(point)) return true;
+        int type = Character.getType(point);
+        return type == Character.NON_SPACING_MARK || type == Character.COMBINING_SPACING_MARK
+                || type == Character.ENCLOSING_MARK || type == Character.CONNECTOR_PUNCTUATION;
+    }
+
+    /** Canonical equivalence and existing case handling, without accent or compatibility folding. */
+    private static String matchingText(String text) {
+        return Normalizer.normalize(Normalizer.normalize(text, Normalizer.Form.NFC).toLowerCase(Locale.ROOT),
+                Normalizer.Form.NFC);
+    }
+
     /**
-     * The phrases in [saved]: one a line or split by commas, trimmed, lower case, each once, in the
-     * order they were written. Blank entries are dropped.
+     * The phrases in [saved]: one a line or split by commas, trimmed, in NFC and ROOT lower case,
+     * each once, in the order they were written. Blank entries are dropped.
      */
     public static List<String> wordList(@Nullable String saved) {
+        return cachedWordList(saved, false);
+    }
+
+    /** One bounded cache for each saved list avoids reparsing either list on the next page. */
+    private static List<String> cachedWordList(@Nullable String saved, boolean allow) {
         if (saved == null || saved.trim().isEmpty()) return Collections.emptyList();
-        Parsed last = parsed;
+        Parsed last = allow ? allowedParsed : parsed;
         if (last != null && last.saved.equals(saved)) return last.words;
         Set<String> words = new LinkedHashSet<>();
         for (String entry : saved.split("[,\\n\\r]")) {
-            String word = entry.trim().toLowerCase(Locale.ROOT);
+            String word = matchingText(entry.trim());
             if (!word.isEmpty()) words.add(word);
         }
         List<String> list = Collections.unmodifiableList(new ArrayList<>(words));
-        parsed = new Parsed(saved, list);
+        Parsed next = new Parsed(saved, list);
+        if (allow) allowedParsed = next;
+        else parsed = next;
         return list;
     }
 

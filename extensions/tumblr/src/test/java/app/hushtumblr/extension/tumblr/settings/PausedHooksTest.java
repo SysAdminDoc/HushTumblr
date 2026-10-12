@@ -17,17 +17,30 @@ package app.hushtumblr.extension.tumblr.settings;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+
+import android.content.Context;
+import android.os.Looper;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.Shadows;
 import org.robolectric.annotation.Config;
 
+import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,20 +50,52 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
+
+import com.tumblr.rumblr.model.TimelineObject;
+import com.tumblr.rumblr.model.TimelineObjectType;
+import com.tumblr.rumblr.model.Timelineable;
+import com.tumblr.rumblr.model.post.blocks.TextBlock;
 
 import app.hushtumblr.extension.tumblr.flags.FeatureSwitches;
 import app.hushtumblr.extension.tumblr.flags.FeatureSwitchesTest;
 import app.hushtumblr.extension.tumblr.notifications.PushNotificationsTest;
+import app.hushtumblr.extension.tumblr.notifications.ActivityNotifications;
+import app.hushtumblr.extension.tumblr.notifications.HushActivityNotification;
+import app.hushtumblr.extension.tumblr.mature.AllowedMatureContent;
+import app.hushtumblr.extension.tumblr.mature.HushAgeVerification;
+import app.hushtumblr.extension.tumblr.mature.HushMatureAccount;
+import app.hushtumblr.extension.tumblr.mature.HushMaturePermission;
+import app.hushtumblr.extension.tumblr.mature.HushMatureResponse;
+import app.hushtumblr.extension.tumblr.mature.HushMatureService;
+import app.hushtumblr.extension.tumblr.mutual.HushMutualAccount;
+import app.hushtumblr.extension.tumblr.mutual.HushMutualFollower;
+import app.hushtumblr.extension.tumblr.mutual.HushMutualPage;
+import app.hushtumblr.extension.tumblr.mutual.HushMutualResponse;
+import app.hushtumblr.extension.tumblr.mutual.HushMutualSource;
+import app.hushtumblr.extension.tumblr.mutual.HushPrimaryBlog;
+import app.hushtumblr.extension.tumblr.mutual.MutualMarkers;
 import app.hushtumblr.extension.tumblr.privacy.AdvertisingId;
+import app.hushtumblr.extension.tumblr.rootmute.HushAccountIdentity;
+import app.hushtumblr.extension.tumblr.rootmute.MatureAccountsForTests;
+import app.hushtumblr.extension.tumblr.rootmute.RootPostMutes;
+import app.hushtumblr.extension.tumblr.timeline.HushPost;
+import app.hushtumblr.extension.tumblr.timeline.HushRootPost;
+import app.hushtumblr.extension.tumblr.timeline.HushTrail;
+import app.hushtumblr.extension.tumblr.timeline.TimelineFilter;
 import app.hushtumblr.extension.tumblr.timeline.TimelineItems;
+import app.hushtumblr.extension.tumblr.ui.AltTextCaptions;
 import app.hushtumblr.extension.tumblr.ui.BottomBarForTests;
 import app.hushtumblr.extension.tumblr.ui.BottomBarTabsForTests;
 import app.hushtumblr.extension.tumblr.ui.DarkBackgroundForTests;
 import app.hushtumblr.extension.tumblr.ui.PostFooter;
 import app.hushtumblr.extension.tumblr.ui.PostFooterForTests;
 import app.hushtumblr.extension.tumblr.ui.PostParts;
+import app.hushtumblr.extension.tumblr.ui.PostTimestamps;
 import app.hushtumblr.extension.tumblr.ui.ReviewPrompts;
 import app.hushtumblr.extension.tumblr.ui.StoreButtons;
+import app.hushtumblr.extension.tumblr.ui.HushImageContainer;
+import app.hushtumblr.extension.tumblr.ui.HushImageDescription;
 import app.hushtumblr.extension.shared.SettingsContextRule;
 import app.hushtumblr.extension.shared.Utils;
 import app.hushtumblr.extension.shared.diagnostics.HookStatus;
@@ -65,7 +110,8 @@ import app.hushtumblr.extension.shared.settings.PauseForTests;
  *
  * <p>Each probe is one hook with its switch on. It must change what Tumblr does while HushTumblr
  * runs, which is the control, and leave it alone while paused. A family that gains a switch
- * without a probe here fails the first test.
+ * without a probe here fails the first test. Dependent options have a separate contract that
+ * enables their parent and checks both their selected outcome and Tumblr's original paused path.
  */
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 30)
@@ -82,6 +128,7 @@ public class PausedHooksTest {
         PauseForTests.resume();
         for (BooleanSetting setting : settingsSwitches()) setting.resetToDefault();
         TextSettings.HIDDEN_WORDS.resetToDefault();
+        TextSettings.ALLOWED_WORDS.resetToDefault();
         TextSettings.TAB_ORDER.resetToDefault();
         BottomBarTabsForTests.forget();
         BottomBarForTests.forget();
@@ -89,6 +136,10 @@ public class PausedHooksTest {
         PatchFamily.inBuildForTests = null;
         ReleaseCheckForTests.forget();
         Utils.setActivity(null);
+        resetHook(MutualMarkers.class);
+        resetHook(AllowedMatureContent.class);
+        MatureAccountsForTests.restore();
+        testField(RootPostMutes.class, "fileForTests", null);
         HookStatus.clear();
     }
 
@@ -186,7 +237,8 @@ public class PausedHooksTest {
         // A page with a post holding the saved word comes back without it. The word is saved here,
         // with the context and unpaused; paused, the list answers empty like a switch answers off.
         TextSettings.HIDDEN_WORDS.save(TimelineItems.PROBE_WORD);
-        probes.put(Settings.HIDE_POSTS_WITH_WORDS, Collections.singletonList(TimelineItems::aPageLosesItsPostWithAHiddenWord));
+        probes.put(Settings.HIDE_POSTS_WITH_WORDS, Collections.singletonList(() -> withSwitch(
+                Settings.WORDS_CURRENT_TEXT, TimelineItems::aPageLosesItsPostWithAHiddenWord)));
         // A theme on the Dark palette gets the patch's background style.
         probes.put(Settings.DARK_BACKGROUND, Collections.singletonList(DarkBackgroundForTests::paintsATheme));
         // The Explore tab's button goes when the bar is built.
@@ -199,8 +251,171 @@ public class PausedHooksTest {
         probes.put(Settings.REORDER_TABS, Collections.singletonList(BottomBarTabsForTests::reordersTheTabs));
         // Firebase's sign-up for push notifications names Tumblr's own certificate.
         probes.put(Settings.FIX_PUSH_NOTIFICATIONS, Collections.singletonList(PushNotificationsTest::fixesACertificate));
+        BooleanSetting[] notifications = {Settings.HIDE_NOTIFICATION_LIKES, Settings.HIDE_NOTIFICATION_REBLOGS,
+                Settings.HIDE_NOTIFICATION_REPLIES, Settings.HIDE_NOTIFICATION_FOLLOWS,
+                Settings.HIDE_NOTIFICATION_MENTIONS, Settings.HIDE_NOTIFICATION_ASKS, Settings.HIDE_NOTIFICATION_BOOPS};
+        String[] types = {"Like", "Reblog", "Reply", "Follower", "NoteMention", "Ask", "Boop"};
+        for (int i = 0; i < notifications.length; i++) {
+            String type = types[i];
+            probes.put(notifications[i], Collections.singletonList(() -> ActivityNotifications.filter(
+                    Collections.singletonList((HushActivityNotification) () -> type)).isEmpty()));
+        }
+        probes.put(Settings.SHOW_POST_TIMESTAMPS, Collections.singletonList(() -> PostTimestamps.show(false)));
+        Context context = Utils.getContext();
+        probes.put(Settings.SHOW_IMAGE_DESCRIPTIONS, Arrays.asList(() -> caption(context, false), () -> caption(context, true)));
+        probes.put(Settings.MUTE_ROOT_POSTS, Collections.singletonList(() -> mutedRoot(context)));
+        probes.put(Settings.REVEAL_ALLOWED_MATURE_CONTENT, Collections.singletonList(PausedHooksTest::matureCover));
+        probes.put(Settings.SHOW_MUTUAL_MARKERS, Collections.singletonList(() -> mutualMarker(context)));
         return probes;
     }
+
+    private static List<BooleanSetting> dependentSwitches() {
+        return Arrays.asList(Settings.KEEP_TAGGED_REBLOGS, Settings.WORDS_CURRENT_TEXT,
+                Settings.WORDS_REBLOG_TRAIL, Settings.WORDS_TAGS, Settings.WORDS_SUMMARY);
+    }
+
+    private static Set<BooleanSetting> probedSwitches(Map<BooleanSetting, List<Probe>> probes) {
+        Set<BooleanSetting> covered = new HashSet<>(probes.keySet());
+        covered.addAll(dependentSwitches());
+        return covered;
+    }
+
+    private static boolean withSwitch(BooleanSetting dependency, Probe probe) {
+        boolean saved = dependency.savedValue();
+        dependency.save(true);
+        try { return probe.changedTumblr(); }
+        finally { dependency.save(saved); }
+    }
+
+    private static boolean caption(Context context, boolean gallery) {
+        LinearLayout parent = new LinearLayout(context);
+        parent.setOrientation(LinearLayout.VERTICAL);
+        FrameLayout frame = new FrameLayout(context);
+        parent.addView(frame);
+        HushImageContainer holder = () -> frame;
+        HushImageDescription description = () -> "A red balloon over a lake";
+        if (gallery) AltTextCaptions.gallery(holder, description); else AltTextCaptions.photo(holder, description);
+        return parent.getChildCount() == 2;
+    }
+
+    private static boolean mutedRoot(Context context) {
+        File document = null;
+        try {
+            MatureAccountsForTests.reset();
+            document = File.createTempFile("paused-mutes-", ".json", context.getCacheDir());
+            StringBuilder key = new StringBuilder();
+            for (byte value : MessageDigest.getInstance("SHA-256").digest("pause-probe-account".getBytes(StandardCharsets.UTF_8)))
+                key.append(String.format(java.util.Locale.ROOT, "%02x", value & 255));
+            Files.write(document.toPath(), ("{\"version\":1,\"accounts\":[{\"account\":\"" + key
+                    + "\",\"roots\":[\"123\"]}]}").getBytes(StandardCharsets.UTF_8));
+            testField(RootPostMutes.class, "fileForTests", document);
+            testField(RootPostMutes.class, "workerForTests", (Consumer<Runnable>) Runnable::run);
+            MatureAccountsForTests.commit(new ProbeAccount(null));
+            return RootPostMutes.shouldHide((HushRootPost) () -> "123");
+        } catch (Exception unavailable) { throw new AssertionError(unavailable); }
+        finally {
+            MatureAccountsForTests.restore();
+            testField(RootPostMutes.class, "fileForTests", null);
+            if (document != null) assertTrue(document.delete());
+        }
+    }
+
+    private static boolean matureCover() {
+        resetHook(AllowedMatureContent.class);
+        MatureAccountsForTests.reset();
+        try {
+            testField(AllowedMatureContent.class, "workerForTests", (Consumer<Runnable>) Runnable::run);
+            HushAgeVerification gate = () -> false;
+            AllowedMatureContent.ageGateParsed(gate, 0);
+            MatureAccountsForTests.commit(new ProbeAccount(gate));
+            int[] requests = {0};
+            AllowedMatureContent.service((HushMatureService) token -> {
+                requests[0]++;
+                HushMaturePermission permission = new HushMaturePermission() {
+                    @Override public Boolean hushShowMatureContent() { return true; }
+                    @Override public Boolean hushCanEditMatureContent() { return true; }
+                };
+                AllowedMatureContent.permissionParsed(permission, 0);
+                AllowedMatureContent.received(token, new HushMatureResponse() {
+                    @Override public Object hushResponse() { return permission; }
+                    @Override public int hushStatus() { return 200; }
+                });
+            });
+            AllowedMatureContent.cover(true);
+            boolean changed = !AllowedMatureContent.cover(true);
+            if (requests[0] != 0) { assertEquals(1, requests[0]); assertTrue(changed); }
+            return changed || requests[0] != 0;
+        } finally { resetHook(AllowedMatureContent.class); MatureAccountsForTests.restore(); }
+    }
+
+    private static boolean mutualMarker(Context context) {
+        resetHook(MutualMarkers.class);
+        MatureAccountsForTests.reset();
+        try {
+            MatureAccountsForTests.commit(new ProbeAccount(null));
+            testField(MutualMarkers.class, "workerForTests", (Consumer<Runnable>) Runnable::run);
+            ProbeBlog friend = new ProbeBlog("friend", false);
+            HushMutualFollower follower = new HushMutualFollower() {
+                @Override public boolean hushMutualFollowing() { return true; }
+                @Override public Object hushMutualFollowerBlog() { return friend; }
+            };
+            HushMutualPage page = new HushMutualPage() {
+                @Override public List<?> hushMutualUsers() { return Collections.singletonList(follower); }
+                @Override public Object hushMutualPagination() { return null; }
+                @Override public Object hushMutualLinks() { return null; }
+            };
+            int[] requests = {0};
+            HushMutualSource source = new HushMutualSource() {
+                @Override public Object first(String host) { assertEquals("primary.tumblr.com", host); requests[0]++; return this; }
+                @Override public Object next(String link) { throw new AssertionError("one page has no next link"); }
+                @Override public Object execute(Object call, long timeout) {
+                    return new HushMutualResponse() {
+                        @Override public Object hushMutualResponse() { return page; }
+                        @Override public int hushMutualStatus() { return 200; }
+                    };
+                }
+                @Override public void cancel(Object call) {}
+            };
+            testCall(MutualMarkers.class, "sourceForTests", new Class<?>[]{HushMutualSource.class}, source);
+            TextView name = new TextView(context);
+            name.setText("friend");
+            MutualMarkers.bind(name, friend, "friend");
+            Shadows.shadowOf(Looper.getMainLooper()).idle();
+            boolean changed = !"friend".contentEquals(name.getText());
+            if (requests[0] != 0) { assertEquals(1, requests[0]); assertTrue(changed); }
+            return changed || requests[0] != 0;
+        } finally { resetHook(MutualMarkers.class); MatureAccountsForTests.restore(); }
+    }
+
+    private static final class ProbeBlog implements HushPrimaryBlog {
+        final String name;
+        final boolean primary;
+        ProbeBlog(String name, boolean primary) { this.name = name; this.primary = primary; }
+        @Override public String hushMutualName() { return name; }
+        @Override public String hushMutualUuid() { return name + "-uuid"; }
+        @Override public boolean hushMutualPrimary() { return primary; }
+    }
+
+    private static final class ProbeAccount implements HushAccountIdentity, HushMatureAccount, HushMutualAccount {
+        final Object gate;
+        ProbeAccount(Object gate) { this.gate = gate; }
+        @Override public String hushAccountId() { return "pause-probe-account"; }
+        @Override public int hushAge() { return 25; }
+        @Override public boolean hushCanModifySafeMode() { return true; }
+        @Override public Object hushAgeVerification() { return gate; }
+        @Override public List<?> hushMutualBlogs() { return Collections.singletonList(new ProbeBlog("primary", true)); }
+    }
+
+    // Reuse each hook's existing package-private seams without expanding the runtime API.
+    private static void testField(Class<?> owner, String name, Object value) {
+        try { Field field = owner.getDeclaredField(name); field.setAccessible(true); field.set(null, value); }
+        catch (ReflectiveOperationException unavailable) { throw new AssertionError(unavailable); }
+    }
+    private static void testCall(Class<?> owner, String name, Class<?>[] parameters, Object... arguments) {
+        try { Method method = owner.getDeclaredMethod(name, parameters); method.setAccessible(true); method.invoke(null, arguments); }
+        catch (ReflectiveOperationException unavailable) { throw new AssertionError(unavailable); }
+    }
+    private static void resetHook(Class<?> owner) { testCall(owner, "resetForTests", new Class<?>[0]); }
 
     /** Every switch the settings screen can show, read off the class so a new one can't hide. */
     static List<BooleanSetting> settingsSwitches() {
@@ -251,7 +466,7 @@ public class PausedHooksTest {
     public void everyHookASwitchRunsTakesTumblrsOwnPathWhilePaused() {
         for (BooleanSetting setting : settingsSwitches()) setting.save(true);
         Map<BooleanSetting, List<Probe>> probes = probes();
-        assertEquals("every family's switch needs a probe here", familySwitches(), probes.keySet());
+        assertEquals("every family's switch needs a probe here", familySwitches(), probedSwitches(probes));
         Map<BooleanSetting, Probe> entry = entryProbes();
         assertEquals("every switch of the settings entry needs a probe here",
                 new HashSet<>(PatchFamily.ENTRY_SWITCHES), entry.keySet());
@@ -289,7 +504,7 @@ public class PausedHooksTest {
     public void eachHookReadsItsOwnSwitchWhenEveryOtherSwitchIsOff() {
         for (BooleanSetting setting : settingsSwitches()) setting.save(false);
         Map<BooleanSetting, List<Probe>> probes = probes();
-        assertEquals("every family's switch needs a probe here", familySwitches(), probes.keySet());
+        assertEquals("every family's switch needs a probe here", familySwitches(), probedSwitches(probes));
         List<String> wrong = new ArrayList<>();
         for (Map.Entry<BooleanSetting, List<Probe>> entry : probes.entrySet()) {
             entry.getKey().save(true);
@@ -297,6 +512,61 @@ public class PausedHooksTest {
             entry.getKey().save(false);
         }
         assertEquals(Collections.emptyList(), wrong);
+    }
+
+    /** Options need their parent enabled; a retention option deliberately restores the native row. */
+    @Test
+    public void dependentOptionsNeedTheirParentAndRespectPauseAndStartup() {
+        for (BooleanSetting setting : settingsSwitches()) setting.save(false);
+        PatchFamily.capabilitiesForTests = EnumSet.allOf(PatchFamily.Capability.class);
+        PatchFamily.inBuildForTests = EnumSet.allOf(PatchFamily.class);
+        TextSettings.HIDDEN_WORDS.save(TimelineItems.PROBE_WORD);
+        TextSettings.ALLOWED_WORDS.save("");
+        for (BooleanSetting option : dependentSwitches()) {
+            boolean retention = option == Settings.KEEP_TAGGED_REBLOGS;
+            BooleanSetting parent = retention ? Settings.HIDE_REBLOGS : Settings.HIDE_POSTS_WITH_WORDS;
+            List<?> page = Collections.singletonList(new TimelineObject(new OptionPost(option), false));
+            parent.save(true);
+            assertEquals(option.key + " off", retention ? Collections.emptyList() : page, TimelineFilter.filter(page));
+            option.save(true);
+            assertEquals(option.key + " on", retention ? page : Collections.emptyList(), TimelineFilter.filter(page));
+            parent.save(false);
+            assertSame(option.key + " cannot enable its parent", page, TimelineFilter.filter(page));
+            parent.save(true);
+            for (HushTumblrPause.Reason reason : HushTumblrPause.Reason.values()) {
+                if (reason == HushTumblrPause.Reason.NONE) continue;
+                PauseForTests.pause(reason);
+                assertSame(option.key + " paused by " + reason, page, TimelineFilter.filter(page));
+                assertTrue(option.key + " saved value", option.savedValue());
+                PauseForTests.resume();
+            }
+            SettingsContextRule.withoutContext(() -> assertSame(page, TimelineFilter.filter(page)));
+            SettingsContextRule.beforeThePauseIsDecided(() -> assertSame(page, TimelineFilter.filter(page)));
+            assertEquals(option.key + " resumed", retention ? page : Collections.emptyList(), TimelineFilter.filter(page));
+            option.save(false);
+            parent.save(false);
+        }
+    }
+
+    private static final class OptionPost implements Timelineable, HushPost {
+        final BooleanSetting option;
+        OptionPost(BooleanSetting option) { this.option = option; }
+        @Override public String getId() { return "pause-option"; }
+        @Override public TimelineObjectType getTimelineObjectType() { return TimelineObjectType.POST; }
+        @Override public List<?> hushContent() {
+            return option == Settings.WORDS_CURRENT_TEXT ? Collections.singletonList(new TextBlock(TimelineItems.PROBE_WORD))
+                    : Collections.emptyList();
+        }
+        @Override public List<?> hushTrail() {
+            return option == Settings.WORDS_REBLOG_TRAIL ? Collections.singletonList((HushTrail) () ->
+                    Collections.singletonList(new TextBlock(TimelineItems.PROBE_WORD))) : Collections.emptyList();
+        }
+        @Override public List<?> hushTags() {
+            return option == Settings.WORDS_TAGS ? Collections.singletonList(TimelineItems.PROBE_WORD)
+                    : option == Settings.KEEP_TAGGED_REBLOGS ? Collections.singletonList("personal") : Collections.emptyList();
+        }
+        @Override public String hushSummary() { return option == Settings.WORDS_SUMMARY ? TimelineItems.PROBE_WORD : null; }
+        @Override public String hushRebloggedFrom() { return option == Settings.KEEP_TAGGED_REBLOGS ? "100" : null; }
     }
 
     /**
@@ -310,7 +580,7 @@ public class PausedHooksTest {
     public void untilTheSettingsAreReadyEveryHookTakesTumblrsOwnPath() {
         for (BooleanSetting setting : settingsSwitches()) setting.save(true);
         Map<BooleanSetting, List<Probe>> probes = probes();
-        assertEquals("every family's switch needs a probe here", familySwitches(), probes.keySet());
+        assertEquals("every family's switch needs a probe here", familySwitches(), probedSwitches(probes));
         Map<BooleanSetting, Probe> entry = entryProbes();
 
         List<String> wrong = new ArrayList<>();

@@ -42,6 +42,23 @@ import app.hushtumblr.extension.shared.settings.BooleanSetting;
  */
 @SuppressWarnings("unused")
 public class Settings extends BaseSettings {
+    public static final BooleanSetting SHOW_MUTUAL_MARKERS = new BooleanSetting("hushtumblr_show_mutual_markers", FALSE);
+    public static final BooleanSetting REVEAL_ALLOWED_MATURE_CONTENT =
+            new BooleanSetting("hushtumblr_reveal_allowed_mature_content", FALSE);
+    public static final BooleanSetting MUTE_ROOT_POSTS = new BooleanSetting("hushtumblr_mute_root_posts", FALSE);
+    public static final BooleanSetting SHOW_IMAGE_DESCRIPTIONS = new BooleanSetting("hushtumblr_show_image_descriptions", FALSE);
+    public static final BooleanSetting SHOW_POST_TIMESTAMPS = new BooleanSetting("hushtumblr_show_post_timestamps", FALSE);
+    public static final BooleanSetting WORDS_CURRENT_TEXT = new BooleanSetting("hushtumblr_words_current_text", TRUE);
+    public static final BooleanSetting WORDS_REBLOG_TRAIL = new BooleanSetting("hushtumblr_words_reblog_trail", TRUE);
+    public static final BooleanSetting WORDS_TAGS = new BooleanSetting("hushtumblr_words_tags", TRUE);
+    public static final BooleanSetting WORDS_SUMMARY = new BooleanSetting("hushtumblr_words_summary", TRUE);
+    public static final BooleanSetting HIDE_NOTIFICATION_LIKES = new BooleanSetting("hushtumblr_hide_notification_likes", FALSE);
+    public static final BooleanSetting HIDE_NOTIFICATION_REBLOGS = new BooleanSetting("hushtumblr_hide_notification_reblogs", FALSE);
+    public static final BooleanSetting HIDE_NOTIFICATION_REPLIES = new BooleanSetting("hushtumblr_hide_notification_replies", FALSE);
+    public static final BooleanSetting HIDE_NOTIFICATION_FOLLOWS = new BooleanSetting("hushtumblr_hide_notification_follows", FALSE);
+    public static final BooleanSetting HIDE_NOTIFICATION_MENTIONS = new BooleanSetting("hushtumblr_hide_notification_mentions", FALSE);
+    public static final BooleanSetting HIDE_NOTIFICATION_ASKS = new BooleanSetting("hushtumblr_hide_notification_asks", FALSE);
+    public static final BooleanSetting HIDE_NOTIFICATION_BOOPS = new BooleanSetting("hushtumblr_hide_notification_boops", FALSE);
     /**
      * Ads and paid Blaze posts leave each page of posts Tumblr loads, and Tumblr's own requests to
      * its ad networks are turned off ({@link app.hushtumblr.extension.tumblr.timeline.TimelineFilter},
@@ -63,7 +80,7 @@ public class Settings extends BaseSettings {
      * start: a patched build can get no push notifications at all without it.
      */
     public static final BooleanSetting FIX_PUSH_NOTIFICATIONS =
-            new BooleanSetting("hushtumblr_fix_push_notifications", TRUE);
+            new BooleanSetting("hushtumblr_fix_push_notifications", TRUE, true);
 
     /**
      * Tumblr's own tracking and ad measurement flags answer off
@@ -162,7 +179,7 @@ public class Settings extends BaseSettings {
      * ({@link app.hushtumblr.extension.tumblr.ui.StoreButtons}). Off to start.
      */
     public static final BooleanSetting HIDE_TUMBLRMART =
-            new BooleanSetting("hushtumblr_hide_tumblrmart", FALSE);
+            new BooleanSetting("hushtumblr_hide_tumblrmart", FALSE, true);
 
     /**
      * The footer under posts doesn't show the like, reblog and comment counts
@@ -176,35 +193,35 @@ public class Settings extends BaseSettings {
      * ({@link app.hushtumblr.extension.tumblr.ui.PostFooter}). Off to start.
      */
     public static final BooleanSetting HIDE_LIKE_BUTTON =
-            new BooleanSetting("hushtumblr_hide_like_button", FALSE);
+            new BooleanSetting("hushtumblr_hide_like_button", FALSE, true);
 
     /**
      * The footer under posts doesn't show the reblog button
      * ({@link app.hushtumblr.extension.tumblr.ui.PostFooter}). Off to start.
      */
     public static final BooleanSetting HIDE_REBLOG_BUTTON =
-            new BooleanSetting("hushtumblr_hide_reblog_button", FALSE);
+            new BooleanSetting("hushtumblr_hide_reblog_button", FALSE, true);
 
     /**
      * The footer under posts doesn't show the comment button
      * ({@link app.hushtumblr.extension.tumblr.ui.PostFooter}). Off to start.
      */
     public static final BooleanSetting HIDE_COMMENT_BUTTON =
-            new BooleanSetting("hushtumblr_hide_comment_button", FALSE);
+            new BooleanSetting("hushtumblr_hide_comment_button", FALSE, true);
 
     /**
      * The footer under posts doesn't show the share button
      * ({@link app.hushtumblr.extension.tumblr.ui.PostFooter}). Off to start.
      */
     public static final BooleanSetting HIDE_SHARE_BUTTON =
-            new BooleanSetting("hushtumblr_hide_share_button", FALSE);
+            new BooleanSetting("hushtumblr_hide_share_button", FALSE, true);
 
     /**
      * The footer under posts doesn't show the Save button, which Tumblr draws only while its
      * POST_STASH flag is on ({@link app.hushtumblr.extension.tumblr.ui.PostFooter}). Off to start.
      */
     public static final BooleanSetting HIDE_SAVE_BUTTON =
-            new BooleanSetting("hushtumblr_hide_save_button", FALSE);
+            new BooleanSetting("hushtumblr_hide_save_button", FALSE, true);
 
     /**
      * The bottom bar's Dashboard tab doesn't show its unread count
@@ -233,6 +250,10 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting HIDE_REBLOGS =
             new BooleanSetting("hushtumblr_hide_reblogs", FALSE);
+
+    /** Keep tagged reblogs, while leaving the other enabled post rules in force. */
+    public static final BooleanSetting KEEP_TAGGED_REBLOGS =
+            new BooleanSetting("hushtumblr_keep_tagged_reblogs", FALSE);
 
     /**
      * Posts with a video anywhere in them, the reblog trail included, leave each page of posts
@@ -268,21 +289,21 @@ public class Settings extends BaseSettings {
      * another was picked ({@link app.hushtumblr.extension.tumblr.ui.DarkBackground}). Off to start.
      */
     public static final BooleanSetting DARK_BACKGROUND =
-            new BooleanSetting("hushtumblr_dark_background", FALSE);
+            new BooleanSetting("hushtumblr_dark_background", FALSE, true);
 
     /**
      * The bottom bar doesn't show the Explore tab's button; the tab itself stays in Tumblr's list
      * ({@link app.hushtumblr.extension.tumblr.ui.BottomBarTabs}). Off to start.
      */
     public static final BooleanSetting HIDE_EXPLORE_TAB =
-            new BooleanSetting("hushtumblr_hide_explore_tab", FALSE);
+            new BooleanSetting("hushtumblr_hide_explore_tab", FALSE, true);
 
     /**
      * The bottom bar doesn't show the Notifications tab's button; the tab itself stays in Tumblr's
      * list ({@link app.hushtumblr.extension.tumblr.ui.BottomBarTabs}). Off to start.
      */
     public static final BooleanSetting HIDE_NOTIFICATIONS_TAB =
-            new BooleanSetting("hushtumblr_hide_notifications_tab", FALSE);
+            new BooleanSetting("hushtumblr_hide_notifications_tab", FALSE, true);
 
     /**
      * Tumblr's tab list, and so the bottom bar, goes in the order saved in
@@ -290,7 +311,7 @@ public class Settings extends BaseSettings {
      * Off to start.
      */
     public static final BooleanSetting REORDER_TABS =
-            new BooleanSetting("hushtumblr_reorder_tabs", FALSE);
+            new BooleanSetting("hushtumblr_reorder_tabs", FALSE, true);
 
     /**
      * Once a day, when Tumblr starts, ask api.github.com whether a newer HushTumblr release is

@@ -1,5 +1,5 @@
 {
-  "version": "v0.0.2",
+  "version": "v0.0.3",
   "appNames": {
     "com.tumblr": "Tumblr"
   },
@@ -98,6 +98,45 @@
       "name": "Disable update prompts",
       "description": "Stops Tumblr asking Google Play for a newer version and showing Play's update prompt. Starts off. Turn it on in Tumblr settings > HushTumblr > More settings > Updates.",
       "category": "Updates",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch",
+        "HushTumblr settings"
+      ],
+      "compatiblePackages": {
+        "com.tumblr": [
+          "46.5.0.109"
+        ]
+      },
+      "compatibility": [
+        {
+          "name": "Tumblr",
+          "packageName": "com.tumblr",
+          "description": null,
+          "appIconColor": 6453,
+          "signatures": [
+            "39ac9c821ad2d605e4849f066e8aad3cca27d5e13eb03ad8755be234a2985dfd"
+          ],
+          "targets": [
+            {
+              "version": "46.5.0.109",
+              "experimental": false,
+              "versionCodes": {
+                "ARM64_V8A": 1460500109,
+                "ARMEABI_V7A": 1460500109,
+                "X86": 1460500109,
+                "X86_64": 1460500109
+              }
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Filter activity notifications",
+      "description": "Hides selected likes, reblogs, replies, follows, mentions, asks and boops from the activity list as pages load. Each switch starts off. Choose them in Tumblr settings > HushTumblr > More settings > Notifications.",
+      "category": "Notifications",
       "use": true,
       "dependencies": [
         "BytecodePatch",
@@ -486,7 +525,7 @@
     },
     {
       "name": "Hide posts with these words",
-      "description": "Takes posts out of your dashboard and other feeds when their text, reblog trail, tags or summary has a word or phrase from your list, ignoring case and matching whole words. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed.",
+      "description": "Hides posts matching your word list. Choose whether to check current text, the reblog trail, tags or summaries. Allowed words can keep a matching post, but other enabled filters still apply. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed.",
       "category": "Feed",
       "use": true,
       "dependencies": [
@@ -1226,6 +1265,45 @@
       "options": []
     },
     {
+      "name": "Mute posts locally",
+      "description": "Adds a local mute action to post menus. Originals and their reblogs stay hidden for this account. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed.",
+      "category": "Feed",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch",
+        "HushTumblr settings"
+      ],
+      "compatiblePackages": {
+        "com.tumblr": [
+          "46.5.0.109"
+        ]
+      },
+      "compatibility": [
+        {
+          "name": "Tumblr",
+          "packageName": "com.tumblr",
+          "description": null,
+          "appIconColor": 6453,
+          "signatures": [
+            "39ac9c821ad2d605e4849f066e8aad3cca27d5e13eb03ad8755be234a2985dfd"
+          ],
+          "targets": [
+            {
+              "version": "46.5.0.109",
+              "experimental": false,
+              "versionCodes": {
+                "ARM64_V8A": 1460500109,
+                "ARMEABI_V7A": 1460500109,
+                "X86": 1460500109,
+                "X86_64": 1460500109
+              }
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
       "name": "Remove ad tracking permissions",
       "description": "Removes Google's advertising ID permission and Android's Privacy Sandbox ad services from Tumblr, so it can't use them. Google Play services then answers with zeros. Works as soon as you patch it in, with no switch.",
       "category": "Privacy",
@@ -1269,6 +1347,123 @@
       "name": "Reorder the bottom bar",
       "description": "Puts the bottom bar's tabs in an order you pick, from a list in its settings. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface.",
       "category": "Navigation",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch",
+        "HushTumblr settings"
+      ],
+      "compatiblePackages": {
+        "com.tumblr": [
+          "46.5.0.109"
+        ]
+      },
+      "compatibility": [
+        {
+          "name": "Tumblr",
+          "packageName": "com.tumblr",
+          "description": null,
+          "appIconColor": 6453,
+          "signatures": [
+            "39ac9c821ad2d605e4849f066e8aad3cca27d5e13eb03ad8755be234a2985dfd"
+          ],
+          "targets": [
+            {
+              "version": "46.5.0.109",
+              "experimental": false,
+              "versionCodes": {
+                "ARM64_V8A": 1460500109,
+                "ARMEABI_V7A": 1460500109,
+                "X86": 1460500109,
+                "X86_64": 1460500109
+              }
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Reveal allowed mature content",
+      "description": "Removes mature-content covers only when Tumblr explicitly allows them for the signed-in adult account. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts.",
+      "category": "Posts",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch",
+        "HushTumblr settings"
+      ],
+      "compatiblePackages": {
+        "com.tumblr": [
+          "46.5.0.109"
+        ]
+      },
+      "compatibility": [
+        {
+          "name": "Tumblr",
+          "packageName": "com.tumblr",
+          "description": null,
+          "appIconColor": 6453,
+          "signatures": [
+            "39ac9c821ad2d605e4849f066e8aad3cca27d5e13eb03ad8755be234a2985dfd"
+          ],
+          "targets": [
+            {
+              "version": "46.5.0.109",
+              "experimental": false,
+              "versionCodes": {
+                "ARM64_V8A": 1460500109,
+                "ARMEABI_V7A": 1460500109,
+                "X86": 1460500109,
+                "X86_64": 1460500109
+              }
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Show mutual markers",
+      "description": "Marks blogs that follow your primary blog when you follow them. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts.",
+      "category": "Posts",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch",
+        "HushTumblr settings"
+      ],
+      "compatiblePackages": {
+        "com.tumblr": [
+          "46.5.0.109"
+        ]
+      },
+      "compatibility": [
+        {
+          "name": "Tumblr",
+          "packageName": "com.tumblr",
+          "description": null,
+          "appIconColor": 6453,
+          "signatures": [
+            "39ac9c821ad2d605e4849f066e8aad3cca27d5e13eb03ad8755be234a2985dfd"
+          ],
+          "targets": [
+            {
+              "version": "46.5.0.109",
+              "experimental": false,
+              "versionCodes": {
+                "ARM64_V8A": 1460500109,
+                "ARMEABI_V7A": 1460500109,
+                "X86": 1460500109,
+                "X86_64": 1460500109
+              }
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Show post timestamps",
+      "description": "Shows when posts were made using Tumblr's own timestamp layout. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts.",
+      "category": "Posts",
       "use": true,
       "dependencies": [
         "BytecodePatch",
@@ -1387,6 +1582,45 @@
       "name": "Turn off screenshot sharing",
       "description": "Stops Tumblr watching for screenshots, so taking one doesn't bring up its offer to save the post as an image. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface.",
       "category": "Interface",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch",
+        "HushTumblr settings"
+      ],
+      "compatiblePackages": {
+        "com.tumblr": [
+          "46.5.0.109"
+        ]
+      },
+      "compatibility": [
+        {
+          "name": "Tumblr",
+          "packageName": "com.tumblr",
+          "description": null,
+          "appIconColor": 6453,
+          "signatures": [
+            "39ac9c821ad2d605e4849f066e8aad3cca27d5e13eb03ad8755be234a2985dfd"
+          ],
+          "targets": [
+            {
+              "version": "46.5.0.109",
+              "experimental": false,
+              "versionCodes": {
+                "ARM64_V8A": 1460500109,
+                "ARMEABI_V7A": 1460500109,
+                "X86": 1460500109,
+                "X86_64": 1460500109
+              }
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Visible image descriptions",
+      "description": "Shows author-provided image descriptions below each image, including galleries and reblogs. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts.",
+      "category": "Posts",
       "use": true,
       "dependencies": [
         "BytecodePatch",

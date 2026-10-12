@@ -273,12 +273,13 @@ public class DexDiff {
             "once-call", "once-call <method reference>");
 
     private static final Map<String, Integer> MUTATION_COLUMNS = Map.ofEntries(
-            Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1),
+            Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1), Map.entry("activityNotifications", 7),
             Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 4),
-            Map.entry("timelineCarousel", 3), Map.entry("postBridge", 3), Map.entry("reviewPrompt", 3),
+            Map.entry("timelineCarousel", 3), Map.entry("postBridge", 3), Map.entry("paidPostBridge", 6), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
             Map.entry("followButton", 3), Map.entry("footerButton", 3), Map.entry("postTags", 5),
-            Map.entry("noteCounts", 5), Map.entry("unreadDots", 2), Map.entry("bottomBarTabs", 3),
-            Map.entry("darkBackground", 3), Map.entry("storeButtons", 5));
+            Map.entry("noteCounts", 5), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
+            Map.entry("darkBackground", 3), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
+            Map.entry("matureContent", 12), Map.entry("rootPostMutes", 10), Map.entry("mutualMarkers", 13));
 
     /**
      * A start-call, next-call, sole-call or once-call line: its method reference, the next-call's
@@ -2004,6 +2005,7 @@ public class DexDiff {
     private static final class FeatureEdits {
         final Set<Integer> removed = new HashSet<>();
         final Map<Integer, Instruction> replacements = new HashMap<>();
+        final Set<Integer> validatedTryBlocks = new HashSet<>();
     }
 
     /** Executable successors, including switch cases and only the handlers an instruction can reach. */
@@ -2350,7 +2352,7 @@ public class DexDiff {
         final Map<String, FeatureEdits> edits = new LinkedHashMap<>();
         final Set<String> claimed = new HashSet<>();
         final Set<String> selected;
-        final Map<String, FeatureFlow> flows = new HashMap<>();
+        final Map<Method, FeatureFlow> flows = new java.util.IdentityHashMap<>();
         final Map<String, Set<String>> controlCallers = new HashMap<>();
         final Map<String, List<Method>> callbacks = new HashMap<>();
         final Set<String> controlMethods = new HashSet<>();
@@ -2371,7 +2373,7 @@ public class DexDiff {
         void fail(String reason) { findings.add("contract: feature " + reason); }
         boolean flag(String name) { return flags.getOrDefault(name, false); }
 
-        FeatureFlow flow(Method m) { return flows.computeIfAbsent(m.toString(), key -> new FeatureFlow(m)); }
+        FeatureFlow flow(Method m) { return flows.computeIfAbsent(m, FeatureFlow::new); }
 
         static boolean controlReference(Reference r) {
             if (r instanceof FieldReference) {
@@ -2514,7 +2516,7 @@ public class DexDiff {
          * timeline list hook, each owning only the capability of its own bridge.
          */
         static List<String> users(Contract rule) {
-            return rule.target.equals("featureSwitch") || rule.target.equals("timelineList")
+            return rule.target.equals("featureSwitch") || rule.target.equals("timelineList") || rule.target.equals("accountIdentity") || rule.target.equals("postJsonPresence")
                     ? List.of(rule.strings.get(rule.strings.size() - 1).split(",")) : List.of();
         }
 
@@ -2765,6 +2767,7 @@ public class DexDiff {
 
         record Anchor(Method method, int at, int clean, String what) {}
         final List<Anchor> anchors = new ArrayList<>();
+        final List<Anchor> labelAnchors = new ArrayList<>();
         final List<FeatureSite> hookSites = new ArrayList<>();
         final Map<String, Set<Integer>> vouched = new HashMap<>();
 
@@ -2887,6 +2890,14 @@ public class DexDiff {
          * shows hold what the hook takes there. True when it's there and shaped so.
          */
         boolean hookAt(Method old, Method m, int cleanAt, String hook, List<Integer> args, int result, List<Integer> checked) {
+            return hookAt(old, m, cleanAt, hook, args, result, checked, false);
+        }
+
+        boolean hookAtLabel(Method old, Method m, int cleanAt, String hook, List<Integer> args, int result, List<Integer> checked) {
+            return hookAt(old, m, cleanAt, hook, args, result, checked, true);
+        }
+
+        boolean hookAt(Method old, Method m, int cleanAt, String hook, List<Integer> args, int result, List<Integer> checked, boolean label) {
             List<Integer> sites = calls(m, hook, 1);
             if (m == null || sites.size() != 1) return false;
             int at = sites.get(0);
@@ -2899,7 +2910,8 @@ public class DexDiff {
             }
             remove(m, at, at + (result < 0 ? 1 : 2));
             anchor(m, at, cleanAt, hook);
-            if (cleanAt > 0) fallthroughOnly(old, cleanAt, hook);
+            if (label) labelAnchors.add(new Anchor(m, at, cleanAt, hook));
+            else if (cleanAt > 0) fallthroughOnly(old, cleanAt, hook);
             vouch(m, at, checked);
             return true;
         }
@@ -3188,6 +3200,973 @@ public class DexDiff {
             capability(c.callee, found);
         }
 
+        static boolean callIs(Instruction i, Opcode op, String ref, Integer... args) {
+            return i != null && i.getOpcode() == op && ref.equals(String.valueOf(reference(i))) && arguments(i).equals(List.of(args));
+        }
+
+        static boolean fieldIs(Instruction i, Opcode op, String ref, int value, int receiver) {
+            return i != null && i.getOpcode() == op && ref.equals(String.valueOf(reference(i))) && firstRegister(i) == value
+                    && (receiver < 0 || i instanceof TwoRegisterInstruction t && t.getRegisterB() == receiver);
+        }
+
+        static boolean literalIs(Instruction i, Opcode op, int register, int value) {
+            return i != null && i.getOpcode() == op && firstRegister(i) == register
+                    && i instanceof NarrowLiteralInstruction n && n.getNarrowLiteral() == value;
+        }
+
+        Method nativeMethod(String ref, String reason) {
+            Method m = clean.methods.get(ref);
+            if (m == null || m.getImplementation() == null || clean.duplicates.contains(ref)
+                    || clean.duplicates.contains(m.getDefiningClass())) { fail(reason + ": missing clean " + ref); return null; }
+            return m;
+        }
+
+        /** Watch every native method in a fenced class; other selected rules can still mark their own edits. */
+        void preserveClass(String type) {
+            ClassDef cd = clean.classes.get(type);
+            if (cd == null) return;
+            for (Method m : cd.getMethods()) if (m.getImplementation() != null) {
+                actual(m);
+                edits.computeIfAbsent(m.toString(), k -> new FeatureEdits());
+            }
+        }
+
+        boolean deadAt(Method m, int at, int register) {
+            FeatureFlow graph = flow(m);
+            BitSet seen = new BitSet();
+            Deque<Integer> work = new ArrayDeque<>(List.of(at));
+            List<Instruction> body = instructions(m);
+            while (!work.isEmpty()) {
+                int k = work.poll();
+                if (k < 0 || k >= body.size() || seen.get(k)) continue;
+                seen.set(k);
+                if (valueReads(body.get(k)).stream().anyMatch(read -> read[0] == register || read[1] == 'W' && read[0] + 1 == register)) return false;
+                work.addAll(graph.handlers.get(k));
+                if (!writes(body.get(k), register)) work.addAll(graph.normal.get(k));
+            }
+            return true;
+        }
+
+        boolean hasField(FeatureIndex index, String type, String name, String value, int required, int forbidden) {
+            ClassDef cd = index.classes.get(type);
+            int found = 0;
+            if (cd != null) for (Field f : cd.getFields()) if (f.getName().equals(name) && f.getType().equals(value)
+                    && (f.getAccessFlags() & required) == required && (f.getAccessFlags() & forbidden) == 0) found++;
+            return found == 1;
+        }
+
+        boolean implementsBridge(String type, String face) {
+            ClassDef old = clean.classes.get(type), host = patched.classes.get(type), bridge = patched.classes.get(face);
+            return old != null && host != null && bridge != null && !old.getInterfaces().contains(face)
+                    && host.getInterfaces().contains(face) && AccessFlags.PUBLIC.isSet(bridge.getAccessFlags())
+                    && AccessFlags.INTERFACE.isSet(bridge.getAccessFlags());
+        }
+
+        boolean immutableBridge(String type, String face, String method, String value, String name, Opcode load) {
+            return immutableBridge(type, face, method, value, name, value, load);
+        }
+
+        boolean immutableBridge(String type, String face, String method, String value, String name, String fieldValue, Opcode load) {
+            int required = AccessFlags.PRIVATE.getValue() | AccessFlags.FINAL.getValue();
+            Method bridge = actual(type + "->" + method + "()" + value);
+            List<Instruction> b = bridge == null ? List.of() : instructions(bridge);
+            boolean object = value.startsWith("L") || value.startsWith("[");
+            return implementsBridge(type, face) && hasField(clean, type, name, fieldValue, required, AccessFlags.STATIC.getValue())
+                    && hasField(patched, type, name, fieldValue, required, AccessFlags.STATIC.getValue())
+                    && !clean.methods.containsKey(type + "->" + method + "()" + value) && bridge != null && !isStatic(bridge)
+                    && AccessFlags.PUBLIC.isSet(bridge.getAccessFlags()) && b.size() == 2
+                    && fieldIs(b.get(0), load, type + "->" + name + ":" + fieldValue, 0, parameter(bridge, -1))
+                    && movesTo(b.get(1), 0, object ? Opcode.RETURN_OBJECT : Opcode.RETURN);
+        }
+
+        boolean covariantBridge(String type, String face, String name, String result, MethodReference getter) {
+            if (getter == null || !publicGetter(getter, getter.getReturnType()) || !assignable(getter.getReturnType(), result)) return false;
+            Method m = actual(type + "->" + name + "()" + result);
+            Method declaration = patched.methods.get(face + "->" + name + "()" + result);
+            List<Instruction> b = m == null ? List.of() : instructions(m);
+            boolean object = result.startsWith("L") || result.startsWith("[");
+            return implementsBridge(type, face) && declaration != null && AccessFlags.PUBLIC.isSet(declaration.getAccessFlags())
+                    && AccessFlags.ABSTRACT.isSet(declaration.getAccessFlags()) && m != null && !isStatic(m) && AccessFlags.PUBLIC.isSet(m.getAccessFlags())
+                    && !clean.methods.containsKey(m.toString()) && b.size() == 3
+                    && callIs(b.get(0), Opcode.INVOKE_VIRTUAL, getter.toString(), parameter(m, -1))
+                    && movesTo(b.get(1), 0, object ? Opcode.MOVE_RESULT_OBJECT : Opcode.MOVE_RESULT)
+                    && movesTo(b.get(2), 0, object ? Opcode.RETURN_OBJECT : Opcode.RETURN);
+        }
+
+        /** Fresh native UUID provenance and balanced request/credential epochs are shared by account features. */
+        void accountIdentity(Contract c) {
+            if (users(c).stream().noneMatch(this::flag)) return;
+            String hooks = c.strings.get(0), user = c.strings.get(1), request = c.strings.get(2), service = c.strings.get(3),
+                    credentials = c.strings.get(4), logout = c.strings.get(5), response = c.strings.get(6), face = c.strings.get(7), uuid = c.strings.get(8);
+            String lifecycle = "account lifecycle cleanup changed", fresh = "fresh account UUID bridge changed";
+            for (String type : List.of(user, request, service, credentials, logout)) preserveClass(type);
+            String uuidName = uuid.substring(uuid.indexOf("->") + 2, uuid.lastIndexOf(':'));
+            if (!immutableBridge(user, face, "hushAccountId", STRING_TYPE, uuidName, Opcode.IGET_OBJECT)) fail(fresh + ": immutable fresh field");
+            Method persist = nativeMethod(user + "->M()V", lifecycle);
+            if (persist != null) {
+                List<Instruction> b = instructions(persist);
+                int read = firstIndex(b, 0, i -> fieldIs(i, Opcode.IGET_OBJECT, uuid, 0, parameter(persist, -1)));
+                boolean shape = !isStatic(persist) && AccessFlags.PUBLIC.isSet(persist.getAccessFlags()) && persist.getImplementation().getRegisterCount() == 2
+                        && !b.isEmpty() && b.get(b.size() - 1).getOpcode() == Opcode.RETURN_VOID
+                        && b.stream().filter(i -> i.getOpcode() == Opcode.RETURN_VOID).count() == 1
+                        && b.stream().noneMatch(i -> i instanceof OffsetInstruction) && persist.getImplementation().getTryBlocks().isEmpty()
+                        && read >= 0 && callIs(get(b, read + 1), Opcode.INVOKE_STATIC, user + "->y0(" + STRING_TYPE + ")V", 0);
+                if (!shape) fail(fresh + ": native UUID persistence");
+                hookAt(persist, actual(persist), 0, hooks + "->beginAccountChange(Ljava/lang/Object;)V", List.of(parameter(persist, -1)), -1, List.of());
+                hookAtLabel(persist, actual(persist), b.size() - 1, hooks + "->commitAccount()V", List.of(), -1, List.of());
+            }
+            Method constructor = nativeMethod(user + "-><init>(" + response + ")V", fresh);
+            if (constructor != null) {
+                List<Instruction> b = instructions(constructor);
+                int bindings = 0;
+                for (int k = 0; k + 2 < b.size(); k++) if (isCall(b.get(k), "Lcom/tumblr/rumblr/model/UserInfo;", "getUserUuid", "()" + STRING_TYPE)
+                        && b.get(k + 1).getOpcode() == Opcode.MOVE_RESULT_OBJECT && b.get(k + 2).getOpcode() == Opcode.IPUT_OBJECT
+                        && uuid.equals(String.valueOf(reference(b.get(k + 2)))) && firstRegister(b.get(k + 1)) == firstRegister(b.get(k + 2))) bindings++;
+                if (bindings != 1) fail(fresh + ": native constructor UUID binding");
+            }
+            Method writer = nativeMethod(user + "->y0(" + STRING_TYPE + ")V", fresh);
+            if (writer != null && (!isStatic(writer) || !clean.texts.get(writer.toString()).contains("user_uuid")
+                    || callSites(instructions(writer), "Lcom/tumblr/Remember;->o(" + STRING_TYPE + STRING_TYPE + ")Lcom/tumblr/Remember;").size() != 1)) fail(fresh + ": UUID writer");
+
+            Method made = nativeMethod(request + "-><init>(" + service + ")V", lifecycle);
+            if (made != null) {
+                List<Instruction> b = instructions(made);
+                if (made.getImplementation().getRegisterCount() != 2 || b.size() != 3 || !made.getImplementation().getTryBlocks().isEmpty()
+                        || !callIs(b.get(0), Opcode.INVOKE_DIRECT, "Ljava/lang/Object;-><init>()V", 0)
+                        || !fieldIs(b.get(1), Opcode.IPUT_OBJECT, request + "->a:" + service, 1, 0) || b.get(2).getOpcode() != Opcode.RETURN_VOID) fail(lifecycle + ": request constructor");
+                hookAt(made, actual(made), 2, hooks + "->requestCreated(Ljava/lang/Object;)V", List.of(0), -1, List.of());
+            }
+            Method accept = nativeMethod(request + "->accept(Ljava/lang/Object;)V", lifecycle);
+            if (accept != null) {
+                List<Instruction> before = instructions(accept);
+                if (accept.getImplementation().getRegisterCount() != 2 || before.size() != 4 || !accept.getImplementation().getTryBlocks().isEmpty()
+                        || !fieldIs(before.get(0), Opcode.IGET_OBJECT, request + "->a:" + service, 0, 0)
+                        || before.get(1).getOpcode() != Opcode.CHECK_CAST || firstRegister(before.get(1)) != 1 || !response.equals(String.valueOf(reference(before.get(1))))
+                        || !callIs(before.get(2), Opcode.INVOKE_STATIC, service + "->v(" + service + response + ")V", 0, 1)
+                        || before.get(3).getOpcode() != Opcode.RETURN_VOID) fail(lifecycle + ": authenticated callback");
+                Method m = actual(accept);
+                calls(m, hooks + "->requestEntered(Ljava/lang/Object;)V", 1);
+                calls(m, hooks + "->requestExited()V", 2);
+                List<Instruction> b = m == null ? List.of() : instructions(m);
+                boolean shape = b.size() == 9 && callIs(b.get(0), Opcode.INVOKE_STATIC_RANGE, hooks + "->requestEntered(Ljava/lang/Object;)V", 0)
+                        && callIs(b.get(4), Opcode.INVOKE_STATIC, hooks + "->requestExited()V") && b.get(5).getOpcode() == Opcode.RETURN_VOID
+                        && movesTo(b.get(6), 1, Opcode.MOVE_EXCEPTION) && callIs(b.get(7), Opcode.INVOKE_STATIC, hooks + "->requestExited()V")
+                        && movesTo(b.get(8), 1, Opcode.THROW) && m.getImplementation().getTryBlocks().size() == 1;
+                if (shape) {
+                    Layout layout = new Layout(m.getImplementation());
+                    TryBlock<? extends ExceptionHandler> block = m.getImplementation().getTryBlocks().get(0);
+                    shape = block.getStartCodeAddress() == layout.addresses.get(1)
+                            && block.getStartCodeAddress() + block.getCodeUnitCount() == layout.addresses.get(4)
+                            && block.getExceptionHandlers().size() == 1 && block.getExceptionHandlers().get(0).getExceptionType() == null
+                            && block.getExceptionHandlers().get(0).getHandlerCodeAddress() == layout.addresses.get(6);
+                }
+                if (!shape) fail(lifecycle + ": request cleanup must cover only native work and rethrow the same exception");
+                else {
+                    remove(m, 0, 1); remove(m, 4, 5); remove(m, 6, 9);
+                    edits.get(m.toString()).validatedTryBlocks.add(0);
+                    anchor(m, 0, 0, lifecycle); anchor(m, 4, 3, lifecycle);
+                }
+            }
+            Method forward = nativeMethod(service + "->v(" + service + response + ")V", lifecycle);
+            if (forward != null && (!isStatic(forward) || callSites(instructions(forward), service + "->D(" + response + ")V").size() != 1)) fail(lifecycle + ": authenticated forwarding");
+            Method parse = nativeMethod(service + "->D(" + response + ")V", lifecycle);
+            if (parse != null) {
+                List<Instruction> b = instructions(parse);
+                boolean binds = false;
+                for (int k = 0; k + 2 < b.size(); k++) if (b.get(k).getOpcode() == Opcode.NEW_INSTANCE && user.equals(String.valueOf(reference(b.get(k))))
+                        && isCall(b.get(k + 1), user, "<init>", "(" + response + ")V") && isCall(b.get(k + 2), user, "M", "()V")
+                        && arguments(b.get(k + 1)).get(0).equals(arguments(b.get(k + 2)).get(0))) binds = true;
+                if (!binds) fail(lifecycle + ": fresh account parser");
+            }
+            Method fetch = nativeMethod(service + "->f()Lyc4;", lifecycle);
+            if (fetch != null) {
+                List<Instruction> b = instructions(fetch);
+                int at = firstIndex(b, 0, i -> isCall(i, request, "<init>", "(" + service + ")V"));
+                if (at < 0 || firstIndex(b, at + 1, i -> isCall(i, "Lp8i;", "u", "()Lyc4;")) < 0) fail(lifecycle + ": callback constructed after subscription");
+            }
+            Method replace = nativeMethod(credentials + "->r(" + STRING_TYPE + STRING_TYPE + ")V", lifecycle);
+            if (replace != null) {
+                List<Instruction> b = instructions(replace);
+                List<Integer> ends = new ArrayList<>();
+                for (int k = 0; k < b.size(); k++) if (b.get(k).getOpcode() == Opcode.RETURN_VOID) ends.add(k);
+                boolean shape = !isStatic(replace) && !b.isEmpty() && b.get(0).getOpcode() == Opcode.MONITOR_ENTER && ends.size() == 1
+                        && ends.get(0) > 1 && b.get(ends.get(0) - 1).getOpcode() == Opcode.MONITOR_EXIT
+                        && clean.texts.get(replace.toString()).containsAll(List.of("AuthToken2", "AuthTokenSecret2"))
+                        && callSites(b, "Lcom/tumblr/Remember;->o(" + STRING_TYPE + STRING_TYPE + ")Lcom/tumblr/Remember;").size() == 2;
+                if (!shape) fail(lifecycle + ": credential replacement transaction");
+                else {
+                    hookAtLabel(replace, actual(replace), 1, hooks + "->credentialsChanging()V", List.of(), -1, List.of());
+                    hookAtLabel(replace, actual(replace), ends.get(0) - 1, hooks + "->credentialsChanged()V", List.of(), -1, List.of());
+                }
+            }
+            Method reset = nativeMethod(credentials + "->p(Lgbl;)V", lifecycle);
+            if (reset != null) {
+                List<Instruction> b = instructions(reset);
+                if (b.isEmpty() || b.get(0).getOpcode() != Opcode.MONITOR_ENTER || callSites(b, credentials + "->a()V").isEmpty()) fail(lifecycle + ": credential reset monitor");
+                hookAtLabel(reset, actual(reset), 1, hooks + "->logout()V", List.of(), -1, List.of());
+            }
+            Method out = nativeMethod(logout + "->i(Landroid/content/Context;ZLj45;)Ljava/lang/Object;", lifecycle);
+            if (out != null) {
+                if (callSites(instructions(out), "Lcom/tumblr/Remember;->b()V").size() != 1) fail(lifecycle + ": native logout Remember clear");
+                hookAt(out, actual(out), 0, hooks + "->logout()V", List.of(), -1, List.of());
+            }
+        }
+
+        /** Native content labels keep their own decision until four answer hooks consult verified permission evidence. */
+        void matureContent(Contract c) {
+            String hooks = c.strings.get(0), gate = c.strings.get(1), age = c.strings.get(2), permission = c.strings.get(3),
+                    response = c.strings.get(4), metadata = c.strings.get(5), repository = c.strings.get(6), service = c.strings.get(7),
+                    requester = c.strings.get(8), continuation = c.strings.get(9), user = c.strings.get(10), nsfwKey = c.strings.get(11);
+            String object = "Ljava/lang/Object;", booleanObject = "Ljava/lang/Boolean;", coverHook = hooks + "->cover(Z)Z";
+            String coverReason = "mature cover answer hook changed", ageReason = "age verification presence hook changed", accountReason = "mature account bridge changed",
+                    requestReason = "mature permission requester changed", continuationReason = "mature continuation bridge changed";
+            for (String type : List.of(gate, age, permission, response, metadata, repository, user, "Lcom/tumblr/rumblr/model/UserInfo;")) preserveClass(type);
+            boolean found = true;
+            Method old = nativeMethod(gate + "->k(Lzve;)Z", coverReason);
+            if (old == null) found = false;
+            else {
+                List<Instruction> b = instructions(old);
+                List<Opcode> shape = List.of(Opcode.INVOKE_VIRTUAL, Opcode.INVOKE_VIRTUAL, Opcode.MOVE_RESULT, Opcode.CONST_4, Opcode.IF_EQZ,
+                        Opcode.INVOKE_DIRECT, Opcode.MOVE_RESULT, Opcode.IF_EQZ, Opcode.INVOKE_DIRECT, Opcode.MOVE_RESULT, Opcode.IF_NEZ,
+                        Opcode.CONST_4, Opcode.RETURN, Opcode.RETURN, Opcode.INVOKE_DIRECT, Opcode.MOVE_RESULT, Opcode.RETURN, Opcode.RETURN);
+                List<Integer> places = List.of(12, 13, 16, 17), registers = List.of(2, 1, 2, 1);
+                boolean good = old.getImplementation().getRegisterCount() == 4 && old.getImplementation().getTryBlocks().isEmpty()
+                        && b.stream().map(Instruction::getOpcode).toList().equals(shape)
+                        && isCall(get(b, 1), gate, "l", "(Lzve;)Z") && isCall(get(b, 5), gate, "f", "(Lzve;)Z")
+                        && isCall(get(b, 8), gate, "j", "(Lzve;)Z") && isCall(get(b, 14), gate, "j", "(Lzve;)Z");
+                for (int k = 0; good && k < places.size(); k++) good &= firstRegister(b.get(places.get(k))) == registers.get(k);
+                Method m = actual(old);
+                List<Integer> sites = calls(m, coverHook, 4);
+                good &= sites.size() == 4;
+                if (m != null && sites.size() == 4) for (int k = 0; k < sites.size(); k++) {
+                    int at = sites.get(k), answer = registers.get(k);
+                    List<Instruction> body = instructions(m);
+                    if (!callIs(body.get(at), Opcode.INVOKE_STATIC_RANGE, coverHook, answer) || !movesTo(get(body, at + 1), answer, Opcode.MOVE_RESULT)) good = false;
+                    else {
+                        remove(m, at, at + 2); anchor(m, at, places.get(k), coverReason);
+                        labelAnchors.add(new Anchor(m, at, places.get(k), coverReason)); vouch(m, at, List.of(answer));
+                    }
+                }
+                if (!good) { fail(coverReason); found = false; }
+            }
+            Method nsfw = nativeMethod(nsfwKey, "native NSFW restriction changed");
+            if (nsfw == null) found = false;
+            else {
+                List<Instruction> b = instructions(nsfw);
+                int at = firstIndex(b, 0, i -> isCall(i, "Lv81;", "U0", "()Z"));
+                Method after = actual(nsfw);
+                if (at < 0 || at > 8 || !isCall(get(b, 10), gate, "k", "(Lzve;)Z") || after == null
+                        || !normalized(nsfw, null).equals(normalized(after, null))) { fail("native NSFW restriction changed"); found = false; }
+            }
+            String accountFace = BASE + "mature/HushMatureAccount;";
+            boolean account = immutableBridge(user, accountFace, "hushAge", "I", "C", Opcode.IGET)
+                    & immutableBridge(user, accountFace, "hushCanModifySafeMode", "Z", "l", Opcode.IGET_BOOLEAN)
+                    & immutableBridge(user, accountFace, "hushAgeVerification", object, "J", age, Opcode.IGET_OBJECT);
+            Method fresh = nativeMethod(user + "-><init>(Lcom/tumblr/rumblr/response/UserInfoResponse;)V", accountReason);
+            List<Instruction> freshBody = fresh == null ? List.of() : instructions(fresh);
+            account &= freshBody.size() == 127 && isCall(get(freshBody, 42), "Lcom/tumblr/rumblr/model/UserInfo;", "getCanModifySafeMode", "()Z")
+                    && isCall(get(freshBody, 87), "Lcom/tumblr/rumblr/model/UserInfo;", "getAge", "()Ljava/lang/Integer;")
+                    && isCall(get(freshBody, 123), "Lcom/tumblr/rumblr/model/UserInfo;", "getAgeVerification", "()" + age)
+                    && (user + "->l:Z").equals(String.valueOf(reference(get(freshBody, 44))))
+                    && (user + "->C:I").equals(String.valueOf(reference(get(freshBody, 96))))
+                    && (user + "->J:" + age).equals(String.valueOf(reference(get(freshBody, 125))));
+            ClassDef raw = clean.classes.get("Lcom/tumblr/rumblr/model/UserInfo;");
+            List<Method> defaults = new ArrayList<>();
+            if (raw != null) for (Method m : raw.getMethods()) if (m.getName().equals("<init>") && AccessFlags.SYNTHETIC.isSet(m.getAccessFlags())) defaults.add(m);
+            List<Instruction> fallback = defaults.size() == 1 ? instructions(defaults.get(0)) : List.of();
+            account &= fallback.size() == 224 && literalIs(get(fallback, 3), Opcode.CONST_4, 3, 0)
+                    && get(fallback, 23) instanceof NarrowLiteralInstruction n && n.getNarrowLiteral() == 0x400
+                    && get(fallback, 25) instanceof TwoRegisterInstruction t && t.getOpcode() == Opcode.MOVE && t.getRegisterA() == 15 && t.getRegisterB() == 3
+                    && get(fallback, 222) instanceof RegisterRangeInstruction r && r.getOpcode() == Opcode.INVOKE_DIRECT_RANGE && r.getStartRegister() == 4;
+            if (!account) fail(accountReason);
+            found &= account;
+
+            boolean models = bridge(age + ">" + BASE + "mature/HushAgeVerification;>hushBlockApp:block_app")
+                    & bridge(permission + ">" + BASE + "mature/HushMaturePermission;>hushShowMatureContent:show_mature_content,hushCanEditMatureContent:can_edit");
+            MethodReference rawBlock = adapterGetter(age, "block_app");
+            models &= rawBlock != null && rawBlock.toString().equals(age + "->getBlockApp()Z");
+            String responseFace = BASE + "mature/HushMatureResponse;";
+            Method responseDecl = patched.methods.get(responseFace + "->hushResponse()" + object);
+            Method nativeResponse = nativeMethod(response + "->getResponse()" + object, accountReason);
+            models &= implementsBridge(response, responseFace) && responseDecl != null && nativeResponse != null
+                    && directBridge(response, responseDecl, nativeResponse);
+            Method status = actual(response + "->hushStatus()I");
+            List<Instruction> sb = status == null ? List.of() : instructions(status);
+            models &= status != null && !isStatic(status) && AccessFlags.PUBLIC.isSet(status.getAccessFlags()) && sb.size() == 8
+                    && callIs(sb.get(0), Opcode.INVOKE_VIRTUAL, response + "->getMetaData()" + metadata, parameter(status, -1))
+                    && movesTo(sb.get(1), 0, Opcode.MOVE_RESULT_OBJECT) && movesTo(sb.get(2), 0, Opcode.IF_EQZ) && target(status, 2) == 6
+                    && callIs(sb.get(3), Opcode.INVOKE_VIRTUAL, metadata + "->getStatus()I", 0)
+                    && movesTo(sb.get(4), 0, Opcode.MOVE_RESULT) && movesTo(sb.get(5), 0, Opcode.RETURN)
+                    && literalIs(sb.get(6), Opcode.CONST_4, 0, 0) && movesTo(sb.get(7), 0, Opcode.RETURN);
+            models &= publicGetter(clean.methods.get(response + "->getMetaData()" + metadata), metadata)
+                    & publicGetter(clean.methods.get(metadata + "->getStatus()I"), "I");
+            if (!models) fail(accountReason + ": nullable raw permission/response model");
+            found &= models;
+
+            String parserType = age.substring(0, age.length() - 1) + "JsonAdapter;", parsedHook = hooks + "->ageGateParsed(" + object + "I)V";
+            preserveClass(parserType);
+            Method parser = nativeMethod(parserType + "->fromJson(Leba;)" + object, ageReason);
+            if (parser == null) found = false;
+            else {
+                List<Instruction> b = instructions(parser);
+                boolean good = b.size() == 100 && parser.getImplementation().getRegisterCount() == 16 && parser.getImplementation().getTryBlocks().isEmpty()
+                        && literalIs(get(b, 6), Opcode.CONST_4, 3, -1)
+                        && get(b, 11) instanceof TwoRegisterInstruction t && t.getOpcode() == Opcode.MOVE && t.getRegisterA() == 9 && t.getRegisterB() == 3
+                        && literalIs(get(b, 58), Opcode.AND_INT_LIT8, 9, -2) && ((TwoRegisterInstruction) b.get(58)).getRegisterB() == 9
+                        && isCall(get(b, 73), age, "<init>", "(ZLjava/lang/String;Ljava/lang/String;Lcom/tumblr/rumblr/model/AgeGroup;)V")
+                        && isCall(get(b, 84), age, "<init>", "(ZLjava/lang/String;Ljava/lang/String;Lcom/tumblr/rumblr/model/AgeGroup;ILz76;)V")
+                        && b.get(84) instanceof RegisterRangeInstruction r && r.getStartRegister() == 4 && r.getRegisterCount() == 7
+                        && movesTo(get(b, 74), 14, Opcode.RETURN_OBJECT) && movesTo(get(b, 85), 4, Opcode.RETURN_OBJECT) && movesTo(get(b, 99), 2, Opcode.RETURN_OBJECT);
+                Method m = actual(parser);
+                featureControls = false; // Presence is captured before the feature is enabled; no request or reveal happens here.
+                List<Integer> sites = calls(m, parsedHook, 2);
+                featureControls = true;
+                good &= sites.size() == 2;
+                if (m != null && sites.size() == 2) for (int k = 0; k < 2; k++) {
+                    int at = sites.get(k), result = k == 0 ? 14 : 4, place = k == 0 ? 74 : 85;
+                    if (!callIs(instructions(m).get(at), Opcode.INVOKE_STATIC, parsedHook, result, 9)) good = false;
+                    else { remove(m, at, at + 1); anchor(m, at, place, ageReason); labelAnchors.add(new Anchor(m, at, place, ageReason)); vouch(m, at, List.of(result, 9)); }
+                }
+                if (!good) fail(ageReason);
+                found &= good;
+            }
+            String permissionParserType = permission.substring(0, permission.length() - 1) + "JsonAdapter;",
+                    permissionHook = hooks + "->permissionParsed(" + object + "I)V", permissionReason = "mature permission presence hook changed";
+            preserveClass(permissionParserType);
+            Method permissionParser = nativeMethod(permissionParserType + "->fromJson(Leba;)" + object, permissionReason);
+            if (permissionParser == null) found = false;
+            else {
+                List<Instruction> p = instructions(permissionParser);
+                boolean good = p.size() == 121 && permissionParser.getImplementation().getRegisterCount() == 24 && permissionParser.getImplementation().getTryBlocks().isEmpty()
+                        && get(p, 7) instanceof NarrowLiteralInstruction initial && initial.getNarrowLiteral() == -1 && p.get(7).getOpcode() == Opcode.CONST_4
+                        && get(p, 14) instanceof TwoRegisterInstruction move && move.getOpcode() == Opcode.MOVE && move.getRegisterA() == 13 && move.getRegisterB() == 4
+                        && literalIs(get(p, 32), Opcode.AND_INT_LIT8, 13, -33) && ((TwoRegisterInstruction) p.get(32)).getRegisterB() == 13
+                        && literalIs(get(p, 37), Opcode.AND_INT_LIT8, 13, -17) && ((TwoRegisterInstruction) p.get(37)).getRegisterB() == 13
+                        && called(get(p, 83)) != null && called(p.get(83)).getDefiningClass().equals(permission) && called(p.get(83)).getName().equals("<init>")
+                        && get(p, 83) instanceof RegisterRangeInstruction first && first.getStartRegister() == 14 && first.getRegisterCount() == 8
+                        && called(get(p, 103)) != null && called(p.get(103)).getDefiningClass().equals(permission) && called(p.get(103)).getName().equals("<init>")
+                        && get(p, 103) instanceof RegisterRangeInstruction second && second.getStartRegister() == 5 && second.getRegisterCount() == 10
+                        && movesTo(get(p, 84), 14, Opcode.RETURN_OBJECT) && movesTo(get(p, 104), 5, Opcode.RETURN_OBJECT) && movesTo(get(p, 118), 3, Opcode.RETURN_OBJECT);
+                Method m = actual(permissionParser);
+                featureControls = false; // Default-true can_edit is not affirmative permission without both JSON keys.
+                List<Integer> sites = calls(m, permissionHook, 2);
+                featureControls = true;
+                good &= sites.size() == 2;
+                if (m != null && sites.size() == 2) for (int k = 0; k < 2; k++) {
+                    int at = sites.get(k), result = k == 0 ? 14 : 5, place = k == 0 ? 84 : 104;
+                    if (!callIs(instructions(m).get(at), Opcode.INVOKE_STATIC, permissionHook, result, 13)) good = false;
+                    else { remove(m, at, at + 1); anchor(m, at, place, permissionReason); labelAnchors.add(new Anchor(m, at, place, permissionReason)); vouch(m, at, List.of(result, 13)); }
+                }
+                if (!good) fail(permissionReason);
+                found &= good;
+            }
+            String serviceHook = hooks + "->service(" + object + ")V";
+            Method ctor = nativeMethod(repository + "-><init>(Ljn6;" + service + ")V", requestReason);
+            if (ctor == null) found = false;
+            else {
+                List<Instruction> b = instructions(ctor);
+                boolean good = b.size() == 14 && ctor.getImplementation().getRegisterCount() == 9 && ctor.getImplementation().getTryBlocks().isEmpty()
+                        && fieldIs(get(b, 4), Opcode.IPUT_OBJECT, repository + "->b:" + service, 8, 6) && b.get(13).getOpcode() == Opcode.RETURN_VOID;
+                Method m = actual(ctor);
+                featureControls = false; // Captures the existing service only. The cover hook controls the GET.
+                List<Integer> sites = calls(m, serviceHook, 1);
+                featureControls = true;
+                good &= sites.size() == 1;
+                if (m != null && sites.size() == 1) {
+                    int at = sites.get(0); List<Instruction> body = instructions(m);
+                    good &= at >= 2 && movesTo(get(body, at - 2), 0, Opcode.NEW_INSTANCE) && requester.equals(String.valueOf(reference(get(body, at - 2))))
+                            && callIs(get(body, at - 1), Opcode.INVOKE_DIRECT, requester + "-><init>(" + object + ")V", 0, 8)
+                            && callIs(body.get(at), Opcode.INVOKE_STATIC, serviceHook, 0);
+                    if (good) {
+                        claimed.add(m + "@" + (at - 1)); remove(m, at - 2, at + 1); anchor(m, at - 2, 13, requestReason);
+                        labelAnchors.add(new Anchor(m, at - 2, 13, requestReason)); vouch(m, at, List.of(0));
+                    }
+                }
+                if (!good) fail(requestReason + ": existing service capture");
+                found &= good;
+            }
+            Method getPermission = patched.methods.get(service + "->getCommunityLabelUserConfig(Lj45;)" + object);
+            ClassDef nativeService = patched.classes.get(service);
+            boolean get = nativeService != null && AccessFlags.INTERFACE.isSet(nativeService.getAccessFlags()) && getPermission != null
+                    && AccessFlags.PUBLIC.isSet(getPermission.getAccessFlags()) && AccessFlags.ABSTRACT.isSet(getPermission.getAccessFlags())
+                    && getPermission.getAnnotations().stream().anyMatch(a -> a.getType().equals("Lretrofit2/http/GET;"))
+                    && getPermission.getAnnotations().stream().noneMatch(a -> Set.of("Lretrofit2/http/POST;", "Lretrofit2/http/PUT;", "Lretrofit2/http/PATCH;", "Lretrofit2/http/DELETE;").contains(a.getType()));
+            Method fetch = actual(requester + "->hushFetchMaturePermission(" + object + ")V");
+            List<Instruction> fb = fetch == null ? List.of() : instructions(fetch);
+            boolean request = get && hasField(patched, requester, "service", object, AccessFlags.PRIVATE.getValue() | AccessFlags.FINAL.getValue(), AccessFlags.STATIC.getValue())
+                    && fetch != null && !isStatic(fetch) && AccessFlags.PUBLIC.isSet(fetch.getAccessFlags()) && fetch.getImplementation().getRegisterCount() == 6 && fb.size() == 11
+                    && fieldIs(fb.get(0), Opcode.IGET_OBJECT, requester + "->service:" + object, 0, 4)
+                    && movesTo(fb.get(1), 0, Opcode.CHECK_CAST) && service.equals(String.valueOf(reference(fb.get(1))))
+                    && movesTo(fb.get(2), 1, Opcode.NEW_INSTANCE) && continuation.equals(String.valueOf(reference(fb.get(2))))
+                    && callIs(fb.get(3), Opcode.INVOKE_DIRECT, continuation + "-><init>(" + object + ")V", 1, 5)
+                    && callIs(fb.get(4), Opcode.INVOKE_INTERFACE, getPermission.toString(), 0, 1) && movesTo(fb.get(5), 2, Opcode.MOVE_RESULT_OBJECT)
+                    && callIs(fb.get(6), Opcode.INVOKE_STATIC, "Lz5a;->g()" + object) && movesTo(fb.get(7), 3, Opcode.MOVE_RESULT_OBJECT)
+                    && fb.get(8).getOpcode() == Opcode.IF_EQ && ((TwoRegisterInstruction) fb.get(8)).getRegisterA() == 2 && ((TwoRegisterInstruction) fb.get(8)).getRegisterB() == 3 && target(fetch, 8) == 10
+                    && callIs(fb.get(9), Opcode.INVOKE_STATIC, hooks + "->received(" + object + object + ")V", 5, 2) && fb.get(10).getOpcode() == Opcode.RETURN_VOID;
+            if (!request) fail(requestReason);
+            found &= request;
+            ClassDef nativeContinuation = clean.classes.get("Lj45;"), context = clean.classes.get("Lma7;"), suspended = clean.classes.get("Lz5a;"), afterContinuation = patched.classes.get(continuation);
+            Method getContext = actual(continuation + "->getContext()Lue5;");
+            List<Instruction> cb = getContext == null ? List.of() : instructions(getContext);
+            Method contextName = nativeMethod("Lma7;->toString()" + STRING_TYPE, continuationReason), marker = nativeMethod("Lb6a;->g()" + object, continuationReason);
+            Method resume = actual(continuation + "->resumeWith(" + object + ")V");
+            boolean resumes = false;
+            if (resume != null) for (Instruction i : instructions(resume)) if (isCall(i, hooks, "received", "(" + object + object + ")V")) resumes = true;
+            boolean continuationGood = nativeContinuation != null && AccessFlags.INTERFACE.isSet(nativeContinuation.getAccessFlags())
+                    && clean.methods.containsKey("Lj45;->getContext()Lue5;") && clean.methods.containsKey("Lj45;->resumeWith(" + object + ")V")
+                    && context != null && context.getInterfaces().contains("Lue5;") && hasField(clean, "Lma7;", "a", "Lma7;", AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue() | AccessFlags.FINAL.getValue(), 0)
+                    && contextName != null && reference(get(instructions(contextName), 0)) instanceof StringReference s && s.getString().equals("EmptyCoroutineContext")
+                    && suspended != null && "Lb6a;".equals(suspended.getSuperclass()) && marker != null && "Llf5;->COROUTINE_SUSPENDED:Llf5;".equals(String.valueOf(reference(get(instructions(marker), 0))))
+                    && afterContinuation != null && afterContinuation.getInterfaces().contains("Lj45;") && getContext != null && !isStatic(getContext) && AccessFlags.PUBLIC.isSet(getContext.getAccessFlags())
+                    && cb.size() == 2 && fieldIs(cb.get(0), Opcode.SGET_OBJECT, "Lma7;->a:Lma7;", 0, -1) && movesTo(cb.get(1), 0, Opcode.RETURN_OBJECT) && resumes;
+            if (!continuationGood) fail(continuationReason);
+            found &= continuationGood;
+            controls(actual(hooks + "->received(" + object + object + ")V"), true);
+            capability(c.callee, found);
+        }
+
+        MethodReference canonicalGetter(String type, String key, String result) {
+            MethodReference getter = adapterGetter(type, key);
+            if (getter == null || !publicGetter(getter, result)) return null;
+            Method m = clean.methods.get(getter.toString());
+            List<Instruction> b = instructions(m);
+            FieldReference f = field(get(b, 0));
+            int immutable = AccessFlags.PRIVATE.getValue() | AccessFlags.FINAL.getValue();
+            if (b.size() != 2 || f == null || !f.getDefiningClass().equals(type) || !f.getType().equals(result)
+                    || !fieldIs(b.get(0), Opcode.IGET_OBJECT, f.toString(), 0, parameter(m, -1)) || !movesTo(b.get(1), 0, Opcode.RETURN_OBJECT)
+                    || !hasField(clean, type, f.getName(), result, immutable, AccessFlags.STATIC.getValue())
+                    || !hasField(patched, type, f.getName(), result, immutable, AccessFlags.STATIC.getValue())) {
+                fail("root canonical bridge changed: mutable or indirect " + key + " getter"); return null;
+            }
+            return getter;
+        }
+
+        /** Explicit first/last default masks, captured once after the only successful Post constructor. */
+        void postJsonPresence(Contract c) {
+            String post = c.strings.get(0), adapter = c.strings.get(1), reason = "Post JSON presence proof changed";
+            String setterKey = post + "->hushSetJsonPresence(II)V", paidField = post + "->hushPaidContextKnown:Z", trailField = post + "->hushRootTrailPresent:Z";
+            if (users(c).stream().noneMatch(this::flag)) {
+                if (!clean.methods.containsKey(setterKey) && patched.methods.containsKey(setterKey)) fail("unselected Post JSON presence hook");
+                return;
+            }
+            preserveClass(post); preserveClass(adapter);
+            Method setter = actual(setterKey);
+            List<Instruction> set = setter == null ? List.of() : instructions(setter);
+            boolean good = !clean.methods.containsKey(setterKey) && setter != null && !isStatic(setter)
+                    && AccessFlags.PUBLIC.isSet(setter.getAccessFlags()) && AccessFlags.SYNTHETIC.isSet(setter.getAccessFlags())
+                    && setter.getImplementation().getRegisterCount() == 4 && set.size() == 11;
+            for (String name : List.of("hushPaidContextKnown", "hushRootTrailPresent")) good &=
+                    hasField(patched, post, name, "Z", AccessFlags.PRIVATE.getValue(), AccessFlags.STATIC.getValue()) && !hasField(clean, post, name, "Z", 0, 0);
+            if (good) good = literalIs(set.get(0), Opcode.CONST, 0, 0x4080000)
+                    && set.get(1) instanceof TwoRegisterInstruction a && a.getOpcode() == Opcode.AND_INT_2ADDR && a.getRegisterA() == 2 && a.getRegisterB() == 0
+                    && movesTo(set.get(2), 2, Opcode.IF_NEZ) && target(setter, 2) == 5
+                    && literalIs(set.get(3), Opcode.CONST_4, 0, 1) && set.get(4).getOpcode() == Opcode.GOTO && target(setter, 4) == 6
+                    && literalIs(set.get(5), Opcode.CONST_4, 0, 0) && fieldIs(set.get(6), Opcode.IPUT_BOOLEAN, paidField, 0, 1)
+                    && literalIs(set.get(7), Opcode.AND_INT_LIT8, 0, 1) && ((TwoRegisterInstruction) set.get(7)).getRegisterB() == 3
+                    && literalIs(set.get(8), Opcode.XOR_INT_LIT8, 0, 1) && ((TwoRegisterInstruction) set.get(8)).getRegisterB() == 0
+                    && fieldIs(set.get(9), Opcode.IPUT_BOOLEAN, trailField, 0, 1) && set.get(10).getOpcode() == Opcode.RETURN_VOID;
+            Method reader = nativeMethod(adapter + "->fromJson(Leba;)Ljava/lang/Object;", reason);
+            if (reader == null) good = false;
+            else {
+                List<Instruction> before = instructions(reader);
+                List<Integer> allocations = new ArrayList<>(), constructors = new ArrayList<>(), returns = new ArrayList<>();
+                for (int k = 0; k < before.size(); k++) {
+                    Instruction i = before.get(k); MethodReference r = called(i);
+                    if (i.getOpcode() == Opcode.NEW_INSTANCE && post.equals(String.valueOf(reference(i)))) allocations.add(k);
+                    if (r != null && r.getDefiningClass().equals(post) && r.getName().equals("<init>")) constructors.add(k);
+                    if (i.getOpcode() == Opcode.RETURN_OBJECT) returns.add(k);
+                }
+                MethodReference ctor = called(get(before, 2094));
+                boolean nativeProof = reader.getImplementation().getRegisterCount() == 178 && before.size() == 2112
+                        && literalIs(get(before, 10), Opcode.CONST_4, 10, -1) && movePair(get(before, 66), Opcode.MOVE, 4, 10)
+                        && movePair(get(before, 67), Opcode.MOVE, 5, 4) && movePair(get(before, 68), Opcode.MOVE, 6, 5) && movePair(get(before, 69), Opcode.MOVE, 7, 6)
+                        && literalIs(get(before, 168), Opcode.CONST, 161, ~0x80000) && literalIs(get(before, 175), Opcode.CONST, 168, ~0x4000000)
+                        && threeRegisters(get(before, 1599), Opcode.AND_INT, 3, 10, 168) && threeRegisters(get(before, 1732), Opcode.AND_INT, 3, 10, 161)
+                        && movePair(get(before, 1580), Opcode.MOVE, 10, 3)
+                        && literalIs(get(before, 372), Opcode.AND_INT_LIT8, 3, -2) && ((TwoRegisterInstruction) before.get(372)).getRegisterB() == 7
+                        && movePair(get(before, 208), Opcode.MOVE, 7, 3)
+                        && movePair(get(before, 2027), Opcode.MOVE_FROM16, 154, 10) && movePair(get(before, 2067), Opcode.MOVE_FROM16, 158, 7)
+                        && !writtenBetween(before, 2028, 2095, 154) && !writtenBetween(before, 2068, 2095, 158)
+                        && allocations.equals(List.of(1908)) && movesTo(get(before, 1908), 4, Opcode.NEW_INSTANCE) && constructors.equals(List.of(2094))
+                        && get(before, 2094) instanceof RegisterRangeInstruction r && r.getOpcode() == Opcode.INVOKE_DIRECT_RANGE && r.getStartRegister() == 4 && r.getRegisterCount() == 156
+                        && ctor != null && ctor.getParameterTypes().size() >= 6 && ctor.getParameterTypes().subList(ctor.getParameterTypes().size() - 6, ctor.getParameterTypes().size())
+                            .stream().map(Object::toString).toList().equals(List.of("I", "I", "I", "I", "I", "Lz76;"))
+                        && returns.equals(List.of(2095, 2109)) && movesTo(get(before, 2095), 4, Opcode.RETURN_OBJECT)
+                        && literalIs(get(before, 1901), Opcode.CONST_16, 157, 0) && movesTo(get(before, 1905), 0, Opcode.IF_NEZ)
+                        && movesTo(get(before, 2109), 157, Opcode.RETURN_OBJECT) && !writtenBetween(before, 1902, 1906, 157) && !writtenBetween(before, 2096, 2110, 157)
+                        && callIs(get(before, 2108), Opcode.INVOKE_STATIC, "Lf9a;->a(Ljava/lang/String;)V", 0);
+                if (nativeProof) {
+                    FeatureFlow graph = flow(reader);
+                    nativeProof = predecessors(graph, 2095).equals(List.of(2094)) && graph.normal.get(1905).contains(2096);
+                    for (int k = 2096; k <= 2109; k++) nativeProof &= predecessors(graph, k).equals(List.of(k == 2096 ? 1905 : k - 1));
+                }
+                Method m = actual(reader); List<Instruction> body = m == null ? List.of() : instructions(m);
+                List<Integer> sites = callSites(body, setterKey); boolean injected = sites.size() == 1;
+                if (injected) {
+                    int at = sites.get(0), first = at - 3;
+                    int vp = firstRegister(get(body, first)), vf = firstRegister(get(body, first + 1)), vt = firstRegister(get(body, first + 2));
+                    injected = first >= 0 && movePair(get(body, first), Opcode.MOVE_OBJECT_FROM16, vp, 4)
+                            && movePair(get(body, first + 1), Opcode.MOVE_FROM16, vf, 154) && movePair(get(body, first + 2), Opcode.MOVE_FROM16, vt, 158)
+                            && vp >= 0 && vp < 16 && vf >= 0 && vf < 16 && vt >= 0 && vt < 16 && new HashSet<>(List.of(vp, vf, vt, 4)).size() == 4
+                            && callIs(body.get(at), Opcode.INVOKE_VIRTUAL, setterKey, vp, vf, vt)
+                            && deadAt(reader, 2095, vp) && deadAt(reader, 2095, vf) && deadAt(reader, 2095, vt);
+                    if (injected) { remove(m, first, at + 1); anchor(m, first, 2095, reason); labelAnchors.add(new Anchor(m, first, 2095, reason)); }
+                }
+                good &= nativeProof && injected;
+                if (m != null && injected) good &= normalized(reader, null).equals(normalized(m, edits.get(m.toString())));
+            }
+            ClassDef model = patched.classes.get(post);
+            if (model != null) for (Method m : model.getMethods()) for (Instruction i : instructions(m))
+                if (i.getOpcode() == Opcode.IPUT_BOOLEAN && Set.of(paidField, trailField).contains(String.valueOf(reference(i))) && !m.toString().equals(setterKey)) good = false;
+            if (!good) fail(reason);
+        }
+
+        boolean movePair(Instruction i, Opcode opcode, int destination, int source) {
+            return i instanceof TwoRegisterInstruction r && i.getOpcode() == opcode && r.getRegisterA() == destination && r.getRegisterB() == source;
+        }
+
+        boolean threeRegisters(Instruction i, Opcode opcode, int a, int b, int c) {
+            return i instanceof ThreeRegisterInstruction r && i.getOpcode() == opcode && r.getRegisterA() == a && r.getRegisterB() == b && r.getRegisterC() == c;
+        }
+
+        List<Integer> predecessors(FeatureFlow graph, int target) {
+            List<Integer> result = new ArrayList<>();
+            for (int k = 0; k < graph.normal.size(); k++) if (graph.normal.get(k).contains(target) || graph.handlers.get(k).contains(target)) result.add(k);
+            return result;
+        }
+
+        /** Native displayed-blog provenance, primary-account follower reads, and recycled marker cleanup. */
+        void mutualMarkers(Contract c) {
+            String hooks = c.strings.get(0), header = c.strings.get(1), user = c.strings.get(2), primary = c.strings.get(3),
+                    shortBlog = c.strings.get(4), blog = c.strings.get(5), follower = c.strings.get(6), page = c.strings.get(7),
+                    pagination = c.strings.get(8), link = c.strings.get(9), response = c.strings.get(10), source = c.strings.get(11), service = c.strings.get(12);
+            String object = "Ljava/lang/Object;", list = "Ljava/util/List;", text = "Landroid/widget/TextView;", call = "Lretrofit2/Call;",
+                    result = "Lretrofit2/Response;", time = "Ljava/util/concurrent/TimeUnit;", metadata = "Lcom/tumblr/rumblr/response/Metadata;", base = BASE + "mutual/";
+            String headerReason = "mutual header hook changed", accountReason = "mutual account bridge changed", blogReason = "mutual blog bridge changed",
+                    pageReason = "mutual follower page bridge changed", requestReason = "mutual native requester changed", responseReason = "mutual response bridge changed";
+            for (String type : List.of(header, user, primary, shortBlog, blog, follower, page, pagination, link, response, service, metadata)) preserveClass(type);
+            Method bind = nativeMethod(header + "->t2(Lzve;Lo9m;Z" + blog + "Z)V", headerReason);
+            boolean shown = bind != null;
+            if (bind != null) {
+                List<Instruction> b = instructions(bind);
+                shown = bind.getImplementation().getRegisterCount() == 21 && b.size() == 128 && bind.getImplementation().getTryBlocks().isEmpty()
+                        && movePair(get(b, 1), Opcode.MOVE_OBJECT_FROM16, 5, 19)
+                        && callIs(get(b, 14), Opcode.INVOKE_DIRECT, header + "->Z0(Lzve;" + blog + ")" + STRING_TYPE, 15, 2, 5)
+                        && movesTo(get(b, 15), 13, Opcode.MOVE_RESULT_OBJECT) && !writtenBetween(b, 2, 106, 5) && !writtenBetween(b, 16, 106, 13)
+                        && fieldIs(get(b, 104), Opcode.IGET_OBJECT, header + "->K:" + text, 0, 15)
+                        && callIs(get(b, 105), Opcode.INVOKE_VIRTUAL, text + "->setText(Ljava/lang/CharSequence;)V", 0, 8)
+                        && hookAtLabel(bind, actual(bind), 106, hooks + "->bind(" + object + object + STRING_TYPE + ")V", List.of(0, 5, 13), -1, List.of(0, 5, 13));
+                if (shown) labelAnchors.add(new Anchor(actual(bind), 106, 106, headerReason));
+            }
+            Method name = nativeMethod(header + "->Z0(Lzve;" + blog + ")" + STRING_TYPE, headerReason);
+            shown &= name != null && instructions(name).size() == 17 && isCall(get(instructions(name), 4), blog, "e0", "()" + STRING_TYPE);
+            List<Method> fulls = new ArrayList<>(); ClassDef oldHeader = clean.classes.get(header);
+            if (oldHeader != null) for (Method m : oldHeader.getMethods()) if (m.getName().equals("S0") && m.getReturnType().equals("V")) fulls.add(m);
+            Method full = fulls.size() == 1 ? fulls.get(0) : null, detach = nativeMethod(header + "->onDetachedFromWindow()V", headerReason);
+            featureControls = false; // Clearing a recycled view must run while paused or switched off too.
+            shown &= full != null && full.getImplementation().getRegisterCount() == 35 && full.getParameterTypes().size() == 18
+                    && full.getParameterTypes().get(0).equals("Lzve;") && instructions(full).size() == 297
+                    && isCall(get(instructions(full), 7), header, "X1", "()V")
+                    && hookAtLabel(full, actual(full), 0, hooks + "->clear(" + object + ")V", List.of(16), -1, List.of(16));
+            shown &= detach != null && detach.getImplementation().getRegisterCount() == 1 && instructions(detach).size() == 4
+                    && instructions(detach).get(0).getOpcode() == Opcode.INVOKE_SUPER
+                    && hookAtLabel(detach, actual(detach), 0, hooks + "->clear(" + object + ")V", List.of(0), -1, List.of(0));
+            featureControls = true;
+            Method view = actual(header + "->hushMutualNameView()" + object); List<Instruction> vb = view == null ? List.of() : instructions(view);
+            shown &= implementsBridge(header, base + "HushMutualHeader;") && hasField(clean, header, "K", text, AccessFlags.PRIVATE.getValue(), AccessFlags.STATIC.getValue())
+                    && view != null && !isStatic(view) && AccessFlags.PUBLIC.isSet(view.getAccessFlags()) && vb.size() == 2
+                    && fieldIs(vb.get(0), Opcode.IGET_OBJECT, header + "->K:" + text, 0, parameter(view, -1)) && movesTo(vb.get(1), 0, Opcode.RETURN_OBJECT);
+            if (!shown) fail(headerReason);
+
+            boolean account = immutableBridge(user, base + "HushMutualAccount;", "hushMutualBlogs", list, "k", Opcode.IGET_OBJECT);
+            Method fresh = nativeMethod(user + "-><init>(Lcom/tumblr/rumblr/response/UserInfoResponse;)V", accountReason);
+            if (fresh == null) account = false;
+            else {
+                List<Instruction> b = instructions(fresh);
+                account &= b.size() == 127 && isCall(get(b, 39), "Lcom/tumblr/rumblr/model/UserInfo;", "getBlogs", "()" + list)
+                        && get(b, 40) != null && b.get(40).getOpcode() == Opcode.MOVE_RESULT_OBJECT
+                        && fieldIs(get(b, 41), Opcode.IPUT_OBJECT, user + "->k:" + list, firstRegister(b.get(40)), parameter(fresh, -1));
+            }
+            if (!account) fail(accountReason);
+
+            MethodReference primaryGetter = adapterGetter(primary, "primary"), shortName = adapterGetter(shortBlog, "name"), shortUuid = adapterGetter(shortBlog, "uuid");
+            boolean blogs = nativeFieldGetter(primaryGetter, "X", "Z", true) && nativeFieldGetter(shortName, "a", STRING_TYPE, true)
+                    && nativeFieldGetter(shortUuid, "g", STRING_TYPE, true)
+                    && nativeFieldGetter(clean.methods.get(blog + "->e0()" + STRING_TYPE), "a", STRING_TYPE, false)
+                    && nativeFieldGetter(clean.methods.get(blog + "->t0()" + STRING_TYPE), "E", STRING_TYPE, false)
+                    && covariantBridge(primary, base + "HushPrimaryBlog;", "hushMutualPrimary", "Z", primaryGetter)
+                    && covariantBridge(shortBlog, base + "HushMutualBlog;", "hushMutualName", STRING_TYPE, shortName)
+                    && covariantBridge(shortBlog, base + "HushMutualBlog;", "hushMutualUuid", STRING_TYPE, shortUuid)
+                    && covariantBridge(blog, base + "HushMutualBlog;", "hushMutualName", STRING_TYPE, clean.methods.get(blog + "->e0()" + STRING_TYPE))
+                    && covariantBridge(blog, base + "HushMutualBlog;", "hushMutualUuid", STRING_TYPE, clean.methods.get(blog + "->t0()" + STRING_TYPE));
+            ClassDef pcd = clean.classes.get(primary), bcd = clean.classes.get("Lcom/tumblr/rumblr/model/blog/BlogInfo;");
+            blogs &= pcd != null && pcd.getSuperclass().equals("Lcom/tumblr/rumblr/model/blog/BlogInfo;") && bcd != null && bcd.getSuperclass().equals(shortBlog)
+                    && mutualPrimaryDefaults(primary) && nativeClassUnchanged(primary) && nativeClassUnchanged(shortBlog) && nativeClassUnchanged(blog);
+            Method copied = nativeMethod(blog + "->W0(" + shortBlog + ")" + blog, blogReason);
+            blogs &= copied != null && instructions(copied).size() == 116 && shortUuid != null
+                    && String.valueOf(reference(get(instructions(copied), 39))).equals(shortUuid.toString())
+                    && reference(get(instructions(copied), 41)) != null && reference(instructions(copied).get(41)).toString().equals(blog + "->E:" + STRING_TYPE);
+            if (!blogs) fail(blogReason);
+
+            MethodReference following = adapterGetter(follower, "following"), followerBlog = adapterGetter(follower, "blog"), users = adapterGetter(page, "users"), pages = adapterGetter(page, "_links"), next = adapterGetter(pagination, "next");
+            boolean followers = nativeFieldGetter(following, "isFollowing", "Z", false) && nativeFieldGetter(followerBlog, "blog", shortBlog, false)
+                    && mutualFollowingDefaults(follower, shortBlog) && nativeClassUnchanged(follower) && nativeClassUnchanged(page)
+                    && nativeClassUnchanged(pagination) && nativeClassUnchanged(link)
+                    && covariantBridge(follower, base + "HushMutualFollower;", "hushMutualFollowing", "Z", following)
+                    && covariantBridge(follower, base + "HushMutualFollower;", "hushMutualFollowerBlog", object, followerBlog)
+                    && covariantBridge(page, base + "HushMutualPage;", "hushMutualUsers", list, users)
+                    && covariantBridge(page, base + "HushMutualPage;", "hushMutualPagination", object, pages)
+                    && covariantBridge(page, base + "HushMutualPage;", "hushMutualLinks", object, clean.methods.get(page + "->getLinks()" + pagination))
+                    && covariantBridge(pagination, base + "HushMutualPagination;", "hushMutualNext", object, next)
+                    && covariantBridge(link, base + "HushMutualLink;", "hushMutualLink", STRING_TYPE, clean.methods.get(link + "->getLink()" + STRING_TYPE));
+            Method pageCtor = nativeMethod(page + "-><init>(I" + list + pagination + ")V", pageReason);
+            if (pageCtor == null) followers = false;
+            else {
+                List<Instruction> b = instructions(pageCtor); Instruction a = get(b, 3), d = get(b, 4);
+                followers &= b.size() == 6 && a instanceof TwoRegisterInstruction first && d instanceof TwoRegisterInstruction second
+                        && fieldIs(a, Opcode.IPUT_OBJECT, page + "->paginationLinks:" + pagination, first.getRegisterA(), first.getRegisterB())
+                        && fieldIs(d, Opcode.IPUT_OBJECT, page + "->links:" + pagination, first.getRegisterA(), first.getRegisterB());
+            }
+            if (!followers) fail(pageReason);
+
+            boolean responses = covariantBridge(response, base + "HushMutualResponse;", "hushMutualResponse", object, clean.methods.get(response + "->getResponse()" + object));
+            Method status = actual(response + "->hushMutualStatus()I"); List<Instruction> sb = status == null ? List.of() : instructions(status);
+            responses &= status != null && !isStatic(status) && AccessFlags.PUBLIC.isSet(status.getAccessFlags()) && sb.size() == 8
+                    && callIs(sb.get(0), Opcode.INVOKE_VIRTUAL, response + "->getMetaData()" + metadata, parameter(status, -1))
+                    && movesTo(sb.get(1), 0, Opcode.MOVE_RESULT_OBJECT) && movesTo(sb.get(2), 0, Opcode.IF_EQZ) && target(status, 2) == 6
+                    && callIs(sb.get(3), Opcode.INVOKE_VIRTUAL, metadata + "->getStatus()I", 0) && movesTo(sb.get(4), 0, Opcode.MOVE_RESULT)
+                    && movesTo(sb.get(5), 0, Opcode.RETURN) && literalIs(sb.get(6), Opcode.CONST_4, 0, 0) && movesTo(sb.get(7), 0, Opcode.RETURN)
+                    && publicGetter(clean.methods.get(response + "->getMetaData()" + metadata), metadata) && publicGetter(clean.methods.get(metadata + "->getStatus()I"), "I");
+            if (!responses) fail(responseReason);
+            boolean requests = mutualRequester(source, service, call, result, time, object, requestReason);
+            capability(c.callee, shown && account && blogs && followers && responses && requests);
+        }
+
+        boolean nativeFieldGetter(MethodReference reference, String name, String type, boolean immutable) {
+            if (reference == null || !publicGetter(reference, type)) return false;
+            Method m = clean.methods.get(reference.toString()); List<Instruction> b = instructions(m);
+            return hasField(clean, reference.getDefiningClass(), name, type, AccessFlags.PRIVATE.getValue() | (immutable ? AccessFlags.FINAL.getValue() : 0), AccessFlags.STATIC.getValue())
+                    && b.size() == 2 && fieldIs(b.get(0), type.equals("Z") ? Opcode.IGET_BOOLEAN : Opcode.IGET_OBJECT,
+                    reference.getDefiningClass() + "->" + name + ":" + type, 0, parameter(m, -1)) && movesTo(b.get(1), 0, type.equals("Z") ? Opcode.RETURN : Opcode.RETURN_OBJECT);
+        }
+
+        boolean nativeClassUnchanged(String type) {
+            ClassDef owner = clean.classes.get(type); if (owner == null) return false;
+            for (Method old : owner.getMethods()) {
+                Method current = patched.methods.get(old.toString());
+                if (current == null || !old.getAnnotations().equals(current.getAnnotations()) || !normalized(old, null).equals(normalized(current, edits.get(old.toString())))) return false;
+            }
+            return true;
+        }
+
+        Method syntheticConstructor(String type) {
+            List<Method> constructors = new ArrayList<>(); ClassDef owner = clean.classes.get(type);
+            if (owner != null) for (Method m : owner.getMethods()) if (m.getName().equals("<init>") && AccessFlags.SYNTHETIC.isSet(m.getAccessFlags())) constructors.add(m);
+            return constructors.size() == 1 ? constructors.get(0) : null;
+        }
+
+        boolean mutualPrimaryDefaults(String type) {
+            Method defaults = syntheticConstructor(type); if (defaults == null) return false;
+            List<? extends CharSequence> parameters = defaults.getParameterTypes(); if (parameters.size() < 3) return false;
+            String args = String.join("", parameters.subList(0, parameters.size() - 3));
+            Method constructor = clean.methods.get(type + "-><init>(" + args + ")V"); if (constructor == null) return false;
+            List<Instruction> b = instructions(defaults), p = instructions(constructor);
+            return defaults.getImplementation().getRegisterCount() == 129 && b.size() == 283 && constructor.getImplementation().getRegisterCount() == 110 && p.size() == 83
+                    && constructor.getParameterTypes().stream().mapToInt(v -> v.equals("J") || v.equals("D") ? 2 : 1).sum() == 60
+                    && parameters.subList(parameters.size() - 3, parameters.size()).stream().map(Object::toString).toList().equals(List.of("I", "I", "Lz76;"))
+                    && movePair(get(p, 11), Opcode.MOVE_OBJECT_FROM16, 0, 49) && !writtenBetween(p, 12, 60, 0)
+                    && movePair(get(p, 58), Opcode.MOVE_FROM16, 1, 94) && fieldIs(get(p, 59), Opcode.IPUT_BOOLEAN, type + "->X:Z", 1, 0)
+                    && movePair(get(b, 1), Opcode.MOVE_FROM16, 1, 127) && literalIs(get(b, 19), Opcode.CONST_4, 3, 0) && !writtenBetween(b, 20, 202, 3)
+                    && literalIs(get(b, 199), Opcode.AND_INT_LIT16, 0, 0x1000) && ((TwoRegisterInstruction) b.get(199)).getRegisterB() == 1
+                    && movesTo(get(b, 200), 0, Opcode.IF_EQZ) && target(defaults, 200) == 203 && movePair(get(b, 201), Opcode.MOVE_FROM16, 49, 3)
+                    && b.get(202).getOpcode() == Opcode.GOTO && target(defaults, 202) == 204 && movePair(get(b, 203), Opcode.MOVE_FROM16, 49, 110)
+                    && !writtenBetween(b, 204, 281, 49) && callIs(get(b, 281), Opcode.INVOKE_DIRECT_RANGE, constructor.toString(), java.util.stream.IntStream.range(4, 65).boxed().toArray(Integer[]::new));
+        }
+
+        boolean mutualFollowingDefaults(String type, String shortBlog) {
+            Method defaults = syntheticConstructor(type), constructor = clean.methods.get(type + "-><init>(" + STRING_TYPE + STRING_TYPE + "JZ" + shortBlog + ")V");
+            if (defaults == null || constructor == null) return false;
+            List<Instruction> b = instructions(defaults), p = instructions(constructor);
+            return defaults.getImplementation().getRegisterCount() == 10 && b.size() == 18 && constructor.getImplementation().getRegisterCount() == 7 && p.size() == 7
+                    && descriptor(defaults).equals("(" + String.join("", constructor.getParameterTypes()) + "ILz76;)V")
+                    && fieldIs(get(p, 4), Opcode.IPUT_BOOLEAN, type + "->isFollowing:Z", 5, 0)
+                    && literalIs(get(b, 10), Opcode.AND_INT_LIT8, 9, 8) && ((TwoRegisterInstruction) b.get(10)).getRegisterB() == 8
+                    && movesTo(get(b, 11), 9, Opcode.IF_EQZ) && target(defaults, 11) == 13 && literalIs(get(b, 12), Opcode.CONST_4, 6, 0)
+                    && !writtenBetween(b, 13, 16, 6) && callIs(get(b, 16), Opcode.INVOKE_DIRECT_RANGE, constructor.toString(), 1, 2, 3, 4, 5, 6, 7);
+        }
+
+        boolean annotationString(Set<? extends com.android.tools.smali.dexlib2.iface.Annotation> annotations, String type, String value) {
+            for (var annotation : annotations) if (annotation.getType().equals(type)) {
+                for (var element : annotation.getElements()) if (element.getName().equals("value")) return element.getValue() instanceof StringEncodedValue text && text.getValue().equals(value);
+                return value.isEmpty();
+            }
+            return false;
+        }
+
+        String literal(Instruction instruction) {
+            return reference(instruction) instanceof StringReference text ? text.getString() : null;
+        }
+
+        boolean mutualRequester(String source, String service, String call, String response, String time, String object, String reason) {
+            String signature = "(" + STRING_TYPE + STRING_TYPE + ")" + call;
+            Method first = patched.methods.get(service + "->followers" + signature), next = patched.methods.get(service + "->followersPagination" + signature);
+            ClassDef sc = clean.classes.get(service), cc = clean.classes.get(call);
+            boolean good = sc != null && AccessFlags.INTERFACE.isSet(sc.getAccessFlags()) && cc != null && AccessFlags.INTERFACE.isSet(cc.getAccessFlags()) && first != null && next != null;
+            if (good) good = annotationString(first.getAnnotations(), "Lretrofit2/http/GET;", "blog/{hostname}/followers?limit=100")
+                    && annotationString(next.getAnnotations(), "Lretrofit2/http/GET;", "")
+                    && annotationString(first.getParameters().get(0).getAnnotations(), "Lretrofit2/http/Path;", "hostname")
+                    && annotationString(first.getParameters().get(1).getAnnotations(), "Lretrofit2/http/Query;", "fields[blogs]")
+                    && next.getParameters().get(0).getAnnotations().stream().anyMatch(a -> a.getType().equals("Lretrofit2/http/Url;"))
+                    && annotationString(next.getParameters().get(1).getAnnotations(), "Lretrofit2/http/Query;", "fields[blogs]");
+            for (Method m : Arrays.asList(first, next)) good &= m != null && AccessFlags.PUBLIC.isSet(m.getAccessFlags()) && AccessFlags.ABSTRACT.isSet(m.getAccessFlags())
+                    && m.getAnnotations().stream().noneMatch(a -> Set.of("Lretrofit2/http/POST;", "Lretrofit2/http/PUT;", "Lretrofit2/http/PATCH;", "Lretrofit2/http/DELETE;").contains(a.getType()));
+            Method nativeRead = nativeMethod("Lcom/tumblr/ui/fragment/FollowerFragment;->a5()" + call, reason), core = nativeMethod("Lcom/tumblr/CoreApp;->X()" + service, reason);
+            String fields = nativeRead == null ? null : literal(get(instructions(nativeRead), 13));
+            good &= nativeRead != null && instructions(nativeRead).size() == 18 && ".tumblr.com".equals(literal(get(instructions(nativeRead), 9)))
+                    && first != null && String.valueOf(reference(get(instructions(nativeRead), 14))).equals(first.toString())
+                    && fields != null && Arrays.asList(fields.split(",")).contains("uuid") && core != null && isStatic(core);
+            for (String key : List.of(call + "->execute()" + response, call + "->timeout()Lpck;", call + "->cancel()V")) {
+                Method method = clean.methods.get(key); good &= method != null && !isStatic(method) && AccessFlags.PUBLIC.isSet(method.getAccessFlags()) && AccessFlags.ABSTRACT.isSet(method.getAccessFlags());
+            }
+            good &= clean.methods.containsKey("Lpck;->timeout(J" + time + ")Lpck;") && publicGetter(clean.methods.get(response + "->isSuccessful()Z"), "Z")
+                    && publicGetter(clean.methods.get(response + "->body()" + object), object);
+            for (String name : List.of("first", "next")) {
+                Method m = actual(source + "->" + name + "(" + STRING_TYPE + ")" + object); List<Instruction> b = m == null ? List.of() : instructions(m);
+                good &= m != null && !isStatic(m) && AccessFlags.PUBLIC.isSet(m.getAccessFlags()) && m.getImplementation().getRegisterCount() == 4 && b.size() == 6
+                        && callIs(b.get(0), Opcode.INVOKE_STATIC, "Lcom/tumblr/CoreApp;->X()" + service)
+                        && movesTo(b.get(1), 0, Opcode.MOVE_RESULT_OBJECT) && fields != null && fields.equals(literal(b.get(2))) && firstRegister(b.get(2)) == 1
+                        && callIs(b.get(3), Opcode.INVOKE_INTERFACE, service + "->" + (name.equals("first") ? "followers" : "followersPagination") + signature, 0, 3, 1)
+                        && movesTo(b.get(4), 0, Opcode.MOVE_RESULT_OBJECT) && movesTo(b.get(5), 0, Opcode.RETURN_OBJECT);
+            }
+            Method execute = actual(source + "->execute(" + object + "J)" + object), cancel = actual(source + "->cancel(" + object + ")V");
+            List<Instruction> b = execute == null ? List.of() : instructions(execute), cb = cancel == null ? List.of() : instructions(cancel);
+            good &= execute != null && !isStatic(execute) && AccessFlags.PUBLIC.isSet(execute.getAccessFlags()) && execute.getImplementation().getRegisterCount() == 8 && b.size() == 16
+                    && movePair(b.get(0), Opcode.MOVE_OBJECT, 0, 5) && fieldIsType(b.get(1), Opcode.CHECK_CAST, call, 0, -1)
+                    && callIs(b.get(2), Opcode.INVOKE_INTERFACE, call + "->timeout()Lpck;", 0) && movesTo(b.get(3), 1, Opcode.MOVE_RESULT_OBJECT)
+                    && fieldIs(b.get(4), Opcode.SGET_OBJECT, time + "->MILLISECONDS:" + time, 2, -1)
+                    && callIs(b.get(5), Opcode.INVOKE_VIRTUAL, "Lpck;->timeout(J" + time + ")Lpck;", 1, 6, 7, 2)
+                    && callIs(b.get(6), Opcode.INVOKE_INTERFACE, call + "->execute()" + response, 0) && movesTo(b.get(7), 1, Opcode.MOVE_RESULT_OBJECT)
+                    && callIs(b.get(8), Opcode.INVOKE_VIRTUAL, response + "->isSuccessful()Z", 1) && movesTo(b.get(9), 2, Opcode.MOVE_RESULT)
+                    && movesTo(b.get(10), 2, Opcode.IF_EQZ) && target(execute, 10) == 14
+                    && callIs(b.get(11), Opcode.INVOKE_VIRTUAL, response + "->body()" + object, 1) && movesTo(b.get(12), 0, Opcode.MOVE_RESULT_OBJECT)
+                    && movesTo(b.get(13), 0, Opcode.RETURN_OBJECT) && literalIs(b.get(14), Opcode.CONST_4, 0, 0) && movesTo(b.get(15), 0, Opcode.RETURN_OBJECT)
+                    && cancel != null && !isStatic(cancel) && AccessFlags.PUBLIC.isSet(cancel.getAccessFlags()) && cancel.getImplementation().getRegisterCount() == 2 && cb.size() == 3
+                    && fieldIsType(cb.get(0), Opcode.CHECK_CAST, call, 1, -1) && callIs(cb.get(1), Opcode.INVOKE_INTERFACE, call + "->cancel()V", 1) && cb.get(2).getOpcode() == Opcode.RETURN_VOID;
+            if (!good) fail(reason);
+            return good;
+        }
+
+        /** Canonical IDs, explicit JSON presence, local-only rebinds and the native menu action. */
+        void rootPostMutes(Contract c) {
+            String root = c.strings.get(0), menu = c.strings.get(1), post = c.strings.get(2), wrapper = c.strings.get(3), menuKey = c.strings.get(4),
+                    timeline = c.strings.get(5), face = c.strings.get(6), local = c.strings.get(7), action = c.strings.get(8), timelineObject = c.strings.get(9);
+            String object = "Ljava/lang/Object;", list = "Ljava/util/List;", mode = "Lrbk;", callback = "Ltj8;", unit = "Lb6l;",
+                    builder = "Lcom/tumblr/components/bottomsheet/b$b;", concrete = "Lcom/tumblr/components/bottomsheet/b$a;", payload = "Lcom/tumblr/rumblr/model/Timelineable;";
+            String canonical = root + "->canonicalRoot(" + STRING_TYPE + STRING_TYPE + STRING_TYPE + list + "Z)" + STRING_TYPE;
+            String presenceField = post + "->hushRootTrailPresent:Z", captureField = wrapper + "->hushCanonicalRoot:" + STRING_TYPE;
+            String rootReason = "root canonical bridge changed", captureReason = "root wrapper capture changed",
+                    menuReason = "root menu hook changed", localReason = "root local timeline bridge changed", callbackReason = "root callback bridge changed";
+            for (String type : List.of(post, wrapper, timeline, mode, timelineObject, "Lvgi;")) preserveClass(type);
+            List<MethodReference> getters = new ArrayList<>();
+            for (String key : List.of("reblogged_root_id", "reblogged_from_id", "id", "trail")) getters.add(canonicalGetter(post, key, key.equals("trail") ? list : STRING_TYPE));
+            Method bridge = actual(post + "->hushRootId()" + STRING_TYPE);
+            List<Instruction> b = bridge == null ? List.of() : instructions(bridge);
+            boolean canonicalGood = implementsBridge(post, face) && bridge != null && !isStatic(bridge) && AccessFlags.PUBLIC.isSet(bridge.getAccessFlags())
+                    && bridge.getImplementation().getRegisterCount() == 6 && b.size() == 12 && getters.stream().noneMatch(java.util.Objects::isNull);
+            for (int k = 0; canonicalGood && k < 4; k++) canonicalGood &= callIs(b.get(2 * k), Opcode.INVOKE_VIRTUAL, getters.get(k).toString(), 5)
+                    && movesTo(b.get(2 * k + 1), k, Opcode.MOVE_RESULT_OBJECT);
+            canonicalGood &= b.size() == 12 && fieldIs(b.get(8), Opcode.IGET_BOOLEAN, presenceField, 4, 5)
+                    && callIs(b.get(9), Opcode.INVOKE_STATIC, canonical, 0, 1, 2, 3, 4) && movesTo(b.get(10), 0, Opcode.MOVE_RESULT_OBJECT) && movesTo(b.get(11), 0, Opcode.RETURN_OBJECT);
+            featureControls = false; // The canonicalizer reads only arguments; account controls belong to the hide/menu decisions.
+            List<Integer> canonicalSites = calls(bridge, canonical, 1);
+            featureControls = true;
+            if (canonicalGood && canonicalSites.size() == 1) vouch(bridge, canonicalSites.get(0), List.of(0, 1, 2, 3, 4));
+            if (!canonicalGood) fail(rootReason);
+            boolean found = canonicalGood;
+
+            if (!hasField(patched, post, "hushRootTrailPresent", "Z", AccessFlags.PRIVATE.getValue(), AccessFlags.STATIC.getValue()) || actual(post + "->hushSetJsonPresence(II)V") == null) { fail(rootReason); found = false; }
+
+            Method wrapped = actual(wrapper + "->hushRootId()" + STRING_TYPE);
+            List<Instruction> wb = wrapped == null ? List.of() : instructions(wrapped);
+            boolean capture = implementsBridge(wrapper, face) && hasField(patched, wrapper, "hushCanonicalRoot", STRING_TYPE, AccessFlags.PRIVATE.getValue() | AccessFlags.FINAL.getValue(), AccessFlags.STATIC.getValue())
+                    && !hasField(clean, wrapper, "hushCanonicalRoot", STRING_TYPE, 0, 0) && wrapped != null && !isStatic(wrapped) && AccessFlags.PUBLIC.isSet(wrapped.getAccessFlags())
+                    && wb.size() == 2 && fieldIs(wb.get(0), Opcode.IGET_OBJECT, captureField, 0, parameter(wrapped, -1)) && movesTo(wb.get(1), 0, Opcode.RETURN_OBJECT);
+            Method constructor = nativeMethod(wrapper + "-><init>(" + post + ")V", captureReason);
+            if (constructor == null) capture = false;
+            else {
+                List<Instruction> before = instructions(constructor);
+                Method m = actual(constructor);
+                List<Instruction> body = m == null ? List.of() : instructions(m);
+                int scratch = firstRegister(get(body, 2));
+                boolean injected = !isStatic(constructor) && constructor.getImplementation().getRegisterCount() == 9
+                        && callIs(get(before, 0), Opcode.INVOKE_DIRECT, "Ljava/lang/Object;-><init>()V", 7)
+                        && callIs(get(body, 1), Opcode.INVOKE_INTERFACE_RANGE, face + "->hushRootId()" + STRING_TYPE, 8)
+                        && movesTo(get(body, 2), scratch, Opcode.MOVE_RESULT_OBJECT) && scratch >= 0 && scratch < 7 && deadAt(constructor, 1, scratch)
+                        && fieldIs(get(body, 3), Opcode.IPUT_OBJECT, captureField, scratch, 7);
+                if (injected) { claimed.add(m + "@1"); remove(m, 1, 4); anchor(m, 1, 1, captureReason); fallthroughOnly(constructor, 1, captureReason); }
+                capture &= injected;
+            }
+            ClassDef wrapperClass = patched.classes.get(wrapper);
+            if (wrapperClass != null) for (Method m : wrapperClass.getMethods()) for (Instruction i : instructions(m))
+                if (i.getOpcode() == Opcode.IPUT_OBJECT && captureField.equals(String.valueOf(reference(i))) && (constructor == null || !m.toString().equals(constructor.toString()))) capture = false;
+            if (!capture) fail(captureReason);
+            found &= capture;
+
+            String menuHook = menu + "->add(" + object + object + "Landroid/content/Context;" + object + ")V";
+            Method oldMenu = nativeMethod(menuKey, menuReason);
+            boolean menuGood = oldMenu != null;
+            if (oldMenu != null) {
+                List<Instruction> before = instructions(oldMenu);
+                menuGood = isStatic(oldMenu) && AccessFlags.PUBLIC.isSet(oldMenu.getAccessFlags()) && oldMenu.getImplementation().getRegisterCount() == 28 && before.size() > 225
+                        && callIs(get(before, 225), Opcode.INVOKE_VIRTUAL, builder + "->h()Lcom/tumblr/components/bottomsheet/b;", 11)
+                        && isCall(get(before, 12), "Landroidx/fragment/app/Fragment;", "requireContext", "()Landroid/content/Context;")
+                        && movesTo(get(before, 13), 10, Opcode.MOVE_RESULT_OBJECT) && movesTo(get(before, 14), 11, Opcode.NEW_INSTANCE) && concrete.equals(String.valueOf(reference(before.get(14))))
+                        && callIs(get(before, 15), Opcode.INVOKE_DIRECT, concrete + "-><init>(Landroid/content/Context;)V", 11, 10)
+                        && !writtenBetween(before, 0, 225, 17) && !writtenBetween(before, 0, 225, 24);
+                for (int register : List.of(10, 11)) {
+                    List<Integer> writes = new ArrayList<>();
+                    for (int k = 0; k < Math.min(225, before.size()); k++) if (writes(before.get(k), register)) writes.add(k);
+                    menuGood &= writes.equals(List.of(register == 10 ? 13 : 14));
+                }
+                Method m = actual(oldMenu);
+                List<Integer> sites = calls(m, menuHook, 1);
+                menuGood &= sites.size() == 1;
+                if (m != null && sites.size() == 1) {
+                    int at = sites.get(0); List<Instruction> body = instructions(m);
+                    Instruction card = get(body, at - 2), host = get(body, at - 1);
+                    int vc = firstRegister(card), vh = firstRegister(host);
+                    boolean injected = card instanceof TwoRegisterInstruction cardMove && cardMove.getOpcode() == Opcode.MOVE_OBJECT_FROM16 && cardMove.getRegisterB() == 24
+                            && host instanceof TwoRegisterInstruction hostMove && hostMove.getOpcode() == Opcode.MOVE_OBJECT_FROM16 && hostMove.getRegisterB() == 17
+                            && vc >= 0 && vc < 16 && vh >= 0 && vh < 16 && new HashSet<>(List.of(vc, vh, 10, 11)).size() == 4
+                            && callIs(body.get(at), Opcode.INVOKE_STATIC, menuHook, 11, vc, 10, vh) && deadAt(oldMenu, 225, vc) && deadAt(oldMenu, 225, vh);
+                    if (injected) { remove(m, at - 2, at + 1); anchor(m, at - 2, 225, menuReason); labelAnchors.add(new Anchor(m, at - 2, 225, menuReason)); vouch(m, at, List.of(11, vc, 10, vh)); }
+                    menuGood &= injected;
+                }
+            }
+            if (!menuGood) fail(menuReason);
+            found &= menuGood;
+            boolean localGood = localTimeline(timeline, local, mode, list);
+            if (!localGood) fail(localReason);
+            found &= localGood;
+
+            ClassDef callbackClass = clean.classes.get(callback), actionClass = patched.classes.get(action);
+            List<Method> declarations = new ArrayList<>();
+            if (callbackClass != null) for (Method m : callbackClass.getMethods()) declarations.add(m);
+            Method actionInvoke = actual(action + "->invoke()" + object);
+            boolean callbackGood = callbackClass != null && AccessFlags.PUBLIC.isSet(callbackClass.getAccessFlags()) && AccessFlags.INTERFACE.isSet(callbackClass.getAccessFlags())
+                    && callbackClass.getInterfaces().equals(List.of("Lvj8;")) && declarations.size() == 1 && declarations.get(0).getName().equals("invoke")
+                    && descriptor(declarations.get(0)).equals("()" + object) && AccessFlags.PUBLIC.isSet(declarations.get(0).getAccessFlags()) && AccessFlags.ABSTRACT.isSet(declarations.get(0).getAccessFlags())
+                    && actionClass != null && actionClass.getInterfaces().contains(callback) && actionInvoke != null && !isStatic(actionInvoke) && AccessFlags.PUBLIC.isSet(actionInvoke.getAccessFlags())
+                    && callSites(instructions(actionInvoke), action + "->run()V").size() == 1 && callSites(instructions(actionInvoke), menu + "->unit()" + object).size() == 1
+                    && hasField(clean, unit, "a", unit, AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue() | AccessFlags.FINAL.getValue(), 0);
+            for (String key : List.of(builder + "->c(" + STRING_TYPE + callback + ")" + builder, builder + "->h()Lcom/tumblr/components/bottomsheet/b;")) {
+                Method method = nativeMethod(key, callbackReason);
+                callbackGood &= method != null && !isStatic(method) && AccessFlags.PUBLIC.isSet(method.getAccessFlags());
+            }
+            Method add = actual(menu + "->addNative(" + object + STRING_TYPE + action + ")V"), nativeUnit = actual(menu + "->unit()" + object);
+            List<Instruction> ab = add == null ? List.of() : instructions(add), ub = nativeUnit == null ? List.of() : instructions(nativeUnit);
+            callbackGood &= add != null && isStatic(add) && ab.size() == 3 && movesTo(ab.get(0), parameter(add, 0), Opcode.CHECK_CAST) && builder.equals(String.valueOf(reference(ab.get(0))))
+                    && callIs(ab.get(1), Opcode.INVOKE_VIRTUAL, builder + "->c(" + STRING_TYPE + callback + ")" + builder, parameter(add, 0), parameter(add, 1), parameter(add, 2)) && ab.get(2).getOpcode() == Opcode.RETURN_VOID
+                    && nativeUnit != null && isStatic(nativeUnit) && ub.size() == 2 && fieldIs(ub.get(0), Opcode.SGET_OBJECT, unit + "->a:" + unit, 0, -1) && movesTo(ub.get(1), 0, Opcode.RETURN_OBJECT);
+            callbackGood &= rootCardStub(menu, face, timelineObject, payload);
+            if (!callbackGood) fail(callbackReason);
+            found &= callbackGood;
+            capability(c.callee, found);
+        }
+
+        boolean rootCardStub(String menu, String face, String timelineObject, String payload) {
+            Method cardGetter = clean.methods.get("Lvgi;->l()" + payload), timelineGetter = clean.methods.get(timelineObject + "->getData()" + payload);
+            Method m = actual(menu + "->cardRoot(Ljava/lang/Object;)" + STRING_TYPE);
+            List<Instruction> b = m == null ? List.of() : instructions(m);
+            return publicGetter(cardGetter, payload) & publicGetter(timelineGetter, payload) && m != null && isStatic(m) && b.size() == 19 && m.getImplementation().getRegisterCount() == 3
+                    && fieldIsType(b.get(0), Opcode.INSTANCE_OF, "Lzve;", 0, 2) && movesTo(b.get(1), 0, Opcode.IF_EQZ) && target(m, 1) == 6
+                    && movesTo(b.get(2), 2, Opcode.CHECK_CAST) && "Lzve;".equals(String.valueOf(reference(b.get(2))))
+                    && callIs(b.get(3), Opcode.INVOKE_VIRTUAL, cardGetter.toString(), 2) && movesTo(b.get(4), 0, Opcode.MOVE_RESULT_OBJECT) && b.get(5).getOpcode() == Opcode.GOTO && target(m, 5) == 11
+                    && fieldIsType(b.get(6), Opcode.INSTANCE_OF, timelineObject, 0, 2) && movesTo(b.get(7), 0, Opcode.IF_EQZ) && target(m, 7) == 17
+                    && movesTo(b.get(8), 2, Opcode.CHECK_CAST) && timelineObject.equals(String.valueOf(reference(b.get(8))))
+                    && callIs(b.get(9), Opcode.INVOKE_VIRTUAL, timelineGetter.toString(), 2) && movesTo(b.get(10), 0, Opcode.MOVE_RESULT_OBJECT)
+                    && fieldIsType(b.get(11), Opcode.INSTANCE_OF, face, 1, 0) && movesTo(b.get(12), 1, Opcode.IF_EQZ) && target(m, 12) == 17
+                    && movesTo(b.get(13), 0, Opcode.CHECK_CAST) && face.equals(String.valueOf(reference(b.get(13))))
+                    && callIs(b.get(14), Opcode.INVOKE_INTERFACE, face + "->hushRootId()" + STRING_TYPE, 0) && movesTo(b.get(15), 0, Opcode.MOVE_RESULT_OBJECT)
+                    && movesTo(b.get(16), 0, Opcode.RETURN_OBJECT) && literalIs(b.get(17), Opcode.CONST_4, 0, 0) && movesTo(b.get(18), 0, Opcode.RETURN_OBJECT);
+        }
+
+        static boolean fieldIsType(Instruction i, Opcode op, String type, int value, int receiver) {
+            return i != null && i.getOpcode() == op && type.equals(String.valueOf(reference(i))) && i instanceof OneRegisterInstruction a
+                    && a.getRegisterA() == value && (receiver < 0 || i instanceof TwoRegisterInstruction t && t.getRegisterB() == receiver);
+        }
+
+        boolean localTimeline(String timeline, String local, String mode, String list) {
+            Method items = actual(timeline + "->hushTimelineItems()" + list), apply = actual(timeline + "->hushApplyTimelineItems(" + list + ")V");
+            List<Instruction> ib = items == null ? List.of() : instructions(items), ab = apply == null ? List.of() : instructions(apply);
+            boolean good = implementsBridge(timeline, local) && hasField(clean, timeline, "z", list, AccessFlags.PROTECTED.getValue(), AccessFlags.STATIC.getValue())
+                    && items != null && !isStatic(items) && AccessFlags.PUBLIC.isSet(items.getAccessFlags()) && ib.size() == 4 && items.getImplementation().getRegisterCount() == 3
+                    && movesTo(ib.get(0), 0, Opcode.NEW_INSTANCE) && "Ljava/util/ArrayList;".equals(String.valueOf(reference(ib.get(0))))
+                    && fieldIs(ib.get(1), Opcode.IGET_OBJECT, timeline + "->z:" + list, 1, 2) && callIs(ib.get(2), Opcode.INVOKE_DIRECT, "Ljava/util/ArrayList;-><init>(Ljava/util/Collection;)V", 0, 1)
+                    && movesTo(ib.get(3), 0, Opcode.RETURN_OBJECT) && apply != null && !isStatic(apply) && AccessFlags.PUBLIC.isSet(apply.getAccessFlags())
+                    && ab.size() == 3 && apply.getImplementation().getRegisterCount() == 3 && fieldIs(ab.get(0), Opcode.SGET_OBJECT, mode + "->FROM_CACHE:" + mode, 0, -1)
+                    && callIs(ab.get(1), Opcode.INVOKE_VIRTUAL, timeline + "->i6(" + mode + list + ")V", 1, 0, 2) && ab.get(2).getOpcode() == Opcode.RETURN_VOID;
+            Method rebind = nativeMethod(timeline + "->i6(" + mode + list + ")V", "root local timeline bridge changed"), predicate = nativeMethod(mode + "->f()Z", "root local timeline bridge changed"),
+                    render = nativeMethod(timeline + "->X6(" + mode + list + ")V", "root local timeline bridge changed"), init = nativeMethod(mode + "-><clinit>()V", "root local timeline bridge changed");
+            List<Instruction> rb = rebind == null ? List.of() : instructions(rebind), pb = predicate == null ? List.of() : instructions(predicate), xb = render == null ? List.of() : instructions(render);
+            good &= rebind != null && !isStatic(rebind) && AccessFlags.PROTECTED.isSet(rebind.getAccessFlags()) && rebind.getImplementation().getRegisterCount() == 6 && rb.size() == 60
+                    && callIs(rb.get(51), Opcode.INVOKE_VIRTUAL, mode + "->f()Z", 4) && movesTo(rb.get(52), 0, Opcode.MOVE_RESULT) && movesTo(rb.get(53), 0, Opcode.IF_NEZ) && ((OffsetInstruction) rb.get(53)).getCodeOffset() == 7
+                    && fieldIs(rb.get(54), Opcode.IGET_OBJECT, timeline + "->z:" + list, 0, 3) && callIs(rb.get(55), Opcode.INVOKE_INTERFACE, list + "->clear()V", 0)
+                    && fieldIs(rb.get(56), Opcode.IGET_OBJECT, timeline + "->z:" + list, 0, 3) && callIs(rb.get(57), Opcode.INVOKE_INTERFACE, list + "->addAll(Ljava/util/Collection;)Z", 0, 5)
+                    && callIs(rb.get(58), Opcode.INVOKE_DIRECT, timeline + "->X6(" + mode + list + ")V", 3, 4, 5) && rb.get(59).getOpcode() == Opcode.RETURN_VOID;
+            good &= predicate != null && predicate.getImplementation().getRegisterCount() == 2 && pb.size() == 6
+                    && fieldIs(pb.get(0), Opcode.SGET_OBJECT, mode + "->PAGINATION:" + mode, 0, -1) && pb.get(1) instanceof TwoRegisterInstruction t && t.getOpcode() == Opcode.IF_NE && t.getRegisterA() == 1 && t.getRegisterB() == 0
+                    && ((OffsetInstruction) pb.get(1)).getCodeOffset() == 4 && literalIs(pb.get(2), Opcode.CONST_4, 1, 1) && movesTo(pb.get(3), 1, Opcode.RETURN)
+                    && literalIs(pb.get(4), Opcode.CONST_4, 1, 0) && movesTo(pb.get(5), 1, Opcode.RETURN);
+            good &= xb.size() == 46 && callSites(xb, timeline + "->Y6(" + list + mode + list + list + "II)V").size() == 1 && callSites(xb, timeline + "->e6()V").size() == 1;
+            for (Instruction i : xb) if (called(i) != null && !Set.of(timeline, "Ljava/util/Collection;", "Ljava/util/Queue;", "Ljava/lang/Integer;", "Lcom/google/common/collect/ImmutableList;").contains(called(i).getDefiningClass())) good = false;
+            List<Instruction> eb = init == null ? List.of() : instructions(init);
+            for (String name : List.of("FROM_CACHE", "PAGINATION")) {
+                int count = 0;
+                for (int k = 0; k + 4 < eb.size(); k++) if (eb.get(k).getOpcode() == Opcode.NEW_INSTANCE && reference(eb.get(k + 1)) instanceof StringReference s && s.getString().equals(name)
+                        && isCall(eb.get(k + 3), mode, "<init>", "(" + STRING_TYPE + "I)V") && eb.get(k + 4).getOpcode() == Opcode.SPUT_OBJECT && (mode + "->" + name + ":" + mode).equals(String.valueOf(reference(eb.get(k + 4))))) count++;
+                good &= count == 1;
+            }
+            return good;
+        }
+
+        /** The native timestamp preference keeps its answer until the optional display hook filters it. */
+        void nativeTimestamps(Contract c) {
+            ClassDef user = clean.classes.get(c.strings.get(1)), header = clean.classes.get(c.strings.get(4));
+            List<Method> getters = new ArrayList<>();
+            if (user != null) for (Method m : user.getMethods()) {
+                List<Instruction> body = instructions(m);
+                if (!AccessFlags.PUBLIC.isSet(m.getAccessFlags()) || !isStatic(m) || !descriptor(m).equals("()Z") || body.size() != 5) continue;
+                if (!(reference(body.get(0)) instanceof StringReference s) || !s.getString().equals(c.strings.get(3))
+                        || body.get(1).getOpcode() != Opcode.CONST_4 || ((NarrowLiteralInstruction) body.get(1)).getNarrowLiteral() != 0
+                        || firstRegister(body.get(0)) == firstRegister(body.get(1))
+                        || body.get(2).getOpcode() != Opcode.INVOKE_STATIC || !String.valueOf(reference(body.get(2))).equals(c.strings.get(2))
+                        || !arguments(body.get(2)).equals(List.of(firstRegister(body.get(0)), firstRegister(body.get(1))))
+                        || body.get(3).getOpcode() != Opcode.MOVE_RESULT || body.get(4).getOpcode() != Opcode.RETURN
+                        || firstRegister(body.get(3)) != firstRegister(body.get(4))) continue;
+                getters.add(m);
+            }
+            Method old = unique(getters, "the native timestamp preference getter");
+            Method reader = clean.methods.get(c.strings.get(2));
+            boolean readable = reader != null && reader.getImplementation() != null && isStatic(reader) && AccessFlags.PUBLIC.isSet(reader.getAccessFlags());
+            if (!readable) fail("the native timestamp preference reader is absent or changed");
+            boolean consumed = false;
+            if (old != null && header != null) for (Method m : header.getMethods())
+                if (descriptor(m).equals("()Z") && instructions(m).stream().anyMatch(i -> i.getOpcode() == Opcode.INVOKE_STATIC
+                        && old.toString().equals(String.valueOf(reference(i))))) consumed = true;
+            if (!consumed) fail("the post header has no native timestamp preference consumer");
+            boolean found = false;
+            if (old != null && readable && consumed) {
+                int answer = firstRegister(instructions(old).get(4));
+                found = hookAt(old, actual(old), 4, c.strings.get(0), List.of(answer), answer, List.of(answer));
+            }
+            Method setter = clean.methods.get(c.strings.get(5)), after = patched.methods.get(c.strings.get(5));
+            if (setter == null || after == null || !normalized(setter, null).equals(normalized(after, null))) {
+                fail("the native timestamp setter changed"); found = false;
+            }
+            capability(c.callee, found);
+        }
+
         /** The getter of model [type] that its Moshi adapter's toJson calls right after writing [key], or null. */
         MethodReference adapterGetter(String type, String key) {
             ClassDef adapter = clean.classes.get(type.substring(0, type.length() - 1) + "JsonAdapter;");
@@ -3198,7 +4177,8 @@ public class DexDiff {
             List<Instruction> body = instructions(writers.get(0));
             int at = firstIndex(body, 0, i -> reference(i) instanceof StringReference s && s.getString().equals(key));
             int call = firstIndex(body, at < 0 ? -1 : at + 1, i -> i.getOpcode() == Opcode.INVOKE_VIRTUAL && called(i).getDefiningClass().equals(type));
-            if (call < 0) { fail(type + "'s adapter calls no getter after \"" + key + "\""); return null; }
+            int nextKey = firstIndex(body, at < 0 ? -1 : at + 1, i -> reference(i) instanceof StringReference);
+            if (call < 0 || nextKey >= 0 && call >= nextKey) { fail(type + "'s adapter calls no getter after \"" + key + "\""); return null; }
             return called(body.get(call));
         }
 
@@ -3250,19 +4230,194 @@ public class DexDiff {
                 if (key == null || !m.getParameterTypes().isEmpty()) { fail(face + " declares " + m.getName() + ", which its rule gives no key"); ok = false; continue; }
                 MethodReference getter = adapterGetter(type, key);
                 if (getter == null) { ok = false; continue; }
-                Method own = clean.methods.get(getter.toString());
-                if (own == null || isStatic(own) || !AccessFlags.PUBLIC.isSet(own.getAccessFlags()) || OBJECT_METHODS.contains(getter.getName())
-                        || !descriptor(getter).equals("()" + m.getReturnType())) { fail(getter + " isn't a public getter of " + m.getReturnType()); ok = false; continue; }
-                String added = type + "->" + m.getName() + "()" + m.getReturnType();
-                Method call = clean.methods.containsKey(added) ? null : actual(added);
-                List<Instruction> body = call == null ? List.of() : instructions(call);
-                if (call == null || isStatic(call) || body.size() != 3 || body.get(0).getOpcode() != Opcode.INVOKE_VIRTUAL
-                        || !String.valueOf(reference(body.get(0))).equals(getter.toString()) || !arguments(body.get(0)).equals(List.of(parameter(call, -1)))
-                        || body.get(1).getOpcode() != Opcode.MOVE_RESULT_OBJECT || body.get(2).getOpcode() != Opcode.RETURN_OBJECT
-                        || firstRegister(body.get(2)) != firstRegister(body.get(1))) { fail(added + " doesn't hand back " + getter); ok = false; }
+                ok &= directBridge(type, m, getter);
             }
             if (declared != keys.size()) { fail(face + " declares " + declared + " methods, its rule names " + keys.size()); ok = false; }
             return ok;
+        }
+
+        boolean publicGetter(MethodReference getter, String result) {
+            Method own = getter == null ? null : clean.methods.get(getter.toString());
+            if (own == null || isStatic(own) || !AccessFlags.PUBLIC.isSet(own.getAccessFlags()) || OBJECT_METHODS.contains(getter.getName())
+                    || !descriptor(getter).equals("()" + result)) { fail(getter + " isn't a public getter of " + result); return false; }
+            return true;
+        }
+
+        boolean directBridge(String type, Method face, MethodReference getter) {
+            if (!publicGetter(getter, face.getReturnType())) return false;
+            String added = type + "->" + face.getName() + "()" + face.getReturnType();
+            Method call = clean.methods.containsKey(added) ? null : actual(added);
+            List<Instruction> body = call == null ? List.of() : instructions(call);
+            boolean object = face.getReturnType().startsWith("L") || face.getReturnType().startsWith("[");
+            if (call == null || isStatic(call) || !AccessFlags.PUBLIC.isSet(call.getAccessFlags()) || body.size() != 3
+                    || body.get(0).getOpcode() != Opcode.INVOKE_VIRTUAL
+                    || !String.valueOf(reference(body.get(0))).equals(getter.toString()) || !arguments(body.get(0)).equals(List.of(parameter(call, -1)))
+                    || body.get(1).getOpcode() != (object ? Opcode.MOVE_RESULT_OBJECT : Opcode.MOVE_RESULT)
+                    || body.get(2).getOpcode() != (object ? Opcode.RETURN_OBJECT : Opcode.RETURN)
+                    || firstRegister(body.get(2)) != firstRegister(body.get(1))) { fail(added + " doesn't hand back " + getter); return false; }
+            return true;
+        }
+
+        /** A kept native interface gets one default bridge to its covariant object getter. */
+        boolean defaultObjectBridge(String spec) {
+            String[] parts = spec.split(">", 4);
+            if (parts.length != 4) { fail("malformed default bridge " + spec); return false; }
+            String owner = parts[0], extension = parts[1], name = parts[2];
+            ClassDef old = clean.classes.get(owner), host = patched.classes.get(owner), face = patched.classes.get(extension);
+            Method getter = clean.methods.get(parts[3]);
+            if (old == null || host == null || face == null || !AccessFlags.INTERFACE.isSet(old.getAccessFlags())
+                    || !AccessFlags.INTERFACE.isSet(host.getAccessFlags()) || !AccessFlags.INTERFACE.isSet(face.getAccessFlags())
+                    || !host.getInterfaces().contains(extension) || getter == null || !getter.getDefiningClass().equals(owner)
+                    || !publicGetter(getter, getter.getReturnType())) { fail(owner + " doesn't extend its image-description bridge"); return false; }
+            List<Method> declarations = new ArrayList<>();
+            for (Method m : face.getMethods()) if (AccessFlags.ABSTRACT.isSet(m.getAccessFlags())) declarations.add(m);
+            if (declarations.size() != 1 || !declarations.get(0).getName().equals(name) || !declarations.get(0).getParameterTypes().isEmpty()
+                    || !assignable(getter.getReturnType(), declarations.get(0).getReturnType())) { fail(extension + " has no single covariant image-description method"); return false; }
+            Method declaration = declarations.get(0);
+            String added = owner + "->" + name + "()" + declaration.getReturnType();
+            Method m = clean.methods.containsKey(added) ? null : actual(added);
+            List<Instruction> body = m == null ? List.of() : instructions(m);
+            boolean found = m != null && !isStatic(m) && !AccessFlags.ABSTRACT.isSet(m.getAccessFlags()) && AccessFlags.PUBLIC.isSet(m.getAccessFlags())
+                    && body.size() == 3 && body.get(0).getOpcode() == Opcode.INVOKE_INTERFACE
+                    && String.valueOf(reference(body.get(0))).equals(getter.toString()) && arguments(body.get(0)).equals(List.of(parameter(m, -1)))
+                    && body.get(1).getOpcode() == Opcode.MOVE_RESULT_OBJECT && body.get(2).getOpcode() == Opcode.RETURN_OBJECT
+                    && firstRegister(body.get(1)) == firstRegister(body.get(2));
+            if (!found) fail(added + " doesn't hand back its native image container getter");
+            return found;
+        }
+
+        /** Captions follow native photo binds and the gallery's clear-before-bind lifecycle. */
+        void imageDescriptions(Contract c) {
+            Method single = clean.methods.get(c.strings.get(1));
+            boolean photo = false;
+            if (single == null || single.getImplementation() == null) fail("the native photo binder is absent");
+            else {
+                boolean imageField = false;
+                for (Field f : clean.classes.get(single.getDefiningClass()).getFields())
+                    if (f.toString().equals(c.strings.get(2)) && !AccessFlags.STATIC.isSet(f.getAccessFlags())) imageField = true;
+                Method m = actual(single);
+                List<Integer> sites = calls(m, c.strings.get(0), 1);
+                List<Instruction> body = m == null ? List.of() : instructions(m);
+                photo = imageField && m != null && !isStatic(single) && parameter(single, -1) == 1 && sites.equals(List.of(1)) && body.size() >= 2
+                        && body.get(0).getOpcode() == Opcode.IGET_OBJECT && body.get(0) instanceof TwoRegisterInstruction read
+                        && read.getRegisterA() == 0 && read.getRegisterB() == parameter(single, -1)
+                        && String.valueOf(reference(body.get(0))).equals(c.strings.get(2))
+                        && arguments(body.get(1)).equals(List.of(parameter(single, 0), 0));
+                if (photo) { remove(m, 0, 2); vouch(m, 1, List.of(0)); }
+                else fail("the photo caption hook doesn't take the current image from its native binder field");
+            }
+            Method gallery = clean.methods.get(c.strings.get(4)), clear = clean.methods.get(c.strings.get(6));
+            boolean galleryBound = false;
+            if (gallery == null || clear == null) fail("the native gallery bind lifecycle is absent");
+            else galleryBound = hookAt(gallery, actual(gallery), 0, c.strings.get(3),
+                    List.of(parameter(gallery, 1), parameter(gallery, 2)), -1, List.of())
+                    & hookAt(clear, actual(clear), 0, c.strings.get(5), List.of(parameter(clear, 5)), -1, List.of());
+            boolean model = bridge(c.strings.get(7));
+            boolean container = defaultObjectBridge(c.strings.get(8)), row = defaultObjectBridge(c.strings.get(9));
+            capability("photoAltTextCaptions", photo && model && container);
+            capability("galleryAltTextCaptions", galleryBound && model && container && row);
+        }
+
+        /** A nullable two-getter header icon path, and the current account's followed/editable getters. */
+        void paidPostBridge(Contract c) {
+            String type = c.strings.get(0), face = c.strings.get(1);
+            ClassDef model = patched.classes.get(type), bridge = patched.classes.get(face);
+            if (model == null || clean.classes.get(type) == null || bridge == null || !AccessFlags.INTERFACE.isSet(bridge.getAccessFlags())
+                    || !model.getInterfaces().contains(face)) { fail(type + " doesn't implement " + face); capability(c.callee, false); return; }
+            Map<String, Method> methods = new LinkedHashMap<>();
+            for (Method m : bridge.getMethods()) if (AccessFlags.ABSTRACT.isSet(m.getAccessFlags())) methods.put(m.getName(), m);
+            String[] path = c.strings.get(2).split(":", -1);
+            boolean ok = methods.size() == 4 && path.length == 3;
+            if (!ok) { fail(face + " doesn't declare the four paid-post bridge methods"); capability(c.callee, false); return; }
+            Set<String> named = new HashSet<>(List.of(path[0]));
+            for (String spec : c.strings.subList(3, 5)) {
+                String[] pair = spec.split(":", -1);
+                Method m = pair.length == 2 ? methods.get(pair[0]) : null;
+                if (m == null || !named.add(pair[0]) || !descriptor(m).equals("()Z")) { fail("invalid paid-post account getter " + spec); ok = false; continue; }
+                ok &= directBridge(type, m, adapterGetter(type, pair[1]));
+            }
+            String knownName = c.strings.get(5);
+            Method knownDeclaration = methods.get(knownName), known = actual(type + "->" + knownName + "()Z");
+            List<Instruction> knownBody = known == null ? List.of() : instructions(known);
+            boolean presence = knownDeclaration != null && descriptor(knownDeclaration).equals("()Z") && known != null && !isStatic(known)
+                    && AccessFlags.PUBLIC.isSet(known.getAccessFlags()) && knownBody.size() == 2
+                    && fieldIs(knownBody.get(0), Opcode.IGET_BOOLEAN, type + "->hushPaidContextKnown:Z", 0, parameter(known, -1))
+                    && movesTo(knownBody.get(1), 0, Opcode.RETURN)
+                    && hasField(patched, type, "hushPaidContextKnown", "Z", AccessFlags.PRIVATE.getValue(), AccessFlags.STATIC.getValue())
+                    && actual(type + "->hushSetJsonPresence(II)V") != null;
+            if (!presence) { fail("paid-post ownership presence bridge changed"); ok = false; }
+            Method m = methods.get(path[0]);
+            if (m == null || !descriptor(m).equals("()" + STRING_TYPE)) { fail("invalid paid-post icon method " + path[0]); ok = false; }
+            MethodReference header = adapterGetter(type, path[1]);
+            MethodReference icon = header == null ? null : adapterGetter(header.getReturnType(), path[2]);
+            if (header == null || !publicGetter(header, header.getReturnType()) || !publicGetter(icon, STRING_TYPE)) ok = false;
+            String added = type + "->" + path[0] + "()" + STRING_TYPE;
+            Method call = clean.methods.containsKey(added) ? null : actual(added);
+            List<Instruction> body = call == null ? List.of() : instructions(call);
+            boolean shaped = header != null && icon != null && call != null && !isStatic(call)
+                    && AccessFlags.PUBLIC.isSet(call.getAccessFlags()) && body.size() == 8;
+            if (shaped) {
+                int held = firstRegister(body.get(1));
+                shaped = body.get(0).getOpcode() == Opcode.INVOKE_VIRTUAL && String.valueOf(reference(body.get(0))).equals(header.toString())
+                        && arguments(body.get(0)).equals(List.of(parameter(call, -1))) && body.get(1).getOpcode() == Opcode.MOVE_RESULT_OBJECT
+                        && body.get(2).getOpcode() == Opcode.IF_EQZ && firstRegister(body.get(2)) == held && target(call, 2) == 6
+                        && body.get(3).getOpcode() == Opcode.INVOKE_VIRTUAL && String.valueOf(reference(body.get(3))).equals(icon.toString())
+                        && arguments(body.get(3)).equals(List.of(held)) && movesTo(body.get(4), held, Opcode.MOVE_RESULT_OBJECT)
+                        && movesTo(body.get(5), held, Opcode.RETURN_OBJECT) && movesTo(body.get(6), held, Opcode.CONST_4)
+                        && ((NarrowLiteralInstruction) body.get(6)).getNarrowLiteral() == 0 && movesTo(body.get(7), held, Opcode.RETURN_OBJECT);
+            }
+            if (!shaped) { fail(added + " doesn't return its structured header icon with a null fallback"); ok = false; }
+            capability(c.callee, ok);
+        }
+
+        /** The in-app activity page only, with a default type-name bridge on its model interface. */
+        void activityNotifications(Contract c) {
+            Method old = clean.methods.get(c.strings.get(1));
+            boolean found = old != null && hookAt(old, actual(old), 0, c.strings.get(0), List.of(parameter(old, 0)),
+                    parameter(old, 0), List.of());
+            if (old == null) fail(c.strings.get(1) + " is absent from the clean target");
+            String type = c.strings.get(2), face = c.strings.get(3), name = c.strings.get(4);
+            ClassDef model = patched.classes.get(type), bridge = patched.classes.get(face), original = clean.classes.get(type);
+            Method getter = clean.methods.get(c.strings.get(5));
+            ClassDef enumType = getter == null ? null : clean.classes.get(getter.getReturnType());
+            boolean declares = model != null && original != null && AccessFlags.INTERFACE.isSet(original.getAccessFlags())
+                    && model.getInterfaces().contains(face) && bridge != null && AccessFlags.INTERFACE.isSet(bridge.getAccessFlags());
+            int abstractCount = 0;
+            if (bridge != null) for (Method m : bridge.getMethods()) if (AccessFlags.ABSTRACT.isSet(m.getAccessFlags())) {
+                abstractCount++;
+                declares &= m.getName().equals(name) && descriptor(m).equals("()" + STRING_TYPE);
+            }
+            declares &= abstractCount == 1 && getter != null && getter.getDefiningClass().equals(type)
+                    && getter.getName().equals("getType") && getter.getParameterTypes().isEmpty()
+                    && AccessFlags.PUBLIC.isSet(getter.getAccessFlags()) && !isStatic(getter)
+                    && enumType != null && "Ljava/lang/Enum;".equals(enumType.getSuperclass());
+            if (!declares) { fail(type + " doesn't extend the activity-notification type bridge"); found = false; }
+            String added = type + "->" + name + "()" + STRING_TYPE;
+            Method call = clean.methods.containsKey(added) ? null : actual(added);
+            List<Instruction> body = call == null ? List.of() : instructions(call);
+            boolean shaped = getter != null && call != null && !isStatic(call) && AccessFlags.PUBLIC.isSet(call.getAccessFlags())
+                    && !AccessFlags.ABSTRACT.isSet(call.getAccessFlags()) && body.size() == 8;
+            if (shaped) {
+                int held = firstRegister(body.get(1));
+                shaped = body.get(0).getOpcode() == Opcode.INVOKE_INTERFACE && String.valueOf(reference(body.get(0))).equals(getter.toString())
+                        && arguments(body.get(0)).equals(List.of(parameter(call, -1))) && body.get(1).getOpcode() == Opcode.MOVE_RESULT_OBJECT
+                        && body.get(2).getOpcode() == Opcode.IF_EQZ && firstRegister(body.get(2)) == held && target(call, 2) == 6
+                        && body.get(3).getOpcode() == Opcode.INVOKE_VIRTUAL
+                        && String.valueOf(reference(body.get(3))).equals("Ljava/lang/Enum;->name()Ljava/lang/String;")
+                        && arguments(body.get(3)).equals(List.of(held)) && movesTo(body.get(4), held, Opcode.MOVE_RESULT_OBJECT)
+                        && movesTo(body.get(5), held, Opcode.RETURN_OBJECT) && movesTo(body.get(6), held, Opcode.CONST_4)
+                        && ((NarrowLiteralInstruction) body.get(6)).getNarrowLiteral() == 0 && movesTo(body.get(7), held, Opcode.RETURN_OBJECT);
+            }
+            if (!shaped) { fail(added + " doesn't return its activity type name with a null fallback"); found = false; }
+            ClassDef push = clean.classes.get(c.strings.get(6));
+            if (push == null) { fail("the excluded push response is absent: " + c.strings.get(6)); found = false; }
+            else for (Method before : push.getMethods()) {
+                Method after = patched.methods.get(before.toString());
+                if (after == null || !normalized(before, null).equals(normalized(after, null))) {
+                    fail(before + " changed on the excluded push-notification path"); found = false;
+                }
+            }
+            capability(c.callee, found && declares);
         }
 
         /** The one instance method taking a Context that names the rating prompt and saves when it was shown, asking the hook first. */
@@ -3783,7 +4938,9 @@ public class DexDiff {
                 }
                 out.add(text);
             }
+            int tryIndex = 0;
             for (TryBlock<? extends ExceptionHandler> block : m.getImplementation().getTryBlocks()) {
+                if (e != null && e.validatedTryBlocks.contains(tryIndex++)) continue;
                 String text = "try " + positions.get(block.getStartCodeAddress()) + ":" + positions.get(block.getStartCodeAddress() + block.getCodeUnitCount());
                 for (ExceptionHandler handler : block.getExceptionHandlers()) text += " " + handler.getExceptionType() + "->" + originalTarget(m, layout, e, positions, handler.getHandlerCodeAddress());
                 out.add(text);
@@ -3841,8 +4998,17 @@ public class DexDiff {
                     case "settingsRow": settingsRow(c); break;
                     case "featureSwitch": featureSwitch(c); break;
                     case "timelineList": timelineList(c); break;
+                    case "nativeTimestamps": nativeTimestamps(c); break;
                     case "timelineCarousel": timelineCarousel(c); break;
                     case "postBridge": postBridge(c); break;
+                    case "paidPostBridge": paidPostBridge(c); break;
+                    case "imageDescriptions": imageDescriptions(c); break;
+                    case "activityNotifications": activityNotifications(c); break;
+                    case "accountIdentity": accountIdentity(c); break;
+                    case "postJsonPresence": postJsonPresence(c); break;
+                    case "matureContent": matureContent(c); break;
+                    case "rootPostMutes": rootPostMutes(c); break;
+                    case "mutualMarkers": mutualMarkers(c); break;
                     case "reviewPrompt": reviewPrompt(c); break;
                     case "followButton": followButton(c); break;
                     case "footerButton": footerButton(c); break;
@@ -3861,6 +5027,20 @@ public class DexDiff {
                 for (int k = 0; k < a.at(); k++) if (e == null || !e.removed.contains(k)) kept++;
                 if (kept != a.clean()) fail(a.what() + " is not where its rule puts it in " + a.method()
                         + " (after original instruction " + kept + ", expected " + a.clean() + ")");
+            }
+            for (Anchor a : labelAnchors) {
+                FeatureEdits e = edits.get(a.method().toString());
+                FeatureFlow graph = flow(a.method());
+                for (int from = 0; from < graph.normal.size(); from++) {
+                    if (e != null && e.removed.contains(from)) continue;
+                    Set<Integer> jumps = new HashSet<>(graph.handlers.get(from));
+                    if (get(instructions(a.method()), from) instanceof OffsetInstruction) jumps.addAll(graph.normal.get(from));
+                    for (int to : jumps) {
+                        int kept = 0;
+                        for (int k = 0; k < to; k++) if (e == null || !e.removed.contains(k)) kept++;
+                        if (kept == a.clean() && to != a.at()) fail(a.what() + " skips its hook at an original branch or handler target " + from + "->" + to + " in " + a.method());
+                    }
+                }
             }
             for (FeatureSite site : hookSites) hookRegisters(site);
             for (String cap : owners.keySet()) if (!coveredCapabilities.contains(cap)) fail("capability has no compiled mutation contract: " + cap);

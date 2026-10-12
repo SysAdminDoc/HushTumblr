@@ -99,6 +99,45 @@ public class ReportChoicesTest {
     }
 
     @Test
+    public void reportChoicesCloseWithARecreatedParent() throws Exception {
+        AlertDialog choices = openChoices();
+        controller.recreate();
+        ShadowLooper.idleMainLooper();
+        assertFalse("old choices outlived the parent", choices.isShowing());
+        assertStaleChoicesDoNothing(choices);
+    }
+
+    @Test
+    public void reportChoicesCloseWithADismissedParent() throws Exception {
+        AlertDialog choices = openChoices();
+        SettingsDialog parent = (SettingsDialog) activity().getFragmentManager()
+                .findFragmentByTag("hushtumblr_settings");
+        parent.dismiss();
+        assertFalse("choices outlived the dismissed parent", choices.isShowing());
+        assertStaleChoicesDoNothing(choices);
+    }
+
+    @Test
+    public void reportChoicesCloseWithADismissedParentWindow() throws Exception {
+        AlertDialog choices = openChoices();
+        SettingsDialog parent = (SettingsDialog) activity().getFragmentManager()
+                .findFragmentByTag("hushtumblr_settings");
+        android.app.Dialog window = parent.getDialog();
+        window.dismiss();
+        assertFalse("choices outlived the dismissed parent window", choices.isShowing());
+        assertStaleChoicesDoNothing(choices);
+        window.dismiss(); // A retained native window may be dismissed again after fragment removal.
+    }
+
+    private void assertStaleChoicesDoNothing(AlertDialog choices) throws Exception {
+        ShadowToast.reset();
+        choices.getListView().performItemClick(null, 0, 0);
+        Utils.awaitBackgroundTasksForTests();
+        ShadowLooper.idleMainLooper();
+        assertNull("a retained callback exported after its parent closed", ShadowToast.getTextOfLatestToast());
+    }
+
+    @Test
     public void atTwiceTheTextSizeBothCardsStillShowAboveTheButtons() {
         assertCardsShowWhole(2f);
     }

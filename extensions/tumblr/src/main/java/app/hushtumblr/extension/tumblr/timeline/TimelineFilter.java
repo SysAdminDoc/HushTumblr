@@ -22,6 +22,7 @@ import app.hushtumblr.extension.shared.settings.BooleanSetting;
 import app.hushtumblr.extension.tumblr.settings.FamilyNames;
 import app.hushtumblr.extension.tumblr.settings.PatchFamily;
 import app.hushtumblr.extension.tumblr.settings.Settings;
+import app.hushtumblr.extension.tumblr.rootmute.RootPostMutes;
 
 /**
  * The one place the timeline switches take items out of a page Tumblr loaded.
@@ -126,7 +127,7 @@ public final class TimelineFilter {
                 if (removedBy[i] != null) continue;
                 String with = i + 1 < size ? removedBy[i + 1] : rules.cardOwner();
                 // A heading over a run of posts heads the rest of them too, so it stays.
-                if (with == null || PostRules.FAMILIES.contains(with) || !isTitle(items.get(i), rules.owner())) continue;
+                if (with == null || isPostRemoval(with) || !isTitle(items.get(i), rules.owner())) continue;
                 removedBy[i] = with;
                 heading[i] = true;
                 any = true;
@@ -147,7 +148,11 @@ public final class TimelineFilter {
     /** What a removal by [family] is counted as. English, for the report. */
     static String removal(String family) {
         if (FamilyNames.HIDE_ADS.equals(family)) return "ad removed";
-        return PostRules.FAMILIES.contains(family) ? "post removed" : "card removed";
+        return isPostRemoval(family) ? "post removed" : "card removed";
+    }
+
+    private static boolean isPostRemoval(String family) {
+        return PostRules.FAMILIES.contains(family) || FamilyNames.MUTE_ROOT_POSTS.equals(family);
     }
 
     /** Which switches take items out of this page, read once a page. */
@@ -156,15 +161,18 @@ public final class TimelineFilter {
         final boolean blogs;
         final boolean communities;
         final boolean watchIt;
+        final boolean mutes;
         /** The post switches, or null when none is on. */
         @Nullable
         final PostRules posts;
 
-        private Rules(boolean ads, boolean blogs, boolean communities, boolean watchIt, @Nullable PostRules posts) {
+        private Rules(boolean ads, boolean blogs, boolean communities, boolean watchIt, boolean mutes,
+                      @Nullable PostRules posts) {
             this.ads = ads;
             this.blogs = blogs;
             this.communities = communities;
             this.watchIt = watchIt;
+            this.mutes = mutes;
             this.posts = posts;
         }
 
@@ -184,8 +192,10 @@ public final class TimelineFilter {
                 boolean watchIt = on(PatchFamily.Capability.WATCH_IT_ROWS, reading, Settings.HIDE_WATCH_IT_ROWS);
                 reading = FamilyNames.HIDE_REBLOGS;
                 PostRules posts = PostRules.now();
-                return ads || blogs || communities || watchIt || posts != null
-                        ? new Rules(ads, blogs, communities, watchIt, posts) : null;
+                reading = FamilyNames.MUTE_ROOT_POSTS;
+                boolean mutes = RootPostMutes.active();
+                return ads || blogs || communities || watchIt || mutes || posts != null
+                        ? new Rules(ads, blogs, communities, watchIt, mutes, posts) : null;
             } catch (Throwable failure) {
                 HookStatus.threw(reading, "switch read", failure);
                 return null;
@@ -204,7 +214,7 @@ public final class TimelineFilter {
             if (ads) return FamilyNames.HIDE_ADS;
             String card = cardOwner();
             if (card != null) return card;
-            return posts != null ? posts.owner() : FamilyNames.HIDE_ADS;
+            return posts != null ? posts.owner() : mutes ? FamilyNames.MUTE_ROOT_POSTS : FamilyNames.HIDE_ADS;
         }
 
         /** The first card switch that's on, or null when none is. */
@@ -222,8 +232,9 @@ public final class TimelineFilter {
             if (ads && isAd(item)) return FamilyNames.HIDE_ADS;
             String card = cardOwner();
             String byCard = card == null ? null : cardFamily(item, this, card);
-            if (byCard != null || posts == null) return byCard;
-            return postFamily(item, posts);
+            if (byCard != null) return byCard;
+            if (mutes && isMutedPost(item)) return FamilyNames.MUTE_ROOT_POSTS;
+            return posts == null ? null : postFamily(item, posts);
         }
 
         /** The patch name whose switch is on and whose cards include [kind], or null. */
@@ -237,20 +248,46 @@ public final class TimelineFilter {
         }
     }
 
+    private static boolean isMutedPost(Object item) {
+        Model found = modelFor(item, FamilyNames.MUTE_ROOT_POSTS);
+        if (found == null) return false;
+        try {
+            return RootPostMutes.shouldHide(found.data.invoke(item));
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.MUTE_ROOT_POSTS, "timeline item", failure);
+            return false;
+        }
+    }
+
     /**
      * True when [item] is a timeline object Tumblr marks as an ad: by its kind, by the Sponsored
-     * label Tumblr is asked to draw on it, or as a paid placement. One that can't be read is kept.
+     * label, as a paid placement, or by its structured paid header context. One that can't be read
+     * is kept.
      */
     static boolean isAd(Object item) {
         Model found = modelFor(item, FamilyNames.HIDE_ADS);
         if (found == null) return false;
         try {
             return AD_TYPES.contains(found.typeOf(item)) || Boolean.TRUE.equals(found.sponsored.invoke(item))
-                    || found.isPaidPlacement(item);
+                    || found.isPaidPlacement(item) || hasPaidHeader(found.data.invoke(item));
         } catch (Throwable failure) {
             HookStatus.threw(FamilyNames.HIDE_ADS, "timeline item", failure);
             return false;
         }
+    }
+
+    /**
+     * Blaze and Sponsored header icons are server values, not localized label text. Followed and
+     * editable posts stay on this path, as do unknown icons and an organic post's is_blazed flag.
+     * A BLAZED_POST campaign wraps a Post and never implements this bridge itself.
+     */
+    private static boolean hasPaidHeader(@Nullable Object payload) {
+        if (!(payload instanceof HushPaidPost)) return false;
+        HushPaidPost post = (HushPaidPost) payload;
+        if (!post.hushPaidContextKnown()) return false;
+        if (post.hushFollowed() || post.hushCanEdit()) return false;
+        String icon = post.hushHeaderIcon();
+        return "blaze".equals(icon) || "money-alt".equals(icon);
     }
 
     /**
@@ -384,10 +421,9 @@ public final class TimelineFilter {
          * Whether Tumblr serves [item] as a paid placement: its {@code Display} says it's sponsored,
          * or its {@code DisplayType} is SPONSORED. Tumblr reads those two to treat a card as an ad
          * (the ad menu with its "Why am I seeing this ad?" page, the close button, and the Blaze
-         * follow and action buttons of a paid Blaze post). A paid Blaze post comes as a plain post
-         * served this way, and its "Sponsored with Blaze" line is text the server sends with the
-         * post. The same post shown because you follow its blog, or on its own blog, isn't served
-         * this way and stays.
+         * follow and action buttons of a paid Blaze post). A plain post can instead carry only the
+         * structured header context checked by {@link TimelineFilter#hasPaidHeader}. The generic
+         * is_blazed flag isn't evidence of a paid placement.
          */
         boolean isPaidPlacement(Object item) throws ReflectiveOperationException {
             Object shown = display.invoke(item);

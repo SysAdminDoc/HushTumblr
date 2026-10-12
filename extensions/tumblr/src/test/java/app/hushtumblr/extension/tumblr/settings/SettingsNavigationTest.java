@@ -589,9 +589,29 @@ public class SettingsNavigationTest {
     @Test public void switchRowsNameWhatTheyChangeAndWhenItApplies() {
         summaryContains(Settings.HIDE_ADVERTISING_ID.key, "empty advertising ID", "ad tracking limited",
                 "as if you deleted your ad ID");
-        summaryContains(Settings.FIX_PUSH_NOTIFICATIONS.key, "sign up for push notifications",
-                "the next time Tumblr starts");
+        summaryContains(Settings.FIX_PUSH_NOTIFICATIONS.key, "sign up for push notifications");
+        assertTrue(Settings.FIX_PUSH_NOTIFICATIONS.rebootApp);
+        assertFalse(String.valueOf(page.findPreference(Settings.FIX_PUSH_NOTIFICATIONS.key).getSummary())
+                .contains("the next time Tumblr starts"));
+        summaryContains(Settings.DARK_BACKGROUND.key, "newly opened Dark Mode screens",
+                "Open screens keep their colors until Tumblr restarts.");
+        summaryContains(Settings.HIDE_TUMBLRMART.key, "when you return to them",
+                "Open screens keep their TumblrMart button until Tumblr restarts.");
         summaryContains(Settings.CHECK_FOR_RELEASES.key, "Once a day", "Nothing is downloaded");
+
+        page.navigation.navigate("Notifications");
+        layout(dialog.getView());
+        String restartLine = "A change here applies after Tumblr restarts.";
+        assertNotEquals(restartLine, String.valueOf(((Preference) list().getItemAtPosition(0)).getTitle()));
+        tap(Settings.FIX_PUSH_NOTIFICATIONS.key);
+        layout(dialog.getView());
+        assertFalse(Settings.FIX_PUSH_NOTIFICATIONS.savedValue());
+        assertEquals(restartLine, String.valueOf(((Preference) list().getItemAtPosition(0)).getTitle()));
+        assertEquals("Saved. Restart Tumblr to apply this change.", ShadowToast.getTextOfLatestToast());
+        tap(Settings.FIX_PUSH_NOTIFICATIONS.key);
+        layout(dialog.getView());
+        assertTrue(Settings.FIX_PUSH_NOTIFICATIONS.savedValue());
+        assertNotEquals(restartLine, String.valueOf(((Preference) list().getItemAtPosition(0)).getTitle()));
     }
 
     @Test public void aliasesKeepAccentMatchingGroupingAndTheSpokenResultCount() {

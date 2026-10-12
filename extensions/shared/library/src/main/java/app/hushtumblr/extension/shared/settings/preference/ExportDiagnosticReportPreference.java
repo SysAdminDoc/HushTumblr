@@ -32,13 +32,16 @@ import app.hushtumblr.extension.shared.L10n;
 /** Offers a compact choice between a quick clipboard report and a full text file. */
 @SuppressWarnings({"deprecation", "unused"})
 public class ExportDiagnosticReportPreference extends Preference {
+    @Nullable private AlertDialog currentChoices;
     {
         // A key so the settings search can index this row. Nothing in the settings
         // framework treats it as a setting: a key with no Setting behind it is skipped.
         setKey("action_export_diagnostic_report");
         setSummary(destinationSummary());
         setOnPreferenceClickListener(pref -> {
+            if (currentChoices != null && currentChoices.isShowing()) return true;
             DialogInterface.OnClickListener choose = (dialog, which) -> {
+                if (dialog != currentChoices || !currentChoices.isShowing()) return;
                 if (which == 0) LogBufferManager.exportToClipboard();
                 if (which == 1) LogBufferManager.exportToFile();
             };
@@ -47,6 +50,11 @@ public class ExportDiagnosticReportPreference extends Preference {
             if (drawn == null) builder.setItems(labels(), choose);
             else builder.setAdapter(drawn, choose);
             AlertDialog dialog = builder.setNegativeButton(negativeText(), null).create();
+            currentChoices = dialog;
+            dialog.setOnDismissListener(ignored -> {
+                if (currentChoices == dialog) currentChoices = null;
+                onDialogDismissed(dialog);
+            });
             // Built, then styled, then shown, so the first layout measures what's on show. The
             // list works out its height from rows it builds itself, and styling applied after
             // show() reached rows it had already measured without it.
@@ -62,6 +70,9 @@ public class ExportDiagnosticReportPreference extends Preference {
      * size belongs here rather than after show(), where the list has already measured itself.
      */
     protected void onDialogCreated(AlertDialog dialog) {
+    }
+
+    protected void onDialogDismissed(AlertDialog dialog) {
     }
 
     /** The dialog's title, in the phone's language. A bundle may override these four. */

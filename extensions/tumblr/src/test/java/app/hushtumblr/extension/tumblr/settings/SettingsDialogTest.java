@@ -25,6 +25,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Fragment;
 import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
@@ -43,6 +44,7 @@ import android.widget.TextView;
 import app.hushtumblr.extension.shared.L10n;
 import app.hushtumblr.extension.shared.SettingsContextRule;
 import app.hushtumblr.extension.shared.settings.Setting;
+import app.hushtumblr.extension.shared.settings.FailingStore;
 
 import org.junit.After;
 import org.junit.Rule;
@@ -53,6 +55,8 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowLooper;
+import org.robolectric.shadows.ShadowAlertDialog;
+import org.robolectric.shadows.ShadowToast;
 import org.robolectric.util.ReflectionHelpers;
 
 import java.util.ArrayList;
@@ -88,6 +92,7 @@ public class SettingsDialogTest {
         SettingsDialog.failNextMount = null;
         Settings.CHECK_FOR_RELEASES.resetToDefault();
         controller.close();
+        PatchFamily.inBuildForTests = null;
     }
 
     @Test
@@ -105,6 +110,163 @@ public class SettingsDialogTest {
             assertTrue(key + " has no title", row.getTitle() != null && row.getTitle().length() > 0);
             assertLightText(row);
         }
+    }
+
+    @Test
+    public void failedWordsSavesKeepTheDraftAndEarlierSummary() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        TextSettings.HIDDEN_WORDS.save("earlier words");
+        HushTumblrPreferenceFragment page = pageOf(show(controller.get()));
+        Preference row = page.findPreference(HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW);
+        String earlier = row.getSummary().toString();
+        for (FailingStore.Fault fault : new FailingStore.Fault[]{FailingStore.Fault.COMMIT_FALSE,
+                FailingStore.Fault.COMMIT_THROWS}) {
+            click(row);
+            AlertDialog editor = ShadowAlertDialog.getLatestAlertDialog();
+            EditText field = editor.findViewById(android.R.id.edit);
+            field.setText("attempted private words");
+            try (FailingStore ignored = FailingStore.install(fault)) {
+                editor.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+            }
+            ShadowLooper.idleMainLooper();
+            assertTrue("failed Save closed the editor", editor.isShowing());
+            assertEquals("attempted private words", field.getText().toString());
+            assertEquals("earlier words", TextSettings.HIDDEN_WORDS.savedValue());
+            assertEquals(earlier, row.getSummary());
+            assertNotNull(ShadowToast.getTextOfLatestToast());
+            editor.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();
+        }
+    }
+
+    @Test
+    public void aSuccessfulWordsSaveClearsTheRecreationDraft() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        HushTumblrPreferenceFragment page = pageOf(show(controller.get()));
+        click(page.findPreference(HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW));
+        AlertDialog editor = ShadowAlertDialog.getLatestAlertDialog();
+        ((EditText) editor.findViewById(android.R.id.edit)).setText("saved words");
+        editor.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+        assertFalse(editor.isShowing());
+        controller.recreate();
+        ShadowLooper.idleMainLooper();
+        page = pageOf((SettingsDialog) controller.get().getFragmentManager().findFragmentByTag(TAG));
+        assertFalse("a saved draft reopened", editor.isShowing());
+        assertEquals("saved words", TextSettings.HIDDEN_WORDS.savedValue());
+        click(page.findPreference(HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW));
+        assertEquals("saved words", ((EditText) ShadowAlertDialog.getLatestAlertDialog()
+                .findViewById(android.R.id.edit)).getText().toString());
+    }
+
+    @Test
+    public void theAllowedWordsEditorSharesTheTotalBudgetAndKeepsRefusedText() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        TextSettings.HIDDEN_WORDS.save("猫".repeat(18000));
+        HushTumblrPreferenceFragment page = pageOf(show(controller.get()));
+        Preference row = page.findPreference(HushTumblrPreferenceFragment.ALLOWED_WORDS_ROW);
+        click(row);
+        AlertDialog editor = ShadowAlertDialog.getLatestAlertDialog();
+        EditText field = editor.findViewById(android.R.id.edit);
+        String draft = "猫".repeat(5000);
+        field.setText(draft);
+        editor.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+        assertTrue(editor.isShowing());
+        assertEquals(draft, field.getText().toString());
+        assertEquals("", TextSettings.ALLOWED_WORDS.savedValue());
+        field.setText("allowed");
+        editor.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+        assertFalse(editor.isShowing());
+        assertEquals("allowed", TextSettings.ALLOWED_WORDS.savedValue());
+    }
+
+    @Test
+    public void recreationKeepsTheUnsavedWordsAndSelectionAndCancelDiscardsThem() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        TextSettings.HIDDEN_WORDS.save("saved");
+        HushTumblrPreferenceFragment page = pageOf(show(controller.get()));
+        click(page.findPreference(HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW));
+        AlertDialog old = ShadowAlertDialog.getLatestAlertDialog();
+        EditText field = old.findViewById(android.R.id.edit);
+        String draft = "caf\u00e9 " + "\u732b".repeat(12000);
+        field.setText(draft);
+        field.setSelection(2, 8);
+        controller.recreate();
+        ShadowLooper.idleMainLooper();
+        AlertDialog restored = ShadowAlertDialog.getLatestAlertDialog();
+        assertNotSame(old, restored);
+        assertFalse(old.isShowing());
+        EditText restoredField = restored.findViewById(android.R.id.edit);
+        assertEquals(draft, restoredField.getText().toString());
+        assertEquals(2, restoredField.getSelectionStart());
+        assertEquals(8, restoredField.getSelectionEnd());
+        assertEquals("saved", TextSettings.HIDDEN_WORDS.savedValue());
+        restored.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();
+        page = pageOf((SettingsDialog) controller.get().getFragmentManager().findFragmentByTag(TAG));
+        click(page.findPreference(HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW));
+        AlertDialog fresh = ShadowAlertDialog.getLatestAlertDialog();
+        assertEquals("saved", ((EditText) fresh.findViewById(android.R.id.edit)).getText().toString());
+        fresh.dismiss();
+    }
+
+    @Test
+    public void failedTabMovesAndResetKeepTheSavedOrderAndSummary() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        String saved = app.hushtumblr.extension.tumblr.ui.BottomBarTabs.join(
+                app.hushtumblr.extension.tumblr.ui.BottomBarTabs.movedUp(
+                        app.hushtumblr.extension.tumblr.ui.BottomBarTabs.choices(""), 2));
+        TextSettings.TAB_ORDER.save(saved);
+        HushTumblrPreferenceFragment page = pageOf(show(controller.get()));
+        Preference row = page.findPreference(HushTumblrPreferenceFragment.TAB_ORDER_ROW);
+        String summary = row.getSummary().toString();
+        click(row);
+        AlertDialog dialog = ShadowAlertDialog.getLatestAlertDialog();
+        android.widget.ListAdapter labels = dialog.getListView().getAdapter();
+        List<Object> earlier = new ArrayList<>();
+        for (int i = 0; i < labels.getCount(); i++) earlier.add(labels.getItem(i));
+        for (FailingStore.Fault fault : new FailingStore.Fault[]{FailingStore.Fault.COMMIT_FALSE,
+                FailingStore.Fault.COMMIT_THROWS}) {
+            try (FailingStore ignored = FailingStore.install(fault)) {
+                dialog.getListView().performItemClick(null, 2, 2);
+            }
+            ShadowLooper.idleMainLooper();
+            assertEquals(saved, TextSettings.TAB_ORDER.savedValue());
+            assertEquals(summary, row.getSummary());
+            for (int i = 0; i < labels.getCount(); i++) assertEquals(earlier.get(i), labels.getItem(i));
+            try (FailingStore ignored = FailingStore.install(fault)) {
+                dialog.getButton(AlertDialog.BUTTON_NEUTRAL).performClick();
+            }
+            ShadowLooper.idleMainLooper();
+            assertTrue(dialog.isShowing());
+            assertEquals(saved, TextSettings.TAB_ORDER.savedValue());
+            assertEquals(summary, row.getSummary());
+            for (int i = 0; i < labels.getCount(); i++) assertEquals(earlier.get(i), labels.getItem(i));
+        }
+        dialog.dismiss();
+    }
+
+    @Test
+    public void overBudgetWordsStayEditableWithoutReplacingSavedWords() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        TextSettings.HIDDEN_WORDS.save("saved words");
+        HushTumblrPreferenceFragment page = pageOf(show(controller.get()));
+        Preference row = page.findPreference(HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW);
+        String summary = row.getSummary().toString();
+        click(row);
+        AlertDialog editor = ShadowAlertDialog.getLatestAlertDialog();
+        EditText field = editor.findViewById(android.R.id.edit);
+        String draft = "\u732b".repeat(SettingsBackup.MAX_BYTES / 2);
+        field.setText(draft);
+        editor.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+        ShadowLooper.idleMainLooper();
+        assertTrue(editor.isShowing());
+        assertEquals(draft, field.getText().toString());
+        assertEquals("saved words", TextSettings.HIDDEN_WORDS.savedValue());
+        assertEquals(summary, row.getSummary());
+        assertTrue(ShadowToast.getTextOfLatestToast().contains("too large"));
+        field.setText("retry");
+        editor.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+        ShadowLooper.idleMainLooper();
+        assertFalse(editor.isShowing());
+        assertEquals("retry", TextSettings.HIDDEN_WORDS.savedValue());
     }
 
     @Test

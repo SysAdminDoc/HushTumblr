@@ -51,6 +51,7 @@ import app.hushtumblr.extension.shared.settings.BooleanSetting;
 import app.hushtumblr.extension.shared.settings.Setting;
 import app.hushtumblr.extension.shared.settings.SettingsJson;
 import app.hushtumblr.extension.shared.settings.StringSetting;
+import app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment;
 import app.hushtumblr.extension.tumblr.ui.BottomBarTabs;
 
 /**
@@ -64,7 +65,8 @@ import app.hushtumblr.extension.tumblr.ui.BottomBarTabs;
  * out or come in. Pause, safe mode, the debug settings, the app language and the counters
  * HushTumblr keeps for itself stay out, and so do the log, the diagnostic data and anything about
  * the person or the phone: a file is a format name, a version number, one true or false per switch
- * and, since version 2, the words to hide and the tab order. An import applies what it read in one
+ * and, since version 2, text choices. Version 3 adds word scopes and allowed words.
+     * An import applies what it read in one
  * preference commit. A file that is too large, isn't JSON, names something twice, holds a switch
  * value of the wrong type or comes from a newer version changes nothing. A text value its settings
  * row could never have saved is left out and named in the preview, and the rest still imports.
@@ -74,15 +76,15 @@ import app.hushtumblr.extension.tumblr.ui.BottomBarTabs;
  * <p>Call the file and preference work on a worker thread.
  */
 public final class SettingsBackup {
-    /** Far more than a settings file needs: one is a few hundred bytes. */
+    /** Maximum complete UTF-8 file, including its envelope and escaped text choices. */
     public static final int MAX_BYTES = 64 * 1024;
     public static final String FORMAT = "hushtumblr-settings";
     /**
      * The file shape this build writes and the newest it reads. A file declaring more is refused.
-     * Version 1 carried the switches only; version 2 adds the text section, {@link #TEXT_NAME}.
+     * Version 1 carried switches only. Version 2 adds text. Version 3 preserves legacy word behavior.
      */
-    static final int SCHEMA = 2;
-    /** The first version with a text section. A version 1 file leaves the text settings as they are. */
+    static final int SCHEMA = 3;
+    /** The first text section. Legacy word-filter imports also clear the new allowed-words list. */
     static final int TEXT_SCHEMA = 2;
 
     static final String FORMAT_NAME = "format";
@@ -122,10 +124,27 @@ public final class SettingsBackup {
             Settings.HIDE_COMMUNITIES_COUNT,
             Settings.HIDE_NOTIFICATIONS_COUNT,
             Settings.HIDE_REBLOGS,
+            Settings.KEEP_TAGGED_REBLOGS,
+            Settings.HIDE_NOTIFICATION_LIKES,
+            Settings.HIDE_NOTIFICATION_REBLOGS,
+            Settings.HIDE_NOTIFICATION_REPLIES,
+            Settings.HIDE_NOTIFICATION_FOLLOWS,
+            Settings.HIDE_NOTIFICATION_MENTIONS,
+            Settings.HIDE_NOTIFICATION_ASKS,
+            Settings.HIDE_NOTIFICATION_BOOPS,
             Settings.HIDE_VIDEO_POSTS,
             Settings.HIDE_PHOTO_POSTS,
             Settings.HIDE_TEXT_POSTS,
             Settings.HIDE_POSTS_WITH_WORDS,
+            Settings.WORDS_CURRENT_TEXT,
+            Settings.WORDS_REBLOG_TRAIL,
+            Settings.WORDS_TAGS,
+            Settings.WORDS_SUMMARY,
+            Settings.SHOW_POST_TIMESTAMPS,
+            Settings.SHOW_IMAGE_DESCRIPTIONS,
+            Settings.MUTE_ROOT_POSTS,
+            Settings.REVEAL_ALLOWED_MATURE_CONTENT,
+            Settings.SHOW_MUTUAL_MARKERS,
             Settings.DARK_BACKGROUND,
             Settings.HIDE_EXPLORE_TAB,
             Settings.HIDE_NOTIFICATIONS_TAB,
@@ -133,12 +152,12 @@ public final class SettingsBackup {
             Settings.FIX_PUSH_NOTIFICATIONS));
 
     /**
-     * The text settings a file carries since version 2: the words Hide posts with these words looks
-     * for, and the bottom bar's tab order. An import checks each value by the rule its settings row
-     * saves by ({@link #textValue}).
+     * Version 2 carries hidden words and tab order; version 3 also carries allowed words.
+     * An import checks each value by the rule its settings row saves by ({@link #textValue}).
      */
     static final List<StringSetting> TEXT_ALLOWLIST = Collections.unmodifiableList(Arrays.asList(
             TextSettings.HIDDEN_WORDS,
+            TextSettings.ALLOWED_WORDS,
             TextSettings.TAB_ORDER));
 
     /**
@@ -433,19 +452,76 @@ public final class SettingsBackup {
      * The file for the switches and text settings as they're saved now. Saved rather than what a
      * paused Tumblr is answered, so exporting while paused keeps what the person chose.
      */
-    public static String create() throws JSONException {
+    public static String create() throws JSONException, Rejected {
+        synchronized (Setting.class) {
+            checkTextBudget(Collections.emptyMap());
+            String file = serialize(Collections.emptyMap(), false);
+            checkSize(file);
+            Snapshot parsed = parse(new String(file.getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8));
+            for (StringSetting setting : TEXT_ALLOWLIST) {
+                if (!setting.persistedValue().equals(parsed.texts.get(setting))) {
+                    throw new Rejected(Reason.VALUE, "Saved text does not round-trip");
+                }
+            }
+            return file;
+        }
+    }
+
+    /** Reserve the full envelope, every switch and the longest valid tab order before saving text. */
+    static void checkTextBudget(StringSetting setting, String value) throws Rejected {
+        checkTextBudget(Collections.singletonMap(setting, value));
+    }
+
+    private static void checkTextBudget(Map<StringSetting, String> replacements) throws Rejected {
+        synchronized (Setting.class) {
+            try {
+                checkSize(serialize(replacements, true));
+            } catch (JSONException failure) {
+                throw new Rejected(Reason.VALUE, "Could not serialize settings");
+            }
+        }
+    }
+
+    private static void checkSize(String file) throws Rejected {
+        if (file.getBytes(StandardCharsets.UTF_8).length > MAX_BYTES) {
+            throw new Rejected(Reason.SIZE, "Larger than " + MAX_BYTES + " bytes");
+        }
+    }
+
+    private static String serialize(Map<StringSetting, String> replacements, boolean reserve) throws JSONException {
         JSONObject switches = new JSONObject();
         for (BooleanSetting setting : ALLOWLIST) {
-            switches.put(setting.key, setting.persistedValue().booleanValue());
+            switches.put(setting.key, reserve ? false : setting.persistedValue().booleanValue());
         }
         JSONObject texts = new JSONObject();
-        for (StringSetting setting : TEXT_ALLOWLIST) texts.put(setting.key, setting.persistedValue());
-        return new JSONObject()
+        for (StringSetting setting : TEXT_ALLOWLIST) {
+            String value = replacements.containsKey(setting) ? replacements.get(setting) : setting.persistedValue();
+            if (reserve && setting == TextSettings.TAB_ORDER) value = BottomBarTabs.join(BottomBarTabs.TABS);
+            texts.put(setting.key, value);
+        }
+        String file = new JSONObject()
                 .put(FORMAT_NAME, FORMAT)
                 .put(SCHEMA_NAME, SCHEMA)
                 .put(SETTINGS_NAME, switches)
                 .put(TEXT_NAME, texts)
                 .toString(2);
+        // Android's JSON writer leaves lone UTF-16 surrogates literal. UTF-8 would replace them.
+        // Escape only those code units, so both the byte budget and the written file preserve text.
+        StringBuilder escaped = null;
+        int start = 0;
+        for (int index = 0; index < file.length(); index++) {
+            char value = file.charAt(index);
+            if (Character.isHighSurrogate(value) && index + 1 < file.length()
+                    && Character.isLowSurrogate(file.charAt(index + 1))) {
+                index++;
+                continue;
+            }
+            if (!Character.isSurrogate(value)) continue;
+            if (escaped == null) escaped = new StringBuilder(file.length());
+            escaped.append(file, start, index).append("\\u").append(Integer.toHexString(value));
+            start = index + 1;
+        }
+        return escaped == null ? file : escaped.append(file, start, file.length()).toString();
     }
 
     /** Whether a file carries the setting stored under [key], a switch or a text setting. */
@@ -475,7 +551,7 @@ public final class SettingsBackup {
     static String textValue(StringSetting setting, @Nullable Object value) {
         if (!(value instanceof String)) return null;
         String text = (String) value;
-        if (setting == TextSettings.HIDDEN_WORDS) return text.trim();
+        if (setting == TextSettings.HIDDEN_WORDS || setting == TextSettings.ALLOWED_WORDS) return text.trim();
         if (setting == TextSettings.TAB_ORDER) {
             return text.isEmpty() || text.equals(BottomBarTabs.join(BottomBarTabs.parse(text))) ? text : null;
         }
@@ -606,6 +682,19 @@ public final class SettingsBackup {
                 else texts.put(setting, value);
             }
         }
+        if ((Integer) schema < 3 && ordered.containsKey(Settings.HIDE_REBLOGS)) {
+            // Old Hide reblogs backups had no tagged-reblog exception.
+            ordered.put(Settings.KEEP_TAGGED_REBLOGS, false);
+        }
+        if ((Integer) schema < 3 && (ordered.containsKey(Settings.HIDE_POSTS_WITH_WORDS)
+                || texts.containsKey(TextSettings.HIDDEN_WORDS))) {
+            // Old word filters matched every field and had no exceptions.
+            ordered.put(Settings.WORDS_CURRENT_TEXT, true);
+            ordered.put(Settings.WORDS_REBLOG_TRAIL, true);
+            ordered.put(Settings.WORDS_TAGS, true);
+            ordered.put(Settings.WORDS_SUMMARY, true);
+            texts.put(TextSettings.ALLOWED_WORDS, "");
+        }
         return new Snapshot(ordered, texts, skipped, unknown);
     }
 
@@ -618,10 +707,11 @@ public final class SettingsBackup {
      *                     back, live and stored; {@link ApplyFailed#rolledBack} says whether that
      *                     worked for every one of them.
      */
-    static int apply(Snapshot snapshot) throws ApplyFailed {
+    static int apply(Snapshot snapshot) throws ApplyFailed, Rejected {
         synchronized (Setting.class) {
             Map<Setting<?>, Object> changes = snapshot.changes();
             if (changes.isEmpty()) return 0;
+            if (!snapshot.texts.isEmpty()) checkTextBudget(snapshot.texts);
             Snapshot before = current();
             write(changes);
             pendingUndo = new Undo(before, current());
@@ -635,6 +725,8 @@ public final class SettingsBackup {
     }
 
     private static void write(Map<Setting<?>, Object> changes) throws ApplyFailed {
+        Map<Setting<?>, Object> before = new LinkedHashMap<>();
+        for (Setting<?> setting : changes.keySet()) before.put(setting, setting.persistedValue());
         try {
             Setting.saveAll(changes);
         } catch (Setting.BatchFailed failed) {
@@ -643,5 +735,6 @@ public final class SettingsBackup {
             // Refused before anything was written.
             throw new ApplyFailed(true, refused);
         }
+        AbstractPreferenceFragment.recordRestartPendingChanges(before);
     }
 }

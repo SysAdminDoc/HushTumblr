@@ -25,7 +25,7 @@ public interface HushPost {
     @Nullable
     List<?> hushTrail();
 
-    /** Its tags, without the #, under "tags". */
+    /** This post's own tags, without the #, under "tags". Reblog-trail tags aren't included. */
     @Nullable
     List<?> hushTags();
 

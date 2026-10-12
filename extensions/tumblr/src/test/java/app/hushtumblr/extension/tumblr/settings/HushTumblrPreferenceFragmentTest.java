@@ -124,6 +124,12 @@ public class HushTumblrPreferenceFragmentTest {
         ROW_TITLES.put(PatchFamily.HIDE_NOTIFICATIONS_TAB, "Hide the Notifications tab");
         ROW_TITLES.put(PatchFamily.REORDER_TABS, "Reorder the bottom bar");
         ROW_TITLES.put(PatchFamily.FIX_PUSH_NOTIFICATIONS, "Fix push notifications");
+        ROW_TITLES.put(PatchFamily.FILTER_ACTIVITY_NOTIFICATIONS, "Hide likes");
+        ROW_TITLES.put(PatchFamily.SHOW_POST_TIMESTAMPS, "Show post timestamps");
+        ROW_TITLES.put(PatchFamily.VISIBLE_ALT_TEXT, "Visible image descriptions");
+        ROW_TITLES.put(PatchFamily.MUTE_ROOT_POSTS, "Mute posts locally");
+        ROW_TITLES.put(PatchFamily.SHOW_MUTUAL_MARKERS, "Show mutual markers");
+        ROW_TITLES.put(PatchFamily.REVEAL_ALLOWED_MATURE_CONTENT, "Reveal allowed mature content");
     }
 
     /** The sections every build has, in the order they're drawn. */
@@ -203,6 +209,11 @@ public class HushTumblrPreferenceFragmentTest {
         for (PatchFamily family : PatchFamily.values()) builds.add(EnumSet.of(family));
         builds.add(EnumSet.allOf(PatchFamily.class));
         assertEquals("every patch needs its row here", EnumSet.allOf(PatchFamily.class), ROW_TITLES.keySet());
+        Map<String, PatchFamily> editors = new LinkedHashMap<>();
+        editors.put(HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW, PatchFamily.HIDE_POSTS_WITH_WORDS);
+        editors.put(HushTumblrPreferenceFragment.ALLOWED_WORDS_ROW, PatchFamily.HIDE_POSTS_WITH_WORDS);
+        editors.put(HushTumblrPreferenceFragment.TAB_ORDER_ROW, PatchFamily.REORDER_TABS);
+        editors.put("hushtumblr_manage_root_mutes", PatchFamily.MUTE_ROOT_POSTS);
 
         List<String> wrong = new ArrayList<>();
         for (Set<PatchFamily> build : builds) {
@@ -224,6 +235,12 @@ public class HushTumblrPreferenceFragmentTest {
                         if (drawn != build.contains(family)) wrong.add(build + ": " + setting.key + (drawn ? " is drawn" : " isn't drawn"));
                     }
                 }
+                for (Map.Entry<String, PatchFamily> editor : editors.entrySet()) {
+                    boolean drawn = page.findPreference(editor.getKey()) != null;
+                    if (drawn != build.contains(editor.getValue())) {
+                        wrong.add(build + ": " + editor.getKey() + (drawn ? " is drawn" : " isn't drawn"));
+                    }
+                }
 
                 List<String> sections = sections(page);
                 List<String> expected = new ArrayList<>();
@@ -232,8 +249,11 @@ public class HushTumblrPreferenceFragmentTest {
                 if (!Collections.disjoint(build, PatchFamily.INTERFACE_PAGE)) expected.add("Interface");
                 if (!Collections.disjoint(build, PatchFamily.PRIVACY_PAGE)) expected.add("Privacy");
                 expected.addAll(EVERY_BUILD);
-                // Its one switch is the page, so it comes with the patch, right after Links.
-                if (build.contains(PatchFamily.FIX_PUSH_NOTIFICATIONS)) expected.add(expected.indexOf("Links") + 1, "Notifications");
+                // Either notification patch needs this section, right after Links.
+                if (build.contains(PatchFamily.FIX_PUSH_NOTIFICATIONS)
+                        || build.contains(PatchFamily.FILTER_ACTIVITY_NOTIFICATIONS)) {
+                    expected.add(expected.indexOf("Links") + 1, "Notifications");
+                }
                 if (!expected.equals(sections)) wrong.add(build + ": sections " + sections);
             }
         }
@@ -251,8 +271,7 @@ public class HushTumblrPreferenceFragmentTest {
                 + "as if you deleted your ad ID in Android settings.",
                     String.valueOf(page.findPreference(Settings.HIDE_ADVERTISING_ID.key).getSummary()));
             assertEquals("Fix push notifications", String.valueOf(page.findPreference(Settings.FIX_PUSH_NOTIFICATIONS.key).getTitle()));
-            assertEquals("Lets a patched Tumblr sign up for push notifications when Google would turn it away. A "
-                + "change applies the next time Tumblr starts.",
+            assertEquals("Lets a patched Tumblr sign up for push notifications when Google would turn it away.",
                     String.valueOf(page.findPreference(Settings.FIX_PUSH_NOTIFICATIONS.key).getSummary()));
             // Both are in Manager's default selection and ship on: a patched build gets no push
             // notifications at all without the second one.

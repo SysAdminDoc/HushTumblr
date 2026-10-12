@@ -85,16 +85,27 @@ public enum PatchFamily {
     /** One hook, with a switch for each tab's badge. */
     HIDE_UNREAD_DOTS(FamilyNames.HIDE_UNREAD_DOTS, "hideUnreadDots", null, Settings.HIDE_DASHBOARD_COUNT,
             Settings.HIDE_COMMUNITIES_COUNT, Settings.HIDE_NOTIFICATIONS_COUNT),
-    HIDE_REBLOGS(FamilyNames.HIDE_REBLOGS, "hideReblogs", null, Settings.HIDE_REBLOGS),
+    HIDE_REBLOGS(FamilyNames.HIDE_REBLOGS, "hideReblogs", null, Settings.HIDE_REBLOGS, Settings.KEEP_TAGGED_REBLOGS),
     HIDE_VIDEO_POSTS(FamilyNames.HIDE_VIDEO_POSTS, "hideVideoPosts", null, Settings.HIDE_VIDEO_POSTS),
     HIDE_PHOTO_POSTS(FamilyNames.HIDE_PHOTO_POSTS, "hidePhotoPosts", null, Settings.HIDE_PHOTO_POSTS),
     HIDE_TEXT_POSTS(FamilyNames.HIDE_TEXT_POSTS, "hideTextPosts", null, Settings.HIDE_TEXT_POSTS),
-    HIDE_POSTS_WITH_WORDS(FamilyNames.HIDE_POSTS_WITH_WORDS, "hidePostsWithWords", null, Settings.HIDE_POSTS_WITH_WORDS),
+    HIDE_POSTS_WITH_WORDS(FamilyNames.HIDE_POSTS_WITH_WORDS, "hidePostsWithWords", null, Settings.HIDE_POSTS_WITH_WORDS,
+            Settings.WORDS_CURRENT_TEXT, Settings.WORDS_REBLOG_TRAIL, Settings.WORDS_TAGS, Settings.WORDS_SUMMARY),
     DARK_BACKGROUND(FamilyNames.DARK_BACKGROUND, "darkBackground", null, Settings.DARK_BACKGROUND),
     HIDE_EXPLORE_TAB(FamilyNames.HIDE_EXPLORE_TAB, "hideExploreTab", null, Settings.HIDE_EXPLORE_TAB),
     HIDE_NOTIFICATIONS_TAB(FamilyNames.HIDE_NOTIFICATIONS_TAB, "hideNotificationsTab", null, Settings.HIDE_NOTIFICATIONS_TAB),
     REORDER_TABS(FamilyNames.REORDER_TABS, "reorderTabs", null, Settings.REORDER_TABS),
-    FIX_PUSH_NOTIFICATIONS(FamilyNames.FIX_PUSH_NOTIFICATIONS, "fixPushNotifications", null, Settings.FIX_PUSH_NOTIFICATIONS);
+    FIX_PUSH_NOTIFICATIONS(FamilyNames.FIX_PUSH_NOTIFICATIONS, "fixPushNotifications", null, Settings.FIX_PUSH_NOTIFICATIONS),
+    FILTER_ACTIVITY_NOTIFICATIONS(FamilyNames.FILTER_ACTIVITY_NOTIFICATIONS, "filterActivityNotifications", null,
+            Settings.HIDE_NOTIFICATION_LIKES, Settings.HIDE_NOTIFICATION_REBLOGS, Settings.HIDE_NOTIFICATION_REPLIES,
+            Settings.HIDE_NOTIFICATION_FOLLOWS, Settings.HIDE_NOTIFICATION_MENTIONS, Settings.HIDE_NOTIFICATION_ASKS,
+            Settings.HIDE_NOTIFICATION_BOOPS),
+    SHOW_POST_TIMESTAMPS(FamilyNames.SHOW_POST_TIMESTAMPS, "showPostTimestamps", null, Settings.SHOW_POST_TIMESTAMPS),
+    VISIBLE_ALT_TEXT(FamilyNames.VISIBLE_ALT_TEXT, "visibleAltText", null, Settings.SHOW_IMAGE_DESCRIPTIONS),
+    MUTE_ROOT_POSTS(FamilyNames.MUTE_ROOT_POSTS, "muteRootPosts", null, Settings.MUTE_ROOT_POSTS),
+    SHOW_MUTUAL_MARKERS(FamilyNames.SHOW_MUTUAL_MARKERS, "showMutualMarkers", null, Settings.SHOW_MUTUAL_MARKERS),
+    REVEAL_ALLOWED_MATURE_CONTENT(FamilyNames.REVEAL_ALLOWED_MATURE_CONTENT, "revealAllowedMatureContent", null,
+            Settings.REVEAL_ALLOWED_MATURE_CONTENT);
 
     /** The patch's name in Morphe Manager. */
     public final String patchName;
@@ -142,7 +153,7 @@ public enum PatchFamily {
     /** The families the Feed page holds. The page and its home row both read this. */
     static final Set<PatchFamily> FEED_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_POSTS_WITH_WORDS,
             HIDE_TEXT_POSTS, HIDE_PHOTO_POSTS, HIDE_VIDEO_POSTS, HIDE_REBLOGS, HIDE_WATCH_IT_ROWS,
-            HIDE_SUGGESTED_COMMUNITIES, HIDE_SUGGESTED_BLOGS, HIDE_AD_FREE_BANNER, HIDE_ADS));
+            HIDE_SUGGESTED_COMMUNITIES, HIDE_SUGGESTED_BLOGS, HIDE_AD_FREE_BANNER, HIDE_ADS, MUTE_ROOT_POSTS));
 
     /** The families the Interface page holds. The page and its home row both read this. */
     static final Set<PatchFamily> INTERFACE_PAGE = Collections.unmodifiableSet(EnumSet.of(REORDER_TABS,
@@ -152,7 +163,7 @@ public enum PatchFamily {
     /** The families the Posts page holds. The page and its home row both read this. */
     static final Set<PatchFamily> POSTS_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_SAVE_BUTTON,
             HIDE_SHARE_BUTTON, HIDE_COMMENT_BUTTON, HIDE_REBLOG_BUTTON, HIDE_LIKE_BUTTON, HIDE_NOTE_COUNTS, HIDE_FOLLOW_BUTTON,
-            HIDE_HASHTAGS));
+            HIDE_HASHTAGS, SHOW_POST_TIMESTAMPS, VISIBLE_ALT_TEXT, REVEAL_ALLOWED_MATURE_CONTENT, SHOW_MUTUAL_MARKERS));
 
     /** The families the Privacy page holds. The page and its home row both read this. */
     static final Set<PatchFamily> PRIVACY_PAGE = Collections.unmodifiableSet(EnumSet.of(DISABLE_ANALYTICS,
@@ -160,7 +171,15 @@ public enum PatchFamily {
 
     /** Each independent hook, its owning family and the flag set only after it was inserted. */
     public enum Capability {
+        PRIMARY_BLOG_MUTUALS(SHOW_MUTUAL_MARKERS, "primaryBlogMutuals", "Show mutual markers"),
         TIMELINE_ADS(HIDE_ADS, "timelineAds", "Hide ads"),
+        ROOT_POST_MUTES(MUTE_ROOT_POSTS, "rootPostMutes", "Mute posts locally"),
+        ACCOUNT_SAFE_MATURE_REVEAL(REVEAL_ALLOWED_MATURE_CONTENT, "accountSafeMatureReveal", "Reveal allowed mature content"),
+        PHOTO_ALT_TEXT_CAPTIONS(VISIBLE_ALT_TEXT, "photoAltTextCaptions", "photo image descriptions"),
+        GALLERY_ALT_TEXT_CAPTIONS(VISIBLE_ALT_TEXT, "galleryAltTextCaptions", "gallery image descriptions"),
+        NATIVE_POST_TIMESTAMPS(SHOW_POST_TIMESTAMPS, "nativePostTimestamps", "Show post timestamps"),
+        ACTIVITY_NOTIFICATION_LIST(FILTER_ACTIVITY_NOTIFICATIONS, "activityNotificationList", "Filter activity notifications"),
+        PAID_POST_HEADER(HIDE_ADS, "paidPostHeader", "Hide ads"),
         ADVERTISING_ID(HIDE_ADVERTISING_ID, "advertisingId", "Hide advertising ID"),
         ANALYTICS_FLAGS(DISABLE_ANALYTICS, "analyticsFlags", "Disable analytics"),
         AD_FREE_BANNER_FLAGS(HIDE_AD_FREE_BANNER, "adFreeBannerFlags", "Hide the ad-free banner"),
@@ -349,7 +368,8 @@ public enum PatchFamily {
 
     /**
      * "on", "disabled by its switch" or "disabled while paused", then the saved switches. A
-     * family with two switches is on while either is: each hides its own kind of post.
+     * Independent switches can each enable their family. Dependent options keep their saved
+     * values in the report but cannot enable a family whose master switch is off.
      */
     private String reportLine(boolean paused) {
         StringBuilder line = new StringBuilder(patchName).append(": ");
@@ -357,7 +377,9 @@ public enum PatchFamily {
             return line.append("no switch, stays in while paused: ").append(effectiveStaysWhilePaused()).toString();
         }
         boolean anyOn = false;
-        for (BooleanSetting setting : switches) anyOn |= setting.savedValue();
+        if (this == HIDE_REBLOGS) anyOn = Settings.HIDE_REBLOGS.savedValue();
+        else if (this == HIDE_POSTS_WITH_WORDS) anyOn = Settings.HIDE_POSTS_WITH_WORDS.savedValue();
+        else for (BooleanSetting setting : switches) anyOn |= setting.savedValue();
         line.append(paused ? "disabled while paused (saved " : anyOn ? "on (" : "disabled by its switch (");
         for (int i = 0; i < switches.size(); i++) {
             if (i > 0) line.append(", ");

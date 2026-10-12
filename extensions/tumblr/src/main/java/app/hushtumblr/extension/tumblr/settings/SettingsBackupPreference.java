@@ -254,6 +254,10 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
             String said = null;
             try {
                 said = write(context.getContentResolver(), uri, SettingsBackup.create().getBytes(StandardCharsets.UTF_8), run);
+            } catch (SettingsBackup.Rejected refused) {
+                said = refused.reason == SettingsBackup.Reason.SIZE
+                        ? L10n.t("Your saved lists are too large for a settings backup. Shorten them before exporting. The existing file wasn't changed.")
+                        : L10n.t("Couldn't save the settings file. Try again.");
             } catch (Exception error) {
                 Logger.printInfo(() -> "Settings export failed: " + error.getClass().getSimpleName());
                 said = L10n.t("Couldn't save the settings file. Try again.");
@@ -441,6 +445,7 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
 
     /** A text setting's name, as its row on the settings screen gives it. */
     static String textName(StringSetting setting) {
+        if (setting == TextSettings.ALLOWED_WORDS) return L10n.t("Allowed words");
         return setting == TextSettings.TAB_ORDER ? L10n.t("Tab order") : L10n.t("Words to hide");
     }
 
@@ -486,6 +491,23 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
             case "hushtumblr_hide_communities_count": return L10n.t("Hide the Communities count");
             case "hushtumblr_hide_notifications_count": return L10n.t("Hide the Notifications count");
             case "hushtumblr_hide_reblogs": return L10n.t("Hide reblogs");
+            case "hushtumblr_keep_tagged_reblogs": return L10n.t("Keep tagged reblogs");
+            case "hushtumblr_hide_notification_likes": return L10n.t("Hide likes");
+            case "hushtumblr_hide_notification_reblogs": return L10n.t("Hide reblog notifications");
+            case "hushtumblr_hide_notification_replies": return L10n.t("Hide reply notifications");
+            case "hushtumblr_hide_notification_follows": return L10n.t("Hide follow notifications");
+            case "hushtumblr_hide_notification_mentions": return L10n.t("Hide mention notifications");
+            case "hushtumblr_hide_notification_asks": return L10n.t("Hide ask notifications");
+            case "hushtumblr_hide_notification_boops": return L10n.t("Hide boop notifications");
+            case "hushtumblr_words_current_text": return L10n.t("Match current post text");
+            case "hushtumblr_words_reblog_trail": return L10n.t("Match reblog trail text");
+            case "hushtumblr_words_tags": return L10n.t("Match current post tags");
+            case "hushtumblr_words_summary": return L10n.t("Match post summaries");
+            case "hushtumblr_show_post_timestamps": return L10n.t("Show post timestamps");
+            case "hushtumblr_show_image_descriptions": return L10n.t("Visible image descriptions");
+            case "hushtumblr_mute_root_posts": return L10n.t("Mute posts locally");
+            case "hushtumblr_reveal_allowed_mature_content": return L10n.t("Reveal allowed mature content");
+            case "hushtumblr_show_mutual_markers": return L10n.t("Show mutual markers");
             case "hushtumblr_hide_video_posts": return L10n.t("Hide video posts");
             case "hushtumblr_hide_photo_posts": return L10n.t("Hide photo posts");
             case "hushtumblr_hide_text_posts": return L10n.t("Hide text posts");
@@ -554,6 +576,8 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
                 try {
                     int changed = SettingsBackup.apply(snapshot);
                     Utils.showToastLong(importedMessage(changed));
+                } catch (SettingsBackup.Rejected refused) {
+                    Utils.showToastLong(refusal(refused.reason));
                 } catch (SettingsBackup.ApplyFailed failure) {
                     Logger.printInfo(() -> "Settings import failed: " + failure.getMessage()
                             + (failure.rolledBack ? ", rolled back" : ", not rolled back"));
@@ -583,8 +607,13 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
 
     /** What the toast after an import says: how many switches changed. */
     static String importedMessage(int switches) {
-        return switches == 0 ? L10n.t("Settings imported.") : L10n.quantity(switches,
-                "Settings imported. %1$d switch changed.", "Settings imported. %1$d switches changed.", switches);
+        return afterBulk(switches == 0 ? L10n.t("Settings imported.") : L10n.quantity(switches,
+                "Settings imported. %1$d switch changed.", "Settings imported. %1$d switches changed.", switches));
+    }
+
+    private static String afterBulk(String message) {
+        return AbstractPreferenceFragment.restartPending.isEmpty() ? message
+                : message + " " + L10n.t("Restart Tumblr to apply these settings.");
     }
 
     /** Restoring an import is an immediate row action with the same atomic write/recovery path. */
@@ -597,7 +626,7 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
             accepted = Utils.runOnBackgroundThread(() -> {
                 try {
                     switch (SettingsBackup.undo()) {
-                        case UNDONE: Utils.showToastLong(L10n.t("Import undone. Your earlier switches are back.")); break;
+                        case UNDONE: Utils.showToastLong(afterBulk(L10n.t("Import undone. Your earlier switches are back."))); break;
                         case EXPIRED: Utils.showToastLong(L10n.t("Undo ended because a saved switch changed.")); break;
                         case NOTHING: Utils.showToastLong(L10n.t("There's no import to undo.")); break;
                     }

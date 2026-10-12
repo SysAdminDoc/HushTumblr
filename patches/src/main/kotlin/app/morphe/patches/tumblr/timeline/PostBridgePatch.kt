@@ -28,11 +28,13 @@ private const val PATCH = "Post bridge"
 internal const val POST = "Lcom/tumblr/rumblr/model/post/Post;"
 internal const val REBLOG_TRAIL = "Lcom/tumblr/rumblr/model/post/ReblogTrail;"
 internal const val TEXT_BLOCK = "Lcom/tumblr/rumblr/model/post/blocks/TextBlock;"
+internal const val POST_HEADER_CONTEXT = "Lcom/tumblr/rumblr/model/post/PostHeaderContext;"
 
 /** The extension's interfaces the bridge makes them implement. */
 internal const val HUSH_POST = "$EXTENSION_PACKAGE/timeline/HushPost;"
 internal const val HUSH_TRAIL = "$EXTENSION_PACKAGE/timeline/HushTrail;"
 internal const val HUSH_TEXT = "$EXTENSION_PACKAGE/timeline/HushText;"
+internal const val HUSH_PAID_POST = "$EXTENSION_PACKAGE/timeline/HushPaidPost;"
 
 private const val LIST = "Ljava/util/List;"
 private const val STRING = "Ljava/lang/String;"
@@ -64,6 +66,16 @@ internal val POST_BRIDGES = listOf(
     ModelBridge(TEXT_BLOCK, HUSH_TEXT, listOf(BridgeGetter("hushText", "text", STRING))),
 )
 
+internal val PAID_POST_BRIDGE = ModelBridge(
+    POST, HUSH_PAID_POST,
+    listOf(
+        BridgeGetter("hushHeaderIcon", "header_context", STRING),
+        BridgeGetter("hushFollowed", "followed", "Z"),
+        BridgeGetter("hushCanEdit", "can_edit", "Z"),
+        BridgeGetter("hushPaidContextKnown", "", "Z"),
+    ),
+)
+
 /** A bridge found in this build: each interface method with the getter it calls, `Lclass;->name()type`. */
 internal class ResolvedBridge(val bridge: ModelBridge, val calls: Map<BridgeGetter, String>)
 
@@ -89,33 +101,82 @@ internal val postBridgePatch = bytecodePatch {
     }
 }
 
+/**
+ * Hide ads reads the server's structured header icon without inspecting its localized label.
+ * The post's followed and can_edit fields protect followed-blog and own-blog Blaze posts. The
+ * generic is_blazed flag says nothing about placement and is deliberately not bridged.
+ */
+internal val paidPostBridgePatch = bytecodePatch {
+    dependsOn(tumblrExtensionPatch, postJsonPresencePatch)
+
+    execute {
+        requireBridgeInterface(PAID_POST_BRIDGE)
+        val direct = PAID_POST_BRIDGE.getters.filter { it.name in setOf("hushFollowed", "hushCanEdit") }
+            .associateWith { resolveGetter(POST, it) }
+        val header = resolveGetter(POST, BridgeGetter("hushHeaderIcon", "header_context", POST_HEADER_CONTEXT))
+        val icon = resolveGetter(POST_HEADER_CONTEXT, BridgeGetter("hushHeaderIcon", "icon", STRING))
+        addBridge(ResolvedBridge(PAID_POST_BRIDGE, direct))
+        mutableClassDefBy(POST).methods.add(ImmutableMethod(
+            POST, "hushPaidContextKnown", emptyList(), "Z", AccessFlags.PUBLIC.value,
+            null, null, MutableMethodImplementation(2),
+        ).toMutable().apply { addInstructions(0, """
+            iget-boolean v0, p0, $POST_PAID_KNOWN
+            return v0
+        """) })
+        mutableClassDefBy(POST).methods.add(
+            ImmutableMethod(
+                POST, "hushHeaderIcon", emptyList(), STRING, AccessFlags.PUBLIC.value,
+                null, null, MutableMethodImplementation(2),
+            ).toMutable().apply {
+                addInstructions(
+                    0,
+                    """
+                        invoke-virtual { p0 }, $header
+                        move-result-object v0
+                        if-eqz v0, :absent
+                        invoke-virtual { v0 }, $icon
+                        move-result-object v0
+                        return-object v0
+                        :absent
+                        const/4 v0, 0x0
+                        return-object v0
+                    """,
+                )
+            },
+        )
+    }
+}
+
 /** Each of [POST_BRIDGES] resolved, throwing for the first model, adapter or getter this build lacks. */
 internal fun BytecodePatchContext.resolvePostBridges(): List<ResolvedBridge> = POST_BRIDGES.map { bridge ->
     requireBridgeInterface(bridge)
-    val model = classDefByOrNull(bridge.model) ?: throw PatchException("$PATCH: Tumblr's ${bridge.model} wasn't found")
-    val adapter = classDefByOrNull(bridge.adapter) ?: throw PatchException("$PATCH: Tumblr's ${bridge.adapter} wasn't found")
+    ResolvedBridge(bridge, bridge.getters.associateWith { resolveGetter(bridge.model, it) })
+}
+
+/** A model's public getter, located by the JSON key in its generated adapter. */
+private fun BytecodePatchContext.resolveGetter(type: String, getter: BridgeGetter): String {
+    val model = classDefByOrNull(type) ?: throw PatchException("$PATCH: Tumblr's $type wasn't found")
+    val adapterType = type.removeSuffix(";") + "JsonAdapter;"
+    val adapter = classDefByOrNull(adapterType) ?: throw PatchException("$PATCH: Tumblr's $adapterType wasn't found")
     val toJson = adapter.methods.singleOrNull { it.name == "toJson" && it.parameterTypes.size == 2 && it.returnType == "V" }
-        ?: throw PatchException("$PATCH: ${bridge.adapter} has no single toJson")
+        ?: throw PatchException("$PATCH: $adapterType has no single toJson")
     val body = toJson.instructionList()
-    val calls = bridge.getters.associateWith { getter ->
-        if (model.methods.any { it.name == getter.name && it.parameterTypes.isEmpty() }) {
-            throw PatchException("$PATCH: ${bridge.model} already has a method named ${getter.name}")
-        }
-        val key = body.indexOfFirst { it.stringRef() == getter.key }
-        if (key < 0) throw PatchException("$PATCH: ${bridge.adapter} doesn't write \"${getter.key}\"")
-        val call = body.drop(key + 1).firstNotNullOfOrNull { instruction ->
-            instruction.methodRef()?.takeIf { instruction.opcode == Opcode.INVOKE_VIRTUAL && it.definingClass == bridge.model }
-        } ?: throw PatchException("$PATCH: no call on ${bridge.model} follows \"${getter.key}\"")
-        val declared = model.methods.any {
-            it.name == call.name && it.parameterTypes.isEmpty() && it.returnType == getter.returnType && !it.isStatic() &&
-                AccessFlags.PUBLIC.isSet(it.accessFlags)
-        }
-        if (call.name in OBJECT_METHODS || call.parameterTypes.isNotEmpty() || call.returnType != getter.returnType || !declared) {
-            throw PatchException("$PATCH: ${bridge.model}->${call.name} isn't a public getter of ${getter.returnType}")
-        }
-        "${bridge.model}->${call.name}()${getter.returnType}"
+    if (model.methods.any { it.name == getter.name && it.parameterTypes.isEmpty() }) {
+        throw PatchException("$PATCH: $type already has a method named ${getter.name}")
     }
-    ResolvedBridge(bridge, calls)
+    val key = body.indexOfFirst { it.stringRef() == getter.key }
+    if (key < 0) throw PatchException("$PATCH: $adapterType doesn't write \"${getter.key}\"")
+    val call = body.drop(key + 1).takeWhile { it.stringRef() == null }.firstNotNullOfOrNull { instruction ->
+        instruction.methodRef()?.takeIf { instruction.opcode == Opcode.INVOKE_VIRTUAL && it.definingClass == type }
+    } ?: throw PatchException("$PATCH: no call on $type follows \"${getter.key}\"")
+    val declared = model.methods.any {
+        it.name == call.name && it.parameterTypes.isEmpty() && it.returnType == getter.returnType && !it.isStatic() &&
+            AccessFlags.PUBLIC.isSet(it.accessFlags)
+    }
+    if (call.name in OBJECT_METHODS || call.parameterTypes.isNotEmpty() || call.returnType != getter.returnType || !declared) {
+        throw PatchException("$PATCH: $type->${call.name} isn't a public getter of ${getter.returnType}")
+    }
+    return "$type->${call.name}()${getter.returnType}"
 }
 
 /** Throws unless the extension has [bridge]'s interface declaring exactly its getters. */
@@ -137,6 +198,9 @@ private fun BytecodePatchContext.addBridge(resolved: ResolvedBridge) {
     val model = mutableClassDefBy(bridge.model)
     if (bridge.bridge !in model.interfaces) model.interfaces.add(bridge.bridge)
     resolved.calls.forEach { (getter, call) ->
+        val objectResult = getter.returnType.startsWith("L") || getter.returnType.startsWith("[")
+        val move = if (objectResult) "move-result-object" else "move-result"
+        val result = if (objectResult) "return-object" else "return"
         model.methods.add(
             ImmutableMethod(
                 bridge.model, getter.name, emptyList(), getter.returnType, AccessFlags.PUBLIC.value,
@@ -146,8 +210,8 @@ private fun BytecodePatchContext.addBridge(resolved: ResolvedBridge) {
                     0,
                     """
                         invoke-virtual { p0 }, $call
-                        move-result-object v0
-                        return-object v0
+                        $move v0
+                        $result v0
                     """,
                 )
             },

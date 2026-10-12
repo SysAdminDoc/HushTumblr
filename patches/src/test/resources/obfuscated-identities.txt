@@ -2,6 +2,87 @@
 # identities: a one-to-three-letter com/tumblr class, a short made-up top-level package, or a
 # short class with no package at all.
 # One path|descriptor per line. ObfuscatedIdentityTest fails on a descriptor found in the code
-# that is not listed here, and on a line here that no longer matches the code, so this list can
-# only shrink. The patches resolve every such class while patching, which is why this list is
-# empty.
+# that is not listed here, and on a line here that no longer matches the code.
+# The exceptions below are restricted to Tumblr 46.5.0.109. Their native preflights and exact
+# DEX fixture tests bind the descriptors to the stated behavior and refuse changed shapes.
+
+# Mature content. Lf74.k(Lzve;)Z is the checked four-register content-label cover predicate.
+# Lgql.b returns Ldtl and calls Lv81.U0()Z before the cover predicate, preserving the separate
+# NSFW restriction. The repository a constructor binds its CommunityLabelService field and
+# retains Ljn6 only as that constructor's other verified parameter. The service method is GET.
+# Leba is the Moshi reader ABI for both explicit age and permission presence masks.
+# Lj45/Lue5 are the checked continuation/context ABI. Lma7 carries EmptyCoroutineContext;
+# Lz5a extends Lb6a, whose g() returns Llf5.COROUTINE_SUSPENDED. The continuation bridge uses
+# those verified singleton and suspension paths without changing native coroutine outcomes.
+patches/src/main/kotlin/app/morphe/patches/tumblr/mature/RevealAllowedMatureContentPatch.kt|Lb6a;
+patches/src/main/kotlin/app/morphe/patches/tumblr/mature/RevealAllowedMatureContentPatch.kt|Lcom/tumblr/communitylabel/data/settings/a;
+patches/src/main/kotlin/app/morphe/patches/tumblr/mature/RevealAllowedMatureContentPatch.kt|Ldtl;
+patches/src/main/kotlin/app/morphe/patches/tumblr/mature/RevealAllowedMatureContentPatch.kt|Leba;
+patches/src/main/kotlin/app/morphe/patches/tumblr/mature/RevealAllowedMatureContentPatch.kt|Lf74;
+patches/src/main/kotlin/app/morphe/patches/tumblr/mature/RevealAllowedMatureContentPatch.kt|Lgql;
+patches/src/main/kotlin/app/morphe/patches/tumblr/mature/RevealAllowedMatureContentPatch.kt|Lj45;
+patches/src/main/kotlin/app/morphe/patches/tumblr/mature/RevealAllowedMatureContentPatch.kt|Ljn6;
+patches/src/main/kotlin/app/morphe/patches/tumblr/mature/RevealAllowedMatureContentPatch.kt|Llf5;
+patches/src/main/kotlin/app/morphe/patches/tumblr/mature/RevealAllowedMatureContentPatch.kt|Lma7;
+patches/src/main/kotlin/app/morphe/patches/tumblr/mature/RevealAllowedMatureContentPatch.kt|Lue5;
+patches/src/main/kotlin/app/morphe/patches/tumblr/mature/RevealAllowedMatureContentPatch.kt|Lv81;
+patches/src/main/kotlin/app/morphe/patches/tumblr/mature/RevealAllowedMatureContentPatch.kt|Lz5a;
+patches/src/main/kotlin/app/morphe/patches/tumblr/mature/RevealAllowedMatureContentPatch.kt|Lzve;
+
+# Mutual markers. PostCardHeader.t2(Lzve;Lo9m;ZBlogInfo;Z)V has the checked 21-register
+# displayed-blog/name/TextView flow; full bind and detach provide unconditional cleanup.
+# Ldca is the Moshi writer ABI used to bind primary/following/name/uuid getters to JSON keys.
+# Lz76 is the synthetic constructor marker in the field-bound false defaults for primary and
+# following. Lpck is returned by the native Retrofit Call.timeout() ABI and accepts the bounded
+# millisecond timeout before the annotated followers GET is executed.
+patches/src/main/kotlin/app/morphe/patches/tumblr/mutual/ShowMutualMarkersPatch.kt|Ldca;
+patches/src/main/kotlin/app/morphe/patches/tumblr/mutual/ShowMutualMarkersPatch.kt|Lo9m;
+patches/src/main/kotlin/app/morphe/patches/tumblr/mutual/ShowMutualMarkersPatch.kt|Lpck;
+patches/src/main/kotlin/app/morphe/patches/tumblr/mutual/ShowMutualMarkersPatch.kt|Lz76;
+patches/src/main/kotlin/app/morphe/patches/tumblr/mutual/ShowMutualMarkersPatch.kt|Lzve;
+
+# Account identity. Lq15's exact constructor/accept bodies bind Lj15 and UserInfoResponse.
+# Lj15.v -> D constructs UserInfo and calls M; M's immutable UUID field is bound to
+# getUserUuid(), y0(), and Remember's user_uuid key. Lj15.f creates Lq15 before Lp8i.u()
+# subscribes to the Lyc4 request. Lbt0.r has AuthToken2/AuthTokenSecret2 writes inside its
+# checked monitor transaction; p(Lgbl;) clears credentials inside the same reset boundary.
+# Lx5b.i(Context,Z,Lj45) is the verified logout coroutine that calls Remember.b() once.
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/AccountIdentityPatch.kt|Lbt0;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/AccountIdentityPatch.kt|Lgbl;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/AccountIdentityPatch.kt|Lj15;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/AccountIdentityPatch.kt|Lj45;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/AccountIdentityPatch.kt|Lp8i;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/AccountIdentityPatch.kt|Lq15;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/AccountIdentityPatch.kt|Lx5b;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/AccountIdentityPatch.kt|Lyc4;
+
+# Root mutes. Ldca's Post Moshi writer binds reblogged_root_id/reblogged_from_id/id/trail to
+# immutable direct getters. Lv81(Post) captures that canonical ID before its Post parameter
+# is reused. Lzve extends Lvgi, whose l() returns Timelineable for the actual menu card.
+# Lu9g.y's complete 28-register menu ABI includes fragment c, Ly9g, Lpxa and Lju1; checked
+# liveness preserves its fragment/card/context/builder through the final bottomsheet b.
+# Ltj8 is the public invoke()Object callback interface extending Lvj8. Lb6l.a is its native
+# public static final Unit singleton. Lrbk's FROM_CACHE/PAGINATION construction and f() branch
+# prove replacement for TimelineFragment.i6 and its local-only X6 renderer.
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lb6l;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lcom/tumblr/components/bottomsheet/b;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lcom/tumblr/ui/fragment/c;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Ldca;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lju1;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lpxa;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lrbk;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Ltj8;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lu9g;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lv81;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lvgi;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lvj8;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Ly9g;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lzve;
+
+# Shared Post JSON presence. Leba's 178-register reader has exactly one successful Post
+# allocation/constructor/return path and one null missing-fields return through Lf9a.a(String).
+# Lz76 terminates that verified synthetic constructor; first mask v154 and trail mask v158
+# prove explicit followed/can_edit/trail presence before the single shared setter call.
+patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/PostJsonPresencePatch.kt|Leba;
+patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/PostJsonPresencePatch.kt|Lf9a;
+patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/PostJsonPresencePatch.kt|Lz76;

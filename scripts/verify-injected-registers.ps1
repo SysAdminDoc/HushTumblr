@@ -265,16 +265,16 @@ if (-not $CleanApk) {
     $CleanApk = $matching[0].FullName
 }
 if (-not (Test-Path -LiteralPath $CleanApk -PathType Leaf)) { throw "No clean APK at $CleanApk." }
-# A distributor's split bundle for Tumblr (an .xapk or .apkm). Its base APK holds the manifest, Tumblr's
-# signature and the app's own classes*.dex, which is what the device half verifies.
-$cleanBase = Get-BaseApk -Apk $CleanApk -Destination (Join-Path $work 'clean-base.apk')
 # Tumblr ships only the split bundle, so a universal APK kept beside it is a merge whose v2 and v3
 # signature blocks no longer verify. Its signed form is the same-named bundle's base.apk, taken only
 # when every classes*.dex of the merge is byte-identical to base.apk's, as Fixtures.signedForm holds
 # the Kotlin fixture tests. An APK that doesn't verify and isn't such a merge still fails below.
 $signedBundle = Get-SignedBundleFor -Apk $CleanApk
+$cleanSource = if ($signedBundle) { $signedBundle } else { $CleanApk }
+# Resolve the signed container before extracting the single clean baseline. The static and device
+# checks must keep this same base APK for the rest of the run.
+$cleanBase = Get-BaseApk -Apk $cleanSource -Destination (Join-Path $work 'clean-base.apk')
 if ($signedBundle) {
-    $cleanBase = Get-BaseApk -Apk $signedBundle -Destination (Join-Path $work 'clean-base.apk')
     Write-Host "[registers] $(Split-Path -Leaf $CleanApk) is a merge of $(Split-Path -Leaf $signedBundle); its signer is read from that bundle's base.apk, whose dex it carries unchanged"
 }
 

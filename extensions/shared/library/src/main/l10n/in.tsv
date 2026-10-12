@@ -201,7 +201,7 @@ Ad tracking	Pelacakan iklan
 Android sends tumblr.com links to a patched Tumblr only after you select those addresses for it. Selecting them sends their links here. Your other link settings stay as they are.	Android mengirim tautan tumblr.com ke Tumblr yang ditambal hanya setelah Anda memilih alamat itu untuknya. Memilihnya mengarahkan tautannya ke sini. Pengaturan tautan Anda yang lain tidak berubah.
 Export settings saves HushTumblr's switches. It doesn't include your Tumblr account, posts, downloaded files or Morphe Manager's signing key. Keep the settings file and a backup of Manager's signing key somewhere you can find them.	Ekspor pengaturan menyimpan sakelar HushTumblr. Akun Tumblr, postingan, file unduhan, dan kunci penandatanganan Morphe Manager tidak ikut. Simpan file pengaturan dan cadangan kunci penandatanganan Manager di tempat yang mudah Anda temukan.
 If you joined through Google or don't know your Tumblr password, ask for a password reset on Tumblr's login screen. Enter the email already linked to that account, then use the reset link sent to your email to set a Tumblr password. It's separate from your Google password.	Jika Anda mendaftar melalui Google atau tidak tahu kata sandi Tumblr Anda, minta reset kata sandi di layar login Tumblr. Masukkan email yang sudah terhubung ke akun tersebut, lalu gunakan tautan yang dikirim ke email Anda untuk menetapkan kata sandi Tumblr. Kata sandi ini berbeda dari kata sandi Google Anda.
-Lets a patched Tumblr sign up for push notifications when Google would turn it away. A change applies the next time Tumblr starts.	Memungkinkan Tumblr yang ditambal mendaftar untuk notifikasi push saat Google akan menolaknya. Perubahan berlaku saat Tumblr dimulai berikutnya.
+Lets a patched Tumblr sign up for push notifications when Google would turn it away.	Memungkinkan Tumblr yang ditambal mendaftar untuk notifikasi push saat Google akan menolaknya.
 Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.	Buka pengaturan Tumblr dari ikon roda gigi di tab akun. HushTumblr tidak mengubah satu pun pengaturan ini.
 Push alerts	Peringatan push
 Tumblr and the ad companies inside it see an empty advertising ID with ad tracking limited, as if you deleted your ad ID in Android settings.	Tumblr dan perusahaan iklan di dalamnya melihat ID iklan kosong dengan pelacakan iklan dibatasi, seolah Anda menghapus ID iklan di setelan Android.
@@ -250,22 +250,22 @@ Takes the Follow button out of the header of posts from blogs you don't follow y
 Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.	Menghapus tag di bagian bawah postingan di dasbor dan feed lainnya, dan tetap menampilkan tautan sumber.
 # context: the switch for Tumblr's Premium diamond and TumblrMart button on the Interface page. TumblrMart and Premium are Tumblr's names; keep them. The last two are parts named in "This build handles %1$s."
 Hide the diamond and TumblrMart	Sembunyikan berlian dan TumblrMart
-Hides the Premium diamond and the TumblrMart button at the top of your dashboard, Explore and notifications. Restart Tumblr to see the change.	Menyembunyikan berlian Premium dan tombol TumblrMart di bagian atas dasbor, Jelajahi, dan notifikasi. Mulai ulang Tumblr untuk melihat perubahannya.
+Hides the Premium diamond on your dashboard, Explore and notifications when you return to them. Open screens keep their TumblrMart button until Tumblr restarts.	Menyembunyikan berlian Premium di dasbor, Jelajahi, dan notifikasi saat kamu kembali ke layar tersebut. Layar yang terbuka tetap menampilkan tombol TumblrMart sampai Tumblr dimulai ulang.
 the Premium diamond	berlian Premium
 TumblrMart buttons	tombol TumblrMart
 # context: the footer under a post, with its like, reblog, comment, share and Save buttons and their counts. Use the words Tumblr shows in your language for notes and for each button.
 Hide note counts	Sembunyikan jumlah nota
 Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.	Menghapus jumlah suka, reblog, dan komentar dari bagian bawah postingan, tapi tombolnya tetap ada.
 Hide the like button	Sembunyikan tombol suka
-Takes the like button out of the footer under posts, and the reactions off community posts. Restart Tumblr to see the change.	Menghapus tombol suka dari bagian bawah postingan, dan reaksi dari postingan komunitas. Mulai ulang Tumblr untuk melihat perubahannya.
+Takes the like button out of the footer under posts, and the reactions off community posts.	Menghapus tombol suka dari bagian bawah postingan, dan reaksi dari postingan komunitas.
 Hide the reblog button	Sembunyikan tombol reblog
-Takes the reblog button out of the footer under posts. Restart Tumblr to see the change.	Menghapus tombol reblog dari bagian bawah postingan. Mulai ulang Tumblr untuk melihat perubahannya.
+Takes the reblog button out of the footer under posts.	Menghapus tombol reblog dari bagian bawah postingan.
 Hide the comment button	Sembunyikan tombol komentar
-Takes the comment button out of the footer under posts. Restart Tumblr to see the change.	Menghapus tombol komentar dari bagian bawah postingan. Mulai ulang Tumblr untuk melihat perubahannya.
+Takes the comment button out of the footer under posts.	Menghapus tombol komentar dari bagian bawah postingan.
 Hide the share button	Sembunyikan tombol bagikan
-Takes the share button out of the footer under posts. Restart Tumblr to see the change.	Menghapus tombol bagikan dari bagian bawah postingan. Mulai ulang Tumblr untuk melihat perubahannya.
+Takes the share button out of the footer under posts.	Menghapus tombol bagikan dari bagian bawah postingan.
 Hide the Save button	Sembunyikan tombol simpan
-Takes the Save button out of the footer under posts, when Tumblr shows one. Restart Tumblr to see the change.	Menghapus tombol simpan dari bagian bawah postingan, saat Tumblr menampilkannya. Mulai ulang Tumblr untuk melihat perubahannya.
+Takes the Save button out of the footer under posts, when Tumblr shows one.	Menghapus tombol simpan dari bagian bawah postingan, saat Tumblr menampilkannya.
 # context: the bottom bar's unread badges, the small dots and numbers on the Dashboard, Communities and Notifications tabs, one switch per tab. Use Tumblr's own names for the tabs in your language.
 Hide unread dots	Sembunyikan titik belum dibaca
 Hide the Dashboard count	Sembunyikan hitungan Dasbor
@@ -284,28 +284,27 @@ Takes posts with pictures and no video, the reblogged part included, out of your
 Hide text posts	Sembunyikan postingan teks
 Takes posts with no pictures or video, the reblogged part included, out of your dashboard and other feeds.	Menghapus postingan tanpa gambar atau video, termasuk bagian yang di-reblog, dari dasbor dan feed lainnya.
 Hide posts with these words	Sembunyikan postingan dengan kata ini
-Takes posts out of your dashboard and other feeds when their text, tags or summary has a word from the list below.	Menghapus postingan dari dasbor dan feed lainnya jika teks, tag, atau ringkasannya berisi kata dari daftar di bawah.
+Takes posts out of your feeds when a hidden word matches one of the selected fields below.	Menghapus postingan dari feed jika kata tersembunyi cocok dengan salah satu bidang yang dipilih di bawah.
 Words to hide	Kata yang disembunyikan
 One word or phrase a line	Satu kata atau frasa per baris
-Posts with any of these in their text, tags or summary are hidden. Case doesn't matter, and only whole words count.	Postingan yang teks, tag, atau ringkasannya berisi salah satu dari ini akan disembunyikan. Huruf besar atau kecil tidak berpengaruh, dan hanya kata utuh yang dihitung.
 Save	Simpan
 The list is empty. Tap to add words or phrases.	Daftarnya kosong. Ketuk untuk menambahkan kata atau frasa.
 Looks for: %1$s	Mencari: %1$s
 # context: Dark background color turns the background of Tumblr's Dark Mode palette (Settings > Appearance) black, or a dark color chosen when the app was patched. Use Tumblr's own name for the Dark Mode palette in your language.
 Dark background color	Warna latar gelap
-Makes the Dark Mode palette's background black, or the dark color picked when patching. Restart Tumblr to see the change.	Membuat latar palet Mode Gelap menjadi hitam, atau warna gelap yang dipilih saat menambal. Mulai ulang Tumblr untuk melihat perubahannya.
+Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.	Membuat layar Mode Gelap yang baru dibuka berwarna hitam, atau warna gelap yang dipilih saat memasang patch. Layar yang terbuka mempertahankan warnanya sampai Tumblr dimulai ulang.
 # context: the bottom bar's tabs. Hide the Explore tab and Hide the Notifications tab take one tab's button off the bar; Reorder the bottom bar puts the tabs in an order chosen in a list where a tap moves a tab one place up. Use Tumblr's own names for the tabs in your language.
 Hide the Explore tab	Sembunyikan tab Jelajahi
-Takes the Explore and search button off the bottom bar. Restart Tumblr to see the change.	Menghapus tombol Jelajahi dan pencarian dari bilah bawah. Mulai ulang Tumblr untuk melihat perubahannya.
+Takes the Explore and search button off the bottom bar.	Menghapus tombol Jelajahi dan pencarian dari bilah bawah.
 Hide the Notifications tab	Sembunyikan tab Notifikasi
-Takes the Notifications button off the bottom bar. Restart Tumblr to see the change.	Menghapus tombol Notifikasi dari bilah bawah. Mulai ulang Tumblr untuk melihat perubahannya.
+Takes the Notifications button off the bottom bar.	Menghapus tombol Notifikasi dari bilah bawah.
 Reorder the bottom bar	Atur ulang bilah bawah
-Puts the bottom bar's tabs in the order set below. Restart Tumblr to see the change.	Menyusun tab di bilah bawah sesuai urutan yang diatur di bawah. Mulai ulang Tumblr untuk melihat perubahannya.
+Puts the bottom bar's tabs in the order set below.	Menyusun tab di bilah bawah sesuai urutan yang diatur di bawah.
 Tab order	Urutan tab
 Tap a tab to move it up	Ketuk tab untuk memindahkannya ke atas
 Tumblr's order	Urutan Tumblr
 The bottom bar keeps Tumblr's order.	Bilah bawah tetap memakai urutan Tumblr.
-Tabs go in this order: %1$s. Restart Tumblr to see the change.	Tab disusun dengan urutan ini: %1$s. Mulai ulang Tumblr untuk melihat perubahannya.
+Tabs go in this order: %1$s.	Tab disusun dengan urutan ini: %1$s.
 Dashboard	Dasbor
 Explore	Jelajahi
 Tumblr TV	Tumblr TV
@@ -317,3 +316,56 @@ Notes	Nota
 # context: the import preview of a settings file. The first is what an empty Words to hide list reads as; the second names Words to hide or Tab order when the file's value for it can't be used.
 None	Tidak ada
 %1$s: the value in that file can't be used, so it'll be left out.	%1$s: nilai dalam file itu tidak bisa dipakai, jadi tidak akan disertakan.
+Your saved lists are too large for a settings backup. Shorten them before exporting. The existing file wasn't changed.	Daftar tersimpan terlalu besar untuk cadangan pengaturan. Persingkat sebelum mengekspor. Berkas yang ada tidak diubah.
+This list is too large for a settings backup. Shorten it before saving. Your draft is still here.	Daftar ini terlalu besar untuk cadangan pengaturan. Persingkat sebelum menyimpan. Draf Anda masih ada di sini.
+Couldn't save the words. Your earlier list is unchanged. Try again.	Kata-kata tidak dapat disimpan. Daftar sebelumnya tidak berubah. Coba lagi.
+Couldn't save the tab order. Your earlier order is unchanged. Try again.	Urutan tab tidak dapat disimpan. Urutan sebelumnya tidak berubah. Coba lagi.
+%1$s moved to position %2$d of %3$d.	%1$s dipindahkan ke posisi %2$d dari %3$d.
+Filter activity notifications	Filter notifikasi aktivitas
+Hide ask notifications	Sembunyikan notifikasi pertanyaan
+Hide boop notifications	Sembunyikan notifikasi boop
+Hide follow notifications	Sembunyikan notifikasi pengikut
+Hide likes	Sembunyikan suka
+Hide mention notifications	Sembunyikan notifikasi sebutan
+Hide reblog notifications	Sembunyikan notifikasi reblog
+Hide reply notifications	Sembunyikan notifikasi balasan
+Hides these from newly loaded activity pages. Push notifications keep Tumblr's settings.	Menyembunyikannya dari halaman aktivitas yang baru dimuat. Notifikasi push tetap memakai pengaturan Tumblr.
+Keep tagged reblogs	Pertahankan reblog bertag
+When reblogs are hidden, keep ones with tags. Other post filters still apply.	Saat reblog disembunyikan, pertahankan yang memiliki tag. Filter postingan lainnya tetap berlaku.
+Match current post text	Cocokkan teks postingan saat ini
+Match reblog trail text	Cocokkan teks rantai reblog
+Match current post tags	Cocokkan tag postingan saat ini
+Match post summaries	Cocokkan ringkasan postingan
+Hidden and allowed words use the same selected fields. Other post filters still apply.	Kata tersembunyi dan yang diizinkan memakai bidang pilihan yang sama. Filter postingan lainnya tetap berlaku.
+Allowed words	Kata yang diizinkan
+Allowed words keep a post when the word filter would hide it. Other filters still apply.	Kata yang diizinkan mempertahankan postingan yang akan disembunyikan filter kata. Filter lainnya tetap berlaku.
+Posts matching a hidden word in the selected fields are hidden. Case doesn't matter, and only whole words count.	Postingan yang cocok dengan kata tersembunyi pada bidang pilihan akan disembunyikan. Huruf besar atau kecil tidak dibedakan, dan hanya kata utuh yang dihitung.
+Show post timestamps	Tampilkan waktu postingan
+Shows Tumblr's own timestamps on newly drawn post cards.	Menampilkan waktu bawaan Tumblr pada kartu postingan yang baru ditampilkan.
+Restart Tumblr to apply these settings.	Mulai ulang Tumblr untuk menerapkan pengaturan ini.
+Visible image descriptions	Deskripsi gambar terlihat
+Shows author-provided image descriptions below images.	Menampilkan deskripsi gambar dari penulis di bawah gambar.
+photo image descriptions	deskripsi foto
+gallery image descriptions	deskripsi galeri
+Mute posts locally	Bisukan postingan secara lokal
+Add posts to a private list from their menu. Originals and their reblogs stay hidden for this account.	Tambahkan postingan ke daftar pribadi melalui menunya. Postingan asli dan reblognya tetap tersembunyi untuk akun ini.
+Mute this post locally	Bisukan postingan ini secara lokal
+Manage muted posts	Kelola postingan yang dibisukan
+Unmute posts or clear this account's private list	Tampilkan kembali postingan atau kosongkan daftar pribadi akun ini
+Couldn't update muted posts	Tidak dapat memperbarui postingan yang dibisukan
+Post muted locally	Postingan dibisukan secara lokal
+Muted posts restored	Postingan yang dibisukan dipulihkan
+Couldn't restore muted posts	Tidak dapat memulihkan postingan yang dibisukan
+Muted posts aren't available for this account yet	Postingan yang dibisukan belum tersedia untuk akun ini
+Stored only on this device for this Tumblr account. Tap a post to unmute it. Up to 500 posts are kept per account.	Disimpan hanya di perangkat ini untuk akun Tumblr ini. Ketuk postingan untuk menampilkannya kembali. Maksimal 500 postingan disimpan per akun.
+Post	Postingan
+No muted posts	Tidak ada postingan yang dibisukan
+Clear muted posts	Hapus postingan yang dibisukan
+Post unmuted	Postingan ditampilkan kembali
+Muted posts cleared	Postingan yang dibisukan dihapus
+Reveal allowed mature content	Tampilkan konten dewasa yang diizinkan
+Removes the tap-to-reveal blur only when Tumblr confirms this account may view the content.	Menghapus buram yang dibuka dengan ketukan hanya jika Tumblr mengonfirmasi bahwa akun ini boleh melihat konten tersebut.
+Show mutual markers	Tampilkan penanda saling mengikuti
+Marks blogs that follow your primary blog when you follow them.	Menandai blog yang mengikuti blog utama Anda dan Anda ikuti.
+Mutual	Saling mengikuti
+Done	Selesai

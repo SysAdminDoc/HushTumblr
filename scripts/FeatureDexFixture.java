@@ -2,6 +2,7 @@ import com.android.tools.smali.dexlib2.AccessFlags;
 import com.android.tools.smali.dexlib2.Opcode;
 import com.android.tools.smali.dexlib2.Opcodes;
 import com.android.tools.smali.dexlib2.iface.ClassDef;
+import com.android.tools.smali.dexlib2.iface.Field;
 import com.android.tools.smali.dexlib2.iface.Method;
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction;
 import com.android.tools.smali.dexlib2.immutable.ImmutableClassDef;
@@ -15,6 +16,16 @@ import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstructio
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction11n;
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction11x;
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction21c;
+import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction21t;
+import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction22c;
+import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction22b;
+import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction22x;
+import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction12x;
+import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction23x;
+import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction31i;
+import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction21s;
+import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction3rc;
+import com.android.tools.smali.dexlib2.immutable.reference.ImmutableFieldReference;
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction35c;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableMethodReference;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableStringReference;
@@ -24,6 +35,7 @@ import com.android.tools.smali.dexlib2.writer.pool.DexPool;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -62,9 +74,44 @@ public final class FeatureDexFixture {
     private static final String URL = "Ljava/net/URL;";
     private static final String HTTP = "Ljava/net/HttpURLConnection;";
     private static final String CONNECTION = "Ljava/net/URLConnection;";
+    private static final String POST = "Lcom/tumblr/rumblr/model/post/Post;";
+    private static final String HEADER = "Lcom/tumblr/rumblr/model/post/PostHeaderContext;";
+    private static final String PAID_POST = BASE + "timeline/HushPaidPost;";
+    private static final String TIMELINE_FILTER = BASE + "timeline/TimelineFilter;";
+    private static final String FEATURE = "Lfixture/Feature;";
+    private static final String FEATURE_CHECK = "Lfixture/FeatureCheck;";
+    private static final String FEATURE_SWITCHES = BASE + "flags/FeatureSwitches;";
+    private static final String REBLOG_TRAIL = "Lcom/tumblr/rumblr/model/post/ReblogTrail;";
+    private static final String TEXT_BLOCK = "Lcom/tumblr/rumblr/model/post/blocks/TextBlock;";
+    private static final String ACTIVITY_NOTIFICATION = "Lcom/tumblr/rumblr/model/activity/ActivityNotification;";
+    private static final String ACTIVITY_TYPE = "Lcom/tumblr/rumblr/model/activity/ActivityNotificationType;";
+    private static final String HUSH_ACTIVITY = BASE + "notifications/HushActivityNotification;";
+    private static final String ACTIVITY_FILTER = BASE + "notifications/ActivityNotifications;";
+    private static final String ACTIVITY_RESPONSE = "Lcom/tumblr/rumblr/response/ActivityNotificationsResponse;";
+    private static final String PUSH_RESPONSE = "Lcom/tumblr/rumblr/response/NotificationsResponse;";
+    private static final String CAROUSEL = "Lcom/tumblr/rumblr/model/carousel/Carousel;";
+    private static final String POST_HEADER = "Lcom/tumblr/ui/widget/PostCardHeader;";
+    private static final String POST_PARTS = BASE + "ui/PostParts;";
+    private static final String FOOTER = BASE + "ui/PostFooter;";
+    private static final String COMMUNITY_FOOTER = "Lcom/tumblr/ui/widget/CommunityPostCardFooter;";
+    private static final String BAR = "Lfixture/BottomBar;";
+    private static final String TIMESTAMPS = BASE + "ui/PostTimestamps;";
+    private static final String USER_INFO = "Lcom/tumblr/UserInfo;";
+    private static final String IMAGE_BLOCK = "Lcom/tumblr/rumblr/model/post/blocks/ImageBlock;";
+    private static final String PHOTO_CONTAINER = "Lcom/tumblr/ui/widget/graywater/viewholder/PhotoContainer;";
+    private static final String PHOTO_HOLDER = "Lcom/tumblr/ui/widget/graywater/viewholder/PhotoViewHolder;";
+    private static final String PHOTO_ROW_ITEM = "Lcom/tumblr/ui/widget/graywater/viewholder/PhotosetRowItem;";
+    private static final String PHOTO_BINDER = "Lyn9$a;";
+    private static final String GALLERY_BINDER = "Lmyd;";
+    private static final String GALLERY_ROW = "Ljyd;";
+    private static final String ALT_TEXT = BASE + "ui/AltTextCaptions;";
+    private static final String IMAGE_DESCRIPTION = BASE + "ui/HushImageDescription;";
+    private static final String IMAGE_CONTAINER = BASE + "ui/HushImageContainer;";
+    private static final String IMAGE_ROW = BASE + "ui/HushImageRow;";
     private static final List<String> SHORTCUTS = List.of("pushDynamicShortcut", "addDynamicShortcuts", "setDynamicShortcuts", "updateShortcuts", "removeAllDynamicShortcuts");
     private static final Map<String, String[]> FAMILIES = new LinkedHashMap<>();
     private static final Map<String, Boolean> FLAGS = new LinkedHashMap<>();
+    private static final List<String> SMALL_CASES = new ArrayList<>();
 
     private static ImmutableMethodReference ref(String type, String name, String result, String... parameters) {
         return new ImmutableMethodReference(type, name, Arrays.asList(parameters), result);
@@ -85,8 +132,32 @@ public final class FeatureDexFixture {
     }
 
     private static ClassDef type(String owner, List<Method> methods) {
-        return new ImmutableClassDef(owner, AccessFlags.PUBLIC.getValue(), SUPERCLASSES.getOrDefault(owner, OBJECT), List.of(), null,
-                Set.of(), List.<ImmutableField>of(), methods);
+        boolean bridge = owner.startsWith(BASE + "timeline/Hush") || owner.startsWith(BASE + "ui/Hush") || owner.equals(HUSH_ACTIVITY)
+                || owner.equals(ACTIVITY_NOTIFICATION) || owner.equals(PHOTO_CONTAINER) || owner.equals(GALLERY_ROW);
+        List<String> interfaces = new ArrayList<>();
+        if (owner.equals(POST) && methods.stream().anyMatch(m -> m.getName().equals("hushFollowed"))) interfaces.add(PAID_POST);
+        if (methods.stream().anyMatch(m -> m.getName().equals("hushContent") || m.getName().equals("hushText")))
+            interfaces.add(BASE + "timeline/" + (owner.equals(POST) ? "HushPost;" : owner.endsWith("ReblogTrail;") ? "HushTrail;" : "HushText;"));
+        if (owner.equals(ACTIVITY_NOTIFICATION) && methods.stream().anyMatch(m -> m.getName().equals("hushNotificationType"))) interfaces.add(HUSH_ACTIVITY);
+        if (owner.equals(IMAGE_BLOCK) && methods.stream().anyMatch(m -> m.getName().equals("hushAltText"))) interfaces.add(IMAGE_DESCRIPTION);
+        if (owner.equals(PHOTO_CONTAINER) && methods.stream().anyMatch(m -> m.getName().equals("hushImageFrame"))) interfaces.add(IMAGE_CONTAINER);
+        if (owner.equals(GALLERY_ROW) && methods.stream().anyMatch(m -> m.getName().equals("hushImageItems"))) interfaces.add(IMAGE_ROW);
+        if (owner.equals(PHOTO_HOLDER) || owner.equals(PHOTO_ROW_ITEM)) interfaces.add(PHOTO_CONTAINER);
+        List<ImmutableField> fields = new ArrayList<>();
+        if (owner.equals(POST) && methods.stream().anyMatch(m -> m.getName().equals("hushSetJsonPresence")))
+            for (String name : List.of("hushRootTrailPresent", "hushPaidContextKnown")) fields.add(new ImmutableField(owner, name, "Z",
+                    AccessFlags.PRIVATE.getValue(), null, Set.of(), Set.of()));
+        if (owner.equals(PHOTO_BINDER)) for (String name : List.of("c", "d")) fields.add(new ImmutableField(owner, name, IMAGE_BLOCK,
+                AccessFlags.PRIVATE.getValue() | AccessFlags.FINAL.getValue(), null, Set.of(), Set.of()));
+        return new ImmutableClassDef(owner, AccessFlags.PUBLIC.getValue() | (bridge ? AccessFlags.INTERFACE.getValue() | AccessFlags.ABSTRACT.getValue() : 0),
+                owner.equals(FEATURE) || owner.equals(ACTIVITY_TYPE) ? "Ljava/lang/Enum;" : owner.equals(COMMUNITY_FOOTER)
+                        ? "Landroid/view/ViewGroup;" : SUPERCLASSES.getOrDefault(owner, OBJECT), interfaces, null,
+                Set.of(), fields, methods);
+    }
+
+    private static Method abstractMethod(String owner, String name, String result) {
+        return new ImmutableMethod(owner, name, List.of(), result, AccessFlags.PUBLIC.getValue() | AccessFlags.ABSTRACT.getValue(),
+                Set.of(), Set.of(), null);
     }
 
     private static Instruction end() { return new ImmutableInstruction10x(Opcode.RETURN_VOID); }
@@ -165,7 +236,38 @@ public final class FeatureDexFixture {
         if (patched) classes.put(ENTRY, wrappers);
     }
 
-    private static void enable(String name) {
+    static void initialize(Path contracts) throws Exception {
+        FAMILIES.clear();
+        FLAGS.clear();
+        for (String line : Files.readAllLines(contracts, StandardCharsets.UTF_8)) if (line.startsWith("family|")) {
+            String[] values = line.trim().split("\\|", -1);
+            FAMILIES.put(values[1], new String[]{values[2], values[3]});
+            FLAGS.put(values[1], false);
+            for (String cap : capabilities(values[1])) FLAGS.put(cap, false);
+        }
+    }
+
+    static Map<String, ClassDef> baseClasses(boolean patched) {
+        Map<String, List<Method>> classes = hosts(patched);
+        if (patched) extensions(classes);
+        Map<String, ClassDef> defs = new LinkedHashMap<>();
+        classes.forEach((owner, methods) -> defs.put(owner, type(owner, methods)));
+        return defs;
+    }
+
+    static void addTimeline(Map<String, ClassDef> defs, boolean patched) {
+        Map<String, List<Method>> classes = new LinkedHashMap<>();
+        timeline(classes, patched);
+        classes.forEach((owner, methods) -> defs.put(owner, type(owner, methods)));
+    }
+
+    static List<String> selected(String... families) {
+        List<String> names = new ArrayList<>(List.of("HushTumblr settings"));
+        for (String family : families) names.add(FAMILIES.get(family)[0]);
+        return names;
+    }
+
+    static void enable(String name) {
         FLAGS.put(name, true);
         for (String cap : capabilities(name)) FLAGS.put(cap, true);
     }
@@ -176,7 +278,7 @@ public final class FeatureDexFixture {
         return column.isEmpty() ? List.of() : List.of(column.split(","));
     }
 
-    private static void reset() { FLAGS.replaceAll((key, value) -> false); }
+    static void reset() { FLAGS.replaceAll((key, value) -> false); }
 
     private static void write(File root, String name, Map<String, List<Method>> classes, boolean patched, String... selected) throws Exception {
         if (patched) extensions(classes);
@@ -191,9 +293,7 @@ public final class FeatureDexFixture {
         classes.forEach((owner, methods) -> defs.add(type(owner, methods)));
         DexPool.writeTo(new File(root, name + ".dex").getPath(), new ImmutableDexFile(Opcodes.getDefault(), defs));
         if (patched) {
-            List<String> names = new ArrayList<>(List.of("HushTumblr settings"));
-            for (String family : selected) names.add(FAMILIES.get(family)[0]);
-            Files.write(new File(root, name + ".selected").toPath(), names, StandardCharsets.UTF_8);
+            Files.write(new File(root, name + ".selected").toPath(), selected(selected), StandardCharsets.UTF_8);
         }
     }
 
@@ -276,18 +376,533 @@ public final class FeatureDexFixture {
                 CONNECTION, STRING)));
     }
 
+    /** The shared hooks Hide ads needs before its dedicated paid-post bridge can be exercised. */
+    private static void timeline(Map<String, List<Method>> classes, boolean hooked) {
+        timeline(classes, hooked ? "good" : "clean");
+    }
+
+    private static void timeline(Map<String, List<Method>> classes, String variant) {
+        boolean hooked = !variant.equals("clean");
+        String pagination = "Lcom/tumblr/rumblr/model/PaginationLink;";
+        for (String owner : List.of("Lcom/tumblr/rumblr/model/Timeline;", "Lcom/tumblr/rumblr/response/timeline/TimelineResponse;")) {
+            String[] parameters = owner.endsWith("Timeline;") ? new String[]{LIST, pagination} : new String[]{LIST, pagination, "Ljava/util/Map;"};
+            List<Instruction> body = new ArrayList<>();
+            boolean filter = hooked && !(variant.equals("missing") && owner.endsWith("TimelineResponse;"));
+            if (filter && !variant.equals("late")) {
+                body.add(invoke(Opcode.INVOKE_STATIC, ref(TIMELINE_FILTER, "filter", LIST, LIST), variant.equals("wrong-list") ? 2 : 1));
+                body.add(new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1));
+            }
+            body.add(invoke(Opcode.INVOKE_DIRECT, ref(OBJECT, "<init>", VOID), 0));
+            if (filter && variant.equals("late")) body.addAll(List.of(invoke(Opcode.INVOKE_STATIC, ref(TIMELINE_FILTER, "filter", LIST, LIST), 1),
+                    new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1)));
+            body.add(end());
+            classes.put(owner, List.of(method(owner, "<init>", VOID, false, parameters.length + 1, body, parameters)));
+        }
+        if (hooked) classes.put(TIMELINE_FILTER, List.of(method(TIMELINE_FILTER, "filter", LIST, true, 2,
+                List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 1)), LIST)));
+    }
+
+    private static void carousel(Map<String, List<Method>> classes, String variant) {
+        model(classes, CAROUSEL, new LinkedHashMap<>(Map.of("elements", ref(CAROUSEL, "items", LIST), "other", ref(CAROUSEL, "otherItems", LIST))));
+        if (variant.equals("clean")) return;
+        List<Method> hooks = new ArrayList<>(classes.getOrDefault(TIMELINE_FILTER, List.of()));
+        if (!variant.equals("missing")) hooks.add(method(TIMELINE_FILTER, "carouselItems", LIST, true, 1,
+                variant.equals("null") ? List.of(new ImmutableInstruction11n(Opcode.CONST_4, 0, 0), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0))
+                        : List.of(new ImmutableInstruction21c(Opcode.CHECK_CAST, 0, new ImmutableTypeReference(CAROUSEL)),
+                        invoke(Opcode.INVOKE_VIRTUAL, ref(CAROUSEL, variant.equals("wrong-getter") ? "otherItems" : "items", LIST), 0),
+                        new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0)), OBJECT));
+        classes.put(TIMELINE_FILTER, hooks);
+    }
+
+    private static List<Instruction> guard(String owner, String name, boolean yes, String variant) {
+        if (variant.equals("clean") || variant.equals("missing")) return new ArrayList<>();
+        List<Instruction> body = new ArrayList<>(List.of(invoke(Opcode.INVOKE_STATIC, ref(owner, name, "Z")),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction21t(Opcode.IF_EQZ, 0, yes ? 4 : 3)));
+        if (yes) body.add(new ImmutableInstruction11n(Opcode.CONST_4, 0, variant.equals("wrong-answer") ? 0 : 1));
+        body.add(yes ? new ImmutableInstruction11x(Opcode.RETURN, 0) : end());
+        return body;
+    }
+
+    private static Method booleanHook(String owner, String name) {
+        return method(owner, name, "Z", true, 1,
+                List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN, 0)));
+    }
+
+    private static void followButton(Map<String, List<Method>> classes, String variant) {
+        List<Method> header = new ArrayList<>(classes.getOrDefault(POST_HEADER, List.of()));
+        header.removeIf(m -> m.getName().startsWith("fixtureFollow"));
+        String action = "Lcom/tumblr/rumblr/model/post/PostHeaderAction$ActionType;";
+        header.add(method(POST_HEADER, "fixtureFollowTest", "Z", false, 3, List.of(
+                new ImmutableInstruction21c(Opcode.SGET_OBJECT, 0, new ImmutableFieldReference(action, "FOLLOW", action)),
+                invoke(Opcode.INVOKE_DIRECT, ref(POST_HEADER, "fixtureFollowCheck", "Z", OBJECT, OBJECT), 2, 0, 0),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN, 0))));
+        List<Instruction> body = guard(POST_PARTS, "hideFollowButton", true, variant);
+        body.add(new ImmutableInstruction11n(Opcode.CONST_4, 0, 0));
+        body.add(new ImmutableInstruction11x(Opcode.RETURN, 0));
+        Method check = method(POST_HEADER, "fixtureFollowCheck", "Z", false, 4, body, OBJECT, OBJECT);
+        header.add(new ImmutableMethod(POST_HEADER, check.getName(), check.getParameters(), "Z", AccessFlags.PRIVATE.getValue(),
+                Set.of(), Set.of(), check.getImplementation()));
+        classes.put(POST_HEADER, header);
+        if (!variant.equals("clean")) classes.put(POST_PARTS, List.of(booleanHook(POST_PARTS, "hideFollowButton")));
+    }
+
+    private static void footerButtons(Map<String, List<Method>> classes, String family, String variant) {
+        String[] controls = {"Like", "Reblog", "Comment", "Share", "Save"};
+        List<Method> hooks = new ArrayList<>();
+        for (String control : controls) {
+            String flag = "hide" + control + "Button", name = flag;
+            boolean selected = flag.equals(family), hooked = selected && !variant.equals("clean");
+            String owner = "Lfixture/" + control + "Engagement;";
+            List<Instruction> body = guard(FOOTER, name, false, hooked ? variant : "clean");
+            body.add(literal("com.tumblr.ui.widget.splitnotescount.composable." + control + "Engagement (Fixture.kt:1)", 0));
+            body.add(end());
+            classes.put(owner, List.of(method(owner, "draw", VOID, true, 1, body)));
+            if (hooked) hooks.add(booleanHook(FOOTER, name));
+        }
+        List<Instruction> bind = new ArrayList<>(List.of(literal("footer_", 0), new ImmutableInstruction11n(Opcode.CONST_4, 0, 0),
+                invoke(Opcode.INVOKE_VIRTUAL, ref("Landroid/view/View;", "setTag", VOID, OBJECT), 1, 0)));
+        String community = switch (family) {
+            case "hideLikeButton" -> "hideCommunityReactions";
+            case "hideCommentButton" -> "hideCommunityComments";
+            case "hideShareButton" -> "hideCommunityShare";
+            default -> null;
+        };
+        if (community != null && !variant.equals("clean")) {
+            if (!variant.equals("missing-community")) bind.add(invoke(Opcode.INVOKE_STATIC, ref(FOOTER, community, VOID, "Landroid/view/ViewGroup;"),
+                    variant.equals("wrong-community") ? 0 : 1));
+            hooks.add(method(FOOTER, community, VOID, true, 2,
+                    List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), end()), "Landroid/view/ViewGroup;"));
+        }
+        bind.add(end());
+        classes.put(COMMUNITY_FOOTER, List.of(method(COMMUNITY_FOOTER, "bind", VOID, false, 2, bind)));
+        if (!hooks.isEmpty()) classes.put(FOOTER, hooks);
+    }
+
+    private static void unreadDots(Map<String, List<Method>> classes, String variant) {
+        String textView = "Landroid/widget/TextView;", animation = "Landroid/view/animation/Animation;", hookOwner = BASE + "ui/BottomBar;";
+        List<Instruction> body = new ArrayList<>();
+        if (!variant.equals("clean") && !variant.equals("missing")) body.addAll(List.of(
+                invoke(Opcode.INVOKE_STATIC, ref(hookOwner, "unreadBadge", textView, textView), variant.equals("wrong-badge") ? 1 : 2),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 2)));
+        body.addAll(List.of(new ImmutableInstruction21t(Opcode.IF_EQZ, 2, 11),
+                invoke(Opcode.INVOKE_VIRTUAL, ref(textView, "getVisibility", "I"), 2), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0),
+                new ImmutableInstruction21t(Opcode.IF_EQZ, 0, 5), invoke(Opcode.INVOKE_VIRTUAL, ref(textView, "startAnimation", VOID, animation), 2, 3), end()));
+        classes.put(BAR, List.of(method(BAR, "badgeId", "I", false, 2, List.of(
+                new ImmutableInstruction21c(Opcode.SGET, 0, new ImmutableFieldReference("Lcom/tumblr/R$id;", "dashboard_badge", "I")),
+                new ImmutableInstruction11x(Opcode.RETURN, 0))), method(BAR, "pop", VOID, false, 4, body, textView, animation)));
+        if (!variant.equals("clean")) classes.put(hookOwner, List.of(method(hookOwner, "unreadBadge", textView, true, 2,
+                List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 1)), textView)));
+    }
+
+    private static void timestamps(Map<String, List<Method>> classes, String variant) {
+        List<Instruction> body = new ArrayList<>(List.of(literal("pref_is_timestamps", 0), new ImmutableInstruction11n(Opcode.CONST_4, 1, 0),
+                invoke(Opcode.INVOKE_STATIC, ref("Lcom/tumblr/Remember;", "c", "Z", STRING, "Z"), 0, 1), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0)));
+        if (!variant.equals("clean") && !variant.equals("missing")) body.addAll(List.of(
+                invoke(Opcode.INVOKE_STATIC, ref(TIMESTAMPS, "show", "Z", "Z"), variant.equals("wrong-answer") ? 1 : 0),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0)));
+        body.add(new ImmutableInstruction11x(Opcode.RETURN, 0));
+        List<Instruction> setter = new ArrayList<>();
+        if (variant.equals("changed-setter")) setter.add(new ImmutableInstruction11n(Opcode.CONST_4, 0, 1));
+        setter.add(end());
+        classes.put(USER_INFO, List.of(method(USER_INFO, "L", "Z", true, 2, body), method(USER_INFO, "x0", VOID, true, 1, setter, "Z")));
+        classes.put("Lcom/tumblr/Remember;", List.of(method("Lcom/tumblr/Remember;", "c", "Z", true, 2,
+                List.of(new ImmutableInstruction11x(Opcode.RETURN, 1)), STRING, "Z")));
+        List<Method> header = new ArrayList<>(classes.getOrDefault(POST_HEADER, List.of()));
+        header.removeIf(m -> m.getName().equals("D2"));
+        header.add(method(POST_HEADER, "D2", "Z", false, 2, List.of(invoke(Opcode.INVOKE_STATIC, ref(USER_INFO, "L", "Z")),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN, 0))));
+        classes.put(POST_HEADER, header);
+        if (!variant.equals("clean")) classes.put(TIMESTAMPS, List.of(method(TIMESTAMPS, "show", "Z", true, 2,
+                List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN, 1)), "Z")));
+    }
+
+    private static void imageDescriptions(Map<String, List<Method>> classes, String variant) {
+        boolean hooked = !variant.equals("clean");
+        model(classes, IMAGE_BLOCK, new LinkedHashMap<>(Map.of("alt_text", ref(IMAGE_BLOCK, "j", STRING), "other", ref(IMAGE_BLOCK, "otherAlt", STRING))));
+        String frame = "Landroid/widget/FrameLayout;", view = "Landroid/view/View;", images = "[" + PHOTO_ROW_ITEM;
+        List<Method> container = new ArrayList<>(List.of(abstractMethod(PHOTO_CONTAINER, "j0", frame)));
+        List<Method> row = new ArrayList<>(List.of(abstractMethod(GALLERY_ROW, "Z", images)));
+        if (hooked) {
+            classes.put(IMAGE_DESCRIPTION, List.of(abstractMethod(IMAGE_DESCRIPTION, "hushAltText", STRING)));
+            classes.put(IMAGE_CONTAINER, List.of(abstractMethod(IMAGE_CONTAINER, "hushImageFrame", view)));
+            classes.put(IMAGE_ROW, List.of(abstractMethod(IMAGE_ROW, "hushImageItems", "[" + OBJECT)));
+            List<Method> image = new ArrayList<>(classes.get(IMAGE_BLOCK));
+            if (!variant.equals("missing-alt-bridge")) image.add(method(IMAGE_BLOCK, "hushAltText", STRING, false, 2,
+                    List.of(invoke(Opcode.INVOKE_VIRTUAL, ref(IMAGE_BLOCK, variant.equals("wrong-alt-getter") ? "otherAlt" : "j", STRING), 1),
+                            new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0))));
+            classes.put(IMAGE_BLOCK, image);
+            if (!variant.equals("missing-container-bridge")) container.add(method(PHOTO_CONTAINER, "hushImageFrame", view, false, 2,
+                    List.of(invoke(variant.equals("wrong-container-invoke") ? Opcode.INVOKE_VIRTUAL : Opcode.INVOKE_INTERFACE,
+                                    ref(PHOTO_CONTAINER, "j0", frame), 1), new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0),
+                            new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0))));
+            if (!variant.equals("missing-row-bridge")) row.add(method(GALLERY_ROW, "hushImageItems", "[" + OBJECT, false, 2,
+                    List.of(invoke(Opcode.INVOKE_INTERFACE, ref(GALLERY_ROW, "Z", images), 1), new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0),
+                            new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0))));
+            List<Method> hooks = new ArrayList<>();
+            for (String name : List.of("photo", "gallery", "clearGallery")) hooks.add(method(ALT_TEXT, name, VOID, true,
+                    name.equals("clearGallery") ? 2 : 3, List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), end()),
+                    name.equals("clearGallery") ? new String[]{OBJECT} : new String[]{OBJECT, OBJECT}));
+            classes.put(ALT_TEXT, hooks);
+        }
+        classes.put(PHOTO_CONTAINER, container); classes.put(GALLERY_ROW, row);
+        classes.put(PHOTO_HOLDER, List.of()); classes.put(PHOTO_ROW_ITEM, List.of());
+        List<Instruction> photo = new ArrayList<>();
+        if (hooked && !variant.equals("missing-photo")) photo.addAll(List.of(new ImmutableInstruction22c(Opcode.IGET_OBJECT, 0, 1,
+                        new ImmutableFieldReference(PHOTO_BINDER, variant.equals("wrong-photo-field") ? "d" : "c", IMAGE_BLOCK)),
+                invoke(Opcode.INVOKE_STATIC, ref(ALT_TEXT, "photo", VOID, OBJECT, OBJECT), variant.equals("wrong-photo-holder") ? 3 : 2, 0)));
+        photo.add(new ImmutableInstruction11n(Opcode.CONST_4, 0, 0)); photo.add(end());
+        classes.put(PHOTO_BINDER, List.of(method(PHOTO_BINDER, "i", VOID, false, 5, photo, PHOTO_HOLDER, "Lvgi;", STRING)));
+        List<Instruction> gallery = new ArrayList<>(), full = new ArrayList<>();
+        if (hooked && !variant.equals("missing-gallery")) gallery.add(invoke(Opcode.INVOKE_STATIC, ref(ALT_TEXT, "gallery", VOID, OBJECT, OBJECT),
+                2, variant.equals("wrong-gallery-image") ? 1 : 3));
+        if (hooked && !variant.equals("missing-clear")) full.add(invoke(Opcode.INVOKE_STATIC, ref(ALT_TEXT, "clearGallery", VOID, OBJECT),
+                variant.equals("wrong-clear-row") ? 5 : 6));
+        gallery.add(end()); full.add(end());
+        classes.put(GALLERY_BINDER, List.of(method(GALLERY_BINDER, "r", VOID, false, 4, gallery, CONTEXT, PHOTO_ROW_ITEM, IMAGE_BLOCK),
+                method(GALLERY_BINDER, "n", VOID, false, 9, full, CONTEXT, "Lcom/tumblr/analytics/ScreenType;", "Lo9m;", "Lp07;", "Lx7d;", GALLERY_ROW, "Lvgi;", "Lea2;")));
+    }
+
+    private static void smallCase(File root, String name, Map<String, List<Method>> classes, String family, String reason) throws Exception {
+        write(root, name, classes, true, family);
+        SMALL_CASES.add(name + "|" + reason.isEmpty() + "|" + reason);
+    }
+
+    private static void smallSelectors(File root, Map<String, List<Method>> settings) throws Exception {
+        SMALL_CASES.clear();
+        for (String variant : List.of("good", "missing", "wrong-list", "late")) {
+            reset(); enable("hideReblogs");
+            Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
+            timeline(classes, variant); postBridge(classes, "good");
+            smallCase(root, "feature-small-timeline-" + variant, classes, "hideReblogs", variant.equals("good") ? ""
+                    : variant.equals("missing") ? "has 0 calls" : variant.equals("late") ? "is not where its rule puts it" : "doesn't take what its rule hands it");
+        }
+        for (String variant : List.of("good", "missing", "wrong-getter", "null")) {
+            reset(); enable("hideSuggestedBlogs");
+            Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
+            timeline(classes, true); carousel(classes, variant);
+            smallCase(root, "feature-small-carousel-" + variant, classes, "hideSuggestedBlogs", variant.equals("good") ? ""
+                    : variant.equals("missing") ? "missing or duplicated compiled method" : "doesn't answer a carousel's items through");
+        }
+        for (String variant : List.of("good", "missing", "wrong-answer")) {
+            reset(); enable("hideFollowButton");
+            Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
+            followButton(classes, variant);
+            smallCase(root, "feature-small-follow-" + variant, classes, "hideFollowButton", variant.equals("good") ? ""
+                    : variant.equals("missing") ? "has 0 calls" : "isn't asked first thing");
+        }
+        for (String family : List.of("hideLikeButton", "hideReblogButton", "hideCommentButton", "hideShareButton", "hideSaveButton")) {
+            boolean community = !family.equals("hideReblogButton") && !family.equals("hideSaveButton");
+            for (String variant : community ? List.of("good", "missing", "missing-community", "wrong-community") : List.of("good", "missing")) {
+                reset(); enable(family);
+                Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
+                footerButtons(classes, family, variant);
+                smallCase(root, "feature-small-footer-" + family + "-" + variant, classes, family, variant.equals("good") ? ""
+                        : variant.equals("wrong-community") ? "doesn't take what its rule hands it" : "has 0 calls");
+            }
+        }
+        for (String variant : List.of("good", "missing", "wrong-badge")) {
+            reset(); enable("hideUnreadDots");
+            Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
+            unreadDots(classes, variant);
+            smallCase(root, "feature-small-unread-" + variant, classes, "hideUnreadDots", variant.equals("good") ? ""
+                    : variant.equals("missing") ? "has 0 calls" : "doesn't take what its rule hands it");
+        }
+        if (FAMILIES.containsKey("showPostTimestamps")) for (String variant : List.of("good", "missing", "wrong-answer", "changed-setter")) {
+            reset(); enable("showPostTimestamps");
+            Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
+            timestamps(classes, variant);
+            smallCase(root, "feature-small-timestamps-" + variant, classes, "showPostTimestamps", variant.equals("good") ? ""
+                    : variant.equals("missing") ? "has 0 calls" : variant.equals("changed-setter") ? "native timestamp setter changed" : "doesn't take what its rule hands it");
+        }
+        if (FAMILIES.containsKey("visibleAltText")) for (String variant : List.of("good", "missing-photo", "wrong-photo-field", "wrong-photo-holder",
+                "missing-gallery", "wrong-gallery-image", "missing-clear", "wrong-clear-row", "missing-alt-bridge", "wrong-alt-getter",
+                "missing-container-bridge", "wrong-container-invoke", "missing-row-bridge")) {
+            reset(); enable("visibleAltText");
+            Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
+            imageDescriptions(classes, variant);
+            String reason = switch (variant) {
+                case "good" -> "";
+                case "missing-photo", "missing-gallery", "missing-clear" -> "has 0 calls";
+                case "wrong-photo-field", "wrong-photo-holder" -> "doesn't take the current image from its native binder field";
+                case "wrong-gallery-image", "wrong-clear-row" -> "doesn't take what its rule hands it";
+                case "missing-alt-bridge" -> "doesn't implement";
+                case "wrong-alt-getter" -> "doesn't hand back";
+                case "missing-container-bridge", "missing-row-bridge" -> "doesn't extend its image-description bridge";
+                default -> "doesn't hand back its native image container getter";
+            };
+            smallCase(root, "feature-small-captions-" + variant, classes, "visibleAltText", reason);
+        }
+        for (String variant : List.of("good", "wrong-first-mask", "wrong-trail-mask", "swapped-presence-masks", "wrong-paid-bits", "wrong-trail-bit",
+                "missing-presence-hook", "missing-error-return", "wrong-known-getter")) {
+            reset(); enable("hideAds");
+            Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
+            timeline(classes, true); featureSwitch(classes, true); paidPostBridge(classes, variant);
+            smallCase(root, "feature-small-paid-presence-" + variant, classes, "hideAds", variant.equals("good") ? ""
+                    : variant.equals("wrong-known-getter") ? "paid-post ownership presence bridge changed" : "Post JSON presence proof changed");
+        }
+        Files.write(new File(root, "small-selector-cases.txt").toPath(), SMALL_CASES, StandardCharsets.UTF_8);
+    }
+
+    private static void featureSwitch(Map<String, List<Method>> classes, boolean hooked) {
+        featureSwitch(classes, hooked ? "good" : "clean");
+    }
+
+    private static void featureSwitch(Map<String, List<Method>> classes, String variant) {
+        boolean hooked = !variant.equals("clean") && !variant.equals("missing");
+        classes.put(FEATURE, List.of(method(FEATURE, "<clinit>", VOID, true, 1,
+                List.of(literal("Whether or not we should show the Tumblr Blaze landing page banner", 0), end()))));
+        List<Instruction> body = new ArrayList<>(List.of(literal("a flag", 0), literal("a bucket", 1),
+                new ImmutableInstruction11n(Opcode.CONST_4, 2, 0),
+                invoke(Opcode.INVOKE_STATIC, ref("Lfixture/FeatureCompare;", "same", "Z", STRING, STRING, "Z"), 0, 1, 2),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0)));
+        if (hooked) {
+            body.add(invoke(Opcode.INVOKE_STATIC, ref(FEATURE_SWITCHES, "isEnabled", "Z", "Ljava/lang/Enum;", "Z"), 4,
+                    variant.equals("wrong-value") ? 2 : 0));
+            body.add(new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0));
+        }
+        body.add(new ImmutableInstruction11x(Opcode.RETURN, 0));
+        classes.put(FEATURE_CHECK, List.of(method(FEATURE_CHECK, "check", "Z", false, 6, body, FEATURE, STRING),
+                method(FEATURE_CHECK, "note", VOID, true, 1,
+                        List.of(literal("You're checking for Feature.isEnabled() with a non-boolean bucket!", 0), end()))));
+        classes.put("Lfixture/FeatureCompare;", List.of(method("Lfixture/FeatureCompare;", "same", "Z", true, 3,
+                List.of(new ImmutableInstruction11x(Opcode.RETURN, 2)), STRING, STRING, "Z")));
+        if (hooked) classes.put(FEATURE_SWITCHES, List.of(method(FEATURE_SWITCHES, "isEnabled", "Z", true, 3,
+                List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN, 2)),
+                "Ljava/lang/Enum;", "Z")));
+    }
+
+    /** A model adapter with two arguments, writing keys before their own zero-argument getters. */
+    private static void model(Map<String, List<Method>> classes, String owner, Map<String, ImmutableMethodReference> getters) {
+        List<Method> methods = new ArrayList<>();
+        List<Instruction> writer = new ArrayList<>();
+        getters.forEach((key, getter) -> {
+            methods.add(method(owner, getter.getName(), getter.getReturnType(), false, 2,
+                    List.of(new ImmutableInstruction11n(Opcode.CONST_4, 0, 0),
+                            new ImmutableInstruction11x(getter.getReturnType().equals("Z") ? Opcode.RETURN : Opcode.RETURN_OBJECT, 0))));
+            writer.add(literal(key, 0));
+            writer.add(invoke(Opcode.INVOKE_VIRTUAL, getter, 3));
+            writer.add(new ImmutableInstruction11x(getter.getReturnType().equals("Z") ? Opcode.MOVE_RESULT : Opcode.MOVE_RESULT_OBJECT, 0));
+        });
+        classes.put(owner, methods);
+        writer.add(end());
+        String adapter = owner.substring(0, owner.length() - 1) + "JsonAdapter;";
+        classes.put(adapter, List.of(method(adapter, "toJson", VOID, false, 4, writer, OBJECT, owner)));
+    }
+
+    private static void paidPostBridge(Map<String, List<Method>> classes, String variant) {
+        boolean hooked = !variant.equals("clean");
+        Map<String, ImmutableMethodReference> getters = new LinkedHashMap<>();
+        getters.put("header_context", ref(POST, "header", HEADER));
+        getters.put("followed", ref(POST, "followed", "Z"));
+        getters.put("can_edit", ref(POST, "editable", "Z"));
+        getters.put("other_header", ref(POST, "otherHeader", HEADER));
+        for (String name : List.of("hushContent", "hushTrail", "hushTags", "hushSummary", "hushRebloggedFrom"))
+            getters.put(postKey(name), ref(POST, "original_" + name, name.equals("hushSummary") || name.equals("hushRebloggedFrom") ? STRING : LIST));
+        model(classes, POST, getters);
+        model(classes, HEADER, Map.of("icon", ref(HEADER, "icon", STRING), "other_icon", ref(HEADER, "otherIcon", STRING)));
+        postJsonPresence(classes, hooked, variant);
+        if (!hooked) return;
+        classes.put(PAID_POST, List.of(abstractMethod(PAID_POST, "hushHeaderIcon", STRING),
+                abstractMethod(PAID_POST, "hushFollowed", "Z"), abstractMethod(PAID_POST, "hushCanEdit", "Z"), abstractMethod(PAID_POST, "hushPaidContextKnown", "Z")));
+        List<Method> post = new ArrayList<>(classes.get(POST));
+        post.add(method(POST, "hushPaidContextKnown", "Z", false, 2, List.of(
+                new ImmutableInstruction22c(Opcode.IGET_BOOLEAN, 0, 1, new ImmutableFieldReference(POST,
+                        variant.equals("wrong-known-getter") ? "hushRootTrailPresent" : "hushPaidContextKnown", "Z")), new ImmutableInstruction11x(Opcode.RETURN, 0))));
+        for (String name : List.of("hushFollowed", "hushCanEdit")) post.add(method(POST, name, "Z", false, 2,
+                List.of(invoke(Opcode.INVOKE_VIRTUAL, ref(POST, name.equals("hushFollowed") ? "followed" : "editable", "Z"), 1),
+                        new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN, 0))));
+        if (!variant.equals("missing")) {
+            List<Instruction> icon = new ArrayList<>(List.of(
+                    invoke(Opcode.INVOKE_VIRTUAL, ref(POST, variant.equals("wrong-header") ? "otherHeader" : "header", HEADER), 1),
+                    new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0),
+                    new ImmutableInstruction21t(Opcode.IF_EQZ, 0, variant.equals("wrong-null-target") ? 8 : 7),
+                    invoke(Opcode.INVOKE_VIRTUAL, ref(HEADER, variant.equals("wrong-icon") ? "otherIcon" : "icon", STRING), 0),
+                    new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0),
+                    variant.equals("wrong-null-value") ? literal("absent", 0) : new ImmutableInstruction11n(Opcode.CONST_4, 0, 0),
+                    new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0)));
+            post.add(method(POST, "hushHeaderIcon", STRING, false, 2, icon));
+        }
+        classes.put(POST, post);
+    }
+
+    /** Shared with the independent root fixture. Existing model fields, getters and writer stay intact. */
+    static void addPostJsonPresence(Map<String, ClassDef> classes, boolean patched, String fault) {
+        String adapter = POST.substring(0, POST.length() - 1) + "JsonAdapter;";
+        Map<String, List<Method>> methods = new LinkedHashMap<>();
+        for (String owner : List.of(POST, adapter)) {
+            List<Method> values = new ArrayList<>(); classes.get(owner).getMethods().forEach(values::add); methods.put(owner, values);
+        }
+        postJsonPresence(methods, patched, fault);
+        for (String owner : methods.keySet()) {
+            ClassDef original = classes.get(owner); List<Field> fields = new ArrayList<>(); original.getFields().forEach(fields::add);
+            if (patched && owner.equals(POST)) for (String name : List.of("hushRootTrailPresent", "hushPaidContextKnown"))
+                fields.add(new ImmutableField(owner, name, "Z", AccessFlags.PRIVATE.getValue(), null, Set.of(), Set.of()));
+            classes.put(owner, new ImmutableClassDef(owner, original.getAccessFlags(), original.getSuperclass(), original.getInterfaces(),
+                    original.getSourceFile(), original.getAnnotations(), fields, methods.get(owner)));
+        }
+    }
+
+    private static int codeOffset(List<Instruction> body, int from, int to) {
+        int result = 0; for (int k = from; k < to; k++) result += body.get(k).getCodeUnits(); return result;
+    }
+
+    private static void postJsonPresence(Map<String, List<Method>> classes, boolean patched, String fault) {
+        String adapter = POST.substring(0, POST.length() - 1) + "JsonAdapter;";
+        String[] parameters = new String[155]; Arrays.fill(parameters, "I"); parameters[154] = "Lz76;";
+        List<Method> model = new ArrayList<>(classes.get(POST));
+        model.removeIf(m -> m.getName().equals("<init>") && m.getParameterTypes().size() == 155);
+        model.add(new ImmutableMethod(POST, "<init>", Arrays.stream(parameters).map(p -> new ImmutableMethodParameter(p, Set.of(), null)).toList(),
+                VOID, AccessFlags.PUBLIC.getValue() | AccessFlags.CONSTRUCTOR.getValue(), Set.of(), Set.of(), new ImmutableMethodImplementation(156,
+                List.of(invoke(Opcode.INVOKE_DIRECT, ref(OBJECT, "<init>", VOID), 0), end()), List.of(), List.of())));
+        if (patched) {
+            List<Instruction> setter = List.of(new ImmutableInstruction31i(Opcode.CONST, 0, fault.equals("wrong-paid-bits") ? 0x80000 : 0x4080000),
+                    new ImmutableInstruction12x(Opcode.AND_INT_2ADDR, 2, 0), new ImmutableInstruction21t(Opcode.IF_NEZ, 2, 4),
+                    new ImmutableInstruction11n(Opcode.CONST_4, 0, 1), new ImmutableInstruction10t(Opcode.GOTO, 2), new ImmutableInstruction11n(Opcode.CONST_4, 0, 0),
+                    new ImmutableInstruction22c(Opcode.IPUT_BOOLEAN, 0, 1, new ImmutableFieldReference(POST, "hushPaidContextKnown", "Z")),
+                    new ImmutableInstruction22b(Opcode.AND_INT_LIT8, 0, 3, fault.equals("wrong-trail-bit") ? 2 : 1),
+                    new ImmutableInstruction22b(Opcode.XOR_INT_LIT8, 0, 0, 1),
+                    new ImmutableInstruction22c(Opcode.IPUT_BOOLEAN, 0, 1, new ImmutableFieldReference(POST, "hushRootTrailPresent", "Z")), end());
+            model.add(new ImmutableMethod(POST, "hushSetJsonPresence", List.of(new ImmutableMethodParameter("I", Set.of(), null), new ImmutableMethodParameter("I", Set.of(), null)),
+                    VOID, AccessFlags.PUBLIC.getValue() | AccessFlags.SYNTHETIC.getValue(), Set.of(), Set.of(), new ImmutableMethodImplementation(4, setter, List.of(), List.of())));
+        }
+        classes.put(POST, model);
+        List<Instruction> reader = new ArrayList<>(); for (int k = 0; k < 2112; k++) reader.add(new ImmutableInstruction10x(Opcode.NOP));
+        reader.set(0, new ImmutableInstruction11n(Opcode.CONST_4, 0, 0));
+        reader.set(10, new ImmutableInstruction11n(Opcode.CONST_4, 10, -1));
+        reader.set(66, new ImmutableInstruction12x(Opcode.MOVE, 4, 10));
+        for (int k = 67; k <= 69; k++) reader.set(k, new ImmutableInstruction12x(Opcode.MOVE, k - 62, k - 63));
+        reader.set(168, new ImmutableInstruction31i(Opcode.CONST, 161, ~0x80000));
+        reader.set(175, new ImmutableInstruction31i(Opcode.CONST, 168, ~0x4000000));
+        reader.set(208, new ImmutableInstruction12x(Opcode.MOVE, 7, 3));
+        reader.set(372, new ImmutableInstruction22b(Opcode.AND_INT_LIT8, 3, 7, -2));
+        reader.set(1580, new ImmutableInstruction12x(Opcode.MOVE, 10, 3));
+        reader.set(1599, new ImmutableInstruction23x(Opcode.AND_INT, 3, 10, 168));
+        reader.set(1732, new ImmutableInstruction23x(Opcode.AND_INT, 3, 10, 161));
+        reader.set(1901, new ImmutableInstruction21s(Opcode.CONST_16, 157, 0));
+        reader.set(1905, new ImmutableInstruction21t(Opcode.IF_NEZ, 0, 1));
+        reader.set(1908, new ImmutableInstruction21c(Opcode.NEW_INSTANCE, 4, new ImmutableTypeReference(POST)));
+        reader.set(2027, new ImmutableInstruction22x(Opcode.MOVE_FROM16, 154, 10));
+        reader.set(2067, new ImmutableInstruction22x(Opcode.MOVE_FROM16, 158, 7));
+        reader.set(2094, new ImmutableInstruction3rc(Opcode.INVOKE_DIRECT_RANGE, 4, 156, ref(POST, "<init>", VOID, parameters)));
+        reader.set(2095, new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 4));
+        reader.set(2108, invoke(Opcode.INVOKE_STATIC, ref("Lf9a;", "a", VOID, STRING), 0));
+        reader.set(2109, new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 157));
+        int error = 2096;
+        if (patched && !fault.equals("missing-presence-hook")) {
+            reader.addAll(2095, List.of(new ImmutableInstruction22x(Opcode.MOVE_OBJECT_FROM16, 0, 4),
+                    new ImmutableInstruction22x(Opcode.MOVE_FROM16, 1, fault.equals("wrong-first-mask") ? 153 : fault.equals("swapped-presence-masks") ? 158 : 154),
+                    new ImmutableInstruction22x(Opcode.MOVE_FROM16, 2, fault.equals("wrong-trail-mask") ? 157 : fault.equals("swapped-presence-masks") ? 154 : 158),
+                    invoke(Opcode.INVOKE_VIRTUAL, ref(POST, "hushSetJsonPresence", VOID, "I", "I"), 0, 1, 2)));
+            error += 4;
+        }
+        reader.set(1905, new ImmutableInstruction21t(Opcode.IF_NEZ, 0, codeOffset(reader, 1905, error)));
+        if (patched && fault.equals("missing-error-return")) reader.set(error + 13, new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0));
+        List<Method> adapterMethods = new ArrayList<>(classes.get(adapter)); adapterMethods.removeIf(m -> m.getName().equals("fromJson"));
+        adapterMethods.add(method(adapter, "fromJson", OBJECT, false, 178, reader, "Leba;")); classes.put(adapter, adapterMethods);
+    }
+
+    private static String postKey(String name) {
+        return switch (name) {
+            case "hushContent" -> "content";
+            case "hushTrail" -> "trail";
+            case "hushTags" -> "tags";
+            case "hushSummary" -> "summary";
+            case "hushRebloggedFrom" -> "reblogged_from_id";
+            case "hushText" -> "text";
+            default -> throw new IllegalArgumentException(name);
+        };
+    }
+
+    private static void postBridge(Map<String, List<Method>> classes, String variant) {
+        boolean hooked = !variant.equals("clean");
+        if (!hooked) {
+            model(classes, REBLOG_TRAIL, Map.of("content", ref(REBLOG_TRAIL, "original_hushContent", LIST)));
+            model(classes, TEXT_BLOCK, Map.of("text", ref(TEXT_BLOCK, "original_hushText", STRING)));
+            return;
+        }
+        for (String owner : List.of(POST, REBLOG_TRAIL, TEXT_BLOCK)) {
+            String face = BASE + "timeline/" + (owner.equals(POST) ? "HushPost;" : owner.equals(REBLOG_TRAIL) ? "HushTrail;" : "HushText;");
+            List<String> names = owner.equals(POST) ? List.of("hushContent", "hushTrail", "hushTags", "hushSummary", "hushRebloggedFrom")
+                    : owner.equals(REBLOG_TRAIL) ? List.of("hushContent") : List.of("hushText");
+            List<Method> model = new ArrayList<>(classes.get(owner)), bridge = new ArrayList<>();
+            for (String name : names) {
+                String result = name.equals("hushSummary") || name.equals("hushRebloggedFrom") || name.equals("hushText") ? STRING : LIST;
+                bridge.add(abstractMethod(face, name, result));
+                if (variant.equals("missing") && name.equals("hushTags") || variant.equals("missing-trail") && owner.equals(REBLOG_TRAIL)) continue;
+                String target = variant.equals("wrong-getter") && name.equals("hushTags") ? "original_hushTrail" : "original_" + name;
+                model.add(method(owner, name, result, false, 2, List.of(invoke(Opcode.INVOKE_VIRTUAL, ref(owner, target, result), 1),
+                        new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0))));
+            }
+            classes.put(owner, model);
+            classes.put(face, bridge);
+        }
+    }
+
+    private static void reviewPrompt(Map<String, List<Method>> classes, String variant) {
+        boolean hooked = !variant.equals("clean") && !variant.equals("missing");
+        String owner = "Lfixture/ReviewLauncher;", prompt = "Lcom/tumblr/rating/RatingPromptActivity;";
+        List<Instruction> body = new ArrayList<>();
+        if (hooked) body.addAll(List.of(invoke(Opcode.INVOKE_STATIC, ref(BASE + "ui/ReviewPrompts;", "skip", "Z")),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction21t(Opcode.IF_EQZ, 0, 3), end()));
+        body.add(literal("app_review_prompt_rules_last_shown", 0));
+        body.add(new ImmutableInstruction21c(Opcode.NEW_INSTANCE, 0, new ImmutableTypeReference(prompt)));
+        // A clean branch to its own return must never be redirected into the injected return.
+        body.add(new ImmutableInstruction10t(Opcode.GOTO, variant.equals("jump-to-injected-return") ? -5 : 1));
+        body.add(end());
+        classes.put(owner, List.of(method(owner, "launch", VOID, false, 3, body, CONTEXT)));
+        if (hooked) classes.put(BASE + "ui/ReviewPrompts;", List.of(method(BASE + "ui/ReviewPrompts;", "skip", "Z", true, 1,
+                List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN, 0)))));
+    }
+
+    private static void activityNotifications(Map<String, List<Method>> classes, String variant) {
+        boolean hooked = !variant.equals("clean");
+        String pagination = "Lcom/tumblr/rumblr/model/PaginationLink;";
+        for (String owner : List.of(ACTIVITY_RESPONSE, PUSH_RESPONSE)) {
+            List<Instruction> body = new ArrayList<>();
+            boolean filtered = hooked && owner.equals(ACTIVITY_RESPONSE) && !variant.equals("missing-hook")
+                    || hooked && owner.equals(PUSH_RESPONSE) && variant.equals("push-hook");
+            if (filtered) body.addAll(List.of(invoke(Opcode.INVOKE_STATIC, ref(ACTIVITY_FILTER, "filter", LIST, LIST),
+                    variant.equals("wrong-list") ? 2 : 1), new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1)));
+            body.add(invoke(Opcode.INVOKE_DIRECT, ref(OBJECT, "<init>", VOID), 0)); body.add(end());
+            classes.put(owner, List.of(method(owner, "<init>", VOID, false, 3, body, LIST, pagination)));
+        }
+        List<Method> notification = new ArrayList<>(List.of(abstractMethod(ACTIVITY_NOTIFICATION, "getType", ACTIVITY_TYPE),
+                abstractMethod(ACTIVITY_NOTIFICATION, "otherType", ACTIVITY_TYPE)));
+        classes.put(ACTIVITY_TYPE, List.of());
+        if (hooked) {
+            classes.put(HUSH_ACTIVITY, List.of(abstractMethod(HUSH_ACTIVITY, "hushNotificationType", STRING)));
+            if (!variant.equals("missing-bridge")) notification.add(method(ACTIVITY_NOTIFICATION, "hushNotificationType", STRING, false, 2,
+                    List.of(invoke(Opcode.INVOKE_INTERFACE, ref(ACTIVITY_NOTIFICATION, variant.equals("wrong-getter") ? "otherType" : "getType", ACTIVITY_TYPE), 1),
+                            new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0), new ImmutableInstruction21t(Opcode.IF_EQZ, 0,
+                                    variant.equals("wrong-null-target") ? 8 : 7),
+                            invoke(Opcode.INVOKE_VIRTUAL, ref("Ljava/lang/Enum;", "name", STRING), 0),
+                            new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0),
+                            new ImmutableInstruction11n(Opcode.CONST_4, 0, 0), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0))));
+            classes.put(ACTIVITY_FILTER, List.of(method(ACTIVITY_FILTER, "filter", LIST, true, 2,
+                    List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 1)), LIST)));
+        }
+        classes.put(ACTIVITY_NOTIFICATION, notification);
+    }
+
     public static void main(String[] args) throws Exception {
         File root = new File(args[0]);
         Files.createDirectories(root.toPath());
-        for (String line : Files.readAllLines(new File(args[1]).toPath(), StandardCharsets.UTF_8)) if (line.startsWith("family|")) {
-            String[] values = line.trim().split("\\|", -1);
-            FAMILIES.put(values[1], new String[]{values[2], values[3]});
-            FLAGS.put(values[1], false);
-            for (String cap : capabilities(values[1])) FLAGS.put(cap, false);
-        }
+        initialize(new File(args[1]).toPath());
         Map<String, List<Method>> clean = hosts(false);
         advertisingId(clean, "clean");
         firebase(clean, "clean");
+        timeline(clean, false);
+        featureSwitch(clean, false);
+        paidPostBridge(clean, "clean");
+        postBridge(clean, "clean");
+        reviewPrompt(clean, "clean");
+        activityNotifications(clean, "clean");
+        carousel(clean, "clean");
+        followButton(clean, "clean");
+        footerButtons(clean, "", "clean");
+        unreadDots(clean, "clean");
+        timestamps(clean, "clean");
+        imageDescriptions(clean, "clean");
         write(root, "feature-clean", clean, false);
         reset();
         Map<String, List<Method>> settings = new LinkedHashMap<>(clean); settings.putAll(hosts(true));
@@ -340,5 +955,42 @@ public final class FeatureDexFixture {
         Map<String, List<Method>> branchingShortcut = new LinkedHashMap<>(settings);
         shortcuts(branchingShortcut, true, "branch-good");
         write(root, "feature-shortcuts-branch-good", branchingShortcut, true);
+        for (String variant : List.of("good", "missing", "wrong-header", "wrong-icon", "wrong-null-target", "wrong-null-value", "false-capability")) {
+            reset(); enable("hideAds");
+            if (variant.equals("false-capability")) FLAGS.put("paidPostHeader", false);
+            Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
+            timeline(classes, true);
+            featureSwitch(classes, true);
+            // Remove the clean model before writing its patched declarations, never duplicate getters.
+            classes.remove(POST);
+            paidPostBridge(classes, variant);
+            write(root, "feature-paid-post-" + variant, classes, true, "hideAds");
+        }
+        for (String variant : List.of("good", "missing", "wrong-getter", "missing-trail")) {
+            reset(); enable("hideReblogs");
+            Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
+            timeline(classes, true); postBridge(classes, variant);
+            write(root, "feature-post-bridge-" + variant, classes, true, "hideReblogs");
+        }
+        for (String variant : List.of("good", "missing", "wrong-value")) {
+            reset(); enable("disableAnalytics");
+            Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
+            featureSwitch(classes, variant);
+            write(root, "feature-switch-" + variant, classes, true, "disableAnalytics");
+        }
+        for (String variant : List.of("good", "missing", "jump-to-injected-return")) {
+            reset(); enable("skipReviewPrompts");
+            Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
+            reviewPrompt(classes, variant);
+            write(root, "feature-review-" + variant, classes, true, "skipReviewPrompts");
+        }
+        if (FAMILIES.containsKey("filterActivityNotifications")) for (String variant : List.of("good", "missing-hook", "wrong-list", "push-hook",
+                "missing-bridge", "wrong-getter", "wrong-null-target")) {
+            reset(); enable("filterActivityNotifications");
+            Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
+            activityNotifications(classes, variant);
+            write(root, "feature-activity-" + variant, classes, true, "filterActivityNotifications");
+        }
+        smallSelectors(root, settings);
     }
 }

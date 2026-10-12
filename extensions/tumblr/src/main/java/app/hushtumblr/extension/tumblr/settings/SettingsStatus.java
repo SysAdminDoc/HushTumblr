@@ -29,11 +29,25 @@ package app.hushtumblr.extension.tumblr.settings;
  */
 @SuppressWarnings({"unused", "SameReturnValue"})
 public final class SettingsStatus {
+    public static boolean showMutualMarkers() { return false; }
+    public static boolean primaryBlogMutuals() { return false; }
+    public static boolean revealAllowedMatureContent() { return false; }
+    public static boolean accountSafeMatureReveal() { return false; }
+    public static boolean muteRootPosts() { return false; }
+    public static boolean rootPostMutes() { return false; }
+    public static boolean visibleAltText() { return false; }
+    public static boolean photoAltTextCaptions() { return false; }
+    public static boolean galleryAltTextCaptions() { return false; }
+    public static boolean showPostTimestamps() { return false; }
+    public static boolean nativePostTimestamps() { return false; }
+    public static boolean filterActivityNotifications() { return false; }
+    public static boolean activityNotificationList() { return false; }
     private SettingsStatus() {
     }
 
     public static boolean hideAds() { return false; }
     public static boolean timelineAds() { return false; }
+    public static boolean paidPostHeader() { return false; }
     public static boolean disableAnalytics() { return false; }
     public static boolean hideAdvertisingId() { return false; }
     public static boolean advertisingId() { return false; }

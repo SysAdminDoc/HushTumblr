@@ -29,12 +29,17 @@ no-call Landroid/content/pm/ShortcutManager;->removeAllDynamicShortcuts()V outsi
 # An empty capability column is a family that changes no bytecode (a manifest-only patch): only its
 # installed flag is checked against the selected patches. Every installed and capability flag
 # SettingsStatus compiles needs a line here, and every capability a mutation rule.
-family|hideAds|Hide ads|timelineAds
+family|hideAds|Hide ads|timelineAds,paidPostHeader
 family|disableAnalytics|Disable analytics|analyticsFlags
 family|hideAdvertisingId|Hide advertising ID|advertisingId
 family|removeAdTrackingPermissions|Remove ad tracking permissions|
 family|spoofSignature|Spoof signature for Google sign-in|
 family|fixPushNotifications|Fix push notifications|firebaseCertificate
+family|filterActivityNotifications|Filter activity notifications|activityNotificationList
+family|showPostTimestamps|Show post timestamps|nativePostTimestamps
+family|visibleAltText|Visible image descriptions|photoAltTextCaptions,galleryAltTextCaptions
+family|muteRootPosts|Mute posts locally|rootPostMutes
+family|revealAllowedMatureContent|Reveal allowed mature content|accountSafeMatureReveal
 family|hideAdFreeBanner|Hide the ad-free banner|adFreeBannerFlags
 family|hideTumblrTv|Hide Tumblr TV|tumblrTvFlags
 family|hideCommunitiesTab|Hide the Communities tab|communitiesTabFlags
@@ -64,26 +69,40 @@ family|hideExploreTab|Hide the Explore tab|exploreTab
 family|hideNotificationsTab|Hide the Notifications tab|notificationsTab
 family|reorderTabs|Reorder the bottom bar|tabOrder
 family|darkBackground|Dark background color|themeBackground
+family|showMutualMarkers|Show mutual markers|primaryBlogMutuals
 
 mutation|settings|settings|Lcom/tumblr/App;|Lcom/tumblr/ui/activity/JumpoffActivity;|Lapp/hushtumblr/extension/tumblr/settings/SettingsEntry;
 # The HushTumblr row in Tumblr's own Settings screen: its package, the field its first row is
 # titled with, and the extension's row hooks. The settings patch leaves the row out, with a
 # warning, when that screen changed shape, and then asks for none of it.
 mutation|settings|settingsRow|Lcom/tumblr/settingshub/impl/hub/|Lcom/tumblr/core/ui/R$string;->settings_hub_row_preferences|Lapp/hushtumblr/extension/tumblr/settings/SettingsHubRow;
+mutation|settings|accountIdentity|Lapp/hushtumblr/extension/tumblr/rootmute/RootPostMutes;|Lcom/tumblr/UserInfo;|Lq15;|Lj15;|Lbt0;|Lx5b;|Lcom/tumblr/rumblr/response/UserInfoResponse;|Lapp/hushtumblr/extension/tumblr/rootmute/HushAccountIdentity;|Lcom/tumblr/UserInfo;->A:Ljava/lang/String;|muteRootPosts,revealAllowedMatureContent,showMutualMarkers
+mutation|settings|postJsonPresence|Lcom/tumblr/rumblr/model/post/Post;|Lcom/tumblr/rumblr/model/post/PostJsonAdapter;|hideAds,muteRootPosts
+mutation|rootPostMutes|rootPostMutes|Lapp/hushtumblr/extension/tumblr/rootmute/RootPostMutes;|Lapp/hushtumblr/extension/tumblr/rootmute/RootPostMenu;|Lcom/tumblr/rumblr/model/post/Post;|Lv81;|Lu9g;->y(Lcom/tumblr/ui/fragment/c;Lcom/tumblr/rumblr/TumblrPostNotesService;Lu9g$a;Ly9g;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lzve;Lpxa;Lcom/tumblr/analytics/ScreenType;Lju1;)V|Lcom/tumblr/ui/fragment/TimelineFragment;|Lapp/hushtumblr/extension/tumblr/timeline/HushRootPost;|Lapp/hushtumblr/extension/tumblr/rootmute/HushLocalTimeline;|Lapp/hushtumblr/extension/tumblr/rootmute/RootPostMuteAction;|Lcom/tumblr/rumblr/model/TimelineObject;
+mutation|accountSafeMatureReveal|matureContent|Lapp/hushtumblr/extension/tumblr/mature/AllowedMatureContent;|Lf74;|Lcom/tumblr/rumblr/model/AgeVerification;|Lcom/tumblr/communitylabel/data/settings/CommunityLabelUserConfigResponse;|Lcom/tumblr/rumblr/response/ApiResponse;|Lcom/tumblr/rumblr/response/Metadata;|Lcom/tumblr/communitylabel/data/settings/a;|Lcom/tumblr/communitylabel/data/settings/CommunityLabelService;|Lapp/hushtumblr/extension/tumblr/mature/NativeMatureService;|Lapp/hushtumblr/extension/tumblr/mature/NativeMatureContinuation;|Lcom/tumblr/UserInfo;|Lgql;->b(Lzve;Lf74;)Ldtl;
+mutation|primaryBlogMutuals|mutualMarkers|Lapp/hushtumblr/extension/tumblr/mutual/MutualMarkers;|Lcom/tumblr/ui/widget/PostCardHeader;|Lcom/tumblr/UserInfo;|Lcom/tumblr/rumblr/model/blog/UserBlogInfo;|Lcom/tumblr/rumblr/model/blog/ShortBlogInfo;|Lcom/tumblr/bloginfo/BlogInfo;|Lcom/tumblr/rumblr/model/User;|Lcom/tumblr/rumblr/response/FollowerResponse;|Lcom/tumblr/rumblr/model/PaginationLink;|Lcom/tumblr/rumblr/model/link/LinkImpl;|Lcom/tumblr/rumblr/response/ApiResponse;|Lapp/hushtumblr/extension/tumblr/mutual/NativeMutualSource;|Lcom/tumblr/rumblr/TumblrService;
 mutation|advertisingId|answers|Lcom/google/android/gms/ads/identifier/AdvertisingIdClient$Info;->getId()Ljava/lang/String;|Lapp/hushtumblr/extension/tumblr/privacy/AdvertisingId;->id(Ljava/lang/String;)Ljava/lang/String;|Lcom/google/android/gms/ads/identifier/AdvertisingIdClient$Info;->isLimitAdTrackingEnabled()Z|Lapp/hushtumblr/extension/tumblr/privacy/AdvertisingId;->limitTracking(Z)Z
 mutation|firebaseCertificate|firebaseCertificate|Lapp/hushtumblr/extension/tumblr/notifications/PushNotifications;->certificateHeader(Ljava/net/URLConnection;Ljava/lang/String;)Ljava/lang/String;
+mutation|activityNotificationList|activityNotifications|Lapp/hushtumblr/extension/tumblr/notifications/ActivityNotifications;->filter(Ljava/util/List;)Ljava/util/List;|Lcom/tumblr/rumblr/response/ActivityNotificationsResponse;-><init>(Ljava/util/List;Lcom/tumblr/rumblr/model/PaginationLink;)V|Lcom/tumblr/rumblr/model/activity/ActivityNotification;|Lapp/hushtumblr/extension/tumblr/notifications/HushActivityNotification;|hushNotificationType|Lcom/tumblr/rumblr/model/activity/ActivityNotification;->getType()Lcom/tumblr/rumblr/model/activity/ActivityNotificationType;|Lcom/tumblr/rumblr/response/NotificationsResponse;
+# Select the native preference by its key and exact read shape, with a native post-header consumer.
+mutation|nativePostTimestamps|nativeTimestamps|Lapp/hushtumblr/extension/tumblr/ui/PostTimestamps;->show(Z)Z|Lcom/tumblr/UserInfo;|Lcom/tumblr/Remember;->c(Ljava/lang/String;Z)Z|pref_is_timestamps|Lcom/tumblr/ui/widget/PostCardHeader;|Lcom/tumblr/UserInfo;->x0(Z)V
+# Native photo/gallery holders, including gallery clearing before a bind can return early.
+mutation|photoAltTextCaptions,galleryAltTextCaptions|imageDescriptions|Lapp/hushtumblr/extension/tumblr/ui/AltTextCaptions;->photo(Ljava/lang/Object;Ljava/lang/Object;)V|Lyn9$a;->i(Lcom/tumblr/ui/widget/graywater/viewholder/PhotoViewHolder;Lvgi;Ljava/lang/String;)V|Lyn9$a;->c:Lcom/tumblr/rumblr/model/post/blocks/ImageBlock;|Lapp/hushtumblr/extension/tumblr/ui/AltTextCaptions;->gallery(Ljava/lang/Object;Ljava/lang/Object;)V|Lmyd;->r(Landroid/content/Context;Lcom/tumblr/ui/widget/graywater/viewholder/PhotosetRowItem;Lcom/tumblr/rumblr/model/post/blocks/ImageBlock;)V|Lapp/hushtumblr/extension/tumblr/ui/AltTextCaptions;->clearGallery(Ljava/lang/Object;)V|Lmyd;->n(Landroid/content/Context;Lcom/tumblr/analytics/ScreenType;Lo9m;Lp07;Lx7d;Ljyd;Lvgi;Lea2;)V|Lcom/tumblr/rumblr/model/post/blocks/ImageBlock;>Lapp/hushtumblr/extension/tumblr/ui/HushImageDescription;>hushAltText:alt_text|Lcom/tumblr/ui/widget/graywater/viewholder/PhotoContainer;>Lapp/hushtumblr/extension/tumblr/ui/HushImageContainer;>hushImageFrame>Lcom/tumblr/ui/widget/graywater/viewholder/PhotoContainer;->j0()Landroid/widget/FrameLayout;|Ljyd;>Lapp/hushtumblr/extension/tumblr/ui/HushImageRow;>hushImageItems>Ljyd;->Z()[Lcom/tumblr/ui/widget/graywater/viewholder/PhotosetRowItem;
 # The feature check's answer, with the feature: the hook, the text only the feature enum's
 # <clinit> holds, the text only the check's companion holds, and the families that ask the hook
 # without owning one of these capabilities (Hide ads, whose own capability is its timeline rule).
 mutation|analyticsFlags,adFreeBannerFlags,tumblrTvFlags,communitiesTabFlags,blazePromptFlags,screenshotSharingFlags,updatePromptFlags|featureSwitch|Lapp/hushtumblr/extension/tumblr/flags/FeatureSwitches;->isEnabled(Ljava/lang/Enum;Z)Z|Whether or not we should show the Tumblr Blaze landing page banner|You're checking for Feature.isEnabled() with a non-boolean bucket!|hideAds
 # Each timeline page's items, first thing in both constructors, and the card and post families
 # that need the hook for the capability their own bridge backs.
-mutation|timelineAds|timelineList|Lapp/hushtumblr/extension/tumblr/timeline/TimelineFilter;->filter(Ljava/util/List;)Ljava/util/List;|Lcom/tumblr/rumblr/model/Timeline;-><init>(Ljava/util/List;Lcom/tumblr/rumblr/model/PaginationLink;)V|Lcom/tumblr/rumblr/response/timeline/TimelineResponse;-><init>(Ljava/util/List;Lcom/tumblr/rumblr/model/PaginationLink;Ljava/util/Map;)V|hideSuggestedBlogs,hideSuggestedCommunities,hideWatchItRows,hideReblogs,hideVideoPosts,hidePhotoPosts,hideTextPosts,hidePostsWithWords
+mutation|timelineAds|timelineList|Lapp/hushtumblr/extension/tumblr/timeline/TimelineFilter;->filter(Ljava/util/List;)Ljava/util/List;|Lcom/tumblr/rumblr/model/Timeline;-><init>(Ljava/util/List;Lcom/tumblr/rumblr/model/PaginationLink;)V|Lcom/tumblr/rumblr/response/timeline/TimelineResponse;-><init>(Ljava/util/List;Lcom/tumblr/rumblr/model/PaginationLink;Ljava/util/Map;)V|hideSuggestedBlogs,hideSuggestedCommunities,hideWatchItRows,hideReblogs,hideVideoPosts,hidePhotoPosts,hideTextPosts,hidePostsWithWords,muteRootPosts
 # The carousel stub, the carousel model and the key its Moshi adapter writes the items under.
 mutation|suggestedBlogCards,suggestedCommunityCards,watchItRows|timelineCarousel|Lapp/hushtumblr/extension/tumblr/timeline/TimelineFilter;->carouselItems(Ljava/lang/Object;)Ljava/util/List;|Lcom/tumblr/rumblr/model/carousel/Carousel;|elements
 # model>interface>method:key, one per bridge: each interface method calls the getter the model's
 # Moshi adapter writes under that key.
 mutation|reblogPosts,videoPosts,photoPosts,textPosts,postWords|postBridge|Lcom/tumblr/rumblr/model/post/Post;>Lapp/hushtumblr/extension/tumblr/timeline/HushPost;>hushContent:content,hushTrail:trail,hushTags:tags,hushSummary:summary,hushRebloggedFrom:reblogged_from_id|Lcom/tumblr/rumblr/model/post/ReblogTrail;>Lapp/hushtumblr/extension/tumblr/timeline/HushTrail;>hushContent:content|Lcom/tumblr/rumblr/model/post/blocks/TextBlock;>Lapp/hushtumblr/extension/tumblr/timeline/HushText;>hushText:text
+# Structured header context only. The icon path returns null when header_context is absent, and
+# the two account-specific getters protect followed-blog and editable Blaze posts.
+mutation|paidPostHeader|paidPostBridge|Lcom/tumblr/rumblr/model/post/Post;|Lapp/hushtumblr/extension/tumblr/timeline/HushPaidPost;|hushHeaderIcon:header_context:icon|hushFollowed:followed|hushCanEdit:can_edit|hushPaidContextKnown
 mutation|reviewPrompt|reviewPrompt|Lapp/hushtumblr/extension/tumblr/ui/ReviewPrompts;->skip()Z|app_review_prompt_rules_last_shown|Lcom/tumblr/rating/RatingPromptActivity;
 mutation|followButton|followButton|Lapp/hushtumblr/extension/tumblr/ui/PostParts;->hideFollowButton()Z|Lcom/tumblr/ui/widget/PostCardHeader;|Lcom/tumblr/rumblr/model/post/PostHeaderAction$ActionType;->FOLLOW
 # A footer button's question, the Compose function it guards (by its source note) and the

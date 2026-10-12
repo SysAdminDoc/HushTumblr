@@ -28,6 +28,11 @@ package app.hushtumblr.extension.tumblr.settings;
  * there would load the settings with no context to read them from.
  */
 public final class FamilyNames {
+    public static final String SHOW_MUTUAL_MARKERS = "Show mutual markers";
+    public static final String REVEAL_ALLOWED_MATURE_CONTENT = "Reveal allowed mature content";
+    public static final String MUTE_ROOT_POSTS = "Mute posts locally";
+    public static final String VISIBLE_ALT_TEXT = "Visible image descriptions";
+    public static final String SHOW_POST_TIMESTAMPS = "Show post timestamps";
     public static final String HIDE_ADS = "Hide ads";
     public static final String DISABLE_ANALYTICS = "Disable analytics";
     public static final String HIDE_ADVERTISING_ID = "Hide advertising ID";
@@ -63,6 +68,7 @@ public final class FamilyNames {
     public static final String HIDE_NOTIFICATIONS_TAB = "Hide the Notifications tab";
     public static final String REORDER_TABS = "Reorder the bottom bar";
     public static final String FIX_PUSH_NOTIFICATIONS = "Fix push notifications";
+    public static final String FILTER_ACTIVITY_NOTIFICATIONS = "Filter activity notifications";
 
     private FamilyNames() {
     }

@@ -1,7 +1,7 @@
 ![HushTumblr. Tumblr, on your terms.](assets/readme-hero.png)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.0.2-92BFFF" alt="Version 0.0.2">
+  <img src="https://img.shields.io/badge/version-0.0.3-92BFFF" alt="Version 0.0.3">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License GPL-3.0"></a>
   <img src="https://img.shields.io/badge/platform-Android%208%2B-3DDC84" alt="Platform Android 8+">
   <img src="https://img.shields.io/badge/Tumblr-46.5.0.109-001935" alt="Tumblr 46.5.0.109">
@@ -22,7 +22,7 @@ The latest release is [v0.0.1](https://github.com/SysAdminDoc/HushTumblr/release
 
 ## Settings
 
-The v0.0.2 source has a refreshed settings screen. Search and the category pages use the same dark cards, with pale blue controls and more room for descriptions. Your saved choices stay the same.
+The v0.0.3 source adds more feed controls and fixes saving, importing and restoring settings. Search and the category pages use dark cards with pale blue controls and room for descriptions. Your saved choices stay the same.
 
 ![HushTumblr settings overview, Feed and Privacy pages](assets/settings-preview.png)
 
@@ -42,13 +42,14 @@ Every patch is checked against this exact build. Other Tumblr versions aren't su
 
 ## Patches
 
-There are 36 patches so far, all for Tumblr 46.5.0.109.
+The current source has 42 patches for Tumblr 46.5.0.109. The published v0.0.1 bundle has 36 patches. Newer additions are waiting for the next release.
 
 | Patch | What it does |
 |---|---|
 | `Dark background color` | Makes the background of Tumblr's Dark Mode palette black, which can save battery on OLED screens, or another dark color you pick when patching. Other palettes stay as they are. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `Disable analytics` | Turns off Firebase crash reports and Google's analytics collection, and Tumblr's own tracking and ad measurement once it restarts. The Firebase and Google part stays until you patch again without it. On by default. Turn it off in Tumblr settings > HushTumblr > Privacy. |
 | `Disable update prompts` | Stops Tumblr asking Google Play for a newer version and showing Play's update prompt. Starts off. Turn it on in Tumblr settings > HushTumblr > More settings > Updates. |
+| `Filter activity notifications` | Hides selected likes, reblogs, replies, follows, mentions, asks and boops from the activity list as pages load. Each switch starts off. Choose them in Tumblr settings > HushTumblr > More settings > Notifications. |
 | `Fix push notifications` | Lets the patched app sign up for push notifications. Firebase can refuse a patched Tumblr whose request doesn't name Tumblr's original signature, so this sends its fingerprint. On by default. Turn it off in Tumblr settings > HushTumblr > More settings > Notifications. |
 | `Hide Blaze prompts` | Hides the prompts to pay for Blaze, Tumblr's way to promote a post. That covers the Blaze buttons on your blog and dashboard, the nudge after you post, and the Blaze banners. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `Hide Tumblr TV` | Takes the Tumblr TV tab out of the bottom bar, and stops sign-up from sending you there. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
@@ -58,7 +59,7 @@ There are 36 patches so far, all for Tumblr 46.5.0.109.
 | `Hide hashtags` | Takes the tags off the bottom of posts in your dashboard, other feeds and Tumblr TV, and keeps the source link. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Hide note counts` | Takes the like, reblog and comment counts off the footer under posts, community posts included, and the count off the top of a post's notes. The buttons stay and still work. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Hide photo posts` | Takes photo posts out of your dashboard and other feeds as each page loads. A post with pictures and no video, its reblog trail included, counts as a photo post. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
-| `Hide posts with these words` | Takes posts out of your dashboard and other feeds when their text, reblog trail, tags or summary has a word or phrase from your list, ignoring case and matching whole words. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
+| `Hide posts with these words` | Hides posts matching your word list. Choose whether to check current text, the reblog trail, tags or summaries. Allowed words can keep a matching post, but other enabled filters still apply. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
 | `Hide reblogs` | Takes reblogs out of your dashboard and other feeds as each page loads, and keeps the posts people made themselves. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
 | `Hide suggested blogs` | Takes the blogs Tumblr suggests you follow out of your dashboard and other feeds, whether as cards, rows or carousels, along with their headings. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
 | `Hide suggested communities` | Takes the communities Tumblr suggests you join out of your dashboard and other feeds, along with their headings. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
@@ -77,13 +78,18 @@ There are 36 patches so far, all for Tumblr 46.5.0.109.
 | `Hide unread dots` | Hides the unread dots and counts on the bottom bar's Dashboard, Communities and Notifications tabs, with a switch for each tab. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `Hide video posts` | Takes video posts out of your dashboard and other feeds as each page loads. A post with a video anywhere in it, its reblog trail included, counts as a video post. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
 | `HushTumblr settings` | Adds a HushTumblr page where you turn features on or off, pause HushTumblr, back up your settings and read the licenses. Open it from Tumblr's Settings or by long-pressing the Tumblr icon. Works as soon as you patch it in, with no switch. |
+| `Mute posts locally` | Adds a local mute action to post menus. Originals and their reblogs stay hidden for this account. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
 | `Remove ad tracking permissions` | Removes Google's advertising ID permission and Android's Privacy Sandbox ad services from Tumblr, so it can't use them. Google Play services then answers with zeros. Works as soon as you patch it in, with no switch. |
 | `Reorder the bottom bar` | Puts the bottom bar's tabs in an order you pick, from a list in its settings. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
+| `Reveal allowed mature content` | Removes mature-content covers only when Tumblr explicitly allows them for the signed-in adult account. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
+| `Show post timestamps` | Shows when posts were made using Tumblr's own timestamp layout. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
+| `Show mutual markers` | Marks blogs that follow your primary blog when you follow them. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Skip review prompts` | Stops the pop-up that asks what you think of the Tumblr app and then asks you for a store rating or feedback. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `Spoof signature for Google sign-in` | Helps Google sign-in work in the patched app by naming Tumblr's original signature. It only helps with microG-RE or the XSpoofSignatures module. Email sign-in doesn't need it. It isn't selected by default. Works as soon as you patch it in, with no switch. |
 | `Turn off screenshot sharing` | Stops Tumblr watching for screenshots, so taking one doesn't bring up its offer to save the post as an image. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
+| `Visible image descriptions` | Shows author-provided image descriptions below each image, including galleries and reblogs. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 
-Morphe Manager selects every patch but Spoof signature for Google sign-in by default. Hide ads, Disable analytics, Hide advertising ID and Fix push notifications start with their switches on, and every other switch starts off. Remove ad tracking permissions and the signature patch have no switch. Their manifest changes, and the Firebase and Google part of Disable analytics, stay until you patch again without them. The settings patch is required by the others.
+Morphe Manager selects every patch but Spoof signature for Google sign-in by default. Hide ads, Disable analytics, Hide advertising ID and Fix push notifications start on. Other features start off. The word filter checks all supported fields until you choose otherwise. Remove ad tracking permissions and the signature patch have no switch. Their manifest changes, and the Firebase and Google part of Disable analytics, stay until you patch again without them. The settings patch is required by the others.
 
 Switches change the runtime hooks without patching again. Pause makes those hooks follow Tumblr's original path. HushTumblr settings opens from the HushTumblr row at the end of Tumblr's own Settings screen. The long-press shortcut on the Tumblr icon and Additional settings in the app, on Tumblr's App info page, open it too.
 
@@ -96,6 +102,14 @@ Disable analytics changes Tumblr's manifest when you patch: Firebase Analytics, 
 Fix push notifications looks at the address and package of Firebase's own request before Firebase sends it, and swaps only the certificate fingerprint for Tumblr's original one. It doesn't open a connection or send anything itself.
 
 The About and Licenses screens link to `github.com`, `gitlab.com` and `www.gnu.org`, and Support HushTumblr on the settings home links to `ko-fi.com`. The optional setup guide links to password and data help at `help.tumblr.com`. All of these open in your browser, and only when you tap one.
+
+Word rules ignore case and compare NFC-normalized text. Letters, digits, combining marks and connector punctuation keep a word together; punctuation and emoji can separate words. This does not remove accents or apply language-specific segmentation. Both word lists share the settings backup size limit. A refused Save keeps your draft.
+
+Muted post IDs stay in a bounded private file on this device, separated by Tumblr account. They aren't included in portable settings backups or diagnostics. The Feed page can clear or manage the current account's list. Unknown account or post identity leaves a post visible.
+
+Mature-content reveal reads Tumblr's existing eligibility service when you opt in. It keeps the blur while the account or its permission is unknown, and after a failed check. It doesn't change Tumblr's eligibility or content-label preferences.
+
+Mutual markers read the followers of your primary blog when you opt in and cache their IDs in memory for the current account. Unknown or stale results leave the header unchanged. Sideblogs don't provide mutual markers.
 
 ## Install
 

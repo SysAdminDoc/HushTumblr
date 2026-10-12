@@ -49,6 +49,7 @@ import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.GraphicsMode;
+import org.robolectric.shadows.ShadowToast;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,6 +61,8 @@ import java.util.Set;
 import app.hushtumblr.extension.shared.SettingsContextRule;
 import app.hushtumblr.extension.shared.settings.HushTumblrPause;
 import app.hushtumblr.extension.shared.settings.PauseForTests;
+import app.hushtumblr.extension.tumblr.rootmute.RootPostMutePreference;
+import app.hushtumblr.extension.tumblr.rootmute.RootPostMutes;
 
 /**
  * A row a tap opens something from wears a chevron, so it reads as one by its shape and not only by
@@ -77,7 +80,8 @@ public class RowChevronTest {
 
     /** Every row on the screen whose tap opens a dialog, a file picker, the browser, Android's settings or another page. */
     private static final Set<String> OPENS_SOMETHING = new LinkedHashSet<>(Arrays.asList(
-            "Jump to a section", "Words to hide", "Tab order", "Supported links", "Export settings", "Import settings",
+            "Jump to a section", "Words to hide", "Allowed words", "Manage muted posts", "Tab order",
+            "Supported links", "Export settings", "Import settings",
             "Export diagnostic report", "Source code and issues", "Licenses", "Release notes", "Update instructions",
             "Setup and backup guide"));
 
@@ -121,12 +125,26 @@ public class RowChevronTest {
             assertEquals(title + " chevron is read out", View.IMPORTANT_FOR_ACCESSIBILITY_NO,
                     chevron.getImportantForAccessibility());
             assertTrue(title + " wears a chevron and has nothing to open", preference instanceof DialogPreference
+                    || preference instanceof RootPostMutePreference
                     || preference.getOnPreferenceClickListener() != null);
         }
         assertEquals(OPENS_SOMETHING, wearing);
         assertTrue("Licenses and Version still look alike", wearing.contains("Licenses") && !wearing.contains("Version"));
         // Hide advertising ID, Fix push notifications, the release check, Pause and Debug logging.
         assertTrue("only " + switches + " switch rows", switches >= 5);
+    }
+
+    @Test
+    public void theMutedPostsChevronHasAWorkingRowAction() {
+        RootPostMutes.logout();
+        View row = rowTitled(rows(show()), "Manage muted posts");
+        assertTrue(item(row) instanceof RootPostMutePreference);
+        assertNotNull(chevronOf(row));
+        ListView list = (ListView) row.getParent();
+        int position = list.getPositionForView(row);
+        ShadowToast.reset();
+        assertTrue(list.performItemClick(row, position, list.getItemIdAtPosition(position)));
+        assertEquals("Muted posts aren't available for this account yet", ShadowToast.getTextOfLatestToast());
     }
 
     /**

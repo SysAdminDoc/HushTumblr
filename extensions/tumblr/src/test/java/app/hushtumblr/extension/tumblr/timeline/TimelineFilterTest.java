@@ -126,6 +126,57 @@ public class TimelineFilterTest {
         assertSame(page, TimelineFilter.filter(page));
     }
 
+    @Test
+    public void paidHeaderIconsRemovePostsWithoutAnyTimelineSponsoredFlag() {
+        TimelineObject blaze = TimelineItems.postWithHeader("blaze", false, false);
+        TimelineObject sponsored = TimelineItems.postWithHeader("money-alt", false, false);
+        TimelineObject organic = TimelineItems.organicBlazedPost();
+        List<Object> page = Arrays.asList(organic, blaze, TimelineItems.post(), sponsored);
+        assertEquals(Arrays.asList(organic, page.get(2)), TimelineFilter.filter(page));
+        String report = String.join("\n", HookStatus.report(""));
+        assertTrue(report, report.contains("ad removed 2"));
+        Settings.HIDE_ADS.save(false);
+        assertSame(page, TimelineFilter.filter(page));
+        Settings.HIDE_ADS.save(true);
+        PauseForTests.pause(HushTumblrPause.Reason.SWITCH);
+        assertSame(page, TimelineFilter.filter(page));
+    }
+
+    @Test
+    public void followedEditableAndUnknownHeaderContextsStay() {
+        List<Object> page = Arrays.asList(
+                TimelineItems.postWithHeader("blaze", true, false),
+                TimelineItems.postWithHeader("blaze", false, true),
+                TimelineItems.postWithHeader("money-alt", true, false),
+                TimelineItems.postWithHeader("money-alt", false, true),
+                TimelineItems.postWithHeader(null, false, false),
+                TimelineItems.postWithHeader("star", false, false),
+                TimelineItems.postWithHeader("BLAZE", false, false),
+                TimelineItems.postWithHeader("new-paid-icon", false, false),
+                TimelineItems.blazed(TimelineItems.postWithHeader("blaze", false, false)));
+        assertSame(page, TimelineFilter.filter(page));
+    }
+
+    @Test
+    public void paidIconsWithDefaultedOwnershipMetadataStay() {
+        List<Object> page = Arrays.asList(
+                TimelineItems.postWithHeader("blaze", false, false, false),
+                TimelineItems.postWithHeader("money-alt", false, false, false),
+                TimelineItems.postWithHeader("blaze", true, false, false),
+                TimelineItems.postWithHeader("money-alt", false, true, false));
+        assertSame(page, TimelineFilter.filter(page));
+    }
+
+    @Test
+    public void anUnreadableHeaderIsKeptAndReported() {
+        TimelineObject broken = new TimelineObject(new TimelineItems.Post(null, null, null, null, null) {
+            @Override public String hushHeaderIcon() { throw new IllegalStateException("unreadable"); }
+        }, false);
+        List<Object> page = Arrays.asList(broken, TimelineItems.postWithHeader("blaze", false, false));
+        assertEquals(Arrays.asList(broken), TimelineFilter.filter(page));
+        assertTrue(String.join("\n", HookStatus.report("")).contains("timeline item"));
+    }
+
     /**
      * Your own Blaze dashboard lists your campaigns as BLAZED_POST items, built through the same
      * page, so Hide ads leaves the whole list as Tumblr built it.

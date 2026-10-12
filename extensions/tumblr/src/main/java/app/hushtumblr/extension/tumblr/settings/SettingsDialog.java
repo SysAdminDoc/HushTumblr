@@ -118,6 +118,18 @@ public final class SettingsDialog extends DialogFragment {
         // in onBackPressed as well, so this covers the gesture and the key alike.
         Dialog dialog = new Dialog(getActivity(), getTheme()) {
             @Override
+            public void dismiss() {
+                try {
+                    if (SettingsDialog.this.isAdded() && SettingsDialog.this.getActivity() != null) {
+                        HushTumblrPreferenceFragment page = page();
+                        if (page != null) page.closeOwnedDialogs();
+                    }
+                } finally {
+                    super.dismiss();
+                }
+            }
+
+            @Override
             public void onBackPressed() {
                 HushTumblrPreferenceFragment page = page();
                 if (!mountFailed && page != null && page.backFromJump()) return;
