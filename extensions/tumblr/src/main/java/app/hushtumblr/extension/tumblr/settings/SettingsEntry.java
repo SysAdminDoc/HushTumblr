@@ -90,11 +90,23 @@ public final class SettingsEntry {
 
     /**
      * Injected before each return of the application's {@code onCreate}, after Tumblr's own
-     * startup. Watches every Tumblr activity, so a pending open lands on whichever one resumes
-     * next: signed out, the launcher hands straight over to the login screen. Also where the
-     * release check, when it's on, asks at most once a day, on a worker.
+     * startup. It takes no register: Tumblr's compiler reuses the {@code this} register for other
+     * values near the end of that method (a String in 46.5.0.109), so the application comes from
+     * the context the start of the same method stored.
      */
-    public static void onApplicationCreate(Context context) {
+    public static void onApplicationCreate() {
+        Context context = Utils.getContext();
+        if (context == null) return;
+        Context application = context.getApplicationContext();
+        onApplicationCreate(application != null ? application : context);
+    }
+
+    /**
+     * Watches every Tumblr activity, so a pending open lands on whichever one resumes next:
+     * signed out, the launcher hands straight over to the login screen. Also where the release
+     * check, when it's on, asks at most once a day, on a worker.
+     */
+    static void onApplicationCreate(Context context) {
         try {
             if (!Utils.isMainProcess()) return;
             if (context instanceof Application && !callbacksRegistered) {

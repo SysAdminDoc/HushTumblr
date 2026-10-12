@@ -148,7 +148,8 @@ val settingsPatch = bytecodePatch(
         // Before each return of the application's onCreate, after Tumblr's own startup: the
         // extension registers activity lifecycle callbacks there, and that's only safe once Tumblr
         // has set itself up. Tumblr's application declares no onCreate of its own; com.tumblr.CoreApp,
-        // the class above it, does.
+        // the class above it, does. The call names no register: by its returns, R8 has reused p0
+        // (in 46.5.0.109 it holds a String there), and ART refused the whole class at launch.
         val applicationOnCreate = declaredInHierarchy(TUMBLR_APPLICATION, "onCreate")
         val returns = applicationOnCreate.implementation!!.instructions.withIndex()
             .filter { it.value.opcode == Opcode.RETURN_VOID }
@@ -157,7 +158,7 @@ val settingsPatch = bytecodePatch(
         returns.asReversed().forEach { index ->
             applicationOnCreate.addInstruction(
                 index,
-                "invoke-static/range { p0 .. p0 }, $ENTRY->onApplicationCreate(Landroid/content/Context;)V",
+                "invoke-static { }, $ENTRY->onApplicationCreate()V",
             )
         }
 
