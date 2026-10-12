@@ -39,11 +39,14 @@ public final class FeatureDexFixture {
     private static final String UTILS = "Lapp/hushtumblr/extension/shared/Utils;";
     // Tumblr's application inherits onCreate from com.tumblr.CoreApp, and its launcher inherits
     // onNewIntent from an AndroidX activity, so the settings hooks land in a superclass of each.
+    // Each ends at the framework class the real one does, since a hook's argument is held to the
+    // type it takes, and a stand-in ending at Object would be a Context that isn't one.
     private static final String APP = "Lcom/tumblr/App;";
     private static final String CORE_APP = "Lcom/tumblr/CoreApp;";
     private static final String ACTIVITY = "Lcom/tumblr/ui/activity/JumpoffActivity;";
     private static final String COMPONENT_ACTIVITY = "Lfixture/ComponentActivity;";
-    private static final Map<String, String> SUPERCLASSES = Map.of(APP, CORE_APP, ACTIVITY, COMPONENT_ACTIVITY);
+    private static final Map<String, String> SUPERCLASSES = Map.of(APP, CORE_APP, ACTIVITY, COMPONENT_ACTIVITY,
+            CORE_APP, "Landroid/app/Application;", COMPONENT_ACTIVITY, "Landroid/app/Activity;");
     private static final String VOID = "V";
     private static final String OBJECT = "Ljava/lang/Object;";
     private static final String LIST = "Ljava/util/List;";
@@ -96,7 +99,7 @@ public final class FeatureDexFixture {
         List<Instruction> app = new ArrayList<>();
         if (patched) {
             app.add(invoke(Opcode.INVOKE_STATIC, ref(UTILS, "setContext", VOID, CONTEXT), 0));
-            app.add(invoke(Opcode.INVOKE_STATIC, ref(ENTRY, "onApplicationCreate", VOID, CONTEXT), 0));
+            app.add(invoke(Opcode.INVOKE_STATIC, ref(ENTRY, "onApplicationCreate", VOID)));
         }
         app.add(end());
         classes.put(APP, new ArrayList<>());
@@ -122,7 +125,7 @@ public final class FeatureDexFixture {
                 method(UTILS, "settingsReady", "Z", true, 1,
                         List.of(new ImmutableInstruction11n(Opcode.CONST_4, 0, 1), new ImmutableInstruction11x(Opcode.RETURN, 0)))));
         List<Method> entry = new ArrayList<>(List.of(
-                method(ENTRY, "onApplicationCreate", VOID, true, 1, List.of(end()), CONTEXT),
+                method(ENTRY, "onApplicationCreate", VOID, true, 1, List.of(end())),
                 method(ENTRY, "onActivityCreate", VOID, true, 1, List.of(end()), "Landroid/app/Activity;"),
                 method(ENTRY, "onNewIntent", VOID, true, 2, List.of(end()), "Landroid/app/Activity;", INTENT)));
         for (Method m : classes.getOrDefault(ENTRY, List.of())) if (SHORTCUTS.contains(m.getName())) entry.add(m);

@@ -27,13 +27,81 @@ no-call Landroid/content/pm/ShortcutManager;->removeAllDynamicShortcuts()V outsi
 # mutation|capability flags|clean-target selector|selector-specific hook descriptors and anchors
 # The clean APK supplies the callers. Final flags do not excuse missing, duplicated or misplaced calls.
 # An empty capability column is a family that changes no bytecode (a manifest-only patch): only its
-# installed flag is checked against the selected patches.
-family|disableAnalytics|Disable analytics|
+# installed flag is checked against the selected patches. Every installed and capability flag
+# SettingsStatus compiles needs a line here, and every capability a mutation rule.
+family|hideAds|Hide ads|timelineAds
+family|disableAnalytics|Disable analytics|analyticsFlags
 family|hideAdvertisingId|Hide advertising ID|advertisingId
 family|removeAdTrackingPermissions|Remove ad tracking permissions|
 family|spoofSignature|Spoof signature for Google sign-in|
 family|fixPushNotifications|Fix push notifications|firebaseCertificate
+family|hideAdFreeBanner|Hide the ad-free banner|adFreeBannerFlags
+family|hideTumblrTv|Hide Tumblr TV|tumblrTvFlags
+family|hideCommunitiesTab|Hide the Communities tab|communitiesTabFlags
+family|hideBlazePrompts|Hide Blaze prompts|blazePromptFlags
+family|turnOffScreenshotSharing|Turn off screenshot sharing|screenshotSharingFlags
+family|disableUpdatePrompts|Disable update prompts|updatePromptFlags
+family|skipReviewPrompts|Skip review prompts|reviewPrompt
+family|hideSuggestedBlogs|Hide suggested blogs|suggestedBlogCards
+family|hideSuggestedCommunities|Hide suggested communities|suggestedCommunityCards
+family|hideWatchItRows|Hide Watch it rows|watchItRows
+family|hideReblogs|Hide reblogs|reblogPosts
+family|hideVideoPosts|Hide video posts|videoPosts
+family|hidePhotoPosts|Hide photo posts|photoPosts
+family|hideTextPosts|Hide text posts|textPosts
+family|hidePostsWithWords|Hide posts with these words|postWords
+family|hideHashtags|Hide hashtags|postTags
+family|hideFollowButton|Hide the Follow button|followButton
+family|hideTumblrMart|Hide the diamond and TumblrMart|premiumDiamond,tumblrMartButtons
+family|hideNoteCounts|Hide note counts|noteCounts
+family|hideLikeButton|Hide the like button|likeButton
+family|hideReblogButton|Hide the reblog button|reblogButton
+family|hideCommentButton|Hide the comment button|commentButton
+family|hideShareButton|Hide the share button|shareButton
+family|hideSaveButton|Hide the Save button|saveButton
+family|hideUnreadDots|Hide unread dots|unreadDots
+family|hideExploreTab|Hide the Explore tab|exploreTab
+family|hideNotificationsTab|Hide the Notifications tab|notificationsTab
+family|reorderTabs|Reorder the bottom bar|tabOrder
+family|darkBackground|Dark background color|themeBackground
 
 mutation|settings|settings|Lcom/tumblr/App;|Lcom/tumblr/ui/activity/JumpoffActivity;|Lapp/hushtumblr/extension/tumblr/settings/SettingsEntry;
+# The HushTumblr row in Tumblr's own Settings screen: its package, the field its first row is
+# titled with, and the extension's row hooks. The settings patch leaves the row out, with a
+# warning, when that screen changed shape, and then asks for none of it.
+mutation|settings|settingsRow|Lcom/tumblr/settingshub/impl/hub/|Lcom/tumblr/core/ui/R$string;->settings_hub_row_preferences|Lapp/hushtumblr/extension/tumblr/settings/SettingsHubRow;
 mutation|advertisingId|answers|Lcom/google/android/gms/ads/identifier/AdvertisingIdClient$Info;->getId()Ljava/lang/String;|Lapp/hushtumblr/extension/tumblr/privacy/AdvertisingId;->id(Ljava/lang/String;)Ljava/lang/String;|Lcom/google/android/gms/ads/identifier/AdvertisingIdClient$Info;->isLimitAdTrackingEnabled()Z|Lapp/hushtumblr/extension/tumblr/privacy/AdvertisingId;->limitTracking(Z)Z
 mutation|firebaseCertificate|firebaseCertificate|Lapp/hushtumblr/extension/tumblr/notifications/PushNotifications;->certificateHeader(Ljava/net/URLConnection;Ljava/lang/String;)Ljava/lang/String;
+# The feature check's answer, with the feature: the hook, the text only the feature enum's
+# <clinit> holds, the text only the check's companion holds, and the families that ask the hook
+# without owning one of these capabilities (Hide ads, whose own capability is its timeline rule).
+mutation|analyticsFlags,adFreeBannerFlags,tumblrTvFlags,communitiesTabFlags,blazePromptFlags,screenshotSharingFlags,updatePromptFlags|featureSwitch|Lapp/hushtumblr/extension/tumblr/flags/FeatureSwitches;->isEnabled(Ljava/lang/Enum;Z)Z|Whether or not we should show the Tumblr Blaze landing page banner|You're checking for Feature.isEnabled() with a non-boolean bucket!|hideAds
+# Each timeline page's items, first thing in both constructors, and the card and post families
+# that need the hook for the capability their own bridge backs.
+mutation|timelineAds|timelineList|Lapp/hushtumblr/extension/tumblr/timeline/TimelineFilter;->filter(Ljava/util/List;)Ljava/util/List;|Lcom/tumblr/rumblr/model/Timeline;-><init>(Ljava/util/List;Lcom/tumblr/rumblr/model/PaginationLink;)V|Lcom/tumblr/rumblr/response/timeline/TimelineResponse;-><init>(Ljava/util/List;Lcom/tumblr/rumblr/model/PaginationLink;Ljava/util/Map;)V|hideSuggestedBlogs,hideSuggestedCommunities,hideWatchItRows,hideReblogs,hideVideoPosts,hidePhotoPosts,hideTextPosts,hidePostsWithWords
+# The carousel stub, the carousel model and the key its Moshi adapter writes the items under.
+mutation|suggestedBlogCards,suggestedCommunityCards,watchItRows|timelineCarousel|Lapp/hushtumblr/extension/tumblr/timeline/TimelineFilter;->carouselItems(Ljava/lang/Object;)Ljava/util/List;|Lcom/tumblr/rumblr/model/carousel/Carousel;|elements
+# model>interface>method:key, one per bridge: each interface method calls the getter the model's
+# Moshi adapter writes under that key.
+mutation|reblogPosts,videoPosts,photoPosts,textPosts,postWords|postBridge|Lcom/tumblr/rumblr/model/post/Post;>Lapp/hushtumblr/extension/tumblr/timeline/HushPost;>hushContent:content,hushTrail:trail,hushTags:tags,hushSummary:summary,hushRebloggedFrom:reblogged_from_id|Lcom/tumblr/rumblr/model/post/ReblogTrail;>Lapp/hushtumblr/extension/tumblr/timeline/HushTrail;>hushContent:content|Lcom/tumblr/rumblr/model/post/blocks/TextBlock;>Lapp/hushtumblr/extension/tumblr/timeline/HushText;>hushText:text
+mutation|reviewPrompt|reviewPrompt|Lapp/hushtumblr/extension/tumblr/ui/ReviewPrompts;->skip()Z|app_review_prompt_rules_last_shown|Lcom/tumblr/rating/RatingPromptActivity;
+mutation|followButton|followButton|Lapp/hushtumblr/extension/tumblr/ui/PostParts;->hideFollowButton()Z|Lcom/tumblr/ui/widget/PostCardHeader;|Lcom/tumblr/rumblr/model/post/PostHeaderAction$ActionType;->FOLLOW
+# A footer button's question, the Compose function it guards (by its source note) and the
+# community footer hook the family adds, or none.
+mutation|likeButton|footerButton|Lapp/hushtumblr/extension/tumblr/ui/PostFooter;->hideLikeButton()Z|com.tumblr.ui.widget.splitnotescount.composable.LikeEngagement|Lapp/hushtumblr/extension/tumblr/ui/PostFooter;->hideCommunityReactions(Landroid/view/ViewGroup;)V
+mutation|reblogButton|footerButton|Lapp/hushtumblr/extension/tumblr/ui/PostFooter;->hideReblogButton()Z|com.tumblr.ui.widget.splitnotescount.composable.ReblogEngagement|none
+mutation|commentButton|footerButton|Lapp/hushtumblr/extension/tumblr/ui/PostFooter;->hideCommentButton()Z|com.tumblr.ui.widget.splitnotescount.composable.CommentEngagement|Lapp/hushtumblr/extension/tumblr/ui/PostFooter;->hideCommunityComments(Landroid/view/ViewGroup;)V
+mutation|shareButton|footerButton|Lapp/hushtumblr/extension/tumblr/ui/PostFooter;->hideShareButton()Z|com.tumblr.ui.widget.splitnotescount.composable.ShareEngagement|Lapp/hushtumblr/extension/tumblr/ui/PostFooter;->hideCommunityShare(Landroid/view/ViewGroup;)V
+mutation|saveButton|footerButton|Lapp/hushtumblr/extension/tumblr/ui/PostFooter;->hideSaveButton()Z|com.tumblr.ui.widget.splitnotescount.composable.SaveEngagement|none
+# The tags row's question, Tumblr TV's tag hook, the tags row, Tumblr TV's post text and the tag model.
+mutation|postTags|postTags|Lapp/hushtumblr/extension/tumblr/ui/PostParts;->hideTags()Z|Lapp/hushtumblr/extension/tumblr/ui/PostParts;->tvTags(Ljava/lang/String;)Ljava/lang/String;|Lcom/tumblr/ui/widget/PostCardWrappedTags;|Lcom/tumblr/videohub/view/VideoHubPostCardText;|Lcom/tumblr/rumblr/model/blog/TagV2;
+# The count formatter's, community comment text's, bolded count's, notes title's and reaction text's hooks.
+mutation|noteCounts|noteCounts|Lapp/hushtumblr/extension/tumblr/ui/PostFooter;->noteCount(I)I|Lapp/hushtumblr/extension/tumblr/ui/PostFooter;->communityCommentsText(Ljava/lang/String;)Ljava/lang/String;|Lapp/hushtumblr/extension/tumblr/ui/PostFooter;->textCount(Ljava/lang/String;)Ljava/lang/String;|Lapp/hushtumblr/extension/tumblr/ui/PostFooter;->notesTitle(Ljava/lang/String;)Ljava/lang/String;|Lapp/hushtumblr/extension/tumblr/ui/PostFooter;->communityReactionsText(Ljava/lang/String;I)Ljava/lang/String;
+# The badge hook and the view id only the bottom bar looks up.
+mutation|unreadDots|unreadDots|Lapp/hushtumblr/extension/tumblr/ui/BottomBar;->unreadBadge(Landroid/widget/TextView;)Landroid/widget/TextView;|Lcom/tumblr/R$id;->dashboard_badge
+mutation|exploreTab,notificationsTab,tabOrder|bottomBarTabs|Lapp/hushtumblr/extension/tumblr/ui/BottomBarTabs;->arrangeTabs(Ljava/util/List;)V|Lapp/hushtumblr/extension/tumblr/ui/BottomBarTabs;->arrangeBar(Landroid/view/ViewGroup;)V|Lcom/tumblr/R$id;->dashboard_badge
+# The activity and Compose theme hooks, and the card surface attribute only the Compose colors read.
+mutation|themeBackground|darkBackground|Lapp/hushtumblr/extension/tumblr/ui/DarkBackground;->onActivityTheme(Landroid/app/Activity;)V|Lapp/hushtumblr/extension/tumblr/ui/DarkBackground;->onComposeTheme(Landroid/content/res/Resources$Theme;)V|Lcom/tumblr/themes/R$attr;->themeMainContentBackgroundColor
+# The diamond's question, the TumblrMart button hook, the two search bar room hooks and the
+# preference only the diamond's class names.
+mutation|premiumDiamond,tumblrMartButtons|storeButtons|Lapp/hushtumblr/extension/tumblr/ui/StoreButtons;->hideDiamond(Landroid/view/View;Landroid/view/View;)Z|Lapp/hushtumblr/extension/tumblr/ui/StoreButtons;->hideTumblrMart(Landroid/view/View;)V|Lapp/hushtumblr/extension/tumblr/ui/StoreButtons;->tumblrMartRoom(I)I|Lapp/hushtumblr/extension/tumblr/ui/StoreButtons;->diamondRoom(I)I|arg_has_clicked_on_premium_diamond

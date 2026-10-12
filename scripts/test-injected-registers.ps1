@@ -627,10 +627,29 @@ try {
         ("The contract file holds rules this suite builds no bad fixtures for:`n$($otherRules -join "`n")")
     $families = @(Get-Content -LiteralPath $featureContracts | Where-Object { $_.StartsWith('family|') } |
         ForEach-Object { $values = $_ -split '\|'; [pscustomobject]@{ Flag = $values[1]; Name = $values[2]; Caps = @($values[3] -split ',' | Where-Object { $_ }) } })
-    Assert-True ($families.Count -eq 5) 'Every one of the 5 installed families needs a compiled contract.'
-    # A manifest-only family declares no capability and is the only kind that may.
-    $manifestOnly = @($families | Where-Object { $_.Caps.Count -eq 0 } | ForEach-Object { $_.Flag })
-    Assert-True (($manifestOnly -join ',') -ceq 'disableAnalytics,removeAdTrackingPermissions,spoofSignature') "Only Disable analytics, Remove ad tracking permissions and Spoof signature for Google sign-in change no bytecode, not: $($manifestOnly -join ', ')"
+    # Every public patch but the settings one is a family, read from the bundle's patch list.
+    $publicNames = @((Get-Content -LiteralPath (Join-Path $Root 'patches-list.json') -Raw | ConvertFrom-Json).patches |
+        ForEach-Object { $_.name } | Where-Object { $_ -ne 'HushTumblr settings' } | Sort-Object)
+    $familyNames = @($families | ForEach-Object { $_.Name } | Sort-Object)
+    Assert-True (($familyNames -join "`n") -ceq ($publicNames -join "`n")) `
+        "The contract file's families and the public patches differ.`nContracts:`n$($familyNames -join "`n")`nPatches:`n$($publicNames -join "`n")"
+    # Each family's capabilities are the ones its patch turns on next to its installed flag, so a
+    # manifest-only family (no capability) is one whose patch turns none on.
+    $sourceCaps = @{}
+    foreach ($file in Get-ChildItem -LiteralPath (Join-Path $Root 'patches/src/main/kotlin') -Recurse -Filter '*.kt') {
+        $text = [IO.File]::ReadAllText($file.FullName)
+        $status = [regex]::Match($text, 'enableStatus\("([A-Za-z0-9]+)"\)')
+        if (-not $status.Success) { continue }
+        Assert-True (-not $sourceCaps.ContainsKey($status.Groups[1].Value)) "Two patch sources turn on $($status.Groups[1].Value)."
+        $sourceCaps[$status.Groups[1].Value] = @([regex]::Matches($text, 'enableCapability\("([A-Za-z0-9]+)"\)') |
+            ForEach-Object { $_.Groups[1].Value } | Sort-Object)
+    }
+    foreach ($family in $families) {
+        Assert-True $sourceCaps.ContainsKey($family.Flag) "No patch source turns on the installed flag $($family.Flag)."
+        Assert-True ((@($family.Caps | Sort-Object) -join ',') -ceq ($sourceCaps[$family.Flag] -join ',')) `
+            "$($family.Name) declares capabilities $($family.Caps -join ',') but its patch turns on $($sourceCaps[$family.Flag] -join ',')."
+    }
+    Assert-True ($sourceCaps.Count -eq $families.Count) 'A patch source turns on an installed flag the contract file has no family for.'
     $declaredFlags = @($families | ForEach-Object { $_.Flag; $_.Caps } | Sort-Object)
     $statusSource = Join-Path $Root 'extensions/tumblr/src/main/java/app/hushtumblr/extension/tumblr/settings/SettingsStatus.java'
     $sourceFlags = @([regex]::Matches([IO.File]::ReadAllText($statusSource), 'public static boolean ([A-Za-z0-9]+)\(\)') |

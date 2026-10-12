@@ -273,7 +273,12 @@ public class DexDiff {
             "once-call", "once-call <method reference>");
 
     private static final Map<String, Integer> MUTATION_COLUMNS = Map.ofEntries(
-            Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1));
+            Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1),
+            Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 4),
+            Map.entry("timelineCarousel", 3), Map.entry("postBridge", 3), Map.entry("reviewPrompt", 3),
+            Map.entry("followButton", 3), Map.entry("footerButton", 3), Map.entry("postTags", 5),
+            Map.entry("noteCounts", 5), Map.entry("unreadDots", 2), Map.entry("bottomBarTabs", 3),
+            Map.entry("darkBackground", 3), Map.entry("storeButtons", 5));
 
     /**
      * A start-call, next-call, sole-call or once-call line: its method reference, the next-call's
@@ -2495,9 +2500,22 @@ public class DexDiff {
             flags.put(name, value == 1);
         }
 
+        /** The settings patch is in every build, and a shared hook is wanted by any family that uses it. */
         boolean active(Contract rule) {
+            if (rule.callee.equals("settings")) return true;
             for (String cap : rule.callee.split(",")) if (flag(owners.get(cap))) return true;
-            return rule.target.equals("settings");
+            for (String user : users(rule)) if (flag(user)) return true;
+            return false;
+        }
+
+        /**
+         * Families that need a shared hook without owning one of its capabilities, the rule's last
+         * column: Hide ads asks the feature switch hook too, and the card and post families the
+         * timeline list hook, each owning only the capability of its own bridge.
+         */
+        static List<String> users(Contract rule) {
+            return rule.target.equals("featureSwitch") || rule.target.equals("timelineList")
+                    ? List.of(rule.strings.get(rule.strings.size() - 1).split(",")) : List.of();
         }
 
         void capability(String names, boolean available) {
@@ -2513,7 +2531,7 @@ public class DexDiff {
             if (sites.size() != count) fail(hook + " has " + sites.size() + " calls in " + m + ", expected " + count);
             BitSet reached = flow(m).reachable(0, true);
             for (int at : sites) {
-                claimed.add(m + "@" + at);
+                if (claimed.add(m + "@" + at)) hookSites.add(new FeatureSite(m, at));
                 if (!reached.get(at)) fail(hook + " is unreachable in " + m);
                 Instruction i = instructions(m).get(at);
                 if (i.getOpcode() != Opcode.INVOKE_STATIC && i.getOpcode() != Opcode.INVOKE_STATIC_RANGE)
@@ -2589,6 +2607,7 @@ public class DexDiff {
                     int at = sites.get(i);
                     Instruction was = instructions(old).get(originals.get(i));
                     if (!arguments(body.get(at)).equals(arguments(was))) fail(hook + " changed receiver or argument registers in " + m);
+                    else vouch(m, at, arguments(was));
                     edits.computeIfAbsent(m.toString(), k -> new FeatureEdits()).replacements.put(at, was);
                 }
             }
@@ -2635,6 +2654,7 @@ public class DexDiff {
                         fail(hook + " does not filter the answer before every return in " + m); all = false; continue;
                     }
                     remove(m, at, at + 2);
+                    vouch(m, at, List.of(register));
                 }
             }
             capability(c.callee, all);
@@ -2681,7 +2701,7 @@ public class DexDiff {
                             && arguments(body.get(at + 2)).equals(write)
                             && onlyFrom(m, at, at - 1) && onlyFrom(m, at + 1, at) && onlyFrom(m, at + 2, at + 1);
                     if (!shaped) fail(hook + " doesn't take the certificate header's fingerprint between its answer and its write in " + m);
-                    else { remove(m, at, at + 2); found = true; }
+                    else { remove(m, at, at + 2); vouch(m, at, List.of(write.get(0), write.get(2))); found = true; }
                 }
             }
             capability(c.callee, found);
@@ -2699,15 +2719,22 @@ public class DexDiff {
             Method app = actual(inherited(c.strings.get(0), "onCreate", "()V"));
             if (app != null) {
                 prefix(app, "Lapp/hushtumblr/extension/shared/Utils;->setContext(Landroid/content/Context;)V", List.of(parameter(app, -1)), false);
-                int count = 0;
                 Method old = clean.methods.get(app.toString());
-                for (Instruction i : instructions(old)) if (i.getOpcode() == Opcode.RETURN_VOID) count++;
-                if (count == 0) fail("settings application lifecycle has no original return");
-                for (int at : calls(app, entry + "->onApplicationCreate(Landroid/content/Context;)V", count)) {
+                List<Integer> returns = new ArrayList<>();
+                List<Instruction> was = instructions(old);
+                for (int at = 0; at < was.size(); at++) if (was.get(at).getOpcode() == Opcode.RETURN_VOID) returns.add(at);
+                if (returns.isEmpty()) fail("settings application lifecycle has no original return");
+                // It names no register: by its returns R8 has reused p0 (a String in 46.5.0.109), and
+                // ART refused the whole application class when it handed that on as the Context.
+                String hook = entry + "->onApplicationCreate()V";
+                List<Integer> sites = calls(app, hook, returns.size());
+                for (int k = 0; k < sites.size(); k++) {
+                    int at = sites.get(k);
                     List<Instruction> body = instructions(app);
                     if (at + 1 >= body.size() || body.get(at + 1).getOpcode() != Opcode.RETURN_VOID
-                            || !arguments(body.get(at)).equals(List.of(parameter(app, -1)))) fail("settings application hook is not before its original return");
+                            || !arguments(body.get(at)).isEmpty()) fail("settings application hook is not before its original return");
                     remove(app, at, at + 1);
+                    if (k < returns.size()) anchor(app, at, returns.get(k), hook);
                 }
             }
             Method create = actual(inherited(c.strings.get(1), "onCreate", "(Landroid/os/Bundle;)V"));
@@ -2729,6 +2756,996 @@ public class DexDiff {
                 String answer = name.equals("pushDynamicShortcut") || name.equals("removeAllDynamicShortcuts") ? "V" : "Z";
                 replacement(manager + "->" + name + "(" + parameters + ")" + answer, entry + "->" + name + "(" + manager + parameters + ")" + answer, null, true);
             }
+        }
+
+        // Each family selector below finds its clean targets the way its patch does, checks the
+        // injected code at the place the patch puts it, and vouches for the registers a hook reads
+        // there when the clean code shows what they hold. The run checks the places and registers
+        // once every rule has marked its own instructions.
+
+        record Anchor(Method method, int at, int clean, String what) {}
+        final List<Anchor> anchors = new ArrayList<>();
+        final List<FeatureSite> hookSites = new ArrayList<>();
+        final Map<String, Set<Integer>> vouched = new HashMap<>();
+
+        /** What follows a question's `if-eqz`, from [from], before the original instruction it skips to. */
+        interface Tail { boolean matches(List<Instruction> body, int from); }
+        static final Tail RETURN_NOTHING = (body, from) -> body.get(from).getOpcode() == Opcode.RETURN_VOID;
+        static final Set<String> OBJECT_METHODS = Set.of("hashCode", "equals", "toString", "getClass");
+        static final String VIEW_IDS = "Lcom/tumblr/R$id;";
+        static final String FOOTER_CONTROLS = "com.tumblr.ui.widget.splitnotescount.composable.";
+        static final String COMMUNITY_FOOTER = "Lcom/tumblr/ui/widget/CommunityPostCardFooter;";
+        static final String COMMENTS_NOTE = "com.tumblr.ui.widget.postcontrol.rememberFormattedComments (";
+        static final String REACTION_CONTROL = "Lcom/tumblr/ui/widget/postcontrol/CommunitiesReactionControl;";
+        static final Set<String> TUMBLRMART_IDS = Set.of("tumblrmart_button_top_bar", "tumblr_mart_icon");
+        static final String ROW_ICONS = "Lcom/tumblr/compose/ds/icons/outline/";
+        static final String STRING_TYPE = "Ljava/lang/String;";
+
+        static boolean isStatic(Method m) { return AccessFlags.STATIC.isSet(m.getAccessFlags()); }
+
+        static Instruction get(List<Instruction> body, int at) { return at >= 0 && at < body.size() ? body.get(at) : null; }
+
+        static MethodReference called(Instruction i) {
+            return i != null && i.getOpcode().name.startsWith("invoke") && reference(i) instanceof MethodReference r ? r : null;
+        }
+
+        static FieldReference field(Instruction i) { return i != null && reference(i) instanceof FieldReference f ? f : null; }
+
+        /** Whether [f] is `Lclass;->name`, as a rule names a field. */
+        static boolean names(FieldReference f, String field) { return f != null && field.equals(f.getDefiningClass() + "->" + f.getName()); }
+
+        static boolean isCall(Instruction i, String owner, String name, String shape) {
+            MethodReference r = called(i);
+            return r != null && r.getDefiningClass().equals(owner) && r.getName().equals(name) && descriptor(r).equals(shape);
+        }
+
+        static boolean movesTo(Instruction i, int register, Opcode opcode) {
+            return i != null && i.getOpcode() == opcode && firstRegister(i) == register;
+        }
+
+        static boolean writes(Instruction i, int register) {
+            if (!i.getOpcode().setsRegister() || !(i instanceof OneRegisterInstruction)) return false;
+            int destination = ((OneRegisterInstruction) i).getRegisterA();
+            return destination == register || i.getOpcode().setsWideRegister() && destination + 1 == register;
+        }
+
+        static boolean writtenBetween(List<Instruction> body, int from, int end, int register) {
+            for (int k = Math.max(0, from); k < Math.min(end, body.size()); k++) if (writes(body.get(k), register)) return true;
+            return false;
+        }
+
+        /** Whether [i] names [register] at all, as a source or a destination. */
+        static boolean namesRegister(Instruction i, int register) {
+            if (i instanceof FiveRegisterInstruction || i instanceof RegisterRangeInstruction) return arguments(i).contains(register);
+            if (i instanceof ThreeRegisterInstruction t && (t.getRegisterB() == register || t.getRegisterC() == register)) return true;
+            if (i instanceof TwoRegisterInstruction t && t.getRegisterB() == register) return true;
+            return i instanceof OneRegisterInstruction o && o.getRegisterA() == register;
+        }
+
+        static int firstIndex(List<Instruction> body, int from, java.util.function.Predicate<Instruction> test) {
+            if (from < 0) return -1;
+            for (int k = from; k < body.size(); k++) if (test.test(body.get(k))) return k;
+            return -1;
+        }
+
+        static boolean plural(Instruction i, String name) {
+            FieldReference f = field(i);
+            return i.getOpcode() == Opcode.SGET && f != null && f.getName().equals(name) && f.getDefiningClass().endsWith("R$plurals;");
+        }
+
+        /** The index a branch at [at] lands on, or -1. */
+        static int target(Method m, int at) {
+            Layout layout = new Layout(m.getImplementation());
+            Instruction i = get(layout.instructions, at);
+            if (!(i instanceof OffsetInstruction)) return -1;
+            return layout.addresses.indexOf(layout.addresses.get(at) + ((OffsetInstruction) i).getCodeOffset());
+        }
+
+        void anchor(Method m, int at, int cleanAt, String what) { if (m != null) anchors.add(new Anchor(m, at, cleanAt, what)); }
+
+        void vouch(Method m, int at, List<Integer> registers) {
+            if (m != null) vouched.computeIfAbsent(m + "@" + at, k -> new HashSet<>()).addAll(registers);
+        }
+
+        /**
+         * Fails unless the clean instruction [at] is reached only by falling through from the one
+         * before. dexlib2 keeps a label on the instruction it was on, so a hook put in front of a
+         * jump target is skipped on every path that jumps there.
+         */
+        void fallthroughOnly(Method old, int at, String what) {
+            FeatureFlow graph = new FeatureFlow(old);
+            boolean only = at > 0 && at < graph.normal.size() && graph.normal.get(at - 1).contains(at);
+            for (int k = 0; only && k < graph.normal.size(); k++)
+                if (k != at - 1 && graph.normal.get(k).contains(at) || graph.handlers.get(k).contains(at)) only = false;
+            if (!only) fail(what + " sits where Tumblr's own code can jump past it in " + old);
+        }
+
+        /** All of Tumblr's methods with a body. */
+        List<Method> tumblrMethods() {
+            List<Method> out = new ArrayList<>();
+            for (Method m : clean.methods.values()) if (!m.getDefiningClass().startsWith(OWN) && m.getImplementation() != null) out.add(m);
+            return out;
+        }
+
+        /** The classes with a method whose instructions match [test]. */
+        List<ClassDef> classesWith(java.util.function.Predicate<Instruction> test) {
+            List<ClassDef> out = new ArrayList<>();
+            for (ClassDef cd : clean.classes.values()) {
+                if (cd.getType().startsWith(OWN)) continue;
+                boolean found = false;
+                for (Method m : cd.getMethods()) if (!found && m.getImplementation() != null)
+                    for (Instruction i : m.getImplementation().getInstructions()) if (test.test(i)) { found = true; break; }
+                if (found) out.add(cd);
+            }
+            return out;
+        }
+
+        /**
+         * [hook] called once in [m], on [args], in front of what was instruction [cleanAt] of [old],
+         * with its answer moved back into [result] unless that's -1. Marks it injected, checks its
+         * place after every rule has run, and vouches for [checked], the arguments the clean code
+         * shows hold what the hook takes there. True when it's there and shaped so.
+         */
+        boolean hookAt(Method old, Method m, int cleanAt, String hook, List<Integer> args, int result, List<Integer> checked) {
+            List<Integer> sites = calls(m, hook, 1);
+            if (m == null || sites.size() != 1) return false;
+            int at = sites.get(0);
+            List<Instruction> body = instructions(m);
+            String answer = ((MethodReference) reference(body.get(at))).getReturnType();
+            Opcode move = answer.startsWith("L") || answer.startsWith("[") ? Opcode.MOVE_RESULT_OBJECT : Opcode.MOVE_RESULT;
+            if (!arguments(body.get(at)).equals(args) || result >= 0 && !movesTo(get(body, at + 1), result, move)) {
+                fail(hook + " doesn't take what its rule hands it in " + m);
+                return false;
+            }
+            remove(m, at, at + (result < 0 ? 1 : 2));
+            anchor(m, at, cleanAt, hook);
+            if (cleanAt > 0) fallthroughOnly(old, cleanAt, hook);
+            vouch(m, at, checked);
+            return true;
+        }
+
+        /**
+         * A question at [at]: `invoke-static {args} hook`, its answer moved into a local, `if-eqz` on
+         * it to the original instruction past [size] more that [tail] accepts. That original
+         * instruction's index, or -1.
+         */
+        int guard(Method m, int at, String hook, List<Integer> args, int size, Tail tail) {
+            List<Instruction> body = instructions(m);
+            Instruction answer = get(body, at + 1), test = get(body, at + 2);
+            int keep = at + 3 + size;
+            if (!String.valueOf(reference(get(body, at))).equals(hook) || !arguments(body.get(at)).equals(args)
+                    || answer == null || answer.getOpcode() != Opcode.MOVE_RESULT || firstRegister(answer) >= parameter(m, -1)
+                    || test == null || test.getOpcode() != Opcode.IF_EQZ || firstRegister(test) != firstRegister(answer)
+                    || target(m, at + 2) != keep || keep >= body.size() || !tail.matches(body, at + 3)) return -1;
+            return keep;
+        }
+
+        /** [hook] asked first thing in [old]'s patched copy, the method's own code run when it answers false. */
+        boolean guardFirst(Method old, String hook, List<Integer> args, int size, Tail tail) {
+            Method m = actual(old);
+            List<Integer> sites = calls(m, hook, 1);
+            if (m == null || sites.size() != 1) return false;
+            int keep = sites.get(0) == 0 ? guard(m, 0, hook, args, size, tail) : -1;
+            if (keep < 0) {
+                fail(hook + " isn't asked first thing in " + m + ", with Tumblr's own code run when it answers false");
+                return false;
+            }
+            remove(m, 0, keep);
+            return true;
+        }
+
+        /**
+         * Every register a hook reads holds what the hook takes: one its rule vouched for, or a
+         * parameter nothing has written over by then, of a type the hook takes. R8 reuses a
+         * parameter's register once the method is done with it, so a hook naming pN further down
+         * can be handed whatever went there instead: Tumblr's application start hook got a String
+         * for its Context, and ART refused the whole class at launch.
+         */
+        void hookRegisters(FeatureSite site) {
+            Method m = site.method;
+            Instruction call = instructions(m).get(site.at);
+            MethodReference hook = (MethodReference) reference(call);
+            Set<Integer> checked = vouched.getOrDefault(site.key(), Set.of());
+            List<Integer> args = arguments(call);
+            int first = parameter(m, -1);
+            Map<Integer, String> declared = new HashMap<>();
+            int register = first;
+            if (!isStatic(m)) declared.put(register++, m.getDefiningClass());
+            for (CharSequence p : m.getParameterTypes()) { declared.put(register, p.toString()); register += slots(p); }
+            int slot = 0;
+            for (CharSequence type : hook.getParameterTypes()) {
+                if (slot >= args.size()) break;
+                int read = args.get(slot);
+                slot += slots(type);
+                if (checked.contains(read)) continue;
+                String held = declared.get(read);
+                if (held == null) fail(hook + " reads v" + read + " in " + m + ", a local no rule shows holds what it takes");
+                else if (overwritten(m, read, site.at)) fail(hook + " reads p" + (read - first) + " in " + m
+                        + " where an instruction that writes over that parameter can run first");
+                else if (!assignable(held, type.toString())) fail(hook + " takes " + type + " but reads p" + (read - first)
+                        + ", a " + held + ", in " + m);
+            }
+        }
+
+        /** Whether a write to [register] can run before instruction [at], along any branch or handler. */
+        boolean overwritten(Method m, int register, int at) {
+            FeatureFlow graph = flow(m);
+            List<Instruction> body = instructions(m);
+            BitSet reached = new BitSet();
+            Deque<Integer> work = new ArrayDeque<>();
+            for (int k = 0; k < body.size(); k++) if (writes(body.get(k), register)) work.addAll(graph.normal.get(k));
+            while (!work.isEmpty()) {
+                int k = work.poll();
+                if (reached.get(k)) continue;
+                reached.set(k);
+                work.addAll(graph.normal.get(k));
+                work.addAll(graph.handlers.get(k));
+            }
+            return reached.get(at);
+        }
+
+        /**
+         * Whether a value of type [held] fits a parameter of type [wanted]. Classes outside the APK
+         * can't be followed, so a chain that leaves it doesn't refute; java.lang's final value types
+         * are known.
+         */
+        boolean assignable(String held, String wanted) {
+            if (held.equals(wanted)) return true;
+            boolean heldObject = held.startsWith("L") || held.startsWith("["), wantedObject = wanted.startsWith("L") || wanted.startsWith("[");
+            if (heldObject != wantedObject) return false;
+            if (!heldObject) return "ZBSCI".contains(held) && "ZBSCI".contains(wanted);
+            if (wanted.equals("Ljava/lang/Object;")) return true;
+            Map<String, Set<String>> finals = Map.of(STRING_TYPE, Set.of("Ljava/lang/CharSequence;", "Ljava/io/Serializable;", "Ljava/lang/Comparable;"),
+                    "Ljava/lang/Integer;", Set.of("Ljava/lang/Number;", "Ljava/io/Serializable;", "Ljava/lang/Comparable;"),
+                    "Ljava/lang/Boolean;", Set.of("Ljava/io/Serializable;", "Ljava/lang/Comparable;"));
+            Deque<String> work = new ArrayDeque<>(List.of(held));
+            Set<String> seen = new HashSet<>();
+            boolean unknown = false;
+            while (!work.isEmpty()) {
+                String type = work.poll();
+                if (!seen.add(type) || type.equals("Ljava/lang/Object;")) continue;
+                if (type.equals(wanted)) return true;
+                if (finals.containsKey(type)) { if (finals.get(type).contains(wanted)) return true; continue; }
+                ClassDef cd = patched.classes.get(type);
+                if (cd == null) { unknown = true; continue; }
+                if (cd.getSuperclass() != null) work.add(cd.getSuperclass());
+                work.addAll(cd.getInterfaces());
+            }
+            return unknown;
+        }
+
+        /**
+         * The HushTumblr row at the end of Tumblr's Settings screen: the rows' builder, the key the
+         * screen's list holds a row by, the tap on a row, and the title stub. The settings patch
+         * leaves the row out with a warning when Tumblr's screen changed shape, so a clean target
+         * that doesn't resolve asks for nothing here, and any of the row's calls left in fails as
+         * unclaimed.
+         */
+        void settingsRow(Contract c) {
+            String hub = c.strings.get(0), title = c.strings.get(1), owner = c.strings.get(2);
+            List<Method> methods = new ArrayList<>();
+            for (Method m : clean.methods.values()) if (m.getDefiningClass().startsWith(hub) && m.getImplementation() != null) methods.add(m);
+            List<Method> builders = new ArrayList<>();
+            for (Method m : methods) if (!isStatic(m) && descriptor(m).equals("()Ljava/util/List;")
+                    && instructions(m).stream().anyMatch(i -> i.getOpcode() == Opcode.SGET && names(field(i), title))) builders.add(m);
+            if (builders.size() != 1) return;
+            Method builder = builders.get(0);
+            List<Instruction> was = instructions(builder);
+            int size = was.size();
+            String rowType = null;
+            for (Instruction i : was) if (i.getOpcode() == Opcode.NEW_INSTANCE) { rowType = String.valueOf(reference(i)); break; }
+            ClassDef rowClass = rowType == null ? null : clean.classes.get(rowType);
+            if (rowClass == null || size < 3) return;
+            List<Method> constructors = new ArrayList<>(), titles = new ArrayList<>(), kinds = new ArrayList<>();
+            for (Method m : rowClass.getMethods()) if (m.getName().equals("<init>") && m.getParameterTypes().size() == 4
+                    && m.getParameterTypes().get(1).toString().equals("I") && m.getParameterTypes().get(3).toString().equals("Ljava/lang/Integer;")) constructors.add(m);
+            if (constructors.size() != 1) return;
+            Method constructor = constructors.get(0);
+            String kindType = constructor.getParameterTypes().get(0).toString(), iconType = constructor.getParameterTypes().get(2).toString();
+            for (Method m : rowClass.getMethods()) if (!isStatic(m)) {
+                if (!m.getName().equals("hashCode") && descriptor(m).equals("()I")) titles.add(m);
+                if (descriptor(m).equals("()" + kindType)) kinds.add(m);
+            }
+            Instruction handBack = was.get(size - 3);
+            if (titles.size() != 1 || kinds.size() != 1 || handBack.getOpcode() != Opcode.INVOKE_STATIC || called(handBack) == null
+                    || !descriptor(called(handBack)).equals("(Ljava/util/List;)Ljava/util/List;") || arguments(handBack).size() != 1
+                    || was.get(size - 2).getOpcode() != Opcode.MOVE_RESULT_OBJECT || was.get(size - 1).getOpcode() != Opcode.RETURN_OBJECT) return;
+            String kindGetter = kinds.get(0).toString();
+            List<Method> keys = new ArrayList<>(), clicks = new ArrayList<>();
+            for (Method m : methods) if (instructions(m).stream().anyMatch(i -> String.valueOf(reference(i)).equals(kindGetter))) {
+                if (isStatic(m) && descriptor(m).equals("(" + rowType + ")Ljava/lang/Object;")) keys.add(m);
+                if (!isStatic(m) && descriptor(m).equals("()V")) clicks.add(m);
+            }
+            if (keys.size() != 1 || clicks.size() != 1) return;
+            String keyFunction = keys.get(0).toString();
+            List<Method> keyCallers = new ArrayList<>();
+            for (Method m : methods) if (instructions(m).stream().anyMatch(i -> String.valueOf(reference(i)).equals(keyFunction))) keyCallers.add(m);
+            if (keyCallers.size() != 1) return;
+            Method keyCaller = keyCallers.get(0), click = clicks.get(0);
+            List<Instruction> keyBody = instructions(keyCaller);
+            int keyCall = firstIndex(keyBody, 0, i -> String.valueOf(reference(i)).equals(keyFunction));
+            Instruction keyResult = get(keyBody, keyCall + 1), keyReturn = get(keyBody, keyCall + 2);
+            if (keyResult == null || keyResult.getOpcode() != Opcode.MOVE_RESULT_OBJECT || keyReturn == null
+                    || keyReturn.getOpcode() != Opcode.RETURN_OBJECT || firstRegister(keyReturn) != firstRegister(keyResult)) return;
+            List<String> rowFields = new ArrayList<>();
+            ClassDef clicker = clean.classes.get(click.getDefiningClass());
+            if (clicker != null) for (Field f : clicker.getFields()) if (!AccessFlags.STATIC.isSet(f.getAccessFlags()) && f.getType().equals(rowType))
+                rowFields.add(f.getDefiningClass() + "->" + f.getName() + ":" + f.getType());
+            if (rowFields.size() != 1) return;
+
+            // The row, added in front of the rows' hand-back when titleRes answers a title.
+            String titleRes = owner + "->titleRes()I";
+            Method m = actual(builder);
+            List<Integer> sites = calls(m, titleRes, 1);
+            if (m != null && sites.size() == 1) {
+                List<Instruction> body = instructions(m);
+                int at = sites.get(0), list = arguments(handBack).get(0), locals = parameter(m, -1);
+                Set<String> read = new HashSet<>();
+                for (Instruction i : was) if (i.getOpcode() == Opcode.SGET_OBJECT) read.add(String.valueOf(reference(i)));
+                boolean shaped = at + 11 < body.size() && arguments(body.get(at)).isEmpty();
+                int vt = shaped ? firstRegister(body.get(at + 1)) : -1, vk = -1, vi = -1, vn = -1, vr = -1;
+                if (shaped) {
+                    Instruction kind = body.get(at + 3), receiver = body.get(at + 4), icon = body.get(at + 5), none = body.get(at + 7), made = body.get(at + 8);
+                    vk = firstRegister(kind); vi = firstRegister(receiver); vn = firstRegister(none); vr = firstRegister(made);
+                    MethodReference getter = called(icon);
+                    shaped = body.get(at + 1).getOpcode() == Opcode.MOVE_RESULT && body.get(at + 2).getOpcode() == Opcode.IF_EQZ
+                            && firstRegister(body.get(at + 2)) == vt && target(m, at + 2) == at + 11
+                            && kind.getOpcode() == Opcode.SGET_OBJECT && field(kind).getType().equals(kindType) && read.contains(String.valueOf(reference(kind)))
+                            && receiver.getOpcode() == Opcode.SGET_OBJECT && read.contains(String.valueOf(reference(receiver)))
+                            && icon.getOpcode() == Opcode.INVOKE_STATIC && getter != null && getter.getDefiningClass().startsWith(ROW_ICONS)
+                            && descriptor(getter).equals("(" + field(receiver).getType() + ")" + iconType) && arguments(icon).equals(List.of(vi))
+                            && movesTo(body.get(at + 6), vi, Opcode.MOVE_RESULT_OBJECT)
+                            && none.getOpcode() == Opcode.CONST_4 && ((NarrowLiteralInstruction) none).getNarrowLiteral() == 0
+                            && made.getOpcode() == Opcode.NEW_INSTANCE && String.valueOf(reference(made)).equals(rowType)
+                            && body.get(at + 9).getOpcode() == Opcode.INVOKE_DIRECT && String.valueOf(reference(body.get(at + 9))).equals(constructor.toString())
+                            && arguments(body.get(at + 9)).equals(List.of(vr, vk, vt, vi, vn))
+                            && body.get(at + 10).getOpcode() == Opcode.INVOKE_INTERFACE
+                            && String.valueOf(reference(body.get(at + 10))).equals("Ljava/util/List;->add(Ljava/lang/Object;)Z")
+                            && arguments(body.get(at + 10)).equals(List.of(list, vr))
+                            && new HashSet<>(List.of(vt, vk, vi, vn, vr, list)).size() == 6
+                            && List.of(vt, vk, vi, vn, vr).stream().allMatch(r -> r < locals);
+                }
+                if (!shaped) fail("the HushTumblr row isn't added to Tumblr's Settings rows in front of their hand-back in " + m);
+                else {
+                    remove(m, at, at + 11);
+                    anchor(m, at, size - 3, titleRes);
+                    fallthroughOnly(builder, size - 3, titleRes);
+                }
+            }
+            // Its key, through rowKey right after Tumblr works one out.
+            int keyRow = arguments(keyBody.get(keyCall)).get(0), keyAnswer = firstRegister(keyResult);
+            hookAt(keyCaller, actual(keyCaller), keyCall + 2, owner + "->rowKey(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
+                    List.of(keyRow, keyAnswer), keyAnswer, List.of(keyRow, keyAnswer));
+            // The tap, asking onClick with the tapped row first thing.
+            String onClick = owner + "->onClick(Ljava/lang/Object;)Z";
+            Method tap = actual(click);
+            List<Integer> taps = calls(tap, onClick, 1);
+            if (tap != null && taps.size() == 1) {
+                List<Instruction> body = instructions(tap);
+                Instruction row = body.get(0);
+                int held = row.getOpcode() == Opcode.IGET_OBJECT ? firstRegister(row) : -1;
+                int keep = taps.get(0) == 1 && held >= 0 && held < parameter(tap, -1) && ((TwoRegisterInstruction) row).getRegisterB() == parameter(tap, -1)
+                        && String.valueOf(reference(row)).equals(rowFields.get(0)) ? guard(tap, 1, onClick, List.of(held), 1, RETURN_NOTHING) : -1;
+                if (keep < 0) fail(onClick + " isn't asked first thing in " + tap + " with the tapped row");
+                else { remove(tap, 0, keep); vouch(tap, 1, List.of(held)); }
+            }
+            // The title stub, reading a row's title through its getter.
+            Method stub = null;
+            ClassDef rowHooks = patched.classes.get(owner);
+            if (rowHooks != null) for (Method s : rowHooks.getMethods()) if (s.getName().equals("titleOf") && isStatic(s)) stub = s;
+            List<Instruction> body = stub == null || stub.getImplementation() == null ? List.of() : instructions(stub);
+            int item = stub == null || stub.getParameterTypes().size() != 1 ? -1 : parameter(stub, 0);
+            if (body.size() != 4 || body.get(0).getOpcode() != Opcode.CHECK_CAST || firstRegister(body.get(0)) != item
+                    || !String.valueOf(reference(body.get(0))).equals(rowType) || body.get(1).getOpcode() != Opcode.INVOKE_VIRTUAL
+                    || !String.valueOf(reference(body.get(1))).equals(titles.get(0).toString()) || !arguments(body.get(1)).equals(List.of(item))
+                    || body.get(2).getOpcode() != Opcode.MOVE_RESULT || body.get(3).getOpcode() != Opcode.RETURN
+                    || firstRegister(body.get(3)) != firstRegister(body.get(2))) fail(owner + "->titleOf doesn't read a row's title through " + titles.get(0));
+        }
+
+        /**
+         * Tumblr's feature check: the one instance method of the feature enum's companion that takes
+         * a feature and its server value. Its one static (String, String, boolean) comparison's
+         * answer goes through the hook, with the feature, right after it's moved into its register.
+         */
+        void featureSwitch(Contract c) {
+            String hook = c.strings.get(0), enumText = c.strings.get(1);
+            List<ClassDef> enums = new ArrayList<>();
+            for (ClassDef cd : clean.classesHolding(enumText)) if ("Ljava/lang/Enum;".equals(cd.getSuperclass()))
+                for (Method m : cd.getMethods()) if (m.getName().equals("<clinit>") && clean.texts.get(m.toString()).contains(enumText)) { enums.add(cd); break; }
+            ClassDef feature = uniqueClass(enums, "Tumblr's feature enum");
+            ClassDef companion = uniqueClass(clean.classesHolding(c.strings.get(2)), "Tumblr's feature check");
+            boolean found = false;
+            if (feature != null && companion != null) {
+                List<Method> checks = new ArrayList<>();
+                for (Method m : companion.getMethods()) if (!isStatic(m) && m.getImplementation() != null
+                        && descriptor(m).equals("(" + feature.getType() + STRING_TYPE + ")Z")) checks.add(m);
+                Method old = unique(checks, "the feature check comparing a flag's server value");
+                if (old != null) {
+                    List<Instruction> was = instructions(old);
+                    List<Integer> compares = new ArrayList<>();
+                    for (int at = 0; at < was.size(); at++) if (was.get(at).getOpcode() == Opcode.INVOKE_STATIC && called(was.get(at)) != null
+                            && descriptor(called(was.get(at))).equals("(Ljava/lang/String;Ljava/lang/String;Z)Z")) compares.add(at);
+                    Instruction moved = compares.size() == 1 ? get(was, compares.get(0) + 1) : null;
+                    if (moved == null || moved.getOpcode() != Opcode.MOVE_RESULT) fail("the feature check has no one comparison taken into a register");
+                    else {
+                        int answer = firstRegister(moved);
+                        found = hookAt(old, actual(old), compares.get(0) + 2, hook, List.of(parameter(old, 0), answer), answer, List.of(answer));
+                    }
+                }
+            }
+            capability(c.callee, found);
+        }
+
+        /** Each timeline page constructor hands its items, its first parameter, through the hook first thing. */
+        void timelineList(Contract c) {
+            boolean found = true;
+            for (String key : c.strings.subList(1, 3)) {
+                Method old = clean.methods.get(key);
+                if (old == null || old.getImplementation() == null) { fail(key + " is absent from the clean target"); found = false; continue; }
+                int items = parameter(old, 0);
+                found &= hookAt(old, actual(old), 0, c.strings.get(0), List.of(items), items, List.of());
+            }
+            capability(c.callee, found);
+        }
+
+        /** The getter of model [type] that its Moshi adapter's toJson calls right after writing [key], or null. */
+        MethodReference adapterGetter(String type, String key) {
+            ClassDef adapter = clean.classes.get(type.substring(0, type.length() - 1) + "JsonAdapter;");
+            List<Method> writers = new ArrayList<>();
+            if (adapter != null) for (Method m : adapter.getMethods()) if (m.getName().equals("toJson") && m.getParameterTypes().size() == 2
+                    && m.getReturnType().equals("V") && m.getImplementation() != null) writers.add(m);
+            if (writers.size() != 1) { fail(type + " has no single Moshi adapter toJson"); return null; }
+            List<Instruction> body = instructions(writers.get(0));
+            int at = firstIndex(body, 0, i -> reference(i) instanceof StringReference s && s.getString().equals(key));
+            int call = firstIndex(body, at < 0 ? -1 : at + 1, i -> i.getOpcode() == Opcode.INVOKE_VIRTUAL && called(i).getDefiningClass().equals(type));
+            if (call < 0) { fail(type + "'s adapter calls no getter after \"" + key + "\""); return null; }
+            return called(body.get(call));
+        }
+
+        /** TimelineFilter.carouselItems, written to answer a carousel's items through the getter its adapter writes under the key. */
+        void timelineCarousel(Contract c) {
+            String carousel = c.strings.get(1);
+            MethodReference getter = adapterGetter(carousel, c.strings.get(2));
+            boolean found = false;
+            if (getter != null && !descriptor(getter).equals("()Ljava/util/List;")) fail(getter + " isn't a getter of a List");
+            else if (getter != null) {
+                Method stub = actual(c.strings.get(0));
+                if (stub != null) {
+                    List<Instruction> body = instructions(stub);
+                    int item = stub.getParameterTypes().size() == 1 ? parameter(stub, 0) : -1;
+                    found = isStatic(stub) && body.size() == 4 && body.get(0).getOpcode() == Opcode.CHECK_CAST && firstRegister(body.get(0)) == item
+                            && String.valueOf(reference(body.get(0))).equals(carousel) && body.get(1).getOpcode() == Opcode.INVOKE_VIRTUAL
+                            && String.valueOf(reference(body.get(1))).equals(getter.toString()) && arguments(body.get(1)).equals(List.of(item))
+                            && body.get(2).getOpcode() == Opcode.MOVE_RESULT_OBJECT && body.get(3).getOpcode() == Opcode.RETURN_OBJECT
+                            && firstRegister(body.get(3)) == firstRegister(body.get(2));
+                    if (!found) fail(stub + " doesn't answer a carousel's items through " + getter);
+                }
+            }
+            capability(c.callee, found);
+        }
+
+        /** Each model implements its extension interface, every method of it handing back the getter its adapter writes under its key. */
+        void postBridge(Contract c) {
+            boolean found = true;
+            for (String spec : c.strings) found &= bridge(spec);
+            capability(c.callee, found);
+        }
+
+        /** One `model>interface>method:key,method:key` bridge. */
+        boolean bridge(String spec) {
+            String[] parts = spec.split(">", -1);
+            if (parts.length != 3) { fail("malformed bridge " + spec); return false; }
+            String type = parts[0], face = parts[1];
+            ClassDef model = patched.classes.get(type), bridge = patched.classes.get(face);
+            if (model == null || clean.classes.get(type) == null || bridge == null || !AccessFlags.INTERFACE.isSet(bridge.getAccessFlags())
+                    || !model.getInterfaces().contains(face)) { fail(type + " doesn't implement " + face); return false; }
+            Map<String, String> keys = new LinkedHashMap<>();
+            for (String pair : parts[2].split(",")) { String[] named = pair.split(":", 2); keys.put(named[0], named.length == 2 ? named[1] : ""); }
+            boolean ok = true;
+            int declared = 0;
+            for (Method m : bridge.getMethods()) {
+                if (!AccessFlags.ABSTRACT.isSet(m.getAccessFlags())) continue;
+                declared++;
+                String key = keys.get(m.getName());
+                if (key == null || !m.getParameterTypes().isEmpty()) { fail(face + " declares " + m.getName() + ", which its rule gives no key"); ok = false; continue; }
+                MethodReference getter = adapterGetter(type, key);
+                if (getter == null) { ok = false; continue; }
+                Method own = clean.methods.get(getter.toString());
+                if (own == null || isStatic(own) || !AccessFlags.PUBLIC.isSet(own.getAccessFlags()) || OBJECT_METHODS.contains(getter.getName())
+                        || !descriptor(getter).equals("()" + m.getReturnType())) { fail(getter + " isn't a public getter of " + m.getReturnType()); ok = false; continue; }
+                String added = type + "->" + m.getName() + "()" + m.getReturnType();
+                Method call = clean.methods.containsKey(added) ? null : actual(added);
+                List<Instruction> body = call == null ? List.of() : instructions(call);
+                if (call == null || isStatic(call) || body.size() != 3 || body.get(0).getOpcode() != Opcode.INVOKE_VIRTUAL
+                        || !String.valueOf(reference(body.get(0))).equals(getter.toString()) || !arguments(body.get(0)).equals(List.of(parameter(call, -1)))
+                        || body.get(1).getOpcode() != Opcode.MOVE_RESULT_OBJECT || body.get(2).getOpcode() != Opcode.RETURN_OBJECT
+                        || firstRegister(body.get(2)) != firstRegister(body.get(1))) { fail(added + " doesn't hand back " + getter); ok = false; }
+            }
+            if (declared != keys.size()) { fail(face + " declares " + declared + " methods, its rule names " + keys.size()); ok = false; }
+            return ok;
+        }
+
+        /** The one instance method taking a Context that names the rating prompt and saves when it was shown, asking the hook first. */
+        void reviewPrompt(Contract c) {
+            String activity = c.strings.get(2);
+            List<Method> launchers = new ArrayList<>();
+            for (Method m : clean.holding(c.strings.get(1))) if (!isStatic(m) && descriptor(m).equals("(Landroid/content/Context;)V")
+                    && instructions(m).stream().anyMatch(i -> reference(i) instanceof TypeReference t && t.getType().equals(activity))) launchers.add(m);
+            Method old = unique(launchers, "the method that opens the rating prompt");
+            capability(c.callee, old != null && guardFirst(old, c.strings.get(0), List.of(), 1, RETURN_NOTHING));
+        }
+
+        /** The post header's Follow button check, which the header's Follow action test calls, answering yes first when asked. */
+        void followButton(Contract c) {
+            String header = c.strings.get(1);
+            ClassDef view = clean.classes.get(header);
+            Method old = null;
+            if (view == null) fail("Tumblr's " + header + " is absent");
+            else {
+                List<Method> tests = new ArrayList<>();
+                for (Method m : view.getMethods()) if (!isStatic(m) && m.getReturnType().equals("Z") && m.getImplementation() != null
+                        && instructions(m).stream().anyMatch(i -> i.getOpcode() == Opcode.SGET_OBJECT && names(field(i), c.strings.get(2)))) tests.add(m);
+                Method test = unique(tests, "the header's Follow action test");
+                if (test != null) {
+                    Set<String> checks = new TreeSet<>();
+                    for (Instruction i : instructions(test)) if (i.getOpcode() == Opcode.INVOKE_DIRECT && called(i).getDefiningClass().equals(header)
+                            && called(i).getReturnType().equals("Z") && called(i).getParameterTypes().size() == 2) checks.add(called(i).toString());
+                    List<Method> found = new ArrayList<>();
+                    for (String key : checks) found.add(clean.methods.get(key));
+                    found.removeIf(m -> m == null);
+                    old = checks.size() == 1 ? unique(found, "the header's Follow button check") : unique(List.of(), "the header's Follow button check");
+                }
+            }
+            Tail yes = (body, from) -> body.get(from).getOpcode() == Opcode.CONST_4 && ((NarrowLiteralInstruction) body.get(from)).getNarrowLiteral() == 1
+                    && body.get(from + 1).getOpcode() == Opcode.RETURN && firstRegister(body.get(from + 1)) == firstRegister(body.get(from));
+            capability(c.callee, old != null && guardFirst(old, c.strings.get(0), List.of(), 2, yes));
+        }
+
+        /** The footer function Compose names [control], found by its source note. */
+        Method footerControl(String control) {
+            String note = control + " (";
+            List<Method> found = new ArrayList<>();
+            for (Method m : tumblrMethods()) if (clean.texts.get(m.toString()).stream().anyMatch(t -> t.startsWith(note))) found.add(m);
+            return unique(found, "the footer's " + control);
+        }
+
+        /** A footer button asking its hook first, and on a community post the footer's bind handing it the footer before its return. */
+        void footerButton(Contract c) {
+            Method old = footerControl(c.strings.get(1));
+            boolean found = false;
+            if (old != null && (!isStatic(old) || !old.getReturnType().equals("V"))) fail("the footer's " + c.strings.get(1) + " isn't a static function returning nothing");
+            else if (old != null) found = guardFirst(old, c.strings.get(0), List.of(), 1, RETURN_NOTHING);
+            if (!c.strings.get(2).equals("none")) found &= communityFooter(c.strings.get(2));
+            capability(c.callee, found);
+        }
+
+        /** [hook] handed the community footer, `this`, in front of the one return of its bind. */
+        boolean communityFooter(String hook) {
+            ClassDef footer = clean.classes.get(COMMUNITY_FOOTER);
+            List<Method> binds = new ArrayList<>();
+            if (footer != null) for (Method m : footer.getMethods()) if (!isStatic(m) && m.getReturnType().equals("V") && m.getImplementation() != null
+                    && clean.texts.get(m.toString()).contains("footer_") && instructions(m).stream().anyMatch(i -> called(i) != null && called(i).getName().equals("setTag"))) binds.add(m);
+            Method old = unique(binds, "the method that binds a community post's footer");
+            if (old == null) return false;
+            List<Instruction> was = instructions(old);
+            int end = was.size() - 1;
+            if (end <= 0 || was.get(end).getOpcode() != Opcode.RETURN_VOID || was.stream().filter(i -> i.getOpcode() == Opcode.RETURN_VOID).count() != 1) {
+                fail("the community footer's bind doesn't end in its one return");
+                return false;
+            }
+            return hookAt(old, actual(old), end, hook, List.of(parameter(old, -1)), -1, List.of());
+        }
+
+        /** The tags row's drawer handed no tags when asked, and Tumblr TV's tags through the hook right before they're split. */
+        void postTags(Contract c) {
+            String view = c.strings.get(2), tagModel = c.strings.get(4);
+            ClassDef tags = clean.classes.get(view);
+            boolean found = false;
+            if (tags == null) fail("Tumblr's " + view + " is absent");
+            else {
+                List<Method> drawers = new ArrayList<>();
+                for (Method m : tags.getMethods()) {
+                    List<String> types = m.getParameterTypes().stream().map(Object::toString).toList();
+                    if (!isStatic(m) && m.getReturnType().equals("V") && m.getImplementation() != null
+                            && types.stream().filter(STRING_TYPE::equals).count() == 1 && types.stream().filter("Ljava/util/List;"::equals).count() == 1
+                            && instructions(m).stream().anyMatch(i -> called(i) != null && called(i).getDefiningClass().equals(tagModel))) drawers.add(m);
+                }
+                Method old = unique(drawers, "the method that draws a post's tags");
+                if (old != null) {
+                    List<String> types = old.getParameterTypes().stream().map(Object::toString).toList();
+                    int text = parameter(old, types.indexOf(STRING_TYPE)), list = parameter(old, types.indexOf("Ljava/util/List;"));
+                    Tail none = (body, from) -> (body.get(from).getOpcode() == Opcode.CONST_STRING || body.get(from).getOpcode() == Opcode.CONST_STRING_JUMBO)
+                            && firstRegister(body.get(from)) == text && reference(body.get(from)) instanceof StringReference s && s.getString().isEmpty()
+                            && body.get(from + 1).getOpcode() == Opcode.SGET_OBJECT && firstRegister(body.get(from + 1)) == list
+                            && String.valueOf(reference(body.get(from + 1))).equals("Ljava/util/Collections;->EMPTY_LIST:Ljava/util/List;");
+                    found = guardFirst(old, c.strings.get(0), List.of(), 2, none);
+                }
+            }
+            found &= tvTags(c.strings.get(3), c.strings.get(1));
+            capability(c.callee, found);
+        }
+
+        /** The one static (String, String, boolean)List split in Tumblr TV's post text whose separator is ", ". */
+        boolean tvTags(String type, String hook) {
+            ClassDef view = clean.classes.get(type);
+            List<Method> owners = new ArrayList<>();
+            List<Integer> splits = new ArrayList<>();
+            if (view != null) for (Method m : view.getMethods()) {
+                if (isStatic(m) || !m.getReturnType().equals("V") || m.getImplementation() == null) continue;
+                List<Instruction> body = instructions(m);
+                for (int at = 0; at < body.size(); at++) if (splitsTags(body, at)) { owners.add(m); splits.add(at); }
+            }
+            if (splits.size() != 1) { fail("Tumblr TV's tag split has " + splits.size() + " clean targets, expected 1"); return false; }
+            Method old = owners.get(0);
+            int split = splits.get(0), tags = arguments(instructions(old).get(split)).get(0);
+            return hookAt(old, actual(old), split, hook, List.of(tags), tags, List.of(tags));
+        }
+
+        static boolean splitsTags(List<Instruction> body, int at) {
+            Instruction call = body.get(at);
+            if (call.getOpcode() != Opcode.INVOKE_STATIC || called(call) == null
+                    || !descriptor(called(call)).equals("(Ljava/lang/String;Ljava/lang/String;Z)Ljava/util/List;")) return false;
+            List<Integer> registers = arguments(call);
+            if (registers.size() < 2 || registers.get(0).equals(registers.get(1))) return false;
+            for (int k = at - 1; k >= 0; k--) if (writes(body.get(k), registers.get(1)))
+                return reference(body.get(k)) instanceof StringReference s && s.getString().equals(", ");
+            return false;
+        }
+
+        /** The footer's count formatter, a community post's comment count text, the notes title and a community reaction's text. */
+        void noteCounts(Contract c) {
+            boolean found = countFormatter(c.strings.get(0));
+            found &= communityComments(c.strings.get(1), c.strings.get(2));
+            found &= notesTitle(c.strings.get(3));
+            found &= reactionText(c.strings.get(4));
+            capability(c.callee, found);
+        }
+
+        /** The one static (int)String of the class building the comment, like and reblog buttons' states, given the count first. */
+        boolean countFormatter(String hook) {
+            Set<String> states = new HashSet<>();
+            for (String control : List.of("CommentEngagement", "LikeEngagement", "ReblogEngagement")) {
+                Method button = footerControl(FOOTER_CONTROLS + control);
+                if (button == null) return false;
+                if (button.getParameterTypes().isEmpty()) { fail("the footer's " + control + " takes no state"); return false; }
+                states.add(button.getParameterTypes().get(0).toString());
+            }
+            List<ClassDef> builders = new ArrayList<>();
+            for (ClassDef cd : clean.classes.values()) {
+                Set<String> built = new HashSet<>();
+                for (Method m : cd.getMethods()) if (isStatic(m)) built.add(m.getReturnType());
+                if (!cd.getType().startsWith(OWN) && built.containsAll(states)) builders.add(cd);
+            }
+            ClassDef builder = uniqueClass(builders, "the class that builds the footer's button states");
+            if (builder == null) return false;
+            List<Method> formatters = new ArrayList<>();
+            for (Method m : builder.getMethods()) if (isStatic(m) && m.getImplementation() != null && descriptor(m).equals("(I)Ljava/lang/String;")) formatters.add(m);
+            Method old = unique(formatters, "the footer's count formatter");
+            if (old == null) return false;
+            if (!clean.texts.get(old.toString()).contains("") || instructions(old).stream().noneMatch(i -> called(i) != null
+                    && called(i).getDefiningClass().equals(STRING_TYPE) && called(i).getName().equals("valueOf"))) {
+                fail("the footer's count formatter doesn't leave zero blank and write the rest as digits");
+                return false;
+            }
+            int count = parameter(old, 0);
+            return hookAt(old, actual(old), 0, hook, List.of(count), count, List.of());
+        }
+
+        /** "3 comments" on a community post, and the count Tumblr bolds inside it, right after the text is written. */
+        boolean communityComments(String hook, String countHook) {
+            List<Method> writers = new ArrayList<>();
+            for (Method m : tumblrMethods()) if (clean.texts.get(m.toString()).stream().anyMatch(t -> t.startsWith(COMMENTS_NOTE))) writers.add(m);
+            Method old = unique(writers, "the function that writes a community post's comment count");
+            if (old == null) return false;
+            List<Instruction> was = instructions(old);
+            int plural = firstIndex(was, 0, i -> plural(i, "community_post_comments"));
+            int written = firstIndex(was, plural < 0 ? -1 : plural + 1, i -> called(i) != null && called(i).getReturnType().equals(STRING_TYPE));
+            Instruction moved = written < 0 ? null : get(was, written + 1);
+            if (moved == null || moved.getOpcode() != Opcode.MOVE_RESULT_OBJECT) { fail("the community comment count isn't a String moved into a register"); return false; }
+            int text = firstRegister(moved), at = written + 2;
+            List<Integer> packs = new ArrayList<>();
+            for (int k = plural + 1; k < at; k++) if (was.get(k).getOpcode() == Opcode.FILLED_NEW_ARRAY || was.get(k).getOpcode() == Opcode.FILLED_NEW_ARRAY_RANGE) packs.add(k);
+            List<Integer> packed = packs.size() == 1 ? arguments(was.get(packs.get(0))) : List.of();
+            int count = packed.size() == 1 ? packed.get(0) : -1;
+            int measured = count < 0 ? -1 : firstIndex(was, at, i -> namesRegister(i, count));
+            if (measured < 0 || !isCall(was.get(measured), STRING_TYPE, "length", "()I") || writtenBetween(was, packs.get(0) + 1, measured, count)) {
+                fail("the community comment count isn't the plural's one argument, measured for its bold right after the text");
+                return false;
+            }
+            Method m = actual(old);
+            List<Integer> sites = calls(m, hook, 1);
+            // The bolded count's hook reads no switch: it blanks the count when the comment text
+            // hook right before it just swapped the text for a word, so that hook's control is its.
+            // The shape below holds it to that place.
+            boolean controlled = featureControls;
+            featureControls = false;
+            List<Integer> counts = calls(m, countHook, 1);
+            featureControls = controlled;
+            if (m == null || sites.size() != 1 || counts.size() != 1) return false;
+            List<Instruction> body = instructions(m);
+            int site = sites.get(0);
+            if (!arguments(body.get(site)).equals(List.of(text)) || !movesTo(get(body, site + 1), text, Opcode.MOVE_RESULT_OBJECT)
+                    || counts.get(0) != site + 2 || !arguments(body.get(site + 2)).equals(List.of(count))
+                    || !movesTo(get(body, site + 3), count, Opcode.MOVE_RESULT_OBJECT)) {
+                fail(hook + " doesn't take the community comment text, then its count, right after the text is written in " + m);
+                return false;
+            }
+            remove(m, site, site + 4);
+            anchor(m, site, at, hook);
+            fallthroughOnly(old, at, hook);
+            vouch(m, site, List.of(text));
+            vouch(m, site + 2, List.of(count));
+            return true;
+        }
+
+        static boolean setsTitle(Instruction i) {
+            MethodReference r = called(i);
+            return r != null && r.getName().equals("setTitle") && descriptor(r).equals("(Ljava/lang/CharSequence;)V");
+        }
+
+        /** The notes screen's "12 notes" title, right after getQuantityString answers it, when it reaches setTitle unchanged. */
+        boolean notesTitle(String hook) {
+            List<Method> titles = new ArrayList<>();
+            for (Method m : tumblrMethods()) {
+                List<Instruction> body = instructions(m);
+                if (body.stream().anyMatch(i -> plural(i, "note_count_show")) && body.stream().anyMatch(FeatureCheck::setsTitle)) titles.add(m);
+            }
+            Method old = unique(titles, "the method that titles a post's notes with its count");
+            if (old == null) return false;
+            List<Instruction> was = instructions(old);
+            int plural = firstIndex(was, 0, i -> plural(i, "note_count_show"));
+            int written = firstIndex(was, plural + 1, i -> called(i) != null && called(i).getName().equals("getQuantityString"));
+            Instruction moved = written < 0 ? null : get(was, written + 1);
+            if (moved == null || moved.getOpcode() != Opcode.MOVE_RESULT_OBJECT || !called(was.get(written)).getReturnType().equals(STRING_TYPE)) {
+                fail("the notes title isn't a String moved into a register");
+                return false;
+            }
+            int text = firstRegister(moved), at = written + 2;
+            int shown = firstIndex(was, at, FeatureCheck::setsTitle);
+            if (shown < 0 || arguments(was.get(shown)).size() != 2 || arguments(was.get(shown)).get(1) != text || writtenBetween(was, at, shown, text)) {
+                fail("the notes title isn't set from the count text unchanged");
+                return false;
+            }
+            return hookAt(old, actual(old), at, hook, List.of(text), text, List.of(text));
+        }
+
+        /** A community reaction button's text and the reactions' total, right before setText shows the text. */
+        boolean reactionText(String hook) {
+            ClassDef control = clean.classes.get(REACTION_CONTROL);
+            List<Method> writers = new ArrayList<>();
+            if (control != null) for (Method m : control.getMethods()) if (!isStatic(m) && m.getImplementation() != null
+                    && descriptor(m).equals("(Ljava/util/List;)V")) writers.add(m);
+            Method old = unique(writers, "the method that writes a community reaction's count");
+            if (old == null) return false;
+            List<Instruction> was = instructions(old);
+            String builder = "Ljava/lang/StringBuilder;";
+            int appended = firstIndex(was, 0, i -> isCall(i, builder, "append", "(I)" + builder));
+            int built = firstIndex(was, appended < 0 ? -1 : appended + 1, i -> isCall(i, builder, "toString", "()" + STRING_TYPE));
+            Instruction moved = built < 0 ? null : get(was, built + 1);
+            int at = moved == null ? -1 : firstIndex(was, built + 2, i -> isCall(i, "Landroid/widget/TextView;", "setText", "(Ljava/lang/CharSequence;)V"));
+            if (at < 0 || moved.getOpcode() != Opcode.MOVE_RESULT_OBJECT) { fail("the community reaction text isn't a String moved into a register and shown"); return false; }
+            int count = arguments(was.get(appended)).get(1), text = firstRegister(moved);
+            if (arguments(was.get(at)).get(1) != text || writtenBetween(was, built + 2, at, text) || writtenBetween(was, appended + 1, at, count)) {
+                fail("the community reaction text and its count don't reach setText unchanged");
+                return false;
+            }
+            return hookAt(old, actual(old), at, hook, List.of(text, count), text, List.of(text, count));
+        }
+
+        /** The one class that looks up [badge], the bottom bar. */
+        ClassDef badgeBar(String badge) {
+            return uniqueClass(classesWith(i -> i.getOpcode() == Opcode.SGET && names(field(i), badge)), "the bottom bar that looks up " + badge);
+        }
+
+        /** The bar's badge pop-in, which starts an animation only on a hidden view, handed its badge through the hook first thing. */
+        void unreadDots(Contract c) {
+            ClassDef bar = badgeBar(c.strings.get(1));
+            Method old = null;
+            if (bar != null) {
+                List<Method> pops = new ArrayList<>();
+                for (Method m : bar.getMethods()) if (!isStatic(m) && m.getImplementation() != null
+                        && descriptor(m).equals("(Landroid/widget/TextView;Landroid/view/animation/Animation;)V") && popsInHidden(instructions(m))) pops.add(m);
+                old = unique(pops, "the bottom bar's badge pop-in");
+            }
+            boolean found = false;
+            if (old != null) {
+                Instruction first = instructions(old).get(0);
+                int badge = parameter(old, 0);
+                if (first.getOpcode() != Opcode.IF_EQZ || firstRegister(first) != badge) fail("the bottom bar's badge pop-in doesn't start by checking it has a badge");
+                else found = hookAt(old, actual(old), 0, c.strings.get(0), List.of(badge), badge, List.of());
+            }
+            capability(c.callee, found);
+        }
+
+        static boolean popsInHidden(List<Instruction> body) {
+            int asked = firstIndex(body, 0, i -> called(i) != null && called(i).getName().equals("getVisibility"));
+            Instruction answer = asked < 0 ? null : get(body, asked + 1), test = asked < 0 ? null : get(body, asked + 2);
+            return answer != null && test != null && answer.getOpcode() == Opcode.MOVE_RESULT && test.getOpcode() == Opcode.IF_EQZ
+                    && firstRegister(answer) == firstRegister(test) && body.stream().anyMatch(i -> called(i) != null && called(i).getName().equals("startAnimation"));
+        }
+
+        /** Tumblr's tab list handed over before it's frozen, and the bottom bar's view right after its controller is built. */
+        void bottomBarTabs(Contract c) {
+            List<Method> builders = new ArrayList<>();
+            for (Method m : tumblrMethods()) if (isStatic(m) && descriptor(m).equals("()Ljava/util/List;") && buildsTabList(instructions(m))) builders.add(m);
+            Method old = unique(builders, "Tumblr's tab list builder");
+            boolean found = false;
+            if (old != null) {
+                List<Instruction> was = instructions(old);
+                List<Integer> list = arguments(was.get(was.size() - 3));
+                found = hookAt(old, actual(old), was.size() - 3, c.strings.get(0), list, -1, list);
+            }
+            ClassDef bar = badgeBar(c.strings.get(2));
+            List<Method> makers = new ArrayList<>();
+            List<Integer> made = new ArrayList<>();
+            if (bar != null) for (Method m : tumblrMethods()) {
+                if (m.getDefiningClass().equals(bar.getType())) continue;
+                List<Instruction> body = instructions(m);
+                for (int at = 0; at < body.size(); at++) {
+                    MethodReference r = called(body.get(at));
+                    if ((body.get(at).getOpcode() == Opcode.INVOKE_DIRECT || body.get(at).getOpcode() == Opcode.INVOKE_DIRECT_RANGE) && r.getDefiningClass().equals(bar.getType())
+                            && r.getName().equals("<init>") && !r.getParameterTypes().isEmpty() && r.getParameterTypes().get(0).toString().equals("Landroid/view/ViewGroup;")) {
+                        makers.add(m); made.add(at);
+                    }
+                }
+            }
+            boolean barred = false;
+            if (makers.size() != 1) fail("the bottom bar's controller is built in " + makers.size() + " places, expected 1");
+            else {
+                Method maker = makers.get(0);
+                List<Integer> view = List.of(arguments(instructions(maker).get(made.get(0))).get(1));
+                barred = hookAt(maker, actual(maker), made.get(0) + 1, c.strings.get(1), view, -1, view);
+            }
+            capability(c.callee, found && barred);
+        }
+
+        /** A static ()List adding the Dashboard and Account tabs to a new ArrayList and returning a static (Collection) copy. */
+        static boolean buildsTabList(List<Instruction> body) {
+            if (body.size() < 4) return false;
+            int made = firstIndex(body, 0, i -> i.getOpcode() == Opcode.NEW_INSTANCE);
+            if (made < 0 || !String.valueOf(reference(body.get(made))).equals("Ljava/util/ArrayList;")) return false;
+            FieldReference first = null;
+            boolean last = false;
+            for (Instruction i : body) if (i.getOpcode() == Opcode.SGET_OBJECT && field(i) != null) {
+                FieldReference f = field(i);
+                if (first == null && f.getName().equals("Dashboard")) first = f;
+                if (f.getName().equals("Account")) last = first == null || f.getType().equals(first.getType()) || last;
+            }
+            Instruction copy = body.get(body.size() - 3);
+            return first != null && first.getType().equals(first.getDefiningClass()) && last
+                    && copy.getOpcode() == Opcode.INVOKE_STATIC && called(copy) != null
+                    && called(copy).getParameterTypes().stream().map(Object::toString).toList().equals(List.of("Ljava/util/Collection;"))
+                    && body.get(body.size() - 2).getOpcode() == Opcode.MOVE_RESULT_OBJECT && body.get(body.size() - 1).getOpcode() == Opcode.RETURN_OBJECT;
+        }
+
+        boolean extendsClass(String type, String ancestor) {
+            Set<String> seen = new HashSet<>();
+            for (String at = type; at != null && seen.add(at); ) {
+                if (at.equals(ancestor)) return true;
+                ClassDef cd = clean.classes.get(at);
+                at = cd == null ? null : cd.getSuperclass();
+            }
+            return false;
+        }
+
+        /** Right after Tumblr sets an activity's theme, and right after its Compose colors take their theme wrapper's theme. */
+        void darkBackground(Contract c) {
+            List<Method> setters = new ArrayList<>(), composers = new ArrayList<>();
+            List<Integer> sets = new ArrayList<>();
+            for (Method m : tumblrMethods()) {
+                List<Instruction> body = instructions(m);
+                List<? extends CharSequence> types = m.getParameterTypes();
+                if (!isStatic(m) && m.getReturnType().equals("V") && types.size() == 2 && types.get(1).toString().equals("I") && types.get(0).toString().startsWith("L")) {
+                    String activity = types.get(0).toString();
+                    int set = firstIndex(body, 0, i -> i.getOpcode() == Opcode.INVOKE_VIRTUAL && isCall(i, activity, "setTheme", "(I)V"));
+                    Instruction next = set < 0 ? null : get(body, set + 1);
+                    if (next != null && arguments(body.get(set)).get(0) == parameter(m, 0) && next.getOpcode() == Opcode.SGET_OBJECT
+                            && field(next).getType().equals(m.getDefiningClass())) { setters.add(m); sets.add(set); }
+                }
+                if (m.getName().equals("<init>") && descriptor(m).equals("(Landroid/content/Context;I)V")
+                        && body.stream().anyMatch(i -> i.getOpcode() == Opcode.NEW_INSTANCE && String.valueOf(reference(i)).equals("Landroid/view/ContextThemeWrapper;"))
+                        && body.stream().anyMatch(FeatureCheck::themeOfWrapper)
+                        && body.stream().anyMatch(i -> i.getOpcode() == Opcode.SGET && names(field(i), c.strings.get(2)))) composers.add(m);
+            }
+            boolean found = false;
+            Method setter = unique(setters, "the method that sets an activity's theme from its palette");
+            if (setter != null && !extendsClass(setter.getParameterTypes().get(0).toString(), "Landroid/app/Activity;"))
+                fail(setter.getParameterTypes().get(0) + ", whose theme Tumblr sets, isn't an activity");
+            else if (setter != null) {
+                int set = sets.get(0);
+                List<Integer> activity = List.of(arguments(instructions(setter).get(set)).get(0));
+                found = hookAt(setter, actual(setter), set + 1, c.strings.get(0), activity, -1, List.of());
+            }
+            Method composer = unique(composers, "the constructor that makes the theme Tumblr's Compose colors read");
+            boolean themed = false;
+            if (composer != null) {
+                List<Instruction> was = instructions(composer);
+                List<Integer> asked = new ArrayList<>();
+                for (int at = 0; at < was.size(); at++) if (themeOfWrapper(was.get(at))) asked.add(at);
+                Instruction answer = asked.size() == 1 ? get(was, asked.get(0) + 1) : null;
+                if (answer == null || answer.getOpcode() != Opcode.MOVE_RESULT_OBJECT) fail("the Compose colors' theme isn't asked for once and kept in a register");
+                else themed = hookAt(composer, actual(composer), asked.get(0) + 2, c.strings.get(1), List.of(firstRegister(answer)), -1, List.of(firstRegister(answer)));
+            }
+            capability(c.callee, found && themed);
+        }
+
+        static boolean themeOfWrapper(Instruction i) {
+            return i.getOpcode() == Opcode.INVOKE_VIRTUAL && isCall(i, "Landroid/view/ContextThemeWrapper;", "getTheme", "()Landroid/content/res/Resources$Theme;");
+        }
+
+        /**
+         * The Premium diamond's drawer asking first with its two views, every TumblrMart button handed
+         * over right after its visibility is set, and the two rooms by Explore's search bar right
+         * after they're stored.
+         */
+        void storeButtons(Contract c) {
+            List<Method> drawers = new ArrayList<>();
+            for (Method m : clean.holding(c.strings.get(4))) {
+                List<String> types = m.getParameterTypes().stream().map(Object::toString).toList();
+                if (!isStatic(m) && m.getReturnType().equals("V") && types.size() >= 2 && types.get(0).equals("Lcom/facebook/drawee/view/SimpleDraweeView;")
+                        && types.get(1).equals("Landroid/widget/ImageView;")) drawers.add(m);
+            }
+            Method old = unique(drawers, "the method that draws the Premium diamond");
+            boolean found = old != null && guardFirst(old, c.strings.get(0), List.of(parameter(old, 0), parameter(old, 1)), 1, RETURN_NOTHING);
+            String hook = c.strings.get(1);
+            int buttons = 0;
+            for (Method was : tumblrMethods()) {
+                List<Instruction> body = instructions(was);
+                List<Integer> places = new ArrayList<>(), registers = new ArrayList<>();
+                for (int id = 0; id < body.size(); id++) {
+                    FieldReference f = field(body.get(id));
+                    if (body.get(id).getOpcode() != Opcode.SGET || f == null || !f.getDefiningClass().equals(VIEW_IDS) || !TUMBLRMART_IDS.contains(f.getName())) continue;
+                    Instruction result = get(body, id + 2);
+                    MethodReference find = called(get(body, id + 1));
+                    int button = result == null ? -1 : firstRegister(result);
+                    int shown = find == null || !find.getName().equals("findViewById") || result == null || result.getOpcode() != Opcode.MOVE_RESULT_OBJECT ? -1
+                            : firstIndex(body, id + 3, i -> (i.getOpcode() == Opcode.INVOKE_VIRTUAL || i.getOpcode() == Opcode.INVOKE_VIRTUAL_RANGE)
+                                    && called(i).getName().equals("setVisibility") && descriptor(called(i)).equals("(I)V") && arguments(i).get(0) == button);
+                    if (shown < 0 || writtenBetween(body, id + 3, shown, button)) { fail(was + " doesn't look a TumblrMart button up and set its visibility"); found = false; continue; }
+                    places.add(shown + 1);
+                    registers.add(button);
+                }
+                if (places.isEmpty()) continue;
+                buttons += places.size();
+                Method m = actual(was);
+                List<Integer> sites = calls(m, hook, places.size());
+                if (m == null || sites.size() != places.size()) { found = false; continue; }
+                List<Instruction> patchedBody = instructions(m);
+                for (int k = 0; k < places.size(); k++) {
+                    int at = sites.get(k);
+                    if (!arguments(patchedBody.get(at)).equals(List.of(registers.get(k)))) { fail(hook + " isn't handed the TumblrMart button in " + m); found = false; continue; }
+                    remove(m, at, at + 1);
+                    anchor(m, at, places.get(k), hook);
+                    fallthroughOnly(was, places.get(k), hook);
+                    vouch(m, at, List.of(registers.get(k)));
+                }
+            }
+            if (buttons == 0) { fail("nothing in Tumblr looks up a TumblrMart button"); found = false; }
+            List<Method> headers = new ArrayList<>();
+            for (Method m : tumblrMethods()) if (instructions(m).stream().anyMatch(i -> i.getOpcode() == Opcode.SGET && names(field(i), VIEW_IDS + "->search_bar"))) headers.add(m);
+            Method header = unique(headers, "Explore's header, which looks its search bar up");
+            if (header == null) found = false;
+            else for (int k = 0; k < 2; k++) found &= searchBarRoom(header, k == 0 ? "APP_TOP_NAVIGATION_UPDATE" : "ENABLE_TUMBLR_PREMIUM", c.strings.get(2 + k));
+            capability(c.callee, found);
+        }
+
+        /** The room [flag] gives by Explore's search bar, through [hook] right after it's stored, before it's added into the bar's margin. */
+        boolean searchBarRoom(Method old, String flag, String hook) {
+            List<Instruction> was = instructions(old);
+            List<Integer> reads = new ArrayList<>();
+            for (int at = 0; at < was.size(); at++) {
+                FieldReference f = field(was.get(at));
+                if (was.get(at).getOpcode() == Opcode.SGET_OBJECT && f.getName().equals(flag) && f.getType().equals(f.getDefiningClass())) reads.add(at);
+            }
+            int stored = reads.size() != 1 ? -1 : firstIndex(was, reads.get(0) + 1, i -> i.getOpcode() == Opcode.IPUT && field(i).getDefiningClass().equals(old.getDefiningClass()));
+            boolean sized = stored >= 0 && was.subList(reads.get(0) + 1, stored).stream().anyMatch(i -> field(i) != null && field(i).getName().equals("top_navigation_icon_size"));
+            int room = stored < 0 ? -1 : firstRegister(was.get(stored)), at = stored + 1;
+            int used = room < 0 ? -1 : firstIndex(was, at, i -> namesRegister(i, room));
+            if (!sized || used < 0 || was.get(used).getOpcode() != Opcode.ADD_INT_2ADDR && was.get(used).getOpcode() != Opcode.ADD_INT) {
+                fail(old + " doesn't size, store and add up the room " + flag + " gives");
+                return false;
+            }
+            return hookAt(old, actual(old), at, hook, List.of(room), room, List.of(room));
         }
 
         List<String> normalized(Method m, FeatureEdits e) {
@@ -2791,8 +3808,10 @@ public class DexDiff {
             // The patcher reports unnamed dependencies using their two concrete patch kinds.
             names.add("BytecodePatch");
             names.add("ResourcePatch");
+            Set<String> families = new HashSet<>();
             for (Contract c : rules) if (c.kind.equals("family")) {
                 if (!names.add(c.target) || flags.containsKey(c.callee)) { fail("duplicate family " + c.target); continue; }
+                families.add(c.callee);
                 readFlag(c.callee);
                 for (String cap : c.strings.get(0).split(",")) {
                     if (cap.isEmpty()) continue;
@@ -2812,15 +3831,38 @@ public class DexDiff {
                     coveredCapabilities.add(cap);
                     if (!owners.containsKey(cap) && !cap.equals("settings")) fail("unowned mutation capability " + cap);
                 }
+                for (String user : users(c)) if (!families.contains(user)) fail("mutation " + c.target + " names an unknown family " + user);
                 if (!active(c)) continue;
-                featureControls = !c.target.equals("settings");
+                featureControls = !c.callee.equals("settings");
                 switch (c.target) {
                     case "answers": answers(c); break;
                     case "firebaseCertificate": firebaseCertificate(c); break;
                     case "settings": settings(c); break;
+                    case "settingsRow": settingsRow(c); break;
+                    case "featureSwitch": featureSwitch(c); break;
+                    case "timelineList": timelineList(c); break;
+                    case "timelineCarousel": timelineCarousel(c); break;
+                    case "postBridge": postBridge(c); break;
+                    case "reviewPrompt": reviewPrompt(c); break;
+                    case "followButton": followButton(c); break;
+                    case "footerButton": footerButton(c); break;
+                    case "postTags": postTags(c); break;
+                    case "noteCounts": noteCounts(c); break;
+                    case "unreadDots": unreadDots(c); break;
+                    case "bottomBarTabs": bottomBarTabs(c); break;
+                    case "darkBackground": darkBackground(c); break;
+                    case "storeButtons": storeButtons(c); break;
                     default: fail("unknown mutation kind " + c.target);
                 }
             }
+            for (Anchor a : anchors) {
+                FeatureEdits e = edits.get(a.method().toString());
+                int kept = 0;
+                for (int k = 0; k < a.at(); k++) if (e == null || !e.removed.contains(k)) kept++;
+                if (kept != a.clean()) fail(a.what() + " is not where its rule puts it in " + a.method()
+                        + " (after original instruction " + kept + ", expected " + a.clean() + ")");
+            }
+            for (FeatureSite site : hookSites) hookRegisters(site);
             for (String cap : owners.keySet()) if (!coveredCapabilities.contains(cap)) fail("capability has no compiled mutation contract: " + cap);
             for (Map.Entry<String, List<FeatureSite>> entry : patched.ownCalls.entrySet()) for (FeatureSite site : entry.getValue())
                 if (!claimed.contains(site.key())) fail("unselected, duplicated or misrouted call " + entry.getKey() + " in " + site.method);
