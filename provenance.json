@@ -166,6 +166,7 @@
         "patches/src/main/kotlin/app/morphe/patches/tumblr/flags/**",
         "patches/src/main/kotlin/app/morphe/patches/tumblr/lookup/**",
         "extensions/tumblr/src/main/java/app/hushtumblr/extension/tumblr/settings/SettingsHubRow.java",
+        "extensions/tumblr/src/main/java/app/hushtumblr/extension/tumblr/settings/TextSettings.java",
         "patches/src/main/kotlin/app/morphe/patches/tumblr/misc/settings/SettingsHubRow.kt"
       ],
       "origin": "original",
