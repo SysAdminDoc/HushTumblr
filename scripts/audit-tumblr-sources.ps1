@@ -538,47 +538,81 @@ Invoke-Source 'GitHub code search' {
             $queries.Add([pscustomobject]@{ Package = $package; Query = "`"$package`" $term" })
         }
     }
+    function Invoke-SearchPage {
+        param([string]$Query, [int]$Page)
+        if ($script:searchCount -gt 0 -and $SearchDelaySeconds -gt 0) { Start-Sleep -Milliseconds ([int]($SearchDelaySeconds * 1000)) }
+        $script:searchCount++
+        $answer = Invoke-SourceRequest -Uri ("https://api.github.com/search/code?q=" + [Uri]::EscapeDataString($Query) +
+            "&per_page=100&page=$Page") -Auth github
+        if ($answer.Status -ne 200) { throw "the search '$Query' answered HTTP $($answer.Status)" }
+        $result = ConvertFrom-SourceJson -Text $answer.Content -What "the search '$Query'"
+        $total = Get-SourceProperty $result 'total_count'
+        $incomplete = Get-SourceProperty $result 'incomplete_results'
+        if (($total -isnot [int] -and $total -isnot [long]) -or $total -lt 0 -or $incomplete -isnot [bool]) {
+            throw "the search '$Query' lacks a nonnegative total_count or boolean incomplete_results"
+        }
+        return [pscustomobject]@{ Total = [long]$total; Incomplete = [bool]$incomplete; Items = @(Get-JsonItems $result.items) }
+    }
+    # Each hit not seen before becomes a candidate, and the count of those outside the indexes comes back.
+    function Add-SearchItems {
+        param($Items, [string]$Package, [hashtable]$Seen)
+        $added = 0
+        foreach ($item in $Items) {
+            $key = ConvertTo-SourceKey ([string]$item.repository.full_name)
+            $path = [string]$item.path
+            if ($Seen.ContainsKey("$key|$path")) { continue }
+            $Seen["$key|$path"] = $true
+            if ($archiveRepositories -contains $key) {
+                # A copy of another repository's patch list. Only the archive's own copy of a
+                # bundle points somewhere; its copies of Jman's copies are read as Jman.
+                if ($path -match '^examplepatches/([^/]+)/([^/]+)/patches-list\.json$') {
+                    Add-Candidate -Key (ConvertTo-SourceKey "$($Matches[1])/$($Matches[2])") -Source 'Morphe Archive' -Packages @($Package)
+                }
+                continue
+            }
+            if ($indexRepositories -contains $key) { continue }
+            Add-Candidate -Key $key -Source 'GitHub code search' -Mentions @($Package) -Path $path -Blob ([string]$item.sha)
+            $added++
+        }
+        return $added
+    }
+    # GitHub counts every file but can fold a file whose blob repeats at another path in the same
+    # repository out of a query's items, so a query can answer incomplete_results=false with fewer
+    # items than total_count: 23 of 25 on 2026-10-11, the second copies of two snapshot files in
+    # Jman's patch-bundle-registry. Asked one language at a time, with a last part for every other
+    # language, the parts listed all 25. Parts that come up short themselves, or don't add up to the
+    # total, leave the query incomplete.
+    $partLanguages = @('Kotlin', 'Java', 'JSON', 'Markdown', 'Smali', 'XML', 'YAML', 'Text')
     $hits = 0
     foreach ($query in $queries) {
         $coverage = [pscustomobject][ordered]@{ service = 'GitHub indexed code'; query = $query.Query
             verifiedAt = $todayText; endpoint = ('https://api.github.com/search/code?q=' + [Uri]::EscapeDataString($query.Query))
-            totalCount = 0; returnedCount = 0; pages = 0; complete = $false }
+            totalCount = 0; returnedCount = 0; pages = 0; parts = 0; complete = $false }
         $searchCoverage.Add($coverage)
+        $seen = @{}
         for ($page = 1; $page -le 10; $page++) {
-            if ($script:searchCount -gt 0 -and $SearchDelaySeconds -gt 0) { Start-Sleep -Milliseconds ([int]($SearchDelaySeconds * 1000)) }
-            $script:searchCount++
-            $answer = Invoke-SourceRequest -Uri ("https://api.github.com/search/code?q=" + [Uri]::EscapeDataString($query.Query) +
-                "&per_page=100&page=$page") -Auth github
-            if ($answer.Status -ne 200) { throw "the search '$($query.Query)' answered HTTP $($answer.Status)" }
-            $result = ConvertFrom-SourceJson -Text $answer.Content -What "the search '$($query.Query)'"
-            $total = Get-SourceProperty $result 'total_count'
-            $incomplete = Get-SourceProperty $result 'incomplete_results'
-            if (($total -isnot [int] -and $total -isnot [long]) -or $total -lt 0 -or $incomplete -isnot [bool]) {
-                $coverage.complete = $false
-                throw "the search '$($query.Query)' lacks a nonnegative total_count or boolean incomplete_results"
-            }
+            try { $answer = Invoke-SearchPage -Query $query.Query -Page $page } catch { $coverage.complete = $false; throw }
             if ($page -eq 1) { $coverage.complete = $true }
             $coverage.pages = $page
-            $coverage.totalCount = [Math]::Max($coverage.totalCount, $total)
-            if ($incomplete) { $coverage.complete = $false }
-            $items = @(Get-JsonItems $result.items)
-            $coverage.returnedCount += $items.Count
-            foreach ($item in $items) {
-                $key = ConvertTo-SourceKey ([string]$item.repository.full_name)
-                $path = [string]$item.path
-                if ($archiveRepositories -contains $key) {
-                    # A copy of another repository's patch list. Only the archive's own copy of a
-                    # bundle points somewhere; its copies of Jman's copies are read as Jman.
-                    if ($path -match '^examplepatches/([^/]+)/([^/]+)/patches-list\.json$') {
-                        Add-Candidate -Key (ConvertTo-SourceKey "$($Matches[1])/$($Matches[2])") -Source 'Morphe Archive' -Packages @($query.Package)
-                    }
-                    continue
-                }
-                if ($indexRepositories -contains $key) { continue }
-                Add-Candidate -Key $key -Source 'GitHub code search' -Mentions @($query.Package) -Path $path -Blob ([string]$item.sha)
-                $hits++
+            $coverage.totalCount = [Math]::Max($coverage.totalCount, $answer.Total)
+            if ($answer.Incomplete) { $coverage.complete = $false }
+            $coverage.returnedCount += $answer.Items.Count
+            $hits += Add-SearchItems -Items $answer.Items -Package $query.Package -Seen $seen
+            if ($answer.Items.Count -lt 100 -or ($page * 100) -ge $answer.Total) { break }
+        }
+        if ($coverage.complete -and $coverage.returnedCount -lt $coverage.totalCount -and $coverage.totalCount -le 100) {
+            $parts = @($partLanguages | ForEach-Object { "$($query.Query) language:$_" }) +
+                @("$($query.Query) " + (@($partLanguages | ForEach-Object { "-language:$_" }) -join ' '))
+            $partsReturned = 0
+            $whole = $true
+            foreach ($part in $parts) {
+                $answer = Invoke-SearchPage -Query $part -Page 1
+                if ($answer.Incomplete -or $answer.Total -gt 100 -or $answer.Items.Count -lt $answer.Total) { $whole = $false; break }
+                $hits += Add-SearchItems -Items $answer.Items -Package $query.Package -Seen $seen
+                $partsReturned += $answer.Items.Count
             }
-            if ($items.Count -lt 100 -or ($page * 100) -ge [int]$result.total_count) { break }
+            $coverage.parts = $parts.Count
+            if ($whole -and $partsReturned -ge $coverage.totalCount) { $coverage.returnedCount = $partsReturned }
         }
         if ($coverage.totalCount -gt 1000) {
             $coverage.complete = $false

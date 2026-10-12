@@ -553,6 +553,7 @@ function New-FakeAnswers {
             @{ repository = @{ full_name = 'rushiforai/morphe-archive' }; path = 'examplepatches/someone/alpha-patches/patches-list.json'; sha = ('7b' * 20) }
         )
         searchOverride = $null
+        searchParts = @{}
         alphaRepo = @{ Status = 200; Content = '{"full_name":"fixture-owner/alpha-patches","archived":false,"default_branch":"main"}' }
         alphaLicense = @{ Status = 200; Content = (@{ path = 'LICENSE'; content = $licenseBase64; license = @{ spdx_id = 'GPL-3.0' } } | ConvertTo-Json) }
         alphaBranches = @{ Status = 200; Content = "[{`"name`":`"main`",`"commit`":{`"sha`":`"$commitA1`"}}]" }
@@ -603,6 +604,7 @@ $fakeForge = @{ Answers = (New-FakeAnswers); Requests = (New-Object System.Colle
                 if ($null -ne $a.searchOverride -and $query -eq '"com.tumblr" bytecodePatch') {
                     $answer.Content = $a.searchOverride
                 }
+                if ($a.searchParts.ContainsKey($query)) { $answer.Content = $a.searchParts[$query] }
                 break
             }
             '^https://api\.github\.com/repos/fixture-owner/alpha-patches$' { $answer = $a.alphaRepo; break }
@@ -739,6 +741,45 @@ $fakeForge = @{ Answers = (New-FakeAnswers); Requests = (New-Object System.Colle
         Assert-Drift $partial.Kind $partial.Detail 'A partial GitHub search response'
         $fakeForge.Answers = New-FakeAnswers
     }
+
+    # GitHub counts a file whose blob repeats at another path in the same repository but can leave
+    # it out of a query's items. The audit asks again one language at a time, and what the parts
+    # list is read like any other hit. Parts that come up short leave the query incomplete.
+    function Set-FoldedSearch {
+        param([string]$Blob, [switch]$PartsShort, [switch]$KotlinShort)
+        $base = '"com.tumblr" bytecodePatch'
+        $folded = @{ repository = @{ full_name = 'clone/alpha-clone' }; path = 'src/AlphaAgain.kt'; sha = $Blob }
+        $hits = @($fakeForge.Answers.searchHits)
+        $fakeForge.Answers.searchOverride = @{ total_count = $hits.Count + 1; incomplete_results = $false; items = $hits } | ConvertTo-Json -Depth 8
+        $kotlin = @($hits | Where-Object { $_.path -like '*.kt' }) + $(if ($PartsShort) { @() } else { @($folded) })
+        $kotlinTotal = if ($KotlinShort) { $kotlin.Count + 1 } else { $kotlin.Count }
+        $fakeForge.Answers.searchParts["$base language:Kotlin"] = @{ total_count = $kotlinTotal; incomplete_results = $false; items = $kotlin } | ConvertTo-Json -Depth 8
+        foreach ($part in @(@{ Language = 'JSON'; Pattern = '*.json' }, @{ Language = 'Text'; Pattern = '*.txt' })) {
+            $items = @($hits | Where-Object { $_.path -like $part.Pattern })
+            $fakeForge.Answers.searchParts["$base language:$($part.Language)"] = @{ total_count = $items.Count; incomplete_results = $false; items = $items } | ConvertTo-Json -Depth 8
+        }
+    }
+    Set-FoldedSearch -Blob $blobKnown
+    $folded = Invoke-Audit
+    $foldedSearch = @($folded.Report.searches | Where-Object { $_.query -eq '"com.tumblr" bytecodePatch' })
+    Assert-True ($folded.ExitCode -eq 0 -and $foldedSearch.Count -eq 1 -and $foldedSearch[0].complete -and
+        $foldedSearch[0].totalCount -eq 9 -and $foldedSearch[0].returnedCount -eq 9 -and $foldedSearch[0].parts -eq 9) `
+        ("A query whose language parts list every counted file was not taken as complete: " +
+            (@($folded.Report.findings | ForEach-Object { "$($_.kind): $($_.repository) $($_.detail)" }) -join ' | ') + " $($foldedSearch | ConvertTo-Json -Compress)")
+    Assert-True (@($fakeForge.Requests | Where-Object { $_.Uri -like '*bytecodePatch%20-language%3AKotlin%20-language%3AJava*' }).Count -eq 1) `
+        'The audit did not ask for the files in every other language.'
+    Reset-FixtureLedger
+    $fakeForge.Answers = New-FakeAnswers
+
+    Set-FoldedSearch -Blob ('9c' * 20)
+    Assert-Drift 'addition' '*github.com/clone/alpha-clone*GitHub code search*' 'A file only the language parts list, which no lineage holds'
+    $fakeForge.Answers = New-FakeAnswers
+    Set-FoldedSearch -Blob $blobKnown -PartsShort
+    Assert-Drift 'search-incomplete' '*bytecodePatch*8 of 9*' 'Language parts that list fewer files than the query counted'
+    $fakeForge.Answers = New-FakeAnswers
+    Set-FoldedSearch -Blob $blobKnown -KotlinShort
+    Assert-Drift 'search-incomplete' '*bytecodePatch*8 of 9*' 'A language part that is itself short'
+    $fakeForge.Answers = New-FakeAnswers
 
     # A later reviewed release pin may contain earlier Tumblr work. Ahead/diverged edits still
     # fail, and no ancestry answer can turn a canonical repository rename into a clean run.
