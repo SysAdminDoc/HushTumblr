@@ -80,7 +80,7 @@ import app.hushtumblr.extension.shared.settings.PauseForTests;
 
 /** Actual settings controls in a light host, including the smaller viewport left by a keyboard. */
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = {26, 30, 36}, qualifiers = "en-rUS-w390dp-h600dp-notnight-xhdpi")
+@Config(sdk = {26, 30, 36, 37}, qualifiers = "en-rUS-w390dp-h600dp-notnight-xhdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @SuppressWarnings("deprecation")
 public class SettingsPolishTest {

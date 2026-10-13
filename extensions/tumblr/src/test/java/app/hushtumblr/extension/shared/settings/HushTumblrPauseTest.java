@@ -234,7 +234,8 @@ public class HushTumblrPauseTest {
         assertEquals(HushTumblrPause.Reason.NONE, HushTumblrPause.reason());
     }
 
-    @Test public void thePauseSwitchPausesTheNextStartAndTurningBackOnUndoesEverything() {
+    @Test @Config(sdk = {30, 37})
+    public void thePauseSwitchPausesTheNextStartAndTurningBackOnUndoesEverything() {
         BaseSettings.PAUSED.save(true);
         start(null);
         assertEquals(HushTumblrPause.Reason.SWITCH, HushTumblrPause.reason());

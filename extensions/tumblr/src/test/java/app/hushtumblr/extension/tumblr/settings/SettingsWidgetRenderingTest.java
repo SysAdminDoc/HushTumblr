@@ -36,7 +36,7 @@ import org.robolectric.shadows.ShadowDialog;
 import java.util.EnumSet;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = {26, 30, 36}, qualifiers = "en-rUS-w390dp-h844dp-xhdpi")
+@Config(sdk = {26, 30, 36, 37}, qualifiers = "en-rUS-w390dp-h844dp-xhdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @SuppressWarnings("deprecation")
 public class SettingsWidgetRenderingTest {

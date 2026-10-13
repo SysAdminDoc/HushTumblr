@@ -463,6 +463,7 @@ public class PausedHooksTest {
     }
 
     @Test
+    @Config(sdk = {30, 37})
     public void everyHookASwitchRunsTakesTumblrsOwnPathWhilePaused() {
         for (BooleanSetting setting : settingsSwitches()) setting.save(true);
         Map<BooleanSetting, List<Probe>> probes = probes();
@@ -607,6 +608,7 @@ public class PausedHooksTest {
     }
 
     @Test
+    @Config(sdk = {30, 37})
     public void pausedEverySwitchAnswersOffAndKeepsWhatWasSaved() {
         List<BooleanSetting> switches = settingsSwitches();
         assertFalse("found no switches to check", switches.isEmpty());

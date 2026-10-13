@@ -316,7 +316,7 @@ public class PostRulesTest {
         assertFalse(PostRules.containsWord("bobcat", "cat"));
     }
 
-    @Test @Config(sdk = {26, 36})
+    @Test @Config(sdk = {26, 36, 37})
     public void canonicallyEquivalentWordsMatchAndShareOneParsedRule() {
         String saved = "Caf\u00e9, CAFE\u0301";
         List<String> words = PostRules.wordList(saved);
@@ -329,7 +329,7 @@ public class PostRulesTest {
         assertFalse(PostRules.matches("caf\u00e9", PostRules.wordList("cafe")));
     }
 
-    @Test @Config(sdk = {26, 36})
+    @Test @Config(sdk = {26, 36, 37})
     public void codePointBoundariesIncludeMarksAndConnectorsAndLeaveEmojiAsSeparators() {
         List<String> words = PostRules.wordList("cat, big news");
         for (String text : Arrays.asList("category", "bobcat", "cat2", "2cat", "cat\u0661",
@@ -347,7 +347,7 @@ public class PostRulesTest {
         assertFalse(PostRules.matches("", words));
     }
 
-    @Test @Config(sdk = {26, 36})
+    @Test @Config(sdk = {26, 36, 37})
     public void canonicalWordsAndCodePointBoundariesApplyToReblogTrailsToo() {
         Settings.HIDE_POSTS_WITH_WORDS.save(true);
         TextSettings.HIDDEN_WORDS.save("caf\u00e9, cat");
@@ -395,7 +395,7 @@ public class PostRulesTest {
         assertTrue(shown(readable).isEmpty());
     }
 
-    @Test @Config(sdk = {26, 36})
+    @Test @Config(sdk = {26, 36, 37})
     public void allowedWordsUseSelectedFieldsAndCanonicalWholeWordMatching() {
         Settings.HIDE_POSTS_WITH_WORDS.save(true);
         TextSettings.HIDDEN_WORDS.save("cat");

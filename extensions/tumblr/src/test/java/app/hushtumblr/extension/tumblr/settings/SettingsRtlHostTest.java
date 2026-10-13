@@ -40,7 +40,7 @@ import app.hushtumblr.extension.shared.SettingsContextRule;
 
 /** Tumblr omits supportsRtl, unlike the extension's test manifest. */
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = {26, 30, 36})
+@Config(sdk = {26, 30, 36, 37})
 @SuppressWarnings("deprecation")
 public class SettingsRtlHostTest {
     @Rule public final SettingsContextRule settingsContext = new SettingsContextRule();

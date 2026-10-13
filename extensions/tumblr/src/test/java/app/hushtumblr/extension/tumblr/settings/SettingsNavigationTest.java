@@ -105,7 +105,7 @@ public class SettingsNavigationTest {
         PauseForTests.resume();
     }
 
-    @Test @Config(sdk = {29, 30, 33, 36})
+    @Test @Config(sdk = {29, 30, 33, 36, 37})
     public void homeAndEveryCategoryAreReachableWithoutRemovingTheModel() {
         assertNotNull(page.navigation);
         assertEquals(HOME_ROWS, list().getCount());
@@ -162,7 +162,8 @@ public class SettingsNavigationTest {
         assertTrue(Settings.FIX_PUSH_NOTIFICATIONS.savedValue());
     }
 
-    @Test public void overviewPauseAndUndoUpdateTheSavedSwitchAndRestartNotice() {
+    @Test @Config(sdk = {30, 37})
+    public void overviewPauseAndUndoUpdateTheSavedSwitchAndRestartNotice() {
         layout(dialog.getView());
         android.widget.Button action = statusAction();
         assertEquals("Pause", action.getText().toString());
@@ -183,7 +184,8 @@ public class SettingsNavigationTest {
         assertTrue(Settings.HIDE_ADVERTISING_ID.savedValue());
     }
 
-    @Test public void overviewPauseUsesTheSwitchWorkerAndPreventsRepeatedSaves() {
+    @Test @Config(sdk = {30, 37})
+    public void overviewPauseUsesTheSwitchWorkerAndPreventsRepeatedSaves() {
         List<Runnable> writes = new ArrayList<>();
         HushTumblrPreferenceFragment.editWorkerForTests = writes::add;
         try {
@@ -431,7 +433,8 @@ public class SettingsNavigationTest {
      * sits under that line, and Undo takes both back. A change owed a restart brings the row up
      * on every page, first on a page without a pause line and under the home page's status card.
      */
-    @Test public void aPauseOrAChangeWaitingOnARestartBringsUpTheRestartRow() {
+    @Test @Config(sdk = {30, 37})
+    public void aPauseOrAChangeWaitingOnARestartBringsUpTheRestartRow() {
         touchMode(true);
         page.navigation.navigate("Pause, backup and diagnostics");
         tap(BaseSettings.PAUSED.key);
@@ -480,7 +483,8 @@ public class SettingsNavigationTest {
     }
 
     /** The row restarts Tumblr and leaves a marker that opens the screen again on this page. */
-    @Test public void theRestartRowRestartsIntoThePageItWasTappedOn() {
+    @Test @Config(sdk = {30, 37})
+    public void theRestartRowRestartsIntoThePageItWasTappedOn() {
         List<android.content.Context> restarted = new ArrayList<>();
         app.hushtumblr.extension.shared.settings.preference.ReopenSettingsAfterRestart.setRestarterForTests(restarted::add);
         app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.add(
@@ -498,7 +502,8 @@ public class SettingsNavigationTest {
      * A save still on the edit worker would be cut off by the restart, so the row waits for it,
      * and a second tap meanwhile doesn't queue another restart.
      */
-    @Test public void theRestartRowWaitsForASaveStillRunning() {
+    @Test @Config(sdk = {30, 37})
+    public void theRestartRowWaitsForASaveStillRunning() {
         List<android.content.Context> restarted = new ArrayList<>();
         app.hushtumblr.extension.shared.settings.preference.ReopenSettingsAfterRestart.setRestarterForTests(restarted::add);
         List<Runnable> writes = new ArrayList<>();
@@ -604,7 +609,8 @@ public class SettingsNavigationTest {
     }
 
     /** While a switch is still saving, a Quick setup changes nothing and says to try again. */
-    @Test public void aQuickSetupWaitsForASwitchStillSaving() {
+    @Test @Config(sdk = {30, 37})
+    public void aQuickSetupWaitsForASwitchStillSaving() {
         List<Runnable> writes = new ArrayList<>();
         HushTumblrPreferenceFragment.editWorkerForTests = writes::add;
         try {
@@ -720,7 +726,7 @@ public class SettingsNavigationTest {
     }
 
     @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
-    @Config(sdk = {29, 30, 33, 36}, qualifiers = "ar-rXB-ldrtl-w390dp-h844dp-night-xhdpi")
+    @Config(sdk = {29, 30, 33, 36, 37}, qualifiers = "ar-rXB-ldrtl-w390dp-h844dp-night-xhdpi")
     public void aPausedPageKeepsItsLineWholeAtLargeRightToLeftText() throws Exception {
         BaseSettings.PAUSED.save(true);
         PauseForTests.pause(HushTumblrPause.Reason.SWITCH);
@@ -764,6 +770,7 @@ public class SettingsNavigationTest {
      * "HushTumblr" broke inside the word. The action now sits below the text at every size.
      */
     @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(sdk = {30, 37})
     public void atLargeTextTheStatusActionSitsUnderItsText() {
         org.robolectric.RuntimeEnvironment.setFontScale(2f);
         try {
@@ -1033,7 +1040,7 @@ public class SettingsNavigationTest {
         return null;
     }
 
-    @Test @Config(sdk = {29, 30, 33, 36})
+    @Test @Config(sdk = {29, 30, 33, 36, 37})
     public void recreationKeepsTheCategoryAndSearchQuery() {
         page.navigation.open(page.findPreference(Settings.CHECK_FOR_RELEASES.key));
         recreate();
@@ -1064,7 +1071,7 @@ public class SettingsNavigationTest {
     // A window as short as the layouts below, 400 px, so the window's own layout leaves both the
     // overview and Pause, backup and diagnostics taller than the list and neither snaps back to the top.
     @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
-    @Config(qualifiers = "w390dp-h200dp-night-xhdpi")
+    @Config(sdk = {30, 37}, qualifiers = "w390dp-h200dp-night-xhdpi")
     public void aNewPageStartsAtTheTopAfterThePreviousPageWasScrolled() {
         touchMode(true);
         try {
@@ -1205,7 +1212,7 @@ public class SettingsNavigationTest {
     }
 
     @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
-    @Config(qualifiers = "ar-rXB-ldrtl-w390dp-h844dp-night-xhdpi")
+    @Config(sdk = {30, 37}, qualifiers = "ar-rXB-ldrtl-w390dp-h844dp-night-xhdpi")
     public void largeRightToLeftPagesKeepTheirCompleteText() throws Exception {
         org.robolectric.RuntimeEnvironment.setFontScale(2f);
         try {
@@ -1267,6 +1274,7 @@ public class SettingsNavigationTest {
     }
 
     @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(sdk = {30, 37})
     public void recoveryKeepsRetryAndBackVisible() throws Exception {
         dialog.dismiss();
         controller.get().getFragmentManager().executePendingTransactions();

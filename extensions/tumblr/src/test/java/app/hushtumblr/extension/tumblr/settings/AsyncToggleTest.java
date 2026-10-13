@@ -127,7 +127,8 @@ public class AsyncToggleTest {
         }
     }
 
-    @Test public void aRejectedWorkerLeavesTheSwitchReadyToTryAgain() {
+    @Test @Config(sdk = {30, 37})
+    public void aRejectedWorkerLeavesTheSwitchReadyToTryAgain() {
         HushTumblrPreferenceFragment.editWorkerForTests = task -> { throw new RejectedExecutionException(); };
         SwitchPreference row = row(Settings.HIDE_ADS.key);
 

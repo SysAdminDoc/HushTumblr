@@ -1168,6 +1168,7 @@ public class SettingsBackupTest {
     }
 
     @Test
+    @Config(sdk = {30, 37})
     public void aFailedUndoRollsBackAndKeepsItsImportedSnapshotForRetry() throws Exception {
         try (FailingStore faults = FailingStore.install(FailingStore.Fault.NONE,
                 FailingStore.Fault.COMMIT_THROWS_AFTER_LANDING, FailingStore.Fault.NONE);
@@ -1497,7 +1498,7 @@ public class SettingsBackupTest {
     }
 
     @Test
-    @Config(sdk = {26, 36})
+    @Config(sdk = {26, 36, 37})
     public void exportedUtf8PreservesLoneSurrogatesAndValidPairs() throws Exception {
         for (String words : new String[]{"x" + (char) 0xd800 + "y", "x" + (char) 0xdc00 + "y",
                 "x" + (char) 0xd83d + (char) 0xde00 + "y",
@@ -1612,7 +1613,7 @@ public class SettingsBackupTest {
     }
 
     @Test
-    @Config(sdk = {29, 30, 33, 36})
+    @Config(sdk = {29, 30, 33, 36, 37})
     public void exportWritesTheFileThroughTheSystemPicker() throws Exception {
         Settings.HIDE_ADVERTISING_ID.save(false);
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
@@ -1638,7 +1639,7 @@ public class SettingsBackupTest {
 
     /** What Export writes is what Import takes back, through both pickers, every switch included. */
     @Test
-    @Config(sdk = {29, 30, 33, 36})
+    @Config(sdk = {29, 30, 33, 36, 37})
     public void aFileExportedThroughThePickerImportsBackThroughIt() throws Exception {
         Settings.HIDE_ADVERTISING_ID.save(false);
         Settings.FIX_PUSH_NOTIFICATIONS.save(false);
@@ -1771,7 +1772,7 @@ public class SettingsBackupTest {
     }
 
     @Test
-    @Config(sdk = {29, 30, 33, 36})
+    @Config(sdk = {29, 30, 33, 36, 37})
     public void aCancelledPickerChangesNothingAndSaysNothing() throws Exception {
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
             Activity activity = controller.get();
@@ -1792,7 +1793,7 @@ public class SettingsBackupTest {
      * finds it by the name the framework gave the page that asked, which the rebuilt one keeps.
      */
     @Test
-    @Config(sdk = {29, 30, 33, 36})
+    @Config(sdk = {29, 30, 33, 36, 37})
     public void thePickersAnswerReachesThePageRebuiltBehindIt() throws Exception {
         String file = fileWith(Settings.FIX_PUSH_NOTIFICATIONS, false);
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
@@ -1953,7 +1954,7 @@ public class SettingsBackupTest {
      * holds a filler.
      */
     @Test
-    @Config(sdk = {29, 30, 33, 36})
+    @Config(sdk = {29, 30, 33, 36, 37})
     public void aFullWorkerQueueLeavesTheRowsUsable() throws Exception {
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
             Activity activity = controller.get();
@@ -1986,6 +1987,7 @@ public class SettingsBackupTest {
      * is on screen, so Import finds no room.
      */
     @Test
+    @Config(sdk = {30, 37})
     public void anImportWhoseWorkerCantStartGivesTheRowsBack() throws Exception {
         String file = fileWith(Settings.HIDE_ADVERTISING_ID, false);
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
@@ -2105,7 +2107,7 @@ public class SettingsBackupTest {
      * nothing new starts, and its late answer shows no preview and says nothing.
      */
     @Test
-    @Config(sdk = {29, 30, 33, 36})
+    @Config(sdk = {29, 30, 33, 36, 37})
     public void aStalledAppGivesTheRowsBackAndItsLateAnswerChangesNothing() throws Exception {
         CountDownLatch release = new CountDownLatch(1);
         SettingsFileProvider.stall = release;
@@ -2266,6 +2268,7 @@ public class SettingsBackupTest {
     }
 
     @Test
+    @Config(sdk = {30, 37})
     public void importRecordsRestartDebtAndUndoReturnsToTheRunningChoice() throws Exception {
         AbstractPreferenceFragment.restartPending.clear();
         SettingsBackup.apply(SettingsBackup.parse(fileWith(Settings.HIDE_TUMBLR_TV, true)));
