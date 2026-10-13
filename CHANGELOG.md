@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+* **Tumblr:** Quick setups, under the status card, turns on the Quiet or Privacy switches in one tap, or puts every switch back. A toast says how many changed.
+* **Tumblr:** Report a problem sits just above the Ko-fi row. It opens a GitHub bug report with your versions, phone and switches filled in.
+* **Tumblr:** Settings search no longer matches the word "null" on rows that have no description.
 * **Tumblr:** A change that needs a restart puts a Restart row at the top of every settings page. Tap it and Tumblr reopens on the same page. Hide ads now asks for it too.
 * **Tumblr:** Settings pages have larger headers and short descriptions. Each control has its own navy card, with clearer spacing and rectangular switch thumbs. Short windows use a compact header to keep the list within reach.
 * **Tumblr:** The status card puts Pause or Resume below its message. Both actions save on a worker and prevent repeated taps. Choice dialogs share the page styling, and tab-order rows show an upward arrow for their move action.

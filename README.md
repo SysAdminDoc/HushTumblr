@@ -99,7 +99,7 @@ These three have no switch:
 
 ## Privacy
 
-HushTumblr collects nothing and has no server. The release check is off until you turn it on. Then it asks `api.github.com` for the latest release at most once a day, and when you tap **Check now**. Links to `github.com`, `gitlab.com`, `www.gnu.org`, `ko-fi.com` and `help.tumblr.com` open in your browser only when you tap them. Muted posts and word lists stay on your phone.
+HushTumblr collects nothing and has no server. The release check is off until you turn it on. Then it asks `api.github.com` for the latest release at most once a day, and when you tap **Check now**. Links to `github.com`, `gitlab.com`, `www.gnu.org`, `ko-fi.com` and `help.tumblr.com` open in your browser only when you tap them. **Report a problem** opens a GitHub issue form with your versions, phone model and the switches you have on filled in, and nothing is posted until you submit it there. Muted posts and word lists stay on your phone.
 
 ## Help
 

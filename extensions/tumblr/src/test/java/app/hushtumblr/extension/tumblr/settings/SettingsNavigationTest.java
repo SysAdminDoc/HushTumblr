@@ -68,10 +68,11 @@ import org.robolectric.shadows.ShadowToast;
 @SuppressWarnings("deprecation")
 public class SettingsNavigationTest {
     /**
-     * The home page's rows with every patch in the build: Status, Browse settings, the Feed, Posts,
-     * Interface and Privacy categories, More settings and Support HushTumblr.
+     * The home page's rows with every patch in the build: Status, Quick setups, Browse settings, the
+     * Feed, Posts, Interface and Privacy categories, More settings, Report a problem and Support
+     * HushTumblr.
      */
-    private static final int HOME_ROWS = 8;
+    private static final int HOME_ROWS = 10;
     @Rule public final SettingsContextRule settings = new SettingsContextRule();
     private ActivityController<Activity> controller;
     private SettingsDialog dialog;
@@ -126,7 +127,8 @@ public class SettingsNavigationTest {
         assertEquals(HushTumblrPreferenceFragment.SUPPORT, row.getKey());
         assertEquals("Support HushTumblr", String.valueOf(row.getTitle()));
         assertEquals("Buy me a coffee on Ko-fi", String.valueOf(row.getSummary()));
-        assertEquals("More settings", String.valueOf(((Preference) list().getItemAtPosition(last - 1)).getTitle()));
+        assertEquals("Report a problem", String.valueOf(((Preference) list().getItemAtPosition(last - 1)).getTitle()));
+        assertEquals("More settings", String.valueOf(((Preference) list().getItemAtPosition(last - 2)).getTitle()));
         assertTrue(list().getAdapter().isEnabled(last));
 
         tap(HushTumblrPreferenceFragment.SUPPORT);
@@ -413,11 +415,12 @@ public class SettingsNavigationTest {
         PatchFamily.inBuildForTests = EnumSet.of(PatchFamily.FIX_PUSH_NOTIFICATIONS);
         recreate();
         assertFalse(hasHomeRow("Privacy"));
-        assertEquals(4, list().getCount());
+        // Status, Quick setups, Browse settings, More settings, Report a problem and Support.
+        assertEquals(6, list().getCount());
         PatchFamily.inBuildForTests = EnumSet.noneOf(PatchFamily.class);
         recreate();
         assertFalse(hasHomeRow("Privacy"));
-        assertEquals(4, list().getCount());
+        assertEquals(6, list().getCount());
     }
 
     /**
@@ -511,6 +514,109 @@ public class SettingsNavigationTest {
         ShadowLooper.idleMainLooper();
         page = page(dialog);
         assertEquals(HOME_ROWS, list().getCount());
+    }
+
+    /** Each Quick setups choice saves its switches on the worker, shows them on their rows and says how many changed. */
+    @Test public void quickSetupsChangeTheirSwitchesAndSayHowMany() {
+        Preference row = (Preference) list().getItemAtPosition(1);
+        assertEquals(SettingsNavigation.QUICK_SETUPS, row.getKey());
+        assertEquals("Quick setups", String.valueOf(row.getTitle()));
+        tap(SettingsNavigation.QUICK_SETUPS);
+        AlertDialog choices = (AlertDialog) org.robolectric.shadows.ShadowDialog.getLatestDialog();
+        assertNotNull("Quick setups opened no dialog", choices);
+        android.widget.ListAdapter cards = choices.getListView().getAdapter();
+        assertEquals(3, cards.getCount());
+        assertTrue(String.valueOf(cards.getItem(0)).startsWith("Quiet\n"));
+        assertTrue(String.valueOf(cards.getItem(1)).startsWith("Privacy\n"));
+        assertTrue(String.valueOf(cards.getItem(2)).startsWith("Back to defaults\n"));
+        try {
+            // Hide ads starts on, so Quiet turns on the other eleven.
+            choices.getListView().performItemClick(null, 0, 0);
+            ShadowLooper.idleMainLooper();
+            for (BooleanSetting setting : QuickSetupKeys.QUIET) {
+                assertTrue(setting.key, setting.savedValue());
+                assertTrue(setting.key + " was saved but its row still shows off",
+                        ((SwitchPreference) page.findPreference(setting.key)).isChecked());
+            }
+            assertEquals("Changed 11 settings", ShadowToast.getTextOfLatestToast());
+            // Turning off screenshot sharing waits for a restart, so the row is up under the status card.
+            assertEquals(SettingsNavigation.RESTART, ((Preference) list().getItemAtPosition(1)).getKey());
+
+            page.applyQuickSetup(QuickSetupKeys.quiet());
+            ShadowLooper.idleMainLooper();
+            assertEquals("Changed 0 settings", ShadowToast.getTextOfLatestToast());
+            page.applyQuickSetup(QuickSetupKeys.defaults());
+            ShadowLooper.idleMainLooper();
+            assertEquals("Changed 11 settings", ShadowToast.getTextOfLatestToast());
+            for (BooleanSetting setting : QuickSetupKeys.DEFAULTS) {
+                assertEquals(setting.key, setting.defaultValue, setting.savedValue());
+            }
+            assertFalse("putting the switches back left a restart owed", contains(SettingsNavigation.RESTART));
+
+            // Privacy on top of the defaults changes only screenshot sharing.
+            page.applyQuickSetup(QuickSetupKeys.privacy());
+            ShadowLooper.idleMainLooper();
+            assertEquals("Changed 1 setting", ShadowToast.getTextOfLatestToast());
+            assertTrue(Settings.TURN_OFF_SCREENSHOT_SHARING.savedValue());
+        } finally {
+            for (BooleanSetting setting : QuickSetupKeys.DEFAULTS) setting.resetToDefault();
+            app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.clear();
+        }
+    }
+
+    /** While a switch is still saving, a Quick setup changes nothing and says to try again. */
+    @Test public void aQuickSetupWaitsForASwitchStillSaving() {
+        List<Runnable> writes = new ArrayList<>();
+        HushTumblrPreferenceFragment.editWorkerForTests = writes::add;
+        try {
+            page.navigation.navigate("Feed");
+            tap(Settings.HIDE_SUGGESTED_BLOGS.key);
+            assertEquals(1, writes.size());
+            page.applyQuickSetup(QuickSetupKeys.quiet());
+            ShadowLooper.idleMainLooper();
+            assertEquals(1, writes.size());
+            assertEquals("Couldn't start that. Try again in a moment.", ShadowToast.getTextOfLatestToast());
+            assertFalse(Settings.HIDE_WATCH_IT_ROWS.savedValue());
+        } finally {
+            for (Runnable write : writes) write.run();
+            ShadowLooper.idleMainLooper();
+            HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
+            for (BooleanSetting setting : QuickSetupKeys.DEFAULTS) setting.resetToDefault();
+            app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.clear();
+        }
+    }
+
+    /** Report a problem opens GitHub's bug form in a browser with the versions and switches filled in. */
+    @Test public void reportAProblemOpensAFilledInGitHubForm() throws Exception {
+        Map<String, Object> before = savedValues();
+        int last = list().getCount() - 1;
+        assertEquals(SettingsNavigation.REPORT, ((Preference) list().getItemAtPosition(last - 1)).getKey());
+        tap(SettingsNavigation.REPORT);
+        Intent started = org.robolectric.Shadows.shadowOf(controller.get()).getNextStartedActivity();
+        assertNotNull("nothing opened", started);
+        assertEquals(Intent.ACTION_VIEW, started.getAction());
+        assertTrue(started.hasCategory(Intent.CATEGORY_BROWSABLE));
+        assertTrue((started.getFlags() & Intent.FLAG_ACTIVITY_NEW_TASK) != 0);
+        String url = started.getDataString();
+        assertTrue(url, url.startsWith("https://github.com/SysAdminDoc/HushTumblr/issues/new?template=bug_report.yml&"));
+        assertTrue(url, url.length() <= app.hushtumblr.extension.shared.settings.preference.ReportProblem.MAX_LENGTH);
+        String decoded = java.net.URLDecoder.decode(url, "UTF-8");
+        assertTrue(decoded, decoded.contains("&versions=HushTumblr "));
+        assertTrue(decoded, decoded.contains(" on Tumblr "));
+        assertTrue(decoded, decoded.contains("&device="));
+        assertTrue(decoded, decoded.contains("What happened:"));
+        assertTrue(decoded, decoded.contains("What I expected:"));
+        // Hide ads starts on, Hide suggested blogs starts off.
+        assertTrue(decoded, decoded.contains("Switches on: Hide ads"));
+        assertFalse(decoded, decoded.contains("Hide suggested blogs"));
+        assertEquals(before, savedValues());
+
+        // No browser: a toast says where to go, and Tumblr stays open.
+        org.robolectric.Shadows.shadowOf(org.robolectric.RuntimeEnvironment.getApplication()).checkActivities(true);
+        tap(SettingsNavigation.REPORT);
+        assertEquals("No app on this phone can open the link. The address is "
+                + L10n.isolate("github.com/SysAdminDoc/HushTumblr") + ".", ShadowToast.getTextOfLatestToast());
+        assertFalse(controller.get().isFinishing());
     }
 
     /**
@@ -931,10 +1037,11 @@ public class SettingsNavigationTest {
 
     @Test public void visibleNavigationAndSearchKeepTheirAccessibilityRoles() {
         layout(dialog.getView());
-        View heading = list().getChildAt(1);
+        // Quick setups sits between the status card and the Browse settings heading.
+        View heading = list().getChildAt(2);
         assertTrue(heading.createAccessibilityNodeInfo().isHeading());
         // The first page row is Feed's.
-        View feed = list().getChildAt(2);
+        View feed = list().getChildAt(3);
         assertEquals(android.widget.Button.class.getName(), feed.createAccessibilityNodeInfo().getClassName());
         assertTrue(feed.performAccessibilityAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK, null));
         assertEquals("Hide ads", ((Preference) list().getItemAtPosition(0)).getTitle());

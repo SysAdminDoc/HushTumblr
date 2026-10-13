@@ -37,7 +37,6 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.preference.SwitchPreference;
 
-import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -52,6 +51,7 @@ import app.hushtumblr.extension.shared.settings.HushTumblrPause;
 import app.hushtumblr.extension.shared.settings.Setting;
 import app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment;
 import app.hushtumblr.extension.shared.settings.preference.ReopenSettingsAfterRestart;
+import app.hushtumblr.extension.shared.settings.preference.SettingsSearch;
 
 /**
  * A view of the complete preference model. Filtering never removes preferences from their
@@ -65,6 +65,8 @@ final class SettingsNavigation extends BaseAdapter {
     private static final String STATUS_ACTION = "hushtumblr_status_action";
     /** The restart row's key. Like the other rows only this view draws, it stores nothing. */
     static final String RESTART = "action_restart_to_apply";
+    static final String QUICK_SETUPS = "action_quick_setups";
+    static final String REPORT = "action_report_problem";
     private final HushTumblrPreferenceFragment page;
     private final SettingsDialog host;
     private final ListView list;
@@ -78,6 +80,10 @@ final class SettingsNavigation extends BaseAdapter {
     private final Preference more;
     /** The home page's last row, which opens HushTumblr's Ko-fi page in a browser. */
     private final Preference support;
+    /** Just above Support: a new GitHub bug report with this install's versions filled in. */
+    private final Preference report;
+    /** Under the home page's status card: a set of switches in one tap. */
+    private final Preference quickSetups;
     /**
      * Shown on every page while a change waits for a restart: a tap restarts Tumblr and the
      * screen comes back on the same page ({@link ReopenSettingsAfterRestart}).
@@ -140,7 +146,15 @@ final class SettingsNavigation extends BaseAdapter {
         support = link(context, L10n.t("Support HushTumblr"), L10n.t("Buy me a coffee on Ko-fi"), SettingsIcons.COFFEE);
         support.setKey(HushTumblrPreferenceFragment.SUPPORT);
         support.setOnPreferenceClickListener(row -> { HushTumblrPreferenceFragment.openSupport(row.getContext()); return true; });
-        restart = new HushTumblrPreferenceFragment.Row(context);
+        report = link(context, L10n.t("Report a problem"),
+                L10n.t("Opens a GitHub report with your versions and settings filled in. Add what happened."), SettingsIcons.BUG);
+        report.setKey(REPORT);
+        report.setOnPreferenceClickListener(row -> { ReportProblemForm.open(row.getContext(), screen); return true; });
+        quickSetups = link(context, L10n.t("Quick setups"),
+                L10n.t("Turn on a set of switches in one tap, or put every switch back the way it started."), SettingsIcons.TOOLS);
+        quickSetups.setKey(QUICK_SETUPS);
+        quickSetups.setOnPreferenceClickListener(ignored -> { page.showQuickSetups(); return true; });
+        restart =new HushTumblrPreferenceFragment.Row(context);
         restart.setKey(RESTART);
         restart.setPersistent(false);
         // A tap restarts at once, so the row goes without a chevron.
@@ -343,7 +357,7 @@ final class SettingsNavigation extends BaseAdapter {
         int restartWas = visible.indexOf(restart);
         boolean pageStatusWas = visible.contains(pageStatus);
         visible.clear();
-        String terms = normalized(query).trim();
+        List<String> terms = SettingsSearch.terms(query);
         Section selected = selected();
         if (!terms.isEmpty()) {
             for (Section section : sections) {
@@ -351,11 +365,10 @@ final class SettingsNavigation extends BaseAdapter {
                 for (int i = 0; i < section.category.getPreferenceCount(); i++) {
                     Preference row = section.category.getPreference(i);
                     // Search only rows this build shows. An alias never creates an unavailable row.
-                    String text = normalized(section.category.getTitle() + " " + row.getTitle() + " "
-                            + row.getSummary() + " " + searchAliases.getOrDefault(row.getKey(), ""));
-                    boolean matches = true;
-                    for (String term : terms.split("\\s+")) if (!text.contains(term)) matches = false;
-                    if (!matches) continue;
+                    // Text a row doesn't have adds nothing: a row with no summary used to carry the
+                    // word "null" and come up for it.
+                    if (!SettingsSearch.matchesTerms(terms, section.category.getTitle(), row.getTitle(),
+                            row.getSummary(), searchAliases.get(row.getKey()))) continue;
                     if (!headingAdded) visible.add(section.category);
                     headingAdded = true;
                     visible.add(row);
@@ -371,9 +384,12 @@ final class SettingsNavigation extends BaseAdapter {
             for (Section section : sections) if (!section.primary) visible.add(section.link);
         } else {
             visible.add(screen.getPreference(0));
+            visible.add(quickSetups);
             visible.add(browse);
             for (Section section : sections) if (section.primary) visible.add(section.link);
             visible.add(more);
+            // Report a problem sits just above Support, which stays last.
+            visible.add(report);
             visible.add(support);
         }
         addRestart();
@@ -459,10 +475,6 @@ final class SettingsNavigation extends BaseAdapter {
             if (setting != null && (!setting.isKeptWhenPaused() || setting == BaseSettings.PAUSED)) return true;
         }
         return false;
-    }
-
-    private static String normalized(String value) {
-        return Normalizer.normalize(value, Normalizer.Form.NFD).replaceAll("\\p{M}+", "").toLowerCase(Locale.ROOT);
     }
 
     private int originalPosition(Preference item) {

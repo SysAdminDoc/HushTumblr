@@ -67,8 +67,10 @@ import android.widget.TextView;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -85,6 +87,7 @@ import app.hushtumblr.extension.shared.settings.preference.ClearLogBufferPrefere
 import app.hushtumblr.extension.shared.settings.preference.ExportDiagnosticReportPreference;
 import app.hushtumblr.extension.shared.settings.preference.ImmediateAction;
 import app.hushtumblr.extension.shared.settings.preference.LogBufferManager;
+import app.hushtumblr.extension.shared.settings.preference.QuickSetups;
 import app.hushtumblr.extension.tumblr.rootmute.RootPostMutePreference;
 import app.hushtumblr.extension.tumblr.timeline.PostRules;
 import app.hushtumblr.extension.tumblr.ui.BottomBarTabs;
@@ -1403,6 +1406,77 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         Context context = getContext();
         if (card != null && context != null) showStatus(card, context);
         if (navigation != null) navigation.restartChanged();
+    }
+
+    /**
+     * Quick setups: Quiet, Privacy or Back to defaults ({@link QuickSetupKeys}), each changing its
+     * switches at once, then a toast saying how many changed. A switch that needs a restart brings
+     * up the restart row the way a tap on it would.
+     */
+    void showQuickSetups() {
+        Context context = getContext();
+        if (context == null) return;
+        List<Map<BooleanSetting, Boolean>> choices = Arrays.asList(
+                QuickSetupKeys.quiet(), QuickSetupKeys.privacy(), QuickSetupKeys.defaults());
+        CharSequence[] names = {L10n.t("Quiet"), L10n.t("Privacy"), L10n.t("Back to defaults")};
+        CharSequence[] details = {
+                L10n.t("Hides ads, suggestions, prompts and unread counts."),
+                L10n.t("Stops Tumblr's tracking and screenshot watching, and hides your advertising ID."),
+                L10n.t("Puts every feature switch back the way it started.")};
+        AlertDialog dialog = show(new AlertDialog.Builder(themed(context))
+                .setTitle(L10n.t("Quick setups"))
+                .setAdapter(new ChoiceCards(ScreenColors.DEFAULT, names, details),
+                        (shown, which) -> applyQuickSetup(choices.get(which)))
+                .setNegativeButton(L10n.t("Cancel"), null));
+        ListView list = dialog == null ? null : dialog.getListView();
+        if (list != null) {
+            // The cards bring their own spacing and press ripple, as in the diagnostic report's choices.
+            list.setDivider(null);
+            list.setSelector(new ColorDrawable(Color.TRANSPARENT));
+        }
+    }
+
+    /**
+     * Applies one Quick setups choice to the switches this page shows. The save runs on the
+     * settings worker in one commit, as a tap on a switch does; a row's own setChecked never
+     * saves. Then the page shows what was saved and a toast says how many changed.
+     */
+    void applyQuickSetup(Map<BooleanSetting, Boolean> values) {
+        PreferenceScreen screen = getPreferenceScreen();
+        if (screen == null || getContext() == null) return;
+        Map<BooleanSetting, Boolean> shown = QuickSetups.shown(screen, values);
+        if (hasPendingEdits()) {
+            // A switch is still saving. Its own save would land after this one and undo part of it.
+            Utils.showToastLong(L10n.t("Couldn't start that. Try again in a moment."));
+            return;
+        }
+        int[] changed = {0};
+        boolean[] failed = {false};
+        boolean accepted = submitEdit(() -> {
+            try {
+                changed[0] = QuickSetups.save(shown);
+            } catch (java.io.IOException | RuntimeException failure) {
+                failed[0] = true;
+                Logger.printInfo(() -> "Quick setup save failed", failure);
+            }
+        }, () -> {
+            Context context = getContext();
+            if (isAdded()) refreshSwitches();
+            if (failed[0]) {
+                Utils.showToastLong(String.valueOf(preferenceChangeRecoveredMessage(context)));
+                return;
+            }
+            int count = changed[0];
+            Utils.showToastLong(L10n.quantity(count, "Changed %1$d setting", "Changed %1$d settings", count));
+            if (count == 0 || context == null || !isAdded()) return;
+            for (BooleanSetting setting : shown.keySet()) {
+                if (restartPending.contains(setting.key)) {
+                    showRestartDialog(context);
+                    return;
+                }
+            }
+        });
+        if (!accepted) Utils.showToastLong(L10n.t("Couldn't start that. Try again in a moment."));
     }
 
     /**

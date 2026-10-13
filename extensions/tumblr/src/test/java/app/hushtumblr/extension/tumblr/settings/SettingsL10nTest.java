@@ -418,8 +418,9 @@ public class SettingsL10nTest {
             collect(page.getPreferenceScreen(), rows, shown);
             shown.add(String.valueOf(backOf(dialog).getContentDescription()));
 
-            // The rows only the navigation draws: Browse settings, the section links, More settings
-            // and Support, then the restart row with one change and two waiting.
+            // The rows only the navigation draws: Quick setups, Browse settings, the section links,
+            // More settings, Report a problem and Support, then the restart row with one change and
+            // two waiting.
             addListed(dialog, shown);
             app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending
                     .add(Settings.HIDE_TUMBLR_TV.key);
@@ -431,6 +432,30 @@ public class SettingsL10nTest {
             addListed(dialog, shown);
             app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.clear();
             page.navigation.restartChanged();
+
+            // Quick setups: each choice is its name and, on the next line, what it does. Then the
+            // toast after a choice, for one change and for none.
+            page.showQuickSetups();
+            ShadowLooper.idleMainLooper();
+            AlertDialog setups = (AlertDialog) ShadowAlertDialog.getLatestDialog();
+            assertNotNull("Quick setups opened no dialog", setups);
+            shown.add(String.valueOf(org.robolectric.Shadows.shadowOf(setups).getTitle()));
+            android.widget.ListAdapter cards = setups.getListView().getAdapter();
+            for (int i = 0; i < cards.getCount(); i++) shown.addAll(Arrays.asList(String.valueOf(cards.getItem(i)).split("\n")));
+            String setupsCancel = String.valueOf(setups.getButton(AlertDialog.BUTTON_NEGATIVE).getText());
+            assertEquals(L10n.t("Cancel"), setupsCancel);
+            shown.add(setupsCancel);
+            setups.dismiss();
+            page.applyQuickSetup(java.util.Collections.singletonMap(Settings.HIDE_SUGGESTED_BLOGS,
+                    !Settings.HIDE_SUGGESTED_BLOGS.savedValue()));
+            ShadowLooper.idleMainLooper();
+            addToast(shown);
+            page.applyQuickSetup(java.util.Collections.singletonMap(Settings.HIDE_SUGGESTED_BLOGS,
+                    Settings.HIDE_SUGGESTED_BLOGS.defaultValue));
+            ShadowLooper.idleMainLooper();
+            page.applyQuickSetup(java.util.Collections.emptyMap());
+            ShadowLooper.idleMainLooper();
+            addToast(shown);
 
             // The export row's dialog.
             Preference export = find(rows, "action_export_diagnostic_report");
