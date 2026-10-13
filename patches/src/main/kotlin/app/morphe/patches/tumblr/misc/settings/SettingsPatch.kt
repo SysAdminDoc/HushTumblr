@@ -124,20 +124,21 @@ internal val settingsManifestPatch = resourcePatch {
 }
 
 /**
- * Makes the HushTumblr screen reachable three ways. Inside Tumblr, a HushTumblr row at the end of
- * Tumblr's own Settings screen opens it ([addSettingsHubRow]); a build whose Settings screen
- * changed shape keeps the other two, with a warning. From the home screen, a long-press shortcut on
- * Tumblr's launcher icon opens Tumblr with an extra; from Android's App info page for Tumblr,
- * "Additional settings in the app" opens it with [APPLICATION_PREFERENCES]. Tumblr's launcher
- * activity reports its intent, and the screen opens over the next Tumblr activity to resume.
- * Every name hooked for those two is a manifest component or a framework override or call.
+ * Makes the HushTumblr screen reachable four ways. Inside Tumblr, a long press on the Tumblr logo
+ * at the top of the dashboard opens it ([hookLogoLongPress]), and so does a HushTumblr row at the
+ * end of Tumblr's own Settings screen ([addSettingsHubRow]); a build where either changed shape
+ * keeps the rest, with a warning. From the home screen, a long-press shortcut on Tumblr's launcher
+ * icon opens Tumblr with an extra; from Android's App info page for Tumblr, "Additional settings in
+ * the app" opens it with [APPLICATION_PREFERENCES]. Tumblr's launcher activity reports its intent,
+ * and the screen opens over the next Tumblr activity to resume. Every name hooked for those two is
+ * a manifest component or a framework override or call.
  */
 @Suppress("unused")
 val settingsPatch = bytecodePatch(
     name = "HushTumblr settings",
     description = "Adds a HushTumblr page where you turn features on or off, pause HushTumblr, back up your " +
-        "settings and read the licenses. Open it from Tumblr's Settings or by long-pressing the Tumblr icon. " +
-        "Works as soon as you patch it in, with no switch.",
+        "settings and read the licenses. Open it by long-pressing the Tumblr logo at the top of your dashboard, " +
+        "from Tumblr's Settings or by long-pressing the Tumblr icon. Works as soon as you patch it in, with no switch.",
     default = true,
 ) {
     category("Settings")
@@ -189,5 +190,10 @@ val settingsPatch = bytecodePatch(
             null
         }
         if (hub != null) addSettingsHubRow(hub)
+
+        // The Tumblr logo at the top of the dashboard: once Tumblr gives it its tap, the extension
+        // adds a long press that opens the screen. A build that taps the logo differently keeps
+        // its logo as it was.
+        hookLogoLongPress()
     }
 }

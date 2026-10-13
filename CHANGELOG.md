@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* **Tumblr:** Long-press the Tumblr logo at the top of your dashboard to open HushTumblr settings. A tap on the logo still does what it always did.
 * **Tumblr:** Quick setups, under the status card, turns on the Quiet or Privacy switches in one tap, or puts every switch back. A toast says how many changed.
 * **Tumblr:** Report a problem sits just above the Ko-fi row. It opens a GitHub bug report with your versions, phone and switches filled in.
 * **Tumblr:** Settings search no longer matches the word "null" on rows that have no description.

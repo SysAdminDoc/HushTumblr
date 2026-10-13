@@ -66,6 +66,14 @@ The Settings screen is Jetpack Compose: `com.tumblr.settingshub.impl.hub.Setting
 - **Icons:** `com.tumblr.compose.ds.icons.outline.<Name>Kt.get<Name>(Lkx6;)Las9;` with `kx6.a` as the argument. The set includes `Hide`, `Shield`, `Settings` and `Sparkle`.
 - **Clicks:** the row's click lambda `hub.c$b$a` (fields `a` the event sink, `b` the `qg0`) sends `hub.g$b(kind)`. The view model's `F(rg0)` maps the kind to an Intent through `hqh` and the activity's `v3(a$b)` starts it, toasting "This section isn't available yet." when the target is missing. A row of our own is recognized in the click lambda by its title resource before the kind is read.
 
+## Dashboard logo
+
+The "t" at the top of the dashboard is `com.tumblr.ui.widget.TLogoView`, a `FrameLayout` holding a `SimpleDraweeView` (`t_logo`, layout `view_t_logo`). Its layout names the class, so the name is kept.
+
+- **Bind:** `tabbeddashboard.fragments.TabbedDashboardHostFragment.m6(View)`, called from `onViewCreated`, picks `t_logo_view_top_bar` when `APP_TOP_NAVIGATION_UPDATE` is on and `t_logo_view` otherwise, makes it visible and gives it a tap (`m6j`) with `TLogoView.setOnClickListener`, the only call to it outside the class itself. The logo is in `v0` at that call.
+- **Listeners:** `TLogoView.setOnClickListener` wraps the listener in `h4j`, which runs the logo's own `d()` first when its flag `a` is set, and the constructor sets one too, so the view always reports a click listener. Nothing sets a long press or touch listener on it, so the settings patch's long press leaves the tap alone.
+- `l6(TLogoView)` only recolors and animates the logo for `HUNGRY_HUNGRY_DASHBOARD`.
+
 ## Other anchors
 
 - `com.tumblr.UserInfo` keeps its name and has about 40 static `()Z` preference getters. `G()Z` reads `pref_is_premium_user`.

@@ -409,6 +409,62 @@ public class SettingsEntryTest {
         }
     }
 
+    @Test public void aLongPressOnTheDashboardLogoOpensTheScreenAndATapStaysTumblrs() {
+        ActivityController<Activity> activity = Robolectric.buildActivity(Activity.class).setup();
+        try {
+            int[] taps = {0};
+            View logo = new android.widget.FrameLayout(activity.get());
+            logo.setOnClickListener(tapped -> taps[0]++);
+            SettingsEntry.onDashboardLogo(logo);
+            // Tumblr binds the top bar again when the dashboard's view comes back.
+            SettingsEntry.onDashboardLogo(logo);
+            assertTrue("the logo got no long press", logo.isLongClickable());
+
+            logo.performClick();
+            ShadowLooper.idleMainLooper();
+            org.junit.Assert.assertEquals("the tap stopped being Tumblr's", 1, taps[0]);
+            assertNull("a tap opened the screen", dialogOver(activity.get()));
+
+            // A page a restart left waiting doesn't decide where the logo's screen opens.
+            SettingsEntry.reopenOn("Links");
+            assertTrue("the long press wasn't taken", logo.performLongClick());
+            ShadowLooper.idleMainLooper();
+            SettingsDialog dialog = (SettingsDialog) dialogOver(activity.get());
+            assertNotNull("the long press didn't open the screen", dialog);
+            org.junit.Assert.assertEquals("the logo's screen opened on another page", "", dialog.startPage());
+            org.junit.Assert.assertEquals("the long press counted as a tap too", 1, taps[0]);
+        } finally {
+            SettingsEntry.onClosedByUser();
+            activity.close();
+        }
+    }
+
+    @Test public void aLogoTumblrAlreadyLongPressesStaysTumblrs() {
+        ActivityController<Activity> activity = Robolectric.buildActivity(Activity.class).setup();
+        try {
+            int[] presses = {0};
+            View logo = new android.widget.FrameLayout(activity.get());
+            logo.setOnLongClickListener(pressed -> {
+                presses[0]++;
+                return true;
+            });
+            SettingsEntry.onDashboardLogo(logo);
+
+            assertTrue(logo.performLongClick());
+            ShadowLooper.idleMainLooper();
+            org.junit.Assert.assertEquals("Tumblr's long press didn't run", 1, presses[0]);
+            assertNull("the screen took Tumblr's long press", dialogOver(activity.get()));
+        } finally {
+            activity.close();
+        }
+    }
+
+    @Test public void aLogoOutsideAnActivityLeavesTheLongPressAlone() {
+        View logo = new android.widget.FrameLayout(RuntimeEnvironment.getApplication());
+        SettingsEntry.onDashboardLogo(logo);
+        org.junit.Assert.assertFalse("a press with no screen to open over was taken", logo.performLongClick());
+    }
+
     @SuppressWarnings("deprecation")
     private static HushTumblrPreferenceFragment pageOver(Activity activity) {
         SettingsDialog dialog = (SettingsDialog) dialogOver(activity);

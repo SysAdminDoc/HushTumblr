@@ -37,7 +37,7 @@ Sign in with your email and Tumblr password. Google's sign-in checks the app's s
 
 ## Settings
 
-Open Tumblr's Settings and tap **HushTumblr** at the bottom, or long-press the Tumblr icon. Switches apply without patching again, though a few, like Disable analytics, finish after Tumblr restarts. **Pause** keeps your saved choices and makes the switches act as off, apart from Debug logging. Changes made while patching stay in the app. The same page backs up your settings.
+Long-press the Tumblr logo at the top of your dashboard. You can also tap **HushTumblr** at the bottom of Tumblr's Settings, or long-press the Tumblr icon. Switches apply without patching again, though a few, like Disable analytics, finish after Tumblr restarts, and a Restart row at the top of the page does that for you. **Pause** keeps your saved choices and makes the switches act as off, apart from Debug logging. Changes made while patching stay in the app. The same page backs up your settings.
 
 Development source 0.0.5 includes redesigned settings pages and worker-based saves. These changes haven't been built or tested yet. The preview below shows the earlier 0.0.4 interface.
 
@@ -93,7 +93,7 @@ These three have no switch:
 
 | Patch | What it does |
 |---|---|
-| `HushTumblr settings` | Adds a HushTumblr page where you turn features on or off, pause HushTumblr, back up your settings and read the licenses. Open it from Tumblr's Settings or by long-pressing the Tumblr icon. Works as soon as you patch it in, with no switch. |
+| `HushTumblr settings` | Adds a HushTumblr page where you turn features on or off, pause HushTumblr, back up your settings and read the licenses. Open it by long-pressing the Tumblr logo at the top of your dashboard, from Tumblr's Settings or by long-pressing the Tumblr icon. Works as soon as you patch it in, with no switch. |
 | `Remove ad tracking permissions` | Removes Google's advertising ID permission and Android's Privacy Sandbox ad services from Tumblr, so it can't use them. Google Play services then answers with zeros. Works as soon as you patch it in, with no switch. |
 | `Spoof signature for Google sign-in` | Helps Google sign-in work in the patched app by naming Tumblr's original signature. It only helps with microG-RE or the XSpoofSignatures module. Email sign-in doesn't need it. It isn't selected by default. Works as soon as you patch it in, with no switch. |
 

@@ -23,6 +23,7 @@ import android.app.Application;
 import android.app.FragmentManager;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.pm.ShortcutInfo;
 import android.content.pm.ShortcutManager;
@@ -35,12 +36,15 @@ import android.graphics.drawable.Icon;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.view.View;
 
 import androidx.annotation.RequiresApi;
 
 import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import app.hushtumblr.extension.shared.L10n;
@@ -50,6 +54,9 @@ import app.hushtumblr.extension.shared.settings.preference.ReopenSettingsAfterRe
 
 /**
  * How the HushTumblr screen is reached.
+ *
+ * <p>Inside Tumblr, a long press on the Tumblr logo at the top of the dashboard opens it over that
+ * screen (see {@link #onDashboardLogo}), and so does the HushTumblr row in Tumblr's own Settings.
  *
  * <p>From the home screen, a long-press shortcut on Tumblr's launcher icon opens Tumblr's launcher
  * activity with {@link #EXTRA_OPEN_SETTINGS}. From Android's App info page for Tumblr, "Additional
@@ -74,6 +81,10 @@ public final class SettingsEntry {
 
     /** A request older than this is dropped rather than opened over some later screen. */
     private static final long REQUEST_LIFETIME_MS = 30_000;
+
+    private static final View.OnLongClickListener LOGO_PRESS = SettingsEntry::openFromLogo;
+    /** Logos that already open the screen, so a top bar bound again doesn't read ours as Tumblr's. */
+    private static final Set<View> watchedLogos = Collections.newSetFromMap(new WeakHashMap<>());
 
     private static volatile boolean openPending;
     private static volatile long requestedAt;
@@ -320,6 +331,67 @@ public final class SettingsEntry {
         } catch (Exception ex) {
             Logger.printException(() -> "Settings entry: onNewIntent failure", ex);
         }
+    }
+
+    /**
+     * Injected right after Tumblr gives the dashboard's "t" logo its tap, with the logo. A long press
+     * on it then opens the screen while a tap stays Tumblr's. Tumblr gives the logo no long press of
+     * its own; in a build where it does, the logo stays Tumblr's. It works while HushTumblr is
+     * paused, since it's a way back in.
+     */
+    public static void onDashboardLogo(View logo) {
+        try {
+            if (logo != null) watchLogo(logo);
+        } catch (Throwable t) {
+            Logger.printException(() -> "Settings entry: could not watch the Tumblr logo", t);
+        }
+    }
+
+    static void watchLogo(View logo) {
+        synchronized (watchedLogos) {
+            if (watchedLogos.contains(logo)) return;
+            if (logo.isLongClickable()) {
+                Logger.printInfo(() -> "Settings entry: Tumblr handles long presses on its logo here, so they stay Tumblr's");
+                return;
+            }
+            logo.setOnLongClickListener(LOGO_PRESS);
+            watchedLogos.add(logo);
+        }
+        Logger.printInfo(() -> "Settings entry: a long press on the Tumblr logo opens the settings");
+    }
+
+    /**
+     * The logo's long press: the screen over the logo's own activity, on its first page even when a
+     * restart left another page waiting. Once it shows, a request still waiting is spent, so it
+     * can't open the screen again over the next screen to resume. False leaves the press as it was.
+     */
+    static boolean openFromLogo(View logo) {
+        try {
+            Activity activity = activityOf(logo.getContext());
+            if (activity == null) {
+                Logger.printInfo(() -> "Settings entry: the Tumblr logo isn't in an activity");
+                return false;
+            }
+            requestedAt = SystemClock.elapsedRealtime();
+            requestedPage = null;
+            Logger.printInfo(() -> "Settings requested by a long press on the Tumblr logo");
+            boolean shown = open(activity);
+            if (shown) openPending = false;
+            return shown;
+        } catch (Throwable t) {
+            Logger.printException(() -> "Settings entry: the long press on the Tumblr logo failed", t);
+            return false;
+        }
+    }
+
+    private static Activity activityOf(Context context) {
+        while (context instanceof ContextWrapper) {
+            if (context instanceof Activity) return (Activity) context;
+            Context base = ((ContextWrapper) context).getBaseContext();
+            if (base == context) break;
+            context = base;
+        }
+        return null;
     }
 
     static final class OpenWhenResumed implements Application.ActivityLifecycleCallbacks {

@@ -2622,7 +2622,11 @@ public class DexDiff {
 
         /** True when the instruction at [at] can be reached only by falling through from [from]. */
         boolean onlyFrom(Method m, int at, int from) {
-            FeatureFlow graph = flow(m);
+            return onlyFrom(flow(m), at, from);
+        }
+
+        /** [onlyFrom] on a graph built outside the cache, which keys by signature and so can't hold a clean method too. */
+        static boolean onlyFrom(FeatureFlow graph, int at, int from) {
             for (int k = 0; k < graph.normal.size(); k++) {
                 if (k != from && graph.normal.get(k).contains(at)) return false;
                 if (graph.handlers.get(k).contains(at)) return false;
@@ -2758,6 +2762,46 @@ public class DexDiff {
                 String answer = name.equals("pushDynamicShortcut") || name.equals("removeAllDynamicShortcuts") ? "V" : "Z";
                 replacement(manager + "->" + name + "(" + parameters + ")" + answer, entry + "->" + name + "(" + manager + parameters + ")" + answer, null, true);
             }
+            dashboardLogo(entry + "->onDashboardLogo(Landroid/view/View;)V");
+        }
+
+        static final String LOGO_VIEW = "Lcom/tumblr/ui/widget/TLogoView;";
+        static final String LOGO_TAP = LOGO_VIEW + "->setOnClickListener(Landroid/view/View$OnClickListener;)V";
+
+        record LogoSite(Method method, int at, int register) {}
+
+        /**
+         * The dashboard's Tumblr logo goes to the settings entry right after Tumblr gives it its tap
+         * (TLogoView.setOnClickListener from outside the logo's own class), so a long press on it opens
+         * the screen. The patch hooks only a single such site that nothing else branches into, and
+         * leaves a build without one as it was. Found in the clean target, never from the hook. The
+         * hook reads the tap's receiver, which the clean call shows is the logo.
+         */
+        void dashboardLogo(String hook) {
+            List<LogoSite> sites = new ArrayList<>();
+            for (Method m : clean.methods.values()) {
+                if (m.getDefiningClass().startsWith(OWN) || m.getDefiningClass().equals(LOGO_VIEW) || m.getImplementation() == null) continue;
+                List<Instruction> body = instructions(m);
+                for (int k = 0; k + 1 < body.size(); k++) {
+                    if (!(body.get(k) instanceof FiveRegisterInstruction tap) || tap.getOpcode() != Opcode.INVOKE_VIRTUAL
+                            || tap.getRegisterCount() != 2 || !LOGO_TAP.equals(String.valueOf(reference(tap)))) continue;
+                    sites.add(new LogoSite(m, k + 1, tap.getRegisterC()));
+                }
+            }
+            if (sites.size() != 1 || !onlyFrom(new FeatureFlow(sites.get(0).method()), sites.get(0).at(), sites.get(0).at() - 1)) return;
+            LogoSite site = sites.get(0);
+            Method m = actual(site.method());
+            List<Integer> at = calls(m, hook, 1);
+            if (m == null || at.size() != 1) return;
+            int k = at.get(0);
+            List<Instruction> body = instructions(m), was = instructions(site.method());
+            if (k != site.at() || !arguments(body.get(k)).equals(List.of(site.register())) || k + 1 >= body.size()
+                    || body.get(k + 1).getOpcode() != was.get(site.at()).getOpcode() || !onlyFrom(m, k + 1, k) || !onlyFrom(m, k, k - 1)) {
+                fail(hook + " doesn't hand over the dashboard logo in front of instruction " + site.at() + " of " + m);
+                return;
+            }
+            remove(m, k, k + 1);
+            vouch(m, k, List.of(site.register()));
         }
 
         // Each family selector below finds its clean targets the way its patch does, checks the
