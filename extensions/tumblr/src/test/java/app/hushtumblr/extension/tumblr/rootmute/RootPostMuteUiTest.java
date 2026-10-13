@@ -47,6 +47,7 @@ import org.robolectric.shadows.ShadowAlertDialog;
 import org.robolectric.shadows.ShadowLooper;
 
 import app.hushtumblr.extension.shared.SettingsContextRule;
+import app.hushtumblr.extension.shared.WorkerPoolForTests;
 import app.hushtumblr.extension.shared.settings.PauseForTests;
 import app.hushtumblr.extension.tumblr.settings.PatchFamily;
 import app.hushtumblr.extension.tumblr.settings.PatchFamilyForTests;
@@ -180,6 +181,124 @@ public class RootPostMuteUiTest {
         new RootPostMuteAction("11", controller.get(), refuses).run();
         assertTrue(RootPostMutes.capture().roots.isEmpty());
         assertNull(find(controller.get().findViewById(android.R.id.content), Button.class));
+    }
+
+    @Test public void aFailedRebindRollbackDisclosesTheSavedMuteAndRetriesOnlyThatRoot() throws Exception {
+        File saved = RootPostMutes.fileForTests;
+        File failure = temporary.newFolder("rollback-failure");
+        new RootPostMuteAction("11", controller.get(), refusesRebind(() -> RootPostMutes.fileForTests = failure)).run();
+        assertEquals(java.util.Set.of("11"), RootPostMutes.capture().roots);
+        assertTrue(menuNotice().getText().toString().contains("still muted locally"));
+        Button unmute = menuRecovery();
+        unmute.performClick();
+        assertEquals(java.util.Set.of("11"), RootPostMutes.capture().roots);
+        assertTrue(unmute.isEnabled());
+        assertTrue(menuNotice().getText().toString().contains("Try again"));
+        RootPostMutes.fileForTests = saved;
+        mute("22");
+        unmute.performClick();
+        assertEquals(java.util.Set.of("22"), RootPostMutes.capture().roots);
+        assertNull(find(controller.get().findViewById(android.R.id.content), Button.class));
+    }
+
+    @Test public void aRefusedRollbackWorkerKeepsUsableRecoveryAfterAdmissionReturns() throws Exception {
+        List<Runnable> queued = new ArrayList<>(); RootPostMutes.workerForTests = queued::add;
+        new RootPostMuteAction("11", controller.get(), refusesRebind(() -> { })).run();
+        assertEquals(1, queued.size());
+        Button unmute;
+        try (WorkerPoolForTests full = WorkerPoolForTests.fill()) {
+            RootPostMutes.workerForTests = null;
+            queued.get(0).run();
+            assertEquals(java.util.Set.of("11"), RootPostMutes.capture().roots);
+            assertTrue(menuNotice().getText().toString().contains("still muted locally"));
+            unmute = menuRecovery();
+            unmute.performClick();
+            assertEquals(java.util.Set.of("11"), RootPostMutes.capture().roots);
+            assertTrue(unmute.isEnabled());
+            assertTrue(menuNotice().getText().toString().contains("Try again"));
+        }
+        RootPostMutes.workerForTests = Runnable::run;
+        unmute.performClick();
+        assertTrue(RootPostMutes.capture().roots.isEmpty());
+    }
+
+    @Test public void aRollbackRevisionConflictOffersUnmuteWithoutOverwritingLaterChanges() {
+        new RootPostMuteAction("11", controller.get(), refusesRebind(() -> mute("22"))).run();
+        assertEquals(java.util.Set.of("11", "22"), RootPostMutes.capture().roots);
+        Button unmute = menuRecovery();
+        mute("33");
+        unmute.performClick();
+        assertEquals(java.util.Set.of("22", "33"), RootPostMutes.capture().roots);
+        assertNull(find(controller.get().findViewById(android.R.id.content), Button.class));
+    }
+
+    @Test public void aConflictingEditThatAlreadyUnmutedTheRootDoesNotOfferStaleRecovery() {
+        new RootPostMuteAction("11", controller.get(), refusesRebind(() -> {
+            RootPostMutes.remove(RootPostMutes.capture(), "11", ignored -> { });
+            mute("22");
+        })).run();
+        assertEquals(java.util.Set.of("22"), RootPostMutes.capture().roots);
+        assertNull(find(controller.get().findViewById(android.R.id.content), Button.class));
+        assertNull(controller.get().findViewById(android.R.id.content).findViewWithTag("root_mute_notice"));
+    }
+
+    @Test public void anAccountChangeDuringRollbackCannotPublishRecoveryIntoTheNextAccount() {
+        List<Runnable> queued = new ArrayList<>(); RootPostMutes.workerForTests = queued::add;
+        new RootPostMuteAction("11", controller.get(), refusesRebind(() -> { })).run();
+        queued.remove(0).run();
+        assertEquals(1, queued.size());
+        assertEquals(java.util.Set.of("11"), RootPostMutes.capture().roots);
+        RootPostMutes.workerForTests = Runnable::run;
+        account("account-b"); mute("22");
+        queued.remove(0).run();
+        assertEquals(java.util.Set.of("22"), RootPostMutes.capture().roots);
+        assertNull(find(controller.get().findViewById(android.R.id.content), Button.class));
+    }
+
+    @Test public void aRecoveryActionRetainedAcrossAccountChangesCannotUnmuteTheNextAccount() throws Exception {
+        File saved = RootPostMutes.fileForTests;
+        File failure = temporary.newFolder("retained-rollback-failure");
+        new RootPostMuteAction("11", controller.get(), refusesRebind(() -> RootPostMutes.fileForTests = failure)).run();
+        Button unmute = menuRecovery();
+        RootPostMutes.fileForTests = saved;
+        account("account-b"); mute("11"); mute("22");
+        unmute.performClick();
+        assertEquals(java.util.Set.of("11", "22"), RootPostMutes.capture().roots);
+        assertNull(find(controller.get().findViewById(android.R.id.content), Button.class));
+    }
+
+    @Test public void aFinishingOwnerDoesNotReceiveFailedRollbackRecovery() throws Exception {
+        List<Runnable> queued = new ArrayList<>(); RootPostMutes.workerForTests = queued::add;
+        new RootPostMuteAction("11", controller.get(), refusesRebind(() -> { })).run();
+        queued.remove(0).run();
+        assertEquals(1, queued.size());
+        RootPostMutes.fileForTests = temporary.newFolder("closed-owner-rollback-failure");
+        controller.get().finish();
+        queued.remove(0).run();
+        assertEquals(java.util.Set.of("11"), RootPostMutes.capture().roots);
+        assertNull(find(controller.get().findViewById(android.R.id.content), Button.class));
+    }
+
+    private static HushLocalTimeline refusesRebind(Runnable beforeRefusal) {
+        app.hushtumblr.extension.tumblr.timeline.HushRootPost selected = () -> "11";
+        return new HushLocalTimeline() {
+            @Override public List<?> hushTimelineItems() { return List.of(selected); }
+            @Override public void hushApplyTimelineItems(List<?> items) { beforeRefusal.run(); }
+        };
+    }
+
+    private TextView menuNotice() {
+        TextView label = controller.get().findViewById(android.R.id.content).findViewWithTag("root_mute_notice");
+        assertNotNull(label);
+        return label;
+    }
+
+    private Button menuRecovery() {
+        Button action = find(controller.get().findViewById(android.R.id.content), Button.class);
+        assertNotNull(action);
+        assertEquals("Unmute post", action.getText().toString());
+        assertTrue(action.isEnabled());
+        return action;
     }
 
     @Test public void aNativeMenuCallbackUsesItsOwnTimelineAndKeepsDirectHostsWorking() {

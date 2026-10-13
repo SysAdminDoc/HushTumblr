@@ -59,6 +59,14 @@ final class RootPostMuteUi {
     }
 
     static void changed(Context context, String message, RootPostMutes.Undo undo, Runnable afterRestore) {
+        changed(context, message, undo, afterRestore, null);
+    }
+
+    static void recoverMute(Context context, RootPostMutes.Undo saved, String root) {
+        changed(context, L10n.t("Couldn't update this feed. The post is still muted locally."), saved, null, root);
+    }
+
+    private static void changed(Context context, String message, RootPostMutes.Undo undo, Runnable afterRestore, String rootToUnmute) {
         if (undo == null) { Utils.showToastShort(L10n.t("Couldn't update muted posts")); return; }
         Activity activity = activity(context);
         if (activity == null || activity.isFinishing() || activity.isDestroyed() || !RootPostMutes.current(undo.account)) return;
@@ -72,7 +80,7 @@ final class RootPostMuteUi {
                 ignored -> { }, panel -> {
                     root.removeView(panel);
                     if (afterRestore != null) afterRestore.run();
-                    Utils.showToastShort(L10n.t("Muted posts restored"));
+                    Utils.showToastShort(rootToUnmute == null ? L10n.t("Muted posts restored") : L10n.t("Post unmuted"));
                 }, root::removeView);
         bar.setLayoutDirection(themed.getResources().getConfiguration().getLayoutDirection());
         int padding = dp(themed, 12);
@@ -97,7 +105,7 @@ final class RootPostMuteUi {
         position.setMargins(padding, padding, padding, padding * 2);
         root.addView(bar, position);
         notice = new WeakReference<>(bar);
-        bar.offer(message, undo);
+        bar.offer(message, undo, rootToUnmute);
     }
 
     static AlertDialog manage(Context context) {
@@ -254,7 +262,7 @@ final class RootPostMuteUi {
         void controls() { dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setEnabled(!busy && !roots.isEmpty()); }
     }
 
-    /** Shared by the manager and the menu notice; a failed write keeps the same Undo available. */
+    /** A failed write retains recovery. A refused rebind removes only its root, preserving later edits. */
     private static final class UndoPanel extends LinearLayout {
         final TextView label;
         final Button undo;
@@ -264,6 +272,7 @@ final class RootPostMuteUi {
         final Handler handler = new Handler(Looper.getMainLooper());
         final Runnable expire;
         RootPostMutes.Undo token;
+        String rootToUnmute;
         boolean closed, busy;
 
         UndoPanel(Context context, BooleanSupplier alive, Consumer<Boolean> busyChanged,
@@ -296,7 +305,13 @@ final class RootPostMuteUi {
         }
 
         void offer(String message, RootPostMutes.Undo value) {
+            offer(message, value, null);
+        }
+
+        void offer(String message, RootPostMutes.Undo value, String root) {
             token = value;
+            rootToUnmute = root;
+            undo.setText(root == null ? L10n.t("Undo") : L10n.t("Unmute post"));
             undo.setVisibility(VISIBLE);
             undo.setEnabled(!busy);
             message(message);
@@ -307,27 +322,30 @@ final class RootPostMuteUi {
 
         void restore() {
             RootPostMutes.Undo chosen = token;
+            String chosenRoot = rootToUnmute;
             if (closed || getParent() == null || busy || chosen == null || !alive.getAsBoolean() || !RootPostMutes.current(chosen.account)) return;
             handler.removeCallbacks(expire);
             setBusy(true);
             busyChanged.accept(true);
-            RootPostMutes.undo(chosen, success -> {
+            Consumer<Boolean> completed = success -> {
                 if (closed || getParent() == null || token != chosen || !alive.getAsBoolean()) return;
                 setBusy(false);
                 busyChanged.accept(false);
                 if (success) {
                     clearUndo();
-                    message(L10n.t("Muted posts restored"));
+                    message(chosenRoot == null ? L10n.t("Muted posts restored") : L10n.t("Post unmuted"));
                     restored.accept(this);
                 } else {
                     message(L10n.t("Couldn't restore muted posts. Try again."));
                     scheduleExpiry();
                 }
-            });
+            };
+            if (chosenRoot == null) RootPostMutes.undo(chosen, completed);
+            else RootPostMutes.remove(chosen.account, chosenRoot, receipt -> completed.accept(receipt != null));
         }
 
         void scheduleExpiry() { handler.removeCallbacks(expire); handler.postDelayed(expire, undoTimeout(getContext())); }
-        void clearUndo() { handler.removeCallbacks(expire); token = null; undo.setVisibility(GONE); }
+        void clearUndo() { handler.removeCallbacks(expire); token = null; rootToUnmute = null; undo.setVisibility(GONE); }
         void close() { closed = true; clearUndo(); undo.setEnabled(false); }
     }
 

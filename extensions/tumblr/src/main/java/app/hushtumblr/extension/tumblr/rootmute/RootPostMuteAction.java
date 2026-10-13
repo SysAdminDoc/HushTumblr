@@ -34,8 +34,11 @@ public final class RootPostMuteAction implements Runnable {
             if (!RootPostMutes.current(account)) return;
             Runnable restore = undo == null ? null : RootPostLocalTimeline.remove(host, root, account);
             if (undo != null && restore == null) {
-                RootPostMutes.undo(undo, ignored -> {
-                    if (RootPostMutes.current(account)) RootPostMuteUi.changed(target, L10n.t("Post muted locally"), null);
+                RootPostMutes.undo(undo, restored -> {
+                    if (!RootPostMutes.current(account)) return;
+                    RootPostMutes.Session saved = RootPostMutes.capture();
+                    if (!restored && saved != null && saved.roots.contains(root)) RootPostMuteUi.recoverMute(target, undo, root);
+                    else RootPostMuteUi.changed(target, L10n.t("Post muted locally"), null);
                 });
             } else RootPostMuteUi.changed(target, L10n.t("Post muted locally"), undo, restore);
         });
