@@ -607,7 +607,10 @@ try {
             'concepts/marketing/2026-10-11/selected/logo-master.png',
             'concepts/marketing/2026-10-11/selected/hero-master.png')
     }).Count -gt 0
+    # Both fixture suites below run common.ps1's merge, member name and signer checks against stand-in
+    # tools, so a push of common.ps1 alone runs them beside the contract tests.
     $injectedRegisterVerifierPaths = @(
+        'scripts/common.ps1',
         'scripts/BadDexFixture.java',
         'scripts/ControlFlowFixture.java',
         'scripts/DexDiff.java',
@@ -634,6 +637,7 @@ try {
         $_ -in $injectedRegisterVerifierPaths
     }).Count -gt 0
     $resourceTableCheckPaths = @(
+        'scripts/common.ps1',
         'scripts/MergeSplits.java',
         'scripts/ResourceTableCheck.java',
         'scripts/test-resource-table-check.ps1',
