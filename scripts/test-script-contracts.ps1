@@ -4249,17 +4249,30 @@ Write-Host '[scripts] shared helper contracts passed'
 function New-FakeBuildQueue {
     param([string]$Path, [string]$Log)
     $quotedLog = "'" + $Log.Replace("'", "''") + "'"
+    $mutexName = 'Local\HushTumblrFixtureQueue-' + [guid]::NewGuid().ToString('N')
+    # Only the log append is serialized. The builders still run concurrently.
+    # PowerShell 5.1's Add-Content can fail while reopening a contended file.
     Set-Content -LiteralPath $Path -Encoding ASCII -Value @(
         'param([switch]$Status, [string]$Label, [string]$Priority, [string]$Run)',
         'function Enter-BuildQueue {',
         '    param([string]$Label = ''build'', [string]$Priority)',
         '    if (-not $Priority) { $Priority = if ($env:BUILD_QUEUE_PRIORITY -eq ''release'') { ''release'' } else { ''normal'' } }',
-        "    Add-Content -LiteralPath $quotedLog -Value ""enter `$Priority `$Label""",
+        "    `$mutex = New-Object System.Threading.Mutex(`$false, '$mutexName')",
+        '    try {',
+        '        [void]$mutex.WaitOne()',
+        "        try { [IO.File]::AppendAllText($quotedLog, ""enter `$Priority `$Label"" + [Environment]::NewLine, [Text.Encoding]::ASCII) }",
+        '        finally { $mutex.ReleaseMutex() }',
+        '    } finally { $mutex.Dispose() }',
         '    return [pscustomobject]@{ slot = 0; label = $Label }',
         '}',
         'function Exit-BuildQueue {',
         '    param($Ticket)',
-        "    Add-Content -LiteralPath $quotedLog -Value ""exit `$(`$Ticket.label)""",
+        "    `$mutex = New-Object System.Threading.Mutex(`$false, '$mutexName')",
+        '    try {',
+        '        [void]$mutex.WaitOne()',
+        "        try { [IO.File]::AppendAllText($quotedLog, ""exit `$(`$Ticket.label)"" + [Environment]::NewLine, [Text.Encoding]::ASCII) }",
+        '        finally { $mutex.ReleaseMutex() }',
+        '    } finally { $mutex.Dispose() }',
         '}',
         'function Get-BuildQueueMask {',
         '    param([int]$Slot)',
