@@ -898,7 +898,9 @@ function Get-MergedApk {
         way; a universal APK that doesn't verify (merging drops every signature) passes only as
         the merge of the same-named .apkm, .xapk or .apks beside it, whose APKs all pass, with
         that bundle's base dex and every native library its APKs carry byte for byte, the rule
-        Fixtures.signedForm holds the fixture suite to. There is no switch to skip any of it.
+        Fixtures.signedForm holds the fixture suite to. There is no switch to skip any of it. The
+        checks live in Open-AuthenticInput, which Assert-AuthenticInput runs on its own for a caller
+        that refuses a list of inputs before merging the first.
 
         Beside -Destination goes <Destination>.authentic.json, the hashes of what was merged and of
         the base APK whose signer stands for it, which verify-injected-registers.ps1 holds a
@@ -917,24 +919,84 @@ function Get-MergedApk {
 
     $Apk = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Apk)
     $Destination = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Destination)
-    $label = Split-Path -Leaf $Apk
     $record = "$Destination.authentic.json"
-    $refuse = { param([string]$Why) throw "Refusing ${label}: $Why. Nothing was merged or patched." }
-    $splits = $null
-    $signedForm = $null
+    $opened = $null
     $writing = $false
     try {
-        if (Test-SplitBundlePath -Path $Apk) {
-            $splits = Expand-SplitBundle -Apk $Apk -Destination $Destination
-            Lock-SplitFiles -Splits $splits
-            $facts = Assert-SplitsAuthentic -Splits $splits -Aapt2 $Aapt2 -PackageName $PackageName -Signers $Signers
-            $writing = $true
-            if (Test-Path -LiteralPath $record) { Remove-Item -LiteralPath $record -Force }
-            Invoke-SplitMerge -Splits $splits -Destination $Destination -Java $Java -DesktopJar $DesktopJar | Out-Null
+        $opened = Open-AuthenticInput -Apk $Apk -Destination $Destination -Aapt2 $Aapt2 -PackageName $PackageName -Signers $Signers
+        $facts = $opened.Facts
+        $writing = $true
+        if (Test-Path -LiteralPath $record) { Remove-Item -LiteralPath $record -Force }
+        if ($opened.Plain) {
+            if (Test-Path -LiteralPath $Destination) { Remove-Item -LiteralPath $Destination -Force }
+            # The CLI patches the bytes that were checked, read through the handle that kept them.
+            $opened.Plain.Handle.Position = 0
+            $sink = [System.IO.File]::Open($Destination, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write,
+                [System.IO.FileShare]::None)
+            try { $opened.Plain.Handle.CopyTo($sink) } finally { $sink.Dispose() }
         } else {
-            $splits = Copy-ApkToSplitDirectory -Apk $Apk -Destination $Destination
-            Lock-SplitFiles -Splits $splits
-            $plain = $splits.Files[0]
+            Invoke-SplitMerge -Splits $opened.Splits -Destination $Destination -Java $Java -DesktopJar $DesktopJar | Out-Null
+        }
+        $merged = (Get-FileHash -LiteralPath $Destination -Algorithm SHA256).Hash.ToLowerInvariant()
+        $recordFacts = [ordered]@{
+            input        = $Apk
+            package      = $PackageName
+            versionCode  = [string]$facts.VersionCode
+            signers      = @($facts.Signers)
+            signedForm   = if ($opened.SignedForm) { $opened.SignedForm.Bundle } else { $null }
+            baseSha256   = [string]$facts.Base.Sha256
+            mergedSha256 = $merged
+            apks         = @($facts.Apks | ForEach-Object {
+                [ordered]@{ member = [string]$_.Member; name = [string]$_.Name; sha256 = [string]$_.Sha256; split = [string]$_.Split } })
+        }
+        [System.IO.File]::WriteAllText($record, ($recordFacts | ConvertTo-Json -Depth 5), (New-Object System.Text.UTF8Encoding($false)))
+        $writing = $false
+        return $Destination
+    } catch {
+        if ($writing) { Remove-Item -LiteralPath $Destination, $record -Force -ErrorAction SilentlyContinue }
+        throw
+    } finally {
+        Close-AuthenticInput -Opened $opened
+    }
+}
+
+function Open-AuthenticInput {
+    <#
+    .SYNOPSIS
+        Every APK -Apk is made of, unpacked or copied beside -Destination, locked, hashed and held
+        to the declared signer and one build (Get-MergedApk's checks, with nothing merged), or a
+        throw that leaves nothing behind.
+    .DESCRIPTION
+        The answer keeps the APKs open: Splits (a bundle's APKs, or the copy of a plain APK),
+        SignedForm (the bundle beside an unsigned universal APK, checked in its place), Plain (the
+        plain APK's file, when -Apk isn't a bundle) and Facts (what Assert-SplitsAuthentic found, or
+        the same shape for a signed plain APK). Close-AuthenticInput lets go of them. Get-MergedApk
+        merges or copies from it, and Assert-AuthenticInput only checks. Production scripts call
+        neither this nor Close-AuthenticInput themselves.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Apk,
+        [Parameter(Mandatory = $true)][string]$Destination,
+        [Parameter(Mandatory = $true)][string]$Aapt2,
+        [Parameter(Mandatory = $true)][string]$PackageName,
+        [Parameter(Mandatory = $true)][string[]]$Signers
+    )
+
+    $Apk = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Apk)
+    $Destination = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Destination)
+    $label = Split-Path -Leaf $Apk
+    $refuse = { param([string]$Why) throw "Refusing ${label}: $Why. Nothing was merged or patched." }
+    # Each folder goes on here the moment it exists, so a throw at any later step deletes it.
+    $opened = [pscustomobject]@{ Apk = $Apk; Splits = $null; SignedForm = $null; Plain = $null; Facts = $null }
+    try {
+        if (Test-SplitBundlePath -Path $Apk) {
+            $opened.Splits = Expand-SplitBundle -Apk $Apk -Destination $Destination
+            Lock-SplitFiles -Splits $opened.Splits
+            $opened.Facts = Assert-SplitsAuthentic -Splits $opened.Splits -Aapt2 $Aapt2 -PackageName $PackageName -Signers $Signers
+        } else {
+            $opened.Splits = Copy-ApkToSplitDirectory -Apk $Apk -Destination $Destination
+            Lock-SplitFiles -Splits $opened.Splits
+            $plain = $opened.Splits.Files[0]
             $pinned = @($Signers | ForEach-Object { "$_".Trim().ToLowerInvariant() } | Where-Object { $_ })
             $identity = Get-SplitManifestIdentity -Apk $plain.Path -Aapt2 $Aapt2
             if ($identity.Package -cne $PackageName) { & $refuse "it is $($identity.Package), not $PackageName" }
@@ -956,9 +1018,9 @@ function Get-MergedApk {
                         'holds the signed build it could be a merge of')
                 }
                 $bundleLabel = Split-Path -Leaf $bundle
-                $signedForm = Expand-SplitBundle -Apk $bundle -Destination $Destination
-                Lock-SplitFiles -Splits $signedForm
-                $facts = Assert-SplitsAuthentic -Splits $signedForm -Aapt2 $Aapt2 -PackageName $PackageName -Signers $Signers
+                $opened.SignedForm = Expand-SplitBundle -Apk $bundle -Destination $Destination
+                Lock-SplitFiles -Splits $opened.SignedForm
+                $facts = Assert-SplitsAuthentic -Splits $opened.SignedForm -Aapt2 $Aapt2 -PackageName $PackageName -Signers $Signers
                 if ($identity.VersionCode -cne $facts.VersionCode) {
                     & $refuse "it does not verify, and it is version code $($identity.VersionCode) where $bundleLabel is $($facts.VersionCode)"
                 }
@@ -983,36 +1045,53 @@ function Get-MergedApk {
                     & $refuse "it does not verify, and its native libraries aren't those of $bundleLabel, so it isn't that signed build's merge"
                 }
             }
-            $writing = $true
-            if (Test-Path -LiteralPath $record) { Remove-Item -LiteralPath $record -Force }
-            if (Test-Path -LiteralPath $Destination) { Remove-Item -LiteralPath $Destination -Force }
-            # The CLI patches the bytes that were checked, read through the handle that kept them.
-            $plain.Handle.Position = 0
-            $sink = [System.IO.File]::Open($Destination, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write,
-                [System.IO.FileShare]::None)
-            try { $plain.Handle.CopyTo($sink) } finally { $sink.Dispose() }
+            $opened.Plain = $plain
+            $opened.Facts = $facts
         }
-        $merged = (Get-FileHash -LiteralPath $Destination -Algorithm SHA256).Hash.ToLowerInvariant()
-        $recordFacts = [ordered]@{
-            input        = $Apk
-            package      = $PackageName
-            versionCode  = [string]$facts.VersionCode
-            signers      = @($facts.Signers)
-            signedForm   = if ($signedForm) { $signedForm.Bundle } else { $null }
-            baseSha256   = [string]$facts.Base.Sha256
-            mergedSha256 = $merged
-            apks         = @($facts.Apks | ForEach-Object {
-                [ordered]@{ member = [string]$_.Member; name = [string]$_.Name; sha256 = [string]$_.Sha256; split = [string]$_.Split } })
-        }
-        [System.IO.File]::WriteAllText($record, ($recordFacts | ConvertTo-Json -Depth 5), (New-Object System.Text.UTF8Encoding($false)))
-        $writing = $false
-        return $Destination
+        return $opened
     } catch {
-        if ($writing) { Remove-Item -LiteralPath $Destination, $record -Force -ErrorAction SilentlyContinue }
+        Close-AuthenticInput -Opened $opened
         throw
+    }
+}
+
+function Close-AuthenticInput {
+    <#
+    .SYNOPSIS
+        Let go of the APKs Open-AuthenticInput holds and delete the folders they were unpacked or
+        copied into, warning rather than failing.
+    #>
+    param($Opened)
+
+    if ($null -eq $Opened) { return }
+    Remove-SplitDirectory -Splits $Opened.Splits
+    Remove-SplitDirectory -Splits $Opened.SignedForm
+}
+
+function Assert-AuthenticInput {
+    <#
+    .SYNOPSIS
+        Get-MergedApk's checks on -Apk, or the throw Get-MergedApk would give, with nothing merged,
+        copied or recorded.
+    .DESCRIPTION
+        The APKs are unpacked beside -Destination for the length of the call and are gone when it
+        returns or throws. A caller given several inputs checks them all with this before it merges
+        or patches the first (build-release-receipt.ps1), and still goes through Get-MergedApk for
+        each, which checks again.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Apk,
+        [Parameter(Mandatory = $true)][string]$Destination,
+        [Parameter(Mandatory = $true)][string]$Aapt2,
+        [Parameter(Mandatory = $true)][string]$PackageName,
+        [Parameter(Mandatory = $true)][string[]]$Signers
+    )
+
+    $opened = $null
+    try {
+        $opened = Open-AuthenticInput -Apk $Apk -Destination $Destination -Aapt2 $Aapt2 -PackageName $PackageName -Signers $Signers
     } finally {
-        Remove-SplitDirectory -Splits $splits
-        Remove-SplitDirectory -Splits $signedForm
+        Close-AuthenticInput -Opened $opened
     }
 }
 

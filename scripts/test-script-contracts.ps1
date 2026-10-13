@@ -4377,8 +4377,10 @@ foreach ($name in @('build-release-receipt.ps1', 'verify-all-patches.ps1')) {
 # merge steps itself: those run unchecked only in the resource table test, on APKs aapt2 builds
 # there. Get-MergedApk has no switch, so nothing can ask it to skip the check, and in each script
 # it comes before the CLI patches, a kept APK is signed, a kept run is looked up or the clean side
-# is compared.
-$checkedSteps = @('Expand-SplitBundle', 'Copy-ApkToSplitDirectory', 'Lock-SplitFiles', 'Invoke-SplitMerge', 'Assert-SplitsAuthentic')
+# is compared. Assert-AuthenticInput runs the same checks with nothing merged, so the receipt
+# builder can refuse its whole fixture list first; the steps it opens and closes stay in common.ps1.
+$checkedSteps = @('Expand-SplitBundle', 'Copy-ApkToSplitDirectory', 'Lock-SplitFiles', 'Invoke-SplitMerge', 'Assert-SplitsAuthentic',
+    'Open-AuthenticInput', 'Close-AuthenticInput')
 foreach ($script in @(Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.ps1' -File |
         Where-Object { $_.Name -ne 'common.ps1' -and $_.Name -notlike 'test-*' })) {
     $scriptAst = [System.Management.Automation.Language.Parser]::ParseFile($script.FullName, [ref]$null, [ref]$null)
@@ -4431,6 +4433,11 @@ foreach ($order in @(
         Assert-True ($laterAt -gt $mergeAt) "In $($order.Name), $($later.What) before Get-MergedApk has checked the APKs, or never."
     }
 }
+# The receipt builder checks its whole fixture list before it merges any fixture.
+$receiptAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'build-release-receipt.ps1'), [ref]$null, [ref]$null)
+$fixtureCheckAt = Get-FirstCommandOffset $receiptAst { param($node) $node.GetCommandName() -eq 'Assert-AuthenticInput' }
+Assert-True ($fixtureCheckAt -ge 0 -and $fixtureCheckAt -lt (Get-FirstCommandOffset $receiptAst $isMerge)) `
+    'build-release-receipt.ps1 merges a fixture before it has checked every fixture (Assert-AuthenticInput), or never checks them.'
 # The verifier holds whatever merge it compares to the record, a merge it was handed included, so
 # that check can't sit behind a condition.
 $verifierAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'verify-injected-registers.ps1'),
@@ -5057,9 +5064,10 @@ try {
     # the catalog pins it to; the fixtures used to count down from a code of their own, which only
     # the version name made declared.
     $newerBuild = "$([int]($releaseTarget.PackageVersion -split '\.')[0] + 1).0.0.1.1"
+    $newerCode = 512008382
     foreach ($build in @($newerBuild) + @($releaseTarget.PackageVersions)) {
         $stockMinSdk = if ($build -eq $newerBuild) { 36 } else { 21 }
-        $versionCode = if ($build -eq $newerBuild) { 512008382 } else { [long]@($releaseTarget.PackageVersionCodes[$build])[0] }
+        $versionCode = if ($build -eq $newerBuild) { $newerCode } else { [long]@($releaseTarget.PackageVersionCodes[$build])[0] }
         $apkm = Join-Path $fixtures "tumblr-$build-$versionCode.xapk"
         # The base names the fixture it was packed into, which the JDK stand-in reads back as it
         # merges: the merger is handed the directory the APKs were unpacked into, not the bundle.
@@ -5981,6 +5989,37 @@ try {
     } finally {
         [System.IO.File]::WriteAllBytes($splitFixture, $splitFixtureBytes)
         [System.IO.File]::WriteAllBytes($releaseReceipt, $splitReceiptBytes)
+    }
+
+    # The same unsigned split in the last fixture the receipt builder is given, the undeclared build
+    # it patches under -f. Every fixture is checked before the first is merged, so the declared
+    # builds ahead of it are neither merged nor patched, and the check leaves no folder behind.
+    # Checked only as each was reached, the run merged and patched them first.
+    $lastFixture = $fixturePaths[$newerBuild]
+    $lastFixtureBytes = [System.IO.File]::ReadAllBytes($lastFixture)
+    $lastReceiptBytes = [System.IO.File]::ReadAllBytes($releaseReceipt)
+    try {
+        Assert-True ($allFixtures.Count -gt 1 -and $allFixtures[-1] -ceq $lastFixture) `
+            'The receipt builder is not given the undeclared build last, after the declared ones.'
+        Remove-Item -LiteralPath $lastFixture -Force
+        New-TestBundleArchive -Path $lastFixture -Entries ([ordered]@{
+            'com.tumblr.apk' = "N: stand-in-bundle=$lastFixture`n" + (Get-FixtureManifest -Build $newerBuild -Code "$newerCode" -MinSdk 36)
+            'icon.png' = 'icon'
+            'config.arm64_v8a.apk' = Get-FixtureSplitManifest -Code "$newerCode" -Split 'config.arm64_v8a' -Marker 'stand-in-unsigned'
+            'manifest.json' = ("{`"package_name`":`"com.tumblr`",`"version_code`":`"$newerCode`",`"split_apks`":[" +
+                '{"file":"com.tumblr.apk","id":"base"},{"file":"config.arm64_v8a.apk","id":"config.arm64_v8a"}]}') })
+        Remove-Item -LiteralPath $releaseReceipt -Force -ErrorAction SilentlyContinue
+        Assert-Throws { Invoke-ReceiptBuilder -Fixtures $allFixtures } `
+            "*Refusing $(Split-Path -Leaf $lastFixture): config.arm64_v8a.apk does not verify (*Nothing was merged or patched.*" `
+            'build-release-receipt.ps1 took a last fixture whose split is unsigned.'
+        Assert-True (-not (Test-Path -LiteralPath $mergeLog) -and -not (Test-Path -LiteralPath $javaLog) -and
+            -not (Test-Path -LiteralPath $releaseReceipt) -and
+            @(Get-ChildItem -LiteralPath (Join-Path $releaseRoot 'work') -Directory |
+                Where-Object { $_.Name -like 'receipt-*' -or $_.Name -like 'check-*' }).Count -eq 0) `
+            'build-release-receipt.ps1 merged or patched the fixtures ahead of one with an unsigned split, or left a folder behind.'
+    } finally {
+        [System.IO.File]::WriteAllBytes($lastFixture, $lastFixtureBytes)
+        [System.IO.File]::WriteAllBytes($releaseReceipt, $lastReceiptBytes)
     }
 
     # The builder, the release check and the device build given relative paths, from a location

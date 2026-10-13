@@ -22,6 +22,8 @@
     one. A fixture of any other build is patched under -f and recorded as forced. The fixtures'
     base manifests are read before anything is patched, so a declared build with no fixture
     stops the run at once instead of after the others, each of which unpacks a whole Tumblr build.
+    Then every fixture's APKs are held to the declared signer (Assert-AuthenticInput), so one bad
+    split anywhere in the list stops the run before the first fixture is merged.
 
     Each patched fixture then goes through the checks verify-all-patches.ps1 runs: its rebuilt
     resource table against the stock one (ResourceTableCheck.java), and its injected code against
@@ -322,6 +324,20 @@ if ($unfixed.Count -gt 0) {
         "receipt needs a run of every declared build without -f. The catalog declares " +
         "$(Format-DeclaredBuilds -Target $expectedTarget), and the fixtures given are $($given -join ', '). " +
         'Nothing was patched.')
+}
+
+# Every fixture's APKs are held to the declared signer and to one build before the first fixture is
+# merged or patched (Assert-AuthenticInput, Get-MergedApk's checks with nothing merged). Checked only
+# as each was reached, a bad split in the last fixture stopped the run after the fixtures ahead of it
+# were merged and patched. Each merge below checks its fixture again.
+foreach ($apk in $Fixture) {
+    $checkDir = Resolve-WithinRoot -Path (Join-Path $workRoot ("check-" + [guid]::NewGuid().ToString('N'))) -Root $workRoot
+    try {
+        Assert-AuthenticInput -Apk $apk -Destination (Join-Path $checkDir 'stock-merged.apk') -Aapt2 $Aapt2 `
+            -PackageName $expectedTarget.PackageName -Signers $declaredSigners
+    } finally {
+        Remove-GeneratedPath -Path $checkDir -Root $workRoot
+    }
 }
 
 # A receipt is made for a release, so its heavy jobs go ahead of everyday builds in the machine's
