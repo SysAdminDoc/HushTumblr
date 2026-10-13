@@ -27,6 +27,11 @@
     HUSHTUMBLR_APPLY_RECORDS, else the default one in the temp folder; -NoReuse always patches.
     Nothing this script makes is kept there: it skips the resource table check.
 
+    The signed APK has to pass zipalign -c -P 16 -v 4, with the zipalign beside aapt2, and its
+    64-bit libraries have to be Tumblr's own bytes (Assert-PageAlignment). A kept APK is held to
+    that before it's signed as well. A library of Tumblr's that doesn't fit 16 KB pages is printed
+    as a warning naming it a target limitation, and is never rewritten.
+
 .EXAMPLE
     scripts/patch-for-device.ps1 -Serial $env:HUSHTUMBLR_DEVICE_SERIAL
 #>
@@ -206,6 +211,9 @@ if ($recorded) {
     if (-not (Test-Path -LiteralPath $apksigner -PathType Leaf)) {
         throw "No apksigner beside aapt2 at $apksigner to sign the kept APK. Pass -NoReuse to patch and sign with the CLI."
     }
+    # zipalign can't put an APK right once it's signed, so the kept one is held to the 16 KB layout
+    # before the signature goes on. The signed APK is held to it again below.
+    Assert-PageAlignment -Apk $recorded.PatchedApk -Stock $patchInput -Aapt2 $Aapt2 | Out-Null
     $savedPassword = [Environment]::GetEnvironmentVariable($passwordVariable, [EnvironmentVariableTarget]::Process)
     $preference = $ErrorActionPreference
     try {
@@ -282,6 +290,10 @@ $patchedManifest = Get-ApkManifestFacts -Apk $out -Aapt2 $Aapt2
 $manifestCheck = Test-ManifestDelta -Stock $stockManifest -Patched $patchedManifest `
     -SelectedPatchNames $manifestSelection -ApprovedManifestDelta $approvedChanges
 if (-not $manifestCheck.Valid) { throw "Patching changed an unapproved compiled manifest fact: $($manifestCheck.Reason)" }
+# What a phone with 16 KB pages needs of the signed APK: a ZIP layout zipalign -c -P 16 -v 4 passes
+# and 64-bit libraries that are still Tumblr's bytes (Assert-PageAlignment). A library of Tumblr's
+# own that doesn't fit is the target's limit, named here whatever the signature says.
+foreach ($limit in @(Assert-PageAlignment -Apk $out -Stock $patchInput -Aapt2 $Aapt2)) { Write-Warning "[device] $limit" }
 if ($recorded) {
     # Signing adds a signature block and leaves the dex alone, and these dex passed DexDiff and the
     # host reference check when the gate kept the run.

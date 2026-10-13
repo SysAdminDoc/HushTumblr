@@ -37,6 +37,13 @@
     merge: one that left an asset out, one with the base APK's resource table and nothing the split
     adds, and one with a signed res file under another name. Those take the merge to tell, so the
     JDK runs for them, and they leave nothing behind either.
+
+    Last, what a device with 16 KB pages needs of a patched APK (Assert-PageAlignment), with the
+    build-tools' zipalign and apksigner: an APK aligned and then signed passes, the same files left
+    as jar packed them fail zipalign -c -P 16 -v 4, and an added library with a 4 KB LOAD segment,
+    a GNU_RELRO that ends inside a 16 KB page or program headers that run past its end is refused
+    on its own in an aligned APK. The same faults in a library the stock APK holds come back as
+    target limitations on a signed APK, and a stock library rewritten to fit is refused.
 #>
 [CmdletBinding()]
 param(
@@ -757,6 +764,105 @@ try {
             @(Get-ChildItem -LiteralPath (Join-Path $bundleDir 'merged') -Force -Filter '.trusted-*').Count -eq 0) `
             "$(Split-Path -Leaf $case.Apk) was not refused before anything was handed on: $refused"
     }
+
+    # What a device with 16 KB pages needs of a patched APK (Assert-PageAlignment), with the
+    # build-tools' own zipalign and apksigner on archives the JDK's jar packs uncompressed. A
+    # library here is an ELF header and its program headers, which is all the check reads: one LOAD
+    # segment, and a GNU_RELRO from 0x4000 up to -RelroEnd when one is asked for.
+    $zipalign = Resolve-Zipalign -Aapt2 $Aapt2
+    $jar = Join-Path (Split-Path -Parent $Java) 'jar.exe'
+    if (-not (Test-Path -LiteralPath $jar -PathType Leaf)) { throw "Required tool not found: $jar" }
+    $pageDir = Join-Path $caseRoot 'pages'
+    function New-TestLibrary([long]$LoadAlign = 0x4000, [long]$RelroEnd = 0) {
+        $bytes = New-Object byte[] 176
+        ([byte[]]@(0x7F, 0x45, 0x4C, 0x46, 2, 1, 1)).CopyTo($bytes, 0)
+        [System.BitConverter]::GetBytes([uint64]64).CopyTo($bytes, 0x20)
+        [System.BitConverter]::GetBytes([uint16]56).CopyTo($bytes, 0x36)
+        [System.BitConverter]::GetBytes([uint16]$(if ($RelroEnd) { 2 } else { 1 })).CopyTo($bytes, 0x38)
+        [System.BitConverter]::GetBytes([uint32]1).CopyTo($bytes, 64)
+        [System.BitConverter]::GetBytes([uint64]$LoadAlign).CopyTo($bytes, 64 + 48)
+        if ($RelroEnd) {
+            [System.BitConverter]::GetBytes([uint32]0x6474e552).CopyTo($bytes, 120)
+            [System.BitConverter]::GetBytes([uint64]0x4000).CopyTo($bytes, 120 + 16)
+            [System.BitConverter]::GetBytes([uint64]($RelroEnd - 0x4000)).CopyTo($bytes, 120 + 40)
+        }
+        return , $bytes
+    }
+    # The libraries and the stock APK's manifest, which apksigner reads the API floor from. Packed
+    # as they come, or aligned and then signed, the order a build has to keep.
+    function New-NativeApk([string]$Name, [System.Collections.IDictionary]$Libraries, [switch]$AsPacked) {
+        $tree = Join-Path $pageDir $Name
+        foreach ($library in $Libraries.GetEnumerator()) {
+            $path = Join-Path $tree ("lib/$($library.Key)" -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+            New-Item -ItemType Directory -Force -Path (Split-Path -Parent $path) | Out-Null
+            [System.IO.File]::WriteAllBytes($path, $library.Value)
+        }
+        $archive = [System.IO.Compression.ZipFile]::OpenRead($stockApk)
+        try { [System.IO.Compression.ZipFileExtensions]::ExtractToFile($archive.GetEntry('AndroidManifest.xml'), (Join-Path $tree 'AndroidManifest.xml')) }
+        finally { $archive.Dispose() }
+        $packed = Join-Path $pageDir "$Name-packed.apk"
+        Invoke-Checked -Program $jar -Arguments @('--create', '--no-compress', '--no-manifest', '--file', $packed, '-C', $tree, '.') `
+            -Description "jar for $Name"
+        if ($AsPacked) { return $packed }
+        $aligned = Join-Path $pageDir "$Name-aligned.apk"
+        Invoke-Checked -Program $zipalign -Arguments @('-f', '-P', '16', '4', $packed, $aligned) -Description "zipalign for $Name"
+        $out = Join-Path $pageDir "$Name.apk"
+        Invoke-Checked -Program $apksigner -Arguments @('sign', '--ks', (Join-Path $keys 'a.p12'), '--ks-pass', 'pass:hushtest',
+            '--key-pass', 'pass:hushtest', '--ks-key-alias', 'test', '--out', $out, $aligned) -Description "apksigner sign $Name"
+        return $out
+    }
+    function Invoke-PageCheck([string]$Apk, [string]$Stock) {
+        try { return [pscustomobject]@{ Limits = @(Assert-PageAlignment -Apk $Apk -Stock $Stock -Aapt2 $Aapt2); Refused = $null } }
+        catch { return [pscustomobject]@{ Limits = @(); Refused = $_.Exception.Message } }
+    }
+    # Tumblr's own, as far as these cases go: a library with a GNU_RELRO that ends on a 16 KB
+    # boundary, one with none, a 32-bit one with 4 KB segments and a dex named .so. The last two
+    # aren't read.
+    $thirtyTwo = New-TestLibrary -LoadAlign 0x1000
+    $thirtyTwo[4] = 1
+    $clean = @{ 'arm64-v8a/libgood.so' = (New-TestLibrary -RelroEnd 0x8000); 'arm64-v8a/libplain.so' = (New-TestLibrary)
+        'armeabi-v7a/libold.so' = $thirtyTwo; 'arm64-v8a/libcode.dex.so' = [System.Text.Encoding]::ASCII.GetBytes("dex`n035") }
+    $cleanStock = New-NativeApk -Name 'clean-stock' -Libraries $clean -AsPacked
+    $accepted = New-NativeApk -Name 'accepted' -Libraries $clean
+    $said = Invoke-PageCheck -Apk $accepted -Stock $cleanStock
+    Assert-True ($null -eq $said.Refused -and $said.Limits.Count -eq 0 -and (Get-ApkSigners -Apk $accepted -Apksigner $apksigner).Verified) `
+        "An APK aligned before it was signed, with Tumblr's libraries as they were, was not accepted: $($said.Refused) $($said.Limits -join ' ')"
+    # The same files as jar packed them: every library sits wherever the entry before it ended.
+    $said = Invoke-PageCheck -Apk $cleanStock -Stock $cleanStock
+    Assert-True ($said.Refused -like "*zipalign -c -P 16 -v 4 didn't pass clean-stock-packed.apk (exit 1)*lib/arm64-v8a/lib*.so (BAD*") `
+        "An APK whose libraries aren't on 16 KB boundaries in the ZIP was not refused for that: $($said.Refused)"
+    # A library Tumblr didn't ship, in an aligned ZIP: one LOAD segment aligned to 4 KB, one whose
+    # GNU_RELRO ends 4 KB into a 16 KB page, and one that counts more program headers than it holds.
+    $cutShort = New-TestLibrary
+    $cutShort[0x38] = 9
+    foreach ($added in @(
+            @{ Name = 'small-load'; Library = (New-TestLibrary -LoadAlign 0x1000); Says = 'LOAD segment 0 is aligned to 0x1000, under 0x4000' },
+            @{ Name = 'short-relro'; Library = (New-TestLibrary -RelroEnd 0x5000)
+                Says = "GNU_RELRO segment 1 (VirtAddr 0x4000, MemSiz 0x1000) doesn't end on a 16 KB boundary" },
+            @{ Name = 'cut-short'; Library = $cutShort; Says = 'its program headers run past the end of the file' })) {
+        $said = Invoke-PageCheck -Apk (New-NativeApk -Name $added.Name -Libraries ($clean + @{ 'arm64-v8a/libadded.so' = $added.Library })) -Stock $cleanStock
+        Assert-True ($said.Refused -like ("*lib/arm64-v8a/libadded.so in $($added.Name).apk, which Tumblr didn't ship, can't be mapped on a " +
+                "device with 16 KB pages: $($added.Says).*")) "$($added.Name).apk was not refused for its library alone: $($said.Refused)"
+    }
+    # The same two faults in libraries the stock APK holds too are Tumblr's to fix. The APK is
+    # taken, signature and all, and each one is named for the caller to report. Putting one right
+    # by rewriting it is refused: it isn't Tumblr's library any more.
+    $limited = $clean + @{ 'arm64-v8a/libinherited.so' = (New-TestLibrary -RelroEnd 0x6000)
+        'x86_64/libinherited.so' = (New-TestLibrary -LoadAlign 0x1000) }
+    $limitedStock = New-NativeApk -Name 'limited-stock' -Libraries $limited -AsPacked
+    $limitedApk = New-NativeApk -Name 'limited' -Libraries $limited
+    $said = Invoke-PageCheck -Apk $limitedApk -Stock $limitedStock
+    $expectedLimits = @(
+        "16 KB target limitation: lib/arm64-v8a/libinherited.so is Tumblr's own library, left as it is, and GNU_RELRO segment 1 (VirtAddr 0x4000, MemSiz 0x2000) doesn't end on a 16 KB boundary.",
+        "16 KB target limitation: lib/x86_64/libinherited.so is Tumblr's own library, left as it is, and LOAD segment 0 is aligned to 0x1000, under 0x4000.")
+    Assert-True ($null -eq $said.Refused -and (@($said.Limits | Sort-Object) -join "`n") -ceq ($expectedLimits -join "`n") -and
+        (Get-ApkSigners -Apk $limitedApk -Apksigner $apksigner).Verified) `
+        "Tumblr's own libraries that don't fit 16 KB pages were not reported as the target's limit on a signed APK: $($said.Refused) $($said.Limits -join ' ')"
+    $rewritten = $limited.Clone()
+    $rewritten['arm64-v8a/libinherited.so'] = New-TestLibrary -RelroEnd 0xC000
+    $said = Invoke-PageCheck -Apk (New-NativeApk -Name 'rewritten' -Libraries $rewritten) -Stock $limitedStock
+    Assert-True ($said.Refused -like "*lib/arm64-v8a/libinherited.so in rewritten.apk isn't the library Tumblr shipped*") `
+        "An APK with one of Tumblr's libraries rewritten to fit was not refused: $($said.Refused) $($said.Limits -join ' ')"
 } finally {
     $env:BUILD_QUEUE_SCRIPT = $savedQueueScript
     if ($caseRoot.StartsWith($requiredPrefix, [System.StringComparison]::OrdinalIgnoreCase) -and `

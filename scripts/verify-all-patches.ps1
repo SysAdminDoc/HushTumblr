@@ -20,7 +20,10 @@
     the merge (or the plain APK) and the patched APK
     the way the release receipt does and prints what patching changed: permissions asked for or
     dropped, components exported or no longer. A change scripts/manifest-delta-allowlist.txt
-    doesn't approve stops the run there, before the release. It then holds the patched APK's
+    doesn't approve stops the run there, before the release. The patched APK then has to pass
+    zipalign -c -P 16 -v 4 with its 64-bit libraries still Tumblr's own bytes, which is what a
+    device with 16 KB pages needs; a library of Tumblr's that doesn't fit is printed as a target
+    limitation and left alone (Assert-PageAlignment). It then holds the patched APK's
     resource table to the merge's with ResourceTableCheck.java: every resource of every package
     has to resolve by its id with its type and each configuration's value, and every file and
     reference the patched values name has to be there. A failure names the id. What the patches
@@ -273,6 +276,12 @@ $result = Resolve-WithinRoot -Path (Join-Path $workRoot "verify-all-result-$runI
         foreach ($change in $manifestChanges) {
             Write-Host "[verify]   $change (approved)"
         }
+        # What a device with 16 KB pages needs of the patched APK: a ZIP layout zipalign -c -P 16 -v 4
+        # passes and 64-bit libraries that are still Tumblr's bytes (Assert-PageAlignment). A library
+        # of Tumblr's own that doesn't fit is the target's limit: named, and left as it is.
+        $pageLimits = @(Assert-PageAlignment -Apk $out -Stock $patchInput -Aapt2 $Aapt2)
+        foreach ($limit in $pageLimits) { Write-Warning "[verify] $limit" }
+        Write-Host "[verify] 16 KB pages: zipalign -c -P 16 -v 4 passes, with $($pageLimits.Count) target limitation(s) in Tumblr's own libraries"
     }
     if ($cliExitCode -eq 0 -and $validation.Valid -and $unapprovedChanges.Count -gt 0) {
         Write-Warning ('[verify] the patched manifest changed in ways scripts/manifest-delta-allowlist.txt ' +

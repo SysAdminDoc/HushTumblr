@@ -1267,6 +1267,159 @@ function Assert-AuthenticMerge {
     }
 }
 
+function Get-NativeLibraryAlignment {
+    <#
+    .SYNOPSIS
+        Every 64-bit ELF library under lib/ of an APK: its name, its SHA-256 and what keeps it off
+        a device with 16 KB pages, if anything does.
+    .DESCRIPTION
+        Read off the program headers, the way Android's page size guide says to. Every LOAD
+        segment has to be aligned to at least 2**14, and a GNU_RELRO segment has to end on a 16 KB
+        boundary, (VirtAddr + MemSiz) % 0x4000 == 0. A library with no GNU_RELRO has nothing to
+        end there, so that part passes. 32-bit libraries only run where pages are 4 KB, and a file
+        under lib/ that isn't ELF is never mapped as code, so neither is read.
+    #>
+    param([Parameter(Mandatory = $true)][string]$Apk)
+
+    Add-Type -AssemblyName System.IO.Compression
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $page = [uint64]0x4000
+    $libraries = New-Object System.Collections.Generic.List[object]
+    # ZipFile reads a relative path against the process directory, not PowerShell's location.
+    $zip = [System.IO.Compression.ZipFile]::OpenRead($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Apk))
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        foreach ($entry in @($zip.Entries)) {
+            if ($entry.FullName -cnotmatch '^lib/[^/]+/[^/]+$') { continue }
+            $buffer = New-Object System.IO.MemoryStream
+            $stream = $entry.Open()
+            try { $stream.CopyTo($buffer) } finally { $stream.Dispose() }
+            $bytes = $buffer.ToArray()
+            # 0x7F 'E' 'L' 'F', then the class: 2 is 64-bit.
+            if ($bytes.Length -lt 64 -or $bytes[0] -ne 0x7F -or $bytes[1] -ne 0x45 -or $bytes[2] -ne 0x4C -or
+                $bytes[3] -ne 0x46 -or $bytes[4] -ne 2) { continue }
+            $problems = New-Object System.Collections.Generic.List[string]
+            $headers = [System.BitConverter]::ToUInt64($bytes, 0x20)
+            $headerSize = [System.BitConverter]::ToUInt16($bytes, 0x36)
+            $headerCount = [System.BitConverter]::ToUInt16($bytes, 0x38)
+            $loads = 0
+            if ($bytes[5] -ne 1) {
+                $problems.Add('it isn''t a little-endian library, so its segments can''t be read')
+            } elseif ($headerSize -lt 56 -or $headers -gt [uint64]$bytes.Length -or
+                [uint64]$headerCount * [uint64]$headerSize -gt [uint64]$bytes.Length - $headers) {
+                $problems.Add('its program headers run past the end of the file')
+            } else {
+                for ($i = 0; $i -lt $headerCount; $i++) {
+                    $at = [int]$headers + $i * $headerSize
+                    $type = [System.BitConverter]::ToUInt32($bytes, $at)
+                    if ($type -eq 1) {
+                        $loads++
+                        $align = [System.BitConverter]::ToUInt64($bytes, $at + 48)
+                        if ($align -lt $page) { $problems.Add(('LOAD segment {0} is aligned to 0x{1:x}, under 0x4000' -f $i, $align)) }
+                    } elseif ($type -eq 0x6474e552) {
+                        $address = [System.BitConverter]::ToUInt64($bytes, $at + 16)
+                        $size = [System.BitConverter]::ToUInt64($bytes, $at + 40)
+                        if ((($address % $page) + ($size % $page)) % $page -ne 0) {
+                            $problems.Add(('GNU_RELRO segment {0} (VirtAddr 0x{1:x}, MemSiz 0x{2:x}) doesn''t end on a 16 KB boundary' -f
+                                    $i, $address, $size))
+                        }
+                    }
+                }
+                if ($loads -eq 0) { $problems.Add('it has no LOAD segment') }
+            }
+            $libraries.Add([pscustomobject]@{
+                    Name     = $entry.FullName
+                    Sha256   = ([System.BitConverter]::ToString($sha.ComputeHash($bytes)) -replace '-', '').ToLowerInvariant()
+                    Problems = $problems.ToArray()
+                })
+        }
+    } finally {
+        $sha.Dispose()
+        $zip.Dispose()
+    }
+    return $libraries.ToArray()
+}
+
+function Resolve-Zipalign {
+    <#
+    .SYNOPSIS
+        The zipalign of the build-tools aapt2 came from, or a throw.
+    #>
+    param([Parameter(Mandatory = $true)][string]$Aapt2)
+
+    $tools = Split-Path -Parent $Aapt2
+    foreach ($name in @('zipalign.exe', 'zipalign', 'zipalign.bat')) {
+        $candidate = Join-Path $tools $name
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+    }
+    throw "No zipalign beside aapt2 in $tools, so the APK's layout can't be checked for devices with 16 KB pages."
+}
+
+function Assert-PageAlignment {
+    <#
+    .SYNOPSIS
+        Hold a patched APK to what a device with 16 KB pages needs, or throw. Returns one line for
+        each library of Tumblr's own that doesn't meet it, which is the target's limit to report.
+    .DESCRIPTION
+        zipalign -c -P 16 -v 4 has to pass, with the zipalign beside aapt2 (build-tools 35 or
+        newer, the first to take -P). Nothing here aligns: zipalign after a signature breaks it,
+        so an APK is held to this before it's signed and again once it is.
+
+        Then the 64-bit libraries (Get-NativeLibraryAlignment). Patching leaves native code alone,
+        so one the stock APK also holds has to be the same bytes. One that fails with Tumblr's own
+        bytes can't be put right here without rewriting Tumblr's code: it comes back as a line for
+        the caller to print, signed or not. A failing library Tumblr didn't ship is a throw.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Apk,
+        # The stock APK the patched one was made from: a bundle's merge, or the plain APK.
+        [Parameter(Mandatory = $true)][string]$Stock,
+        [Parameter(Mandatory = $true)][string]$Aapt2
+    )
+
+    $label = Split-Path -Leaf $Apk
+    $zipalign = Resolve-Zipalign -Aapt2 $Aapt2
+    # Continue for the call alone: zipalign warns on stderr about headers a merge leaves, which is
+    # a terminating error in Windows PowerShell 5.1 under Stop. The exit code is what gets judged.
+    $preference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        $global:LASTEXITCODE = -1
+        $lines = @(& $zipalign -c -P 16 -v 4 $Apk 2>&1 | ForEach-Object { "$_" })
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $preference
+    }
+    if ($exitCode -ne 0) {
+        $telling = @($lines | Where-Object { $_ -match '\(BAD' } | Select-Object -First 5)
+        if ($telling.Count -eq 0) { $telling = @($lines | Where-Object { $_ } | Select-Object -First 2) }
+        throw ("zipalign -c -P 16 -v 4 didn't pass $label (exit $exitCode), so it isn't accepted for devices with " +
+            "16 KB pages: $(@($telling | ForEach-Object { $_.Trim() }) -join '; ')")
+    }
+
+    $limits = New-Object System.Collections.Generic.List[string]
+    $libraries = @(Get-NativeLibraryAlignment -Apk $Apk)
+    if ($libraries.Count -eq 0) { return $limits.ToArray() }
+    $stockLibraries = New-Object 'System.Collections.Generic.Dictionary[string,string]' ([System.StringComparer]::Ordinal)
+    foreach ($library in @(Get-NativeLibraryAlignment -Apk $Stock)) { $stockLibraries[$library.Name] = $library.Sha256 }
+    foreach ($library in $libraries) {
+        $shipped = $null
+        $known = $stockLibraries.TryGetValue($library.Name, [ref]$shipped)
+        if ($known -and $shipped -cne $library.Sha256) {
+            throw ("$($library.Name) in $label isn't the library Tumblr shipped (SHA-256 $($library.Sha256), not $shipped). " +
+                'Patching leaves native code as it is, so this APK isn''t accepted.')
+        }
+        if ($library.Problems.Count -eq 0) { continue }
+        if (-not $known) {
+            throw ("$($library.Name) in $label, which Tumblr didn't ship, can't be mapped on a device with 16 KB pages: " +
+                "$($library.Problems -join '; ').")
+        }
+        $limits.Add("16 KB target limitation: $($library.Name) is Tumblr's own library, left as it is, and " +
+            "$($library.Problems -join '; ').")
+    }
+    return $limits.ToArray()
+}
+
 function Assert-UrlReachable {
     <#
     .SYNOPSIS

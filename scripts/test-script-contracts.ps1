@@ -4539,6 +4539,27 @@ $conditional = @($recordChecks | Where-Object {
 Assert-True ($recordChecks.Count -eq 1 -and $conditional.Count -eq 0) `
     'verify-injected-registers.ps1 does not hold the merge it compares to the record of its signer check on every run.'
 
+# Every script that patches holds the APK it made to what a device with 16 KB pages needs
+# (Assert-PageAlignment), against the stock APK the CLI was handed, once the CLI has patched. The
+# device script also signs a kept APK itself, and zipalign can't put a signed APK right, so there
+# the kept APK is held to it before apksigner signs and the signed one after. The release root
+# section below runs all three against a zipalign that fails.
+$isPageCheck = { param($node) $node.GetCommandName() -eq 'Assert-PageAlignment' }
+foreach ($name in @('patch-for-device.ps1', 'build-release-receipt.ps1', 'verify-all-patches.ps1')) {
+    $scriptAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot $name), [ref]$null, [ref]$null)
+    $pageChecks = @($scriptAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] -and
+            (& $isPageCheck $node) }, $true) | Sort-Object { $_.Extent.StartOffset })
+    Assert-True ($pageChecks.Count -gt 0 -and $pageChecks[-1].Extent.StartOffset -gt (Get-FirstCommandOffset $scriptAst $isCliPatch) -and
+        $pageChecks[-1].Extent.Text -match '-Apk \$out -Stock \$patchInput -Aapt2 \$Aapt2$') `
+        "$name does not hold the APK it patched to the 16 KB page check, against the stock APK the CLI was handed."
+    if ($name -eq 'patch-for-device.ps1') {
+        $signAt = Get-FirstCommandOffset $scriptAst $isKeptSign
+        Assert-True ($pageChecks.Count -eq 2 -and $pageChecks[0].Extent.StartOffset -lt $signAt -and
+            $pageChecks[0].Extent.Text -match '-Apk \$recorded\.PatchedApk -Stock \$patchInput ' -and $pageChecks[1].Extent.StartOffset -gt $signAt) `
+            'patch-for-device.ps1 does not hold a kept APK to the 16 KB page check before it signs it, and the signed APK after.'
+    }
+}
+
 Write-Host '[scripts] split bundle contracts passed'
 
 # --- relative paths ------------------------------------------------------------------------------
@@ -5136,6 +5157,17 @@ try {
         'copy /y "!LAST!" "!OUT!" >nul || exit /b 3',
         'if exist "!LAST!.xmltree" copy /y "!LAST!.xmltree" "!OUT!.xmltree" >nul',
         'exit /b 0')
+    # And a zipalign beside them, which every patched APK is held to for devices with 16 KB pages
+    # (Assert-PageAlignment). It notes what it was asked in zipalign.log and passes the APK, unless
+    # a case leaves zipalign-fails.txt behind. The real one is run against real archives in
+    # test-resource-table-check.ps1.
+    $zipalignLog = Join-Path $tools 'zipalign.log'
+    Set-Content -LiteralPath (Join-Path $tools 'zipalign.bat') -Encoding ASCII -Value @(
+        '@echo off',
+        '>>"%~dp0zipalign.log" echo %*',
+        'if exist "%~dp0zipalign-fails.txt" (echo Verification FAILED& exit /b 1)',
+        'echo Verification successful',
+        'exit /b 0')
     New-TestBundleArchive -Path (Join-Path $tools 'patched.apk') -Entries ([ordered]@{
         'AndroidManifest.xml' = 'binary manifest'; 'classes.dex' = "dex`n035" })
 
@@ -5430,10 +5462,12 @@ try {
     # A patched fixture whose injected code fails the structural check, or calls a class or member
     # the build lacks, stops the run with no receipt. HushPinterest 0.0.3 shipped a System share sheet
     # call into a class from another Pinterest build because the builder read only the CLI's verdicts.
+    # So does one zipalign -c -P 16 -v 4 doesn't pass, which a device with 16 KB pages can't load.
     $builtReceiptBeforeChecks = [System.IO.File]::ReadAllBytes($releaseReceipt)
     foreach ($broken in @(
             @{ Flag = 'dexdiff-fails.txt'; Pattern = '*failed its structural or host reference checks (exit 1)*' },
-            @{ Flag = 'references-fails.txt'; Pattern = '*failed its structural or host reference checks (exit 1)*' })) {
+            @{ Flag = 'references-fails.txt'; Pattern = '*failed its structural or host reference checks (exit 1)*' },
+            @{ Flag = 'zipalign-fails.txt'; Pattern = "*zipalign -c -P 16 -v 4 didn't pass *.apk (exit 1)*Verification FAILED*" })) {
         $flag = Join-Path $tools $broken.Flag
         Set-Content -LiteralPath $flag -Value 'on' -Encoding ASCII
         Remove-Item -LiteralPath $releaseReceipt -Force
@@ -5652,6 +5686,23 @@ try {
         Assert-True (@(Get-StoreEntries $failedStore).Count -eq 0) `
             "A run that failed when $($flagName -replace '\.txt$', '') left something in the record store: $(@(Get-StoreEntries $failedStore).Name -join ', ')"
     }
+    # A patched APK zipalign -c -P 16 -v 4 doesn't pass is refused by name, before the resource
+    # table is compared, and isn't kept either. A passing run asked zipalign exactly that.
+    $zipalignFlag = Join-Path $tools 'zipalign-fails.txt'
+    Set-Content -LiteralPath $zipalignFlag -Value 'on' -Encoding ASCII
+    try {
+        Assert-Throws { Invoke-VerifyAll -Apk $newestFixture -KeepIn $failedStore } `
+            "*zipalign -c -P 16 -v 4 didn't pass verify-all.apk (exit 1)*Verification FAILED*" `
+            'verify-all-patches.ps1 passed an APK that failed the 16 KB layout check.'
+    } finally { Remove-Item -LiteralPath $zipalignFlag -Force -ErrorAction SilentlyContinue }
+    Assert-True (-not (Test-Path -LiteralPath $resourceStock) -and @(Get-StoreEntries $failedStore).Count -eq 0) `
+        'A run that failed the 16 KB layout check went on to the resource table or left something in the record store.'
+    Remove-Item -LiteralPath $zipalignLog -Force -ErrorAction SilentlyContinue
+    $said = Invoke-VerifyAll -Apk $newestFixture
+    Assert-True ($said -like '*16 KB pages: zipalign -c -P 16 -v 4 passes, with 0 target limitation(s)*' -and
+        (@(Get-Content -LiteralPath $zipalignLog) -join '|') -like '-c -P 16 -v 4 *verify-all.apk*' -and
+        @(Get-Content -LiteralPath $zipalignLog).Count -eq 1) `
+        "verify-all-patches.ps1 did not hold the patched APK to zipalign -c -P 16 -v 4 once: $(@(Get-Content -LiteralPath $zipalignLog -ErrorAction SilentlyContinue) -join '; ')"
 
     # The receipt reads a kept run of each fixture instead of patching it, and still checks the
     # report, manifests and delta, so the release check takes what it writes. The stand-in aapt2
@@ -5688,13 +5739,29 @@ try {
     $keptDevice = @{ Root = $releaseRepo; DesktopJar = $stubJar; Java = $stubJava; Aapt2 = $stubAapt2
         OutDir = (Join-Path $releaseRoot 'device-kept'); AndroidJar = $stubAndroidJar; ApiVersions = $stubApiVersions
         Apk = $newestFixture; AppliedDir = $receiptStore }
-    Remove-Item -LiteralPath $javaLog, $apksignerLog -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $javaLog, $apksignerLog, $zipalignLog -Force -ErrorAction SilentlyContinue
     $said = @(& (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6>&1 | ForEach-Object { "$_" })
     $handed = [string]$said[-1]
     Assert-True (-not (Test-Path -LiteralPath $javaLog) -and (Test-Path -LiteralPath $handed -PathType Leaf) -and
         ($said -join "`n") -like '*passed every check in the gate run kept as*' -and
         (Get-Content -LiteralPath $apksignerLog -Raw) -like '*sign alias=sideload in=*patched.apk out=*') `
         "patch-for-device.ps1 did not sign the kept run instead of patching: $($said -join ' | ')"
+    # zipalign can't put a signed APK right, so the kept APK is held to the 16 KB layout before it's
+    # signed and the signed one after. A kept APK that fails is never signed, and nothing is left.
+    Assert-True ((@(Get-Content -LiteralPath $zipalignLog) -join '|') -like '-c -P 16 -v 4 *patched.apk*|-c -P 16 -v 4 *-signed.apk*' -and
+        @(Get-Content -LiteralPath $zipalignLog).Count -eq 2) `
+        "patch-for-device.ps1 did not hold the kept APK and then the signed one to zipalign -c -P 16 -v 4: $(@(Get-Content -LiteralPath $zipalignLog) -join '; ')"
+    $keptRunsBefore = @(Get-ChildItem -LiteralPath $keptDevice.OutDir -Directory).Count
+    Remove-Item -LiteralPath $apksignerLog -Force -ErrorAction SilentlyContinue
+    Set-Content -LiteralPath $zipalignFlag -Value 'on' -Encoding ASCII
+    try {
+        Assert-Throws { & (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6> $null } `
+            "*zipalign -c -P 16 -v 4 didn't pass patched.apk (exit 1)*Verification FAILED*" `
+            'patch-for-device.ps1 took a kept APK that failed the 16 KB layout check.'
+    } finally { Remove-Item -LiteralPath $zipalignFlag -Force -ErrorAction SilentlyContinue }
+    Assert-True (-not (Test-Path -LiteralPath $apksignerLog) -and
+        @(Get-ChildItem -LiteralPath $keptDevice.OutDir -Directory).Count -eq $keptRunsBefore) `
+        'patch-for-device.ps1 signed a kept APK that failed the 16 KB layout check, or left its run folder behind.'
     $keptDevice['NoReuse'] = $true
     Remove-Item -LiteralPath $javaLog, $apksignerLog -Force -ErrorAction SilentlyContinue
     $said = @(& (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6> $null)

@@ -31,7 +31,9 @@
     can apply and still call something one build lacks. HushPinterest 0.0.3's System share sheet did,
     calling a class from one Pinterest build on another, and the receipt only read the CLI's verdicts. A
     finding stops the run.
-    Their reports stay in -WorkDir.
+    Their reports stay in -WorkDir. A patched APK that doesn't pass zipalign -c -P 16 -v 4, or
+    whose 64-bit libraries aren't Tumblr's own bytes, stops it too (Assert-PageAlignment); a
+    library of Tumblr's that doesn't fit 16 KB pages is printed as a target limitation.
 
     The patched APKs are working files and are deleted on the way out, including after a failure.
 
@@ -435,6 +437,9 @@ foreach ($apk in $Fixture) {
             -ApprovedManifestDelta $approved
         if (-not $manifestCheck.Valid) { throw "${label}: $($manifestCheck.Reason)" }
         $delta = $manifestCheck.Delta
+        # What a device with 16 KB pages needs of the patched APK (Assert-PageAlignment). A library
+        # of Tumblr's own that doesn't fit is the target's limit: named, and left as it is.
+        foreach ($limit in @(Assert-PageAlignment -Apk $out -Stock $patchInput -Aapt2 $Aapt2)) { Write-Warning "[receipt] ${label}: $limit" }
 
         if ($recorded) {
             Write-Host "[receipt] ${label}: the resource table, DexDiff and host reference checks passed on these bytes in the kept run"
