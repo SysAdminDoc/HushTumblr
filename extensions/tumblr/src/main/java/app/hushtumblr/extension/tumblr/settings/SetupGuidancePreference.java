@@ -37,9 +37,10 @@ import app.hushtumblr.extension.shared.Utils;
 @SuppressWarnings("deprecation")
 public final class SetupGuidancePreference extends DialogPreference {
     static final String KEY = "action_setup_guidance";
-    /** Tumblr's help center, where its password and data export articles are found by searching. */
-    private static final String PASSWORD_HELP = "https://help.tumblr.com/";
-    private static final String DATA_HELP = "https://help.tumblr.com/";
+    /** Tumblr's article on resetting a password through its reset page. */
+    private static final String PASSWORD_HELP = "https://help.tumblr.com/knowledge-base/resetting-your-password/";
+    /** Tumblr's article on requesting an account's personal data, which it takes on its website only. */
+    private static final String DATA_HELP = "https://help.tumblr.com/knowledge-base/manage-account-and-privacy-data/";
     private final Activity host;
     private Session session;
 
@@ -169,7 +170,7 @@ public final class SetupGuidancePreference extends DialogPreference {
                 + "with a different key can't update this one, and Android may refuse to "
                 + "install an older version. If an update is refused, keep the installed "
                 + "app and its data."));
-            paragraph(L10n.t(getContext(), "Tumblr's data export is separate from Export settings. Tumblr's help page explains how to request your personal data from the account you're already using."));
+            paragraph(L10n.t(getContext(), "Tumblr's data export is separate from Export settings. To get a copy of your personal data, sign in on Tumblr's website with the account you're already using and ask for it in Settings, under Privacy. Tumblr's apps can't make that request. Exporting a blog's posts is a different Tumblr feature with its own help article."));
             action(L10n.t(getContext(), "Tumblr data export help"), () -> openHelp(DATA_HELP));
         }
 

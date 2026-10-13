@@ -771,8 +771,8 @@ public final class L10nTranslations {
                 "Tumblr-Hilfe zum Passwort");
         table.put("Tumblr's access to the ad ID and Android's ad services is removed",
                 "Tumblrs Zugriff auf die Werbe-ID und die Werbedienste von Android ist entfernt");
-        table.put("Tumblr's data export is separate from Export settings. Tumblr's help page explains how to request your personal data from the account you're already using.",
-                "Der Datenexport von Tumblr ist unabh\u00e4ngig von \u201eEinstellungen exportieren\u201c. Die Hilfeseite von Tumblr erkl\u00e4rt, wie du deine pers\u00f6nlichen Daten f\u00fcr das Konto anfordern kannst, das du bereits verwendest.");
+        table.put("Tumblr's data export is separate from Export settings. To get a copy of your personal data, sign in on Tumblr's website with the account you're already using and ask for it in Settings, under Privacy. Tumblr's apps can't make that request. Exporting a blog's posts is a different Tumblr feature with its own help article.",
+                "Der Datenexport von Tumblr ist unabh\u00e4ngig von \u201eEinstellungen exportieren\u201c. F\u00fcr eine Kopie deiner pers\u00f6nlichen Daten meldest du dich auf der Tumblr-Website mit dem Konto an, das du bereits verwendest, und forderst sie in den Einstellungen unter \u201eDatenschutz\u201c an. In den Tumblr-Apps geht das nicht. Der Export der Posts eines Blogs ist eine andere Tumblr-Funktion mit eigenem Hilfeartikel.");
         table.put("Tumblr's order",
                 "Reihenfolge von Tumblr");
         table.put("Tumblr's original signature is added to the app",
@@ -1576,8 +1576,8 @@ public final class L10nTranslations {
                 "Ayuda de Tumblr con la contrase\u00f1a");
         table.put("Tumblr's access to the ad ID and Android's ad services is removed",
                 "el acceso de Tumblr al ID de publicidad y a los servicios de publicidad de Android est\u00e1 eliminado");
-        table.put("Tumblr's data export is separate from Export settings. Tumblr's help page explains how to request your personal data from the account you're already using.",
-                "La exportaci\u00f3n de datos de Tumblr es independiente de Exportar ajustes. La p\u00e1gina de ayuda de Tumblr explica c\u00f3mo solicitar tus datos personales de la cuenta que ya utilizas.");
+        table.put("Tumblr's data export is separate from Export settings. To get a copy of your personal data, sign in on Tumblr's website with the account you're already using and ask for it in Settings, under Privacy. Tumblr's apps can't make that request. Exporting a blog's posts is a different Tumblr feature with its own help article.",
+                "La exportaci\u00f3n de datos de Tumblr es independiente de Exportar ajustes. Para obtener una copia de tus datos personales, inicia sesi\u00f3n en el sitio web de Tumblr con la cuenta que ya utilizas y solic\u00edtala en Ajustes, en Privacidad. Las apps de Tumblr no pueden hacer esa solicitud. Exportar las publicaciones de un blog es otra funci\u00f3n de Tumblr, con su propio art\u00edculo de ayuda.");
         table.put("Tumblr's order",
                 "Orden de Tumblr");
         table.put("Tumblr's original signature is added to the app",
@@ -2381,8 +2381,8 @@ public final class L10nTranslations {
                 "Bantuan kata sandi Tumblr");
         table.put("Tumblr's access to the ad ID and Android's ad services is removed",
                 "akses Tumblr ke ID iklan dan layanan iklan Android dihapus");
-        table.put("Tumblr's data export is separate from Export settings. Tumblr's help page explains how to request your personal data from the account you're already using.",
-                "Ekspor data Tumblr terpisah dari Ekspor pengaturan. Halaman bantuan Tumblr menjelaskan cara meminta data pribadi dari akun yang sudah Anda gunakan.");
+        table.put("Tumblr's data export is separate from Export settings. To get a copy of your personal data, sign in on Tumblr's website with the account you're already using and ask for it in Settings, under Privacy. Tumblr's apps can't make that request. Exporting a blog's posts is a different Tumblr feature with its own help article.",
+                "Ekspor data Tumblr terpisah dari Ekspor pengaturan. Untuk mendapatkan salinan data pribadi Anda, masuk di situs web Tumblr dengan akun yang sudah Anda gunakan, lalu minta di Pengaturan, pada bagian Privasi. Aplikasi Tumblr tidak dapat membuat permintaan itu. Mengekspor postingan blog adalah fitur Tumblr yang berbeda dengan artikel bantuannya sendiri.");
         table.put("Tumblr's order",
                 "Urutan Tumblr");
         table.put("Tumblr's original signature is added to the app",
@@ -3186,8 +3186,8 @@ public final class L10nTranslations {
                 "Ajuda do Tumblr com a senha");
         table.put("Tumblr's access to the ad ID and Android's ad services is removed",
                 "o acesso do Tumblr ao ID de publicidade e aos servi\u00e7os de an\u00fancios do Android foi removido");
-        table.put("Tumblr's data export is separate from Export settings. Tumblr's help page explains how to request your personal data from the account you're already using.",
-                "A exporta\u00e7\u00e3o de dados do Tumblr \u00e9 separada de Exportar configura\u00e7\u00f5es. A p\u00e1gina de ajuda do Tumblr explica como solicitar seus dados pessoais da conta que voc\u00ea j\u00e1 usa.");
+        table.put("Tumblr's data export is separate from Export settings. To get a copy of your personal data, sign in on Tumblr's website with the account you're already using and ask for it in Settings, under Privacy. Tumblr's apps can't make that request. Exporting a blog's posts is a different Tumblr feature with its own help article.",
+                "A exporta\u00e7\u00e3o de dados do Tumblr \u00e9 separada de Exportar configura\u00e7\u00f5es. Para receber uma c\u00f3pia dos seus dados pessoais, entre no site do Tumblr com a conta que voc\u00ea j\u00e1 usa e fa\u00e7a o pedido em Configura\u00e7\u00f5es, na parte de Privacidade. Os apps do Tumblr n\u00e3o fazem esse pedido. Exportar os posts de um blog \u00e9 outro recurso do Tumblr, com um artigo de ajuda pr\u00f3prio.");
         table.put("Tumblr's order",
                 "Ordem do Tumblr");
         table.put("Tumblr's original signature is added to the app",
@@ -3991,8 +3991,8 @@ public final class L10nTranslations {
                 "Tumblr parola yard\u0131m\u0131");
         table.put("Tumblr's access to the ad ID and Android's ad services is removed",
                 "Tumblr'\u0131n reklam kimli\u011fine ve Android reklam hizmetlerine eri\u015fimi kald\u0131r\u0131ld\u0131");
-        table.put("Tumblr's data export is separate from Export settings. Tumblr's help page explains how to request your personal data from the account you're already using.",
-                "Tumblr'\u0131n veri d\u0131\u015fa aktar\u0131m\u0131, Ayarlar\u0131 d\u0131\u015fa aktar i\u015fleminden ayr\u0131d\u0131r. Tumblr'\u0131n yard\u0131m sayfas\u0131, zaten kulland\u0131\u011f\u0131n\u0131z hesaptan ki\u015fisel verilerinizi nas\u0131l talep edece\u011finizi a\u00e7\u0131klar.");
+        table.put("Tumblr's data export is separate from Export settings. To get a copy of your personal data, sign in on Tumblr's website with the account you're already using and ask for it in Settings, under Privacy. Tumblr's apps can't make that request. Exporting a blog's posts is a different Tumblr feature with its own help article.",
+                "Tumblr'\u0131n veri d\u0131\u015fa aktar\u0131m\u0131, Ayarlar\u0131 d\u0131\u015fa aktar i\u015fleminden ayr\u0131d\u0131r. Ki\u015fisel verilerinizin bir kopyas\u0131n\u0131 almak i\u00e7in Tumblr'\u0131n web sitesinde zaten kulland\u0131\u011f\u0131n\u0131z hesapla oturum a\u00e7\u0131n ve Ayarlar'da Gizlilik b\u00f6l\u00fcm\u00fcnden isteyin. Tumblr uygulamalar\u0131 bu iste\u011fi yapamaz. Bir blogun g\u00f6nderilerini d\u0131\u015fa aktarmak, kendi yard\u0131m makalesi olan ayr\u0131 bir Tumblr \u00f6zelli\u011fidir.");
         table.put("Tumblr's order",
                 "Tumblr'\u0131n s\u0131ras\u0131");
         table.put("Tumblr's original signature is added to the app",

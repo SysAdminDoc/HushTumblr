@@ -137,6 +137,10 @@ public class SetupGuidancePreferenceTest {
         assertTrue(copy.contains("different key can't update this one"));
         assertTrue(copy.contains("Android may refuse to install an older version"));
         assertTrue(copy.contains("Tumblr's data export is separate from Export settings"));
+        assertTrue(copy.contains("sign in on Tumblr's website with the account you're already using"));
+        assertTrue(copy.contains("ask for it in Settings, under Privacy"));
+        assertTrue(copy.contains("Tumblr's apps can't make that request"));
+        assertTrue(copy.contains("Exporting a blog's posts is a different Tumblr feature"));
         assertFalse(copy.contains("clear data"));
         assertFalse(copy.contains("new account"));
         for (TextView text : textViews(scroll(guide))) assertFalse(text instanceof android.widget.EditText);
@@ -147,13 +151,15 @@ public class SetupGuidancePreferenceTest {
         AlertDialog guide = open();
         Map<String, ?> before = new LinkedHashMap<>(Setting.preferences.preferences.getAll());
         for (String[] help : new String[][]{
-                {"Tumblr password help", "https://help.tumblr.com/"},
-                {"Tumblr data export help", "https://help.tumblr.com/"}}) {
+                {"Tumblr password help", "https://help.tumblr.com/knowledge-base/resetting-your-password/"},
+                {"Tumblr data export help", "https://help.tumblr.com/knowledge-base/manage-account-and-privacy-data/"}}) {
             button(guide, help[0]).performClick();
             Intent intent = shadowOf(controller.get()).getNextStartedActivity();
             assertNotNull(intent);
             assertEquals(Intent.ACTION_VIEW, intent.getAction());
             assertEquals(help[1], intent.getDataString());
+            assertEquals("https", intent.getData().getScheme());
+            assertEquals("help.tumblr.com", intent.getData().getHost());
             assertTrue(intent.hasCategory(Intent.CATEGORY_BROWSABLE));
             assertNull(intent.getPackage());
             assertNull(intent.getClipData());
@@ -216,10 +222,15 @@ public class SetupGuidancePreferenceTest {
         for (RuntimeException failure : new RuntimeException[]{new ActivityNotFoundException(),
                 new SecurityException("denied"), new IllegalStateException("host unavailable")}) {
             GuideActivity.browserFailure = failure;
-            button(guide, "Tumblr password help").performClick();
-            ShadowLooper.idleMainLooper();
-            assertTrue(ShadowToast.getTextOfLatestToast().contains("https://help.tumblr.com/"));
-            assertTrue(guide.isShowing());
+            for (String[] help : new String[][]{
+                    {"Tumblr password help", "https://help.tumblr.com/knowledge-base/resetting-your-password/"},
+                    {"Tumblr data export help", "https://help.tumblr.com/knowledge-base/manage-account-and-privacy-data/"}}) {
+                ShadowToast.reset();
+                button(guide, help[0]).performClick();
+                ShadowLooper.idleMainLooper();
+                assertTrue(ShadowToast.getTextOfLatestToast().contains(help[1]));
+                assertTrue(guide.isShowing());
+            }
         }
         GuideActivity.refused.add(android.provider.Settings.ACTION_APP_OPEN_BY_DEFAULT_SETTINGS);
         GuideActivity.refused.add(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
@@ -317,7 +328,8 @@ public class SetupGuidancePreferenceTest {
         Button last = button(guide, "Tumblr data export help");
         assertTrue(last.getBottom() <= scroll.getScrollY() + scroll.getHeight());
         last.performClick();
-        assertEquals("https://help.tumblr.com/", GuideActivity.attempts.get(0).getDataString());
+        assertEquals("https://help.tumblr.com/knowledge-base/manage-account-and-privacy-data/",
+                GuideActivity.attempts.get(0).getDataString());
         assertTrue(guide.getButton(AlertDialog.BUTTON_NEGATIVE).isEnabled());
         capture(guide, "setup-guide-large-rtl-api" + Build.VERSION.SDK_INT, true);
     }
