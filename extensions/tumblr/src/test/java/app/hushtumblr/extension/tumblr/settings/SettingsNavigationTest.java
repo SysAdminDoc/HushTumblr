@@ -960,12 +960,48 @@ public class SettingsNavigationTest {
         page.navigation.back();
         layout(dialog.getView());
         assertEquals("Privacy", focusedTitle(a11y));
-        // About's row sits under the More settings heading, near the end of the home page.
+        // About's row sits under the More settings heading, below the first screen: scrolled to and
+        // tapped, it gets focus back where the list was left.
+        list().setSelectionFromTop(position("section_About"), 0);
+        layout(dialog.getView());
+        int left = list().getFirstVisiblePosition();
         page.navigation.navigate("About");
         layout(dialog.getView());
         page.navigation.back();
         layout(dialog.getView());
         assertEquals("About", focusedTitle(a11y));
+        assertEquals(left, list().getFirstVisiblePosition());
+    }
+
+    /**
+     * A page opened with home never scrolled to its row, as after a restart or from search, leaves
+     * that row off screen. Back scrolls it into view, and focus lands on it then rather than
+     * whenever it was scrolled to later.
+     */
+    @Test public void backBringsAnOffScreenRowIntoViewForItsFocus() {
+        android.view.accessibility.AccessibilityManager a11y = controller.get().getSystemService(android.view.accessibility.AccessibilityManager.class);
+        org.robolectric.Shadows.shadowOf(a11y).setEnabled(true);
+        org.robolectric.Shadows.shadowOf(a11y).setTouchExplorationEnabled(true);
+        layout(dialog.getView());
+        int about = position("section_About");
+        assertTrue("About starts off screen", about > list().getLastVisiblePosition());
+        page.navigation.navigate("About");
+        layout(dialog.getView());
+        page.navigation.back();
+        // One pass finds the row off screen and scrolls, the next draws it and focuses it.
+        layout(dialog.getView());
+        layout(dialog.getView());
+        assertTrue("About is on screen", about >= list().getFirstVisiblePosition() && about <= list().getLastVisiblePosition());
+        assertEquals("About", focusedTitle(a11y));
+        // A row Back finds on screen stays where the list was left.
+        list().setSelectionFromTop(0, 0);
+        layout(dialog.getView());
+        page.navigation.navigate("Feed");
+        layout(dialog.getView());
+        page.navigation.back();
+        layout(dialog.getView());
+        assertEquals(0, list().getFirstVisiblePosition());
+        assertEquals("Feed", focusedTitle(a11y));
     }
 
     /** The first text of the last row that took accessibility focus. */
@@ -1054,6 +1090,8 @@ public class SettingsNavigationTest {
             layout(dialog.getView(), 400);
             assertEquals(0, list().getFirstVisiblePosition());
             assertEquals(list().getPaddingTop(), list().getChildAt(0).getTop());
+            // Without a screen reader, home keeps the place it was left even though About's row
+            // isn't in it.
             assertTrue(page.navigation.back());
             layout(dialog.getView(), 400);
             assertEquals(homePosition, list().getFirstVisiblePosition());

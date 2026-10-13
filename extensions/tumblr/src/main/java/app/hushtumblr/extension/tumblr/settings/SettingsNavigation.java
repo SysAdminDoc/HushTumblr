@@ -308,7 +308,38 @@ final class SettingsNavigation extends BaseAdapter {
         host.showPage(title(), true, query, description());
         showAt(homePosition, homeOffset);
         refocus = section != null ? section.link : null;
+        if (refocus != null && screenReaderOn()) bringIntoView(refocus);
         return true;
+    }
+
+    private boolean screenReaderOn() {
+        android.view.accessibility.AccessibilityManager a11y = (android.view.accessibility.AccessibilityManager)
+                list.getContext().getSystemService(android.content.Context.ACCESSIBILITY_SERVICE);
+        return a11y != null && a11y.isEnabled() && a11y.isTouchExplorationEnabled();
+    }
+
+    /**
+     * Scrolls home to [row] when the place home was left doesn't show it, as after a restart, a
+     * search or Jump to a section opened its page. Screen reader focus goes to the row when it's
+     * drawn, so a row left off screen took focus whenever it was scrolled to later, long after
+     * Back. Only with a screen reader on: without one, home keeps exactly the place it was left.
+     * Checked once the list has laid out, and posted: a layout request made during layout is dropped.
+     */
+    private void bringIntoView(Preference row) {
+        list.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+            @Override public void onLayoutChange(View view, int left, int top, int right, int bottom,
+                    int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                list.removeOnLayoutChangeListener(this);
+                // Drawn already, which cleared refocus, or another page or a search came first.
+                int position = visible.indexOf(row);
+                if (refocus != row || position < 0) return;
+                if (position >= list.getFirstVisiblePosition() && position <= list.getLastVisiblePosition()) return;
+                list.post(() -> {
+                    // The row above it shows too: its heading, or the page row before it.
+                    if (refocus == row && visible.indexOf(row) == position) list.setSelectionFromTop(Math.max(0, position - 1), 0);
+                });
+            }
+        });
     }
 
     private void showAt(int position, int offset) {
