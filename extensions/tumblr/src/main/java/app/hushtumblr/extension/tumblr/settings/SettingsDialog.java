@@ -79,6 +79,8 @@ public final class SettingsDialog extends DialogFragment {
     private static final String PAGE_HOME_STATE = "hushtumblr_page_home";
     private static final String PAGE_QUERY_STATE = "hushtumblr_page_query";
     private static final String PAGE_RESULTS_STATE = "hushtumblr_page_results";
+    /** The argument naming the page the screen opens on: a route of {@link SettingsNavigation}. */
+    static final String START_PAGE = "hushtumblr_start_page";
 
     /** Thrown once before mounting, so a test reaches recovery even when no child exists. */
     static volatile RuntimeException failNextMount;
@@ -118,6 +120,26 @@ public final class SettingsDialog extends DialogFragment {
         if (!isAdded() || getView() == null || getDialog() == null || !getDialog().isShowing()) return;
         mountPage(true);
     };
+
+    /**
+     * The screen, opening on [page] when nothing saved says otherwise: the page a restart from the
+     * restart row left. Null or empty opens the first page.
+     */
+    static SettingsDialog onPage(@Nullable String page) {
+        SettingsDialog dialog = new SettingsDialog();
+        if (page != null && !page.isEmpty()) {
+            Bundle arguments = new Bundle();
+            arguments.putString(START_PAGE, page);
+            dialog.setArguments(arguments);
+        }
+        return dialog;
+    }
+
+    /** The page this screen was asked to open on, or "" for the first page. */
+    String startPage() {
+        Bundle arguments = getArguments();
+        return arguments == null ? "" : arguments.getString(START_PAGE, "");
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

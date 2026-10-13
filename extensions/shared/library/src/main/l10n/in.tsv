@@ -128,7 +128,9 @@ Opening supported links is off for this app in Android's settings. Tap to turn i
 Android didn't say which links open here. Tap to check in Android's settings.	Android tidak memberi tahu tautan mana yang terbuka di sini. Ketuk untuk memeriksanya di pengaturan Android.
 Selecting links by hand	Memilih tautan secara manual
 
-A change here applies after Tumblr restarts.	Perubahan di sini berlaku setelah Tumblr dimulai ulang.
+Restart Tumblr to apply this change	Mulai ulang Tumblr untuk menerapkan perubahan ini
+Restart Tumblr to apply %1$d changes	Mulai ulang Tumblr untuk menerapkan %1$d perubahan
+Tumblr closes and reopens on this page.	Tumblr ditutup lalu dibuka lagi di halaman ini.
 Android verified this app for Tumblr's web addresses, so their links open here.	Android telah memverifikasi aplikasi ini untuk alamat web Tumblr, jadi tautannya terbuka di sini.
 Android's settings for this app didn't open. Open App info from Tumblr's icon, then Open by default.	Pengaturan Android untuk aplikasi ini tidak terbuka. Buka Info aplikasi dari ikon Tumblr, lalu Buka secara default.
 HushTumblr %1$s on Tumblr %2$s	HushTumblr %1$s di Tumblr %2$s

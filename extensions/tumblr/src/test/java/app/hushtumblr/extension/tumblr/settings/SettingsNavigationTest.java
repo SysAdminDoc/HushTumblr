@@ -67,6 +67,11 @@ import org.robolectric.shadows.ShadowToast;
 @Config(sdk = 30, qualifiers = "w390dp-h844dp-night-xhdpi")
 @SuppressWarnings("deprecation")
 public class SettingsNavigationTest {
+    /**
+     * The home page's rows with every patch in the build: Status, Browse settings, the Feed, Posts,
+     * Interface and Privacy categories, More settings and Support HushTumblr.
+     */
+    private static final int HOME_ROWS = 8;
     @Rule public final SettingsContextRule settings = new SettingsContextRule();
     private ActivityController<Activity> controller;
     private SettingsDialog dialog;
@@ -98,9 +103,7 @@ public class SettingsNavigationTest {
     @Test @Config(sdk = {29, 30, 33, 36})
     public void homeAndEveryCategoryAreReachableWithoutRemovingTheModel() {
         assertNotNull(page.navigation);
-        // Status, Browse settings, the Feed, Posts, Interface and Privacy categories, More settings
-        // and Support HushTumblr.
-        assertEquals(8, list().getCount());
+        assertEquals(HOME_ROWS, list().getCount());
         // Feed, Posts, Interface, Privacy, Links, Notifications, Tumblr's own settings, Updates,
         // Pause, backup and diagnostics, and About.
         assertEquals(10, page.sections().size());
@@ -113,7 +116,7 @@ public class SettingsNavigationTest {
             assertTrue(page.navigation.back());
             while (page.navigation.back()) { }
         }
-        assertEquals(8, list().getCount());
+        assertEquals(HOME_ROWS, list().getCount());
     }
 
     @Test public void theHomePageEndsWithSupportWhichOpensKoFi() {
@@ -352,7 +355,7 @@ public class SettingsNavigationTest {
         assertFalse(HushTumblrPause.isPaused());
         assertEquals(position, list().getFirstVisiblePosition());
         assertEquals(offset, list().getChildAt(0).getTop());
-        if (restart) assertEquals("A change here applies after Tumblr restarts.",
+        if (restart) assertEquals("Restart Tumblr to apply this change",
                 String.valueOf(((Preference) list().getItemAtPosition(0)).getTitle()));
         else assertFalse(titles().contains("HushTumblr is on"));
         capture("undo-pending-" + (restart ? "restart" : search == null ? "category" : "search"), 1200);
@@ -418,34 +421,96 @@ public class SettingsNavigationTest {
     }
 
     /**
-     * Pause switched on from its own page is owed a restart: the page says so and Undo takes it
-     * back, after which the line goes. A restart owed for a setting a page shows is said there too.
+     * Pause switched on from its own page is owed a restart: the page says so, the restart row
+     * sits under that line, and Undo takes both back. A change owed a restart brings the row up
+     * on every page, first on a page without a pause line and under the home page's status card.
      */
-    @Test public void aPauseOrAChangeWaitingOnARestartIsSaidOnItsPage() {
+    @Test public void aPauseOrAChangeWaitingOnARestartBringsUpTheRestartRow() {
         page.navigation.navigate("Pause, backup and diagnostics");
         tap(BaseSettings.PAUSED.key);
         layout(dialog.getView());
         Preference line = (Preference) list().getItemAtPosition(0);
         assertEquals("HushTumblr is on", String.valueOf(line.getTitle()));
         assertEquals("HushTumblr pauses when Tumblr restarts.", String.valueOf(line.getSummary()));
+        Preference restart = (Preference) list().getItemAtPosition(1);
+        assertEquals(SettingsNavigation.RESTART, restart.getKey());
+        assertEquals("Restart Tumblr to apply this change", String.valueOf(restart.getTitle()));
+        assertEquals("Tumblr closes and reopens on this page.", String.valueOf(restart.getSummary()));
+        assertTrue("the restart row can't be tapped", list().getAdapter().isEnabled(1));
+        assertNull("a restart saved message went to a toast instead of the row", ShadowToast.getLatestToast());
         pageAction().performClick();
         ShadowLooper.idleMainLooper();
         layout(dialog.getView());
         assertFalse(BaseSettings.PAUSED.savedValue());
         assertEquals(BaseSettings.PAUSED.key, ((Preference) list().getItemAtPosition(0)).getKey());
+        assertFalse(contains(SettingsNavigation.RESTART));
 
         page.navigation.back();
         app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.add(
                 Settings.HIDE_ADVERTISING_ID.key);
         page.navigation.navigate("Privacy");
         layout(dialog.getView());
-        line = (Preference) list().getItemAtPosition(0);
-        assertEquals("A change here applies after Tumblr restarts.", String.valueOf(line.getTitle()));
-        android.view.ViewGroup frame = list().getChildAt(0).findViewById(android.R.id.widget_frame);
-        assertTrue("a restart line offered an action", frame == null || frame.getChildCount() == 0);
+        assertEquals(SettingsNavigation.RESTART, ((Preference) list().getItemAtPosition(0)).getKey());
+        assertEquals(categoryCount("Privacy") + 1, list().getCount());
         page.navigation.back();
         page.navigation.navigate("Links");
-        assertEquals("a restart owed elsewhere was said here", categoryCount("Links"), list().getCount());
+        assertEquals(SettingsNavigation.RESTART, ((Preference) list().getItemAtPosition(0)).getKey());
+        assertEquals(categoryCount("Links") + 1, list().getCount());
+        while (page.navigation.back()) { }
+        assertEquals(SettingsNavigation.RESTART, ((Preference) list().getItemAtPosition(1)).getKey());
+        assertEquals(HOME_ROWS + 1, list().getCount());
+
+        // Two changes are counted, and the row goes once neither is owed.
+        app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.add(
+                Settings.FIX_PUSH_NOTIFICATIONS.key);
+        page.navigation.restartChanged();
+        assertEquals("Restart Tumblr to apply 2 changes",
+                String.valueOf(((Preference) list().getItemAtPosition(1)).getTitle()));
+        app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.clear();
+        page.navigation.restartChanged();
+        assertFalse(contains(SettingsNavigation.RESTART));
+        assertEquals(HOME_ROWS, list().getCount());
+    }
+
+    /** The row restarts Tumblr and leaves a marker that opens the screen again on this page. */
+    @Test public void theRestartRowRestartsIntoThePageItWasTappedOn() {
+        List<android.content.Context> restarted = new ArrayList<>();
+        app.hushtumblr.extension.shared.settings.preference.ReopenSettingsAfterRestart.setRestarterForTests(restarted::add);
+        app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.add(
+                Settings.FIX_PUSH_NOTIFICATIONS.key);
+        page.navigation.navigate("Notifications");
+        Map<String, Object> before = savedValues();
+        tap(SettingsNavigation.RESTART);
+        assertEquals(1, restarted.size());
+        assertEquals(before, savedValues());
+        assertEquals("Notifications", app.hushtumblr.extension.shared.settings.preference.ReopenSettingsAfterRestart
+                .takeFresh(Setting.preferences.preferences, android.os.SystemClock.elapsedRealtime()));
+    }
+
+    /** Asked to open on a page, as after that restart, the screen starts there with its title and no search. */
+    @Test public void aScreenAskedToStartOnAPageOpensThere() {
+        dialog.dismissAllowingStateLoss();
+        ShadowLooper.idleMainLooper();
+        dialog = SettingsDialog.onPage("Links");
+        dialog.show(controller.get().getFragmentManager(), "hushtumblr_settings");
+        controller.get().getFragmentManager().executePendingTransactions();
+        ShadowLooper.idleMainLooper();
+        page = page(dialog);
+        assertTrue(contains(HushTumblrPreferenceFragment.SUPPORTED_LINKS));
+        assertEquals(categoryCount("Links"), list().getCount());
+        assertEquals(View.GONE, ((View) findSearch(dialog.getView()).getParent()).getVisibility());
+        assertTrue(page.navigation.back());
+        assertTrue("Back from a More settings page goes to More settings", contains("section_Links"));
+
+        // A page this build doesn't have opens the first page.
+        dialog.dismissAllowingStateLoss();
+        ShadowLooper.idleMainLooper();
+        dialog = SettingsDialog.onPage("No such page");
+        dialog.show(controller.get().getFragmentManager(), "hushtumblr_settings");
+        controller.get().getFragmentManager().executePendingTransactions();
+        ShadowLooper.idleMainLooper();
+        page = page(dialog);
+        assertEquals(HOME_ROWS, list().getCount());
     }
 
     /**
@@ -460,11 +525,12 @@ public class SettingsNavigationTest {
     }
 
     /**
-     * A flag-backed switch owes a restart like any other restart-needing one: its page shows the
-     * shared line and the shared toast, and its own summary no longer says the same thing. Turned
-     * back to what the running Tumblr has, it owes nothing and the line goes.
+     * A flag-backed switch owes a restart like any other restart-needing one: the restart row comes
+     * up the moment it's flipped, with no toast that offers nothing to tap, and its own summary no
+     * longer says the same thing. Turned back to what the running Tumblr has, it owes nothing and
+     * the row goes.
      */
-    @Test public void aFlagBackedSwitchGetsTheSharedRestartLineAndToastInsteadOfASentence() {
+    @Test public void flippingARestartGatedSwitchShowsTheRowAtOnce() {
         for (BooleanSetting setting : flagBacked()) {
             assertTrue(setting.key, setting.rebootApp);
             Preference row = page.findPreference(setting.key);
@@ -474,19 +540,20 @@ public class SettingsNavigationTest {
         }
         page.navigation.navigate("Interface");
         layout(dialog.getView());
-        String restartLine = "A change here applies after Tumblr restarts.";
-        assertNotEquals(restartLine, String.valueOf(((Preference) list().getItemAtPosition(0)).getTitle()));
+        assertFalse(contains(SettingsNavigation.RESTART));
 
         tap(Settings.HIDE_TUMBLR_TV.key);
         layout(dialog.getView());
         assertTrue(Settings.HIDE_TUMBLR_TV.savedValue());
-        assertEquals(restartLine, String.valueOf(((Preference) list().getItemAtPosition(0)).getTitle()));
-        assertEquals("Saved. Restart Tumblr to apply this change.", ShadowToast.getTextOfLatestToast());
+        assertEquals(SettingsNavigation.RESTART, ((Preference) list().getItemAtPosition(0)).getKey());
+        assertEquals("Restart Tumblr to apply this change",
+                String.valueOf(((Preference) list().getItemAtPosition(0)).getTitle()));
+        assertNull("the restart was said in a toast with nothing to tap", ShadowToast.getLatestToast());
 
         tap(Settings.HIDE_TUMBLR_TV.key);
         layout(dialog.getView());
         assertFalse(Settings.HIDE_TUMBLR_TV.savedValue());
-        assertNotEquals(restartLine, String.valueOf(((Preference) list().getItemAtPosition(0)).getTitle()));
+        assertFalse(contains(SettingsNavigation.RESTART));
     }
 
     /** The paused line on real pages, dark and light, for a look before the phone does. */
@@ -607,7 +674,7 @@ public class SettingsNavigationTest {
         assertEquals("No matching settings", ((Preference) list().getItemAtPosition(0)).getTitle());
         assertTrue(page.navigation.back());
         assertEquals("", search.getText().toString());
-        assertEquals(8, list().getCount());
+        assertEquals(HOME_ROWS, list().getCount());
     }
 
     @Test public void switchRowsNameWhatTheyChangeAndWhenItApplies() {
@@ -625,17 +692,16 @@ public class SettingsNavigationTest {
 
         page.navigation.navigate("Notifications");
         layout(dialog.getView());
-        String restartLine = "A change here applies after Tumblr restarts.";
-        assertNotEquals(restartLine, String.valueOf(((Preference) list().getItemAtPosition(0)).getTitle()));
+        assertFalse(contains(SettingsNavigation.RESTART));
         tap(Settings.FIX_PUSH_NOTIFICATIONS.key);
         layout(dialog.getView());
         assertFalse(Settings.FIX_PUSH_NOTIFICATIONS.savedValue());
-        assertEquals(restartLine, String.valueOf(((Preference) list().getItemAtPosition(0)).getTitle()));
-        assertEquals("Saved. Restart Tumblr to apply this change.", ShadowToast.getTextOfLatestToast());
+        assertEquals(SettingsNavigation.RESTART, ((Preference) list().getItemAtPosition(0)).getKey());
+        assertNull("the restart was said in a toast with nothing to tap", ShadowToast.getLatestToast());
         tap(Settings.FIX_PUSH_NOTIFICATIONS.key);
         layout(dialog.getView());
         assertTrue(Settings.FIX_PUSH_NOTIFICATIONS.savedValue());
-        assertNotEquals(restartLine, String.valueOf(((Preference) list().getItemAtPosition(0)).getTitle()));
+        assertFalse(contains(SettingsNavigation.RESTART));
     }
 
     @Test public void aliasesKeepAccentMatchingGroupingAndTheSpokenResultCount() {
@@ -806,14 +872,14 @@ public class SettingsNavigationTest {
         page.navigation.open(page.findPreference(Settings.HIDE_ADVERTISING_ID.key));
         SettingsL10nTest.backOf(dialog).performClick();
         assertTrue(dialog.getDialog().isShowing());
-        assertEquals(8, list().getCount());
+        assertEquals(HOME_ROWS, list().getCount());
         page.navigation.navigate("About");
         dialog.getDialog().onBackPressed();
         // More settings: Links, Notifications, Tumblr's own settings, Updates, Pause, backup and diagnostics,
         // and About.
         assertEquals(6, list().getCount());
         dialog.getDialog().onBackPressed();
-        assertEquals(8, list().getCount());
+        assertEquals(HOME_ROWS, list().getCount());
         dialog.getDialog().onBackPressed();
         ShadowLooper.idleMainLooper();
         assertFalse(controller.get().isFinishing());

@@ -1393,12 +1393,16 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                 + "then Open by default."));
     }
 
-    /** A switch whose change waits for a restart: the card says what the next start brings. */
+    /**
+     * A switch whose change waits for a restart: the card says what the next start brings, and the
+     * restart row comes, goes or counts again.
+     */
     @Override
     protected void onRestartPendingChanged() {
         Preference card = statusCard;
         Context context = getContext();
         if (card != null && context != null) showStatus(card, context);
+        if (navigation != null) navigation.restartChanged();
     }
 
     /**

@@ -63,9 +63,11 @@ public class Settings extends BaseSettings {
      * Ads and paid Blaze posts leave each page of posts Tumblr loads, and Tumblr's own requests to
      * its ad networks are turned off ({@link app.hushtumblr.extension.tumblr.timeline.TimelineFilter},
      * {@link app.hushtumblr.extension.tumblr.flags.FeatureSwitches}). On to start, like the patch.
+     * Restart-gated: the feed filter reads it per page, but the ad network switches are only read
+     * when Tumblr starts, which is what the row's summary promises.
      */
     public static final BooleanSetting HIDE_ADS =
-            new BooleanSetting("hushtumblr_hide_ads", TRUE);
+            new BooleanSetting("hushtumblr_hide_ads", TRUE, true);
 
     /**
      * Google's advertising ID getters answer an empty ID with ad tracking limited

@@ -125,7 +125,9 @@ Opening supported links is off for this app in Android's settings. Tap to turn i
 Android didn't say which links open here. Tap to check in Android's settings.	O Android não informou quais links abrem aqui. Toque para conferir nas configurações do Android.
 Selecting links by hand	Selecionar links manualmente
 
-A change here applies after Tumblr restarts.	Uma alteração daqui vale depois que o Tumblr reiniciar.
+Restart Tumblr to apply this change	Reinicie o Tumblr para aplicar esta alteração
+Restart Tumblr to apply %1$d changes	Reinicie o Tumblr para aplicar %1$d alterações
+Tumblr closes and reopens on this page.	O Tumblr fecha e abre de novo nesta página.
 Android verified this app for Tumblr's web addresses, so their links open here.	O Android verificou este app para os endereços web do Tumblr, então os links deles abrem aqui.
 Android's settings for this app didn't open. Open App info from Tumblr's icon, then Open by default.	As configurações do Android para este app não abriram. Abra Informações do app pelo ícone do Tumblr e depois Abrir por padrão.
 HushTumblr %1$s on Tumblr %2$s	HushTumblr %1$s no Tumblr %2$s

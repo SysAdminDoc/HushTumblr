@@ -128,7 +128,9 @@ Opening supported links is off for this app in Android's settings. Tap to turn i
 Android didn't say which links open here. Tap to check in Android's settings.	Android burada hangi bağlantıların açıldığını bildirmedi. Android ayarlarında kontrol etmek için dokunun.
 Selecting links by hand	Bağlantıları elle seçme
 
-A change here applies after Tumblr restarts.	Buradaki bir değişiklik Tumblr yeniden başladıktan sonra geçerli olur.
+Restart Tumblr to apply this change	Bu değişikliği uygulamak için Tumblr'ı yeniden başlat
+Restart Tumblr to apply %1$d changes	%1$d değişikliği uygulamak için Tumblr'ı yeniden başlat
+Tumblr closes and reopens on this page.	Tumblr kapanır ve bu sayfada yeniden açılır.
 Android verified this app for Tumblr's web addresses, so their links open here.	Android bu uygulamayı Tumblr'ın web adresleri için doğruladı, bu yüzden bağlantıları burada açılır.
 Android's settings for this app didn't open. Open App info from Tumblr's icon, then Open by default.	Bu uygulamanın Android ayarları açılamadı. Tumblr simgesinden Uygulama bilgileri'ni, ardından Varsayılan olarak aç'ı açın.
 HushTumblr %1$s on Tumblr %2$s	Tumblr %2$s üzerinde HushTumblr %1$s

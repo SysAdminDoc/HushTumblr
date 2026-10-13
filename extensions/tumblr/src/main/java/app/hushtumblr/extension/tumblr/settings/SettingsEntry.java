@@ -46,6 +46,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import app.hushtumblr.extension.shared.L10n;
 import app.hushtumblr.extension.shared.Logger;
 import app.hushtumblr.extension.shared.Utils;
+import app.hushtumblr.extension.shared.settings.preference.ReopenSettingsAfterRestart;
 
 /**
  * How the HushTumblr screen is reached.
@@ -76,6 +77,12 @@ public final class SettingsEntry {
 
     private static volatile boolean openPending;
     private static volatile long requestedAt;
+    /**
+     * The page the next open lands on, or null for the first page. Set by a restart from the
+     * restart row, kept while the screen is opened again over a later activity, and dropped
+     * once the person closes it or asks for it another way.
+     */
+    private static volatile String requestedPage;
     private static volatile boolean callbacksRegistered;
     /** The activity the screen was last shown over, while the person hasn't closed it. */
     private static WeakReference<Activity> host;
@@ -104,7 +111,8 @@ public final class SettingsEntry {
     /**
      * Watches every Tumblr activity, so a pending open lands on whichever one resumes next:
      * signed out, the launcher hands straight over to the login screen. Also where the release
-     * check, when it's on, asks at most once a day, on a worker.
+     * check, when it's on, asks at most once a day, on a worker. A start that the settings
+     * screen's restart row asked for opens the screen again, on the page it was on.
      */
     static void onApplicationCreate(Context context) {
         try {
@@ -113,6 +121,8 @@ public final class SettingsEntry {
                 ((Application) context).registerActivityLifecycleCallbacks(new OpenWhenResumed());
                 callbacksRegistered = true;
             }
+            // Before the settings are ready, reading the marker would load them with no context.
+            if (Utils.settingsReady()) ReopenSettingsAfterRestart.reopenIfPending(SettingsEntry::reopenOn);
         } catch (Exception ex) {
             Logger.printException(() -> "Settings entry: could not watch activities", ex);
         }
@@ -392,7 +402,7 @@ public final class SettingsEntry {
                 return false;
             }
             closedByUser = false;
-            new SettingsDialog().show(fragments, DIALOG_TAG);
+            SettingsDialog.onPage(requestedPage).show(fragments, DIALOG_TAG);
             host = new WeakReference<>(activity);
             Logger.printInfo(() -> "Settings opened over " + name);
             return true;
@@ -406,6 +416,7 @@ public final class SettingsEntry {
     static void onClosedByUser() {
         closedByUser = true;
         host = null;
+        requestedPage = null;
     }
 
     /**
@@ -427,8 +438,23 @@ public final class SettingsEntry {
 
     private static void request(String from) {
         requestedAt = SystemClock.elapsedRealtime();
+        requestedPage = null;
         openPending = true;
         Logger.printInfo(() -> "Settings requested by " + from);
+    }
+
+    /**
+     * The screen again after the restart row restarted Tumblr, on [page], over the first Tumblr
+     * screen to resume: the same open the launcher shortcut and App info lead to.
+     */
+    static void reopenOn(String page) {
+        request("a restart from the settings screen");
+        requestedPage = page;
+    }
+
+    /** The page the next open lands on. Package-visible for tests. */
+    static String requestedPage() {
+        return requestedPage;
     }
 
     /**

@@ -210,6 +210,19 @@
       ],
       "license": "GPL-3.0-only",
       "changes": "Renamed for Tumblr: packages app.hushtumblr.extension.tumblr and app.morphe.patches.tumblr. Tumblr's package, certificate and Firebase request builder in place of Pinterest's two Firebase Installations callers, and HushTumblr's settings and status flags. Earlier history: Adapted from HushTelegram's Firebase push repair: the certificate header hook, its startup wait and its request scoping, with Pinterest's package and certificate, Pinterest's two Firebase Installations callers, and HushPinterest's settings and status flags. Telegram's local status readers and push answer hook were left out."
+    },
+    {
+      "paths": [
+        "extensions/shared/library/src/main/java/app/hushtumblr/extension/shared/settings/preference/ReopenSettingsAfterRestart.java"
+      ],
+      "origin": "ported",
+      "upstream": "https://github.com/SysAdminDoc/HushPinterest",
+      "commit": "44fb93384a319d8e5d324f51b416efdc3d3147e6",
+      "via": [
+        "https://github.com/SysAdminDoc/hushfeed"
+      ],
+      "license": "GPL-3.0-only",
+      "changes": "The settings standard written for HushPinterest, copied later than the rest of the fork. Renamed for Tumblr: package app.hushtumblr.extension.shared and the HushTumblrPause class in place of HushPinterestPause. Nothing else changed."
     }
   ]
 }

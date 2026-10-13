@@ -29,6 +29,7 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 import app.hushtumblr.extension.shared.SettingsContextRule;
+import app.hushtumblr.extension.shared.settings.preference.ReopenSettingsAfterRestart;
 
 import org.junit.After;
 import org.junit.Before;
@@ -363,6 +364,49 @@ public class SettingsEntryTest {
         ActivityController<Activity> loggedOut = replace(login);
 
         assertNull("the screen came back after the person closed it with the arrow", dialogOver(loggedOut.get()));
+    }
+
+    /**
+     * The restart row restarts Tumblr with a marker naming its page. The next start takes the
+     * marker, the same way onApplicationCreate does, and the screen opens over the first Tumblr
+     * screen to resume, on that page. Closing it drops the page, so a later open starts at the top.
+     */
+    @Test public void aStartAfterTheRestartRowOpensTheScreenOnItsPage() {
+        android.content.SharedPreferences store = app.hushtumblr.extension.shared.settings.Setting.preferences.preferences;
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        try {
+            org.junit.Assert.assertFalse("a start without a marker asked for the screen",
+                    ReopenSettingsAfterRestart.reopenIfPending(SettingsEntry::reopenOn));
+            ReopenSettingsAfterRestart.remember(store, "Links", android.os.SystemClock.elapsedRealtime());
+            assertTrue(ReopenSettingsAfterRestart.reopenIfPending(SettingsEntry::reopenOn));
+            org.junit.Assert.assertFalse("the marker outlived the start that read it",
+                    store.contains("hush_reopen_settings_page"));
+
+            ActivityController<Activity> activity = Robolectric.buildActivity(Activity.class).setup();
+            ShadowLooper.idleMainLooper();
+            SettingsDialog dialog = (SettingsDialog) dialogOver(activity.get());
+            assertNotNull("the restart didn't open the screen again", dialog);
+            org.junit.Assert.assertEquals("Links", dialog.startPage());
+            HushTumblrPreferenceFragment page = pageOver(activity.get());
+            android.widget.ListView list = page.getView().findViewById(android.R.id.list);
+            boolean onLinks = false;
+            for (int i = 0; i < list.getCount(); i++) {
+                Object row = list.getItemAtPosition(i);
+                if (row instanceof android.preference.Preference && HushTumblrPreferenceFragment.SUPPORTED_LINKS
+                        .equals(((android.preference.Preference) row).getKey())) onLinks = true;
+            }
+            assertTrue("the screen didn't open on Links", onLinks);
+
+            SettingsL10nTest.backOf(dialog).performClick();
+            SettingsL10nTest.backOf(dialog).performClick();
+            SettingsL10nTest.backOf(dialog).performClick();
+            ShadowLooper.idleMainLooper();
+            assertNull("the screen stayed open", dialogOver(activity.get()));
+            assertNull("closing the screen kept its page for the next open", SettingsEntry.requestedPage());
+        } finally {
+            SettingsEntry.onClosedByUser();
+            PatchFamily.inBuildForTests = null;
+        }
     }
 
     @SuppressWarnings("deprecation")

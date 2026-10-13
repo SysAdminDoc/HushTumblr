@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* **Tumblr:** A change that needs a restart puts a Restart row at the top of every settings page. Tap it and Tumblr reopens on the same page. Hide ads now asks for it too.
 * **Tumblr:** Settings pages have larger headers and short descriptions. Each control has its own navy card, with clearer spacing and rectangular switch thumbs. Short windows use a compact header to keep the list within reach.
 * **Tumblr:** The status card puts Pause or Resume below its message. Both actions save on a worker and prevent repeated taps. Choice dialogs share the page styling, and tab-order rows show an upward arrow for their move action.
 * **Tumblr:** A local mute that can't refresh the feed or undo itself keeps an Unmute post action. Recovery changes only that post and preserves later edits to the account's muted list.

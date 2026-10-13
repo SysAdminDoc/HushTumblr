@@ -418,6 +418,20 @@ public class SettingsL10nTest {
             collect(page.getPreferenceScreen(), rows, shown);
             shown.add(String.valueOf(backOf(dialog).getContentDescription()));
 
+            // The rows only the navigation draws: Browse settings, the section links, More settings
+            // and Support, then the restart row with one change and two waiting.
+            addListed(dialog, shown);
+            app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending
+                    .add(Settings.HIDE_TUMBLR_TV.key);
+            page.navigation.restartChanged();
+            addListed(dialog, shown);
+            app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending
+                    .add(Settings.FIX_PUSH_NOTIFICATIONS.key);
+            page.navigation.restartChanged();
+            addListed(dialog, shown);
+            app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.clear();
+            page.navigation.restartChanged();
+
             // The export row's dialog.
             Preference export = find(rows, "action_export_diagnostic_report");
             export.getOnPreferenceClickListener().onPreferenceClick(export);
@@ -606,6 +620,18 @@ public class SettingsL10nTest {
         ShadowLooper.idleMainLooper();
         app.hushtumblr.extension.shared.Utils.awaitBackgroundTasksForTests();
         ShadowLooper.idleMainLooper();
+    }
+
+    /** The title and summary of every row the dialog's list shows now. */
+    private static void addListed(SettingsDialog dialog, Set<String> shown) {
+        android.widget.ListView list = dialog.getView().findViewById(android.R.id.list);
+        for (int i = 0; i < list.getCount(); i++) {
+            Object item = list.getItemAtPosition(i);
+            if (!(item instanceof Preference)) continue;
+            shown.add(String.valueOf(((Preference) item).getTitle()));
+            CharSequence summary = ((Preference) item).getSummary();
+            if (summary != null) shown.add(String.valueOf(summary));
+        }
     }
 
     private static void addToast(Set<String> shown) {
