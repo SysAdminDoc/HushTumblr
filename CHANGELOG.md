@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+* **Tumblr:** The Tumblr's own settings page now lists where Tumblr keeps six of its own controls, such as autoplay, the dashboard order and filtered tags. Each row shows the path to the control in the language Tumblr is using.
+* **Tumblr:** Dark background color now reaches Tumblr's newer settings screens and the redesigned post card, which used to stay gray. Bars, rows and dialogs sit one step lighter than the page.
+* **Tumblr:** Hide the Communities tab now takes the Communities button off the bottom bar on every start. It used to come back after a restart with nothing behind it.
+* **Tumblr:** Manage muted posts now tells you when this account's list couldn't be read and gives you a Retry button, including when the app was too busy at sign-in to read it. Nothing is changed or deleted while it can't be read.
+* **Tumblr:** Manage muted posts now says that this device keeps muted post lists for eight accounts, and that a ninth account's first mute deletes the list that's gone longest without a change.
+* **Tumblr:** Hide reblogs has a new option, Keep reblogs with added content. Turn it on to keep reblogs where the reblogger added something of their own while empty reblogs stay hidden.
+* **Tumblr:** The setup guide's two help buttons now open Tumblr's own articles on resetting a password and on requesting your personal data. The guide also says that request is made on Tumblr's website, not in the app.
+* **Tooling:** Patched APKs are now checked for devices with 16 KB memory pages before they're kept, receipted or signed for a phone, and Tumblr's own native libraries are confirmed untouched.
+* **Tooling:** An unsigned universal APK now has to match the merge of the signed bundle beside it file for file, so one that leaves an asset out or carries a swapped resource or resource table is refused before patching.
+* **Tooling:** The settings, pause and restart checks now also run against Android 17 (API 37).
 * **Tumblr:** Long-press the Tumblr logo at the top of your dashboard to open HushTumblr settings. A tap on the logo still does what it always did.
 * **Tumblr:** Quick setups, under the status card, turns on the Quiet or Privacy switches in one tap, or puts every switch back. A toast says how many changed.
 * **Tumblr:** Report a problem sits just above the Ko-fi row. It opens a GitHub bug report with your versions, phone and switches filled in.
