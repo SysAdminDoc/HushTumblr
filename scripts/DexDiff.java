@@ -2773,9 +2773,11 @@ public class DexDiff {
         /**
          * The dashboard's Tumblr logo goes to the settings entry right after Tumblr gives it its tap
          * (TLogoView.setOnClickListener from outside the logo's own class), so a long press on it opens
-         * the screen. The patch hooks only a single such site that nothing else branches into, and
-         * leaves a build without one as it was. Found in the clean target, never from the hook. The
-         * hook reads the tap's receiver, which the clean call shows is the logo.
+         * the screen. The patch hooks only a single such site, in a method without exception ranges,
+         * that nothing else branches into, and leaves a build without one as it was. Found in the clean
+         * target, never from the hook. The same method also takes the TumblrMart button's hook, earlier
+         * on, so the hook's place is checked by anchor against the original instructions, not by its
+         * patched index. It reads the tap's receiver, which the clean call shows is the logo.
          */
         void dashboardLogo(String hook) {
             List<LogoSite> sites = new ArrayList<>();
@@ -2788,19 +2790,25 @@ public class DexDiff {
                     sites.add(new LogoSite(m, k + 1, tap.getRegisterC()));
                 }
             }
-            if (sites.size() != 1 || !onlyFrom(new FeatureFlow(sites.get(0).method()), sites.get(0).at(), sites.get(0).at() - 1)) return;
+            if (sites.size() != 1) return;
             LogoSite site = sites.get(0);
+            if (site.method().getImplementation().getTryBlocks().iterator().hasNext()
+                    || !onlyFrom(new FeatureFlow(site.method()), site.at(), site.at() - 1)) return;
             Method m = actual(site.method());
             List<Integer> at = calls(m, hook, 1);
             if (m == null || at.size() != 1) return;
             int k = at.get(0);
             List<Instruction> body = instructions(m), was = instructions(site.method());
-            if (k != site.at() || !arguments(body.get(k)).equals(List.of(site.register())) || k + 1 >= body.size()
-                    || body.get(k + 1).getOpcode() != was.get(site.at()).getOpcode() || !onlyFrom(m, k + 1, k) || !onlyFrom(m, k, k - 1)) {
-                fail(hook + " doesn't hand over the dashboard logo in front of instruction " + site.at() + " of " + m);
+            Instruction tap = get(body, k - 1), next = get(body, k + 1);
+            if (!arguments(body.get(k)).equals(List.of(site.register())) || tap == null || !LOGO_TAP.equals(String.valueOf(reference(tap)))
+                    || !arguments(tap).equals(arguments(was.get(site.at() - 1))) || next == null || next.getOpcode() != was.get(site.at()).getOpcode()
+                    || !onlyFrom(m, k + 1, k) || !onlyFrom(m, k, k - 1)) {
+                fail(hook + " doesn't hand over the dashboard logo right after its tap, in front of original instruction " + site.at() + " of " + m);
                 return;
             }
             remove(m, k, k + 1);
+            anchor(m, k, site.at(), hook);
+            labelAnchors.add(new Anchor(m, k, site.at(), hook));
             vouch(m, k, List.of(site.register()));
         }
 

@@ -37,6 +37,14 @@ private const val WHAT = "HushTumblr settings (the dashboard logo's long press)"
 /** Where Tumblr gives the logo its tap: the hook goes in at [index], passing the logo in [register]. */
 internal class LogoSite(val method: Method, val index: Int, val register: Int)
 
+/** Each place [method] gives the logo its tap, as the index right after the call and the logo's register. */
+private fun Method.logoTaps(): List<Pair<Int, Int>> =
+    instructionList().withIndex().mapNotNull { (index, instruction) ->
+        if (instruction.opcode != Opcode.INVOKE_VIRTUAL || instruction.methodRef()?.descriptor() != LOGO_TAP) return@mapNotNull null
+        val tap = instruction as FiveRegisterInstruction
+        if (tap.registerCount == 2) index + 1 to tap.registerC else null
+    }
+
 /**
  * Every place outside the logo's own class where Tumblr gives the logo its tap. In 46.5.0.109 that's
  * the dashboard host fragment's top bar bind (`TabbedDashboardHostFragment.m6`, from
@@ -47,11 +55,7 @@ internal fun BytecodePatchContext.dashboardLogoSites(): List<LogoSite> {
     classDefForEach { owner ->
         if (owner.type.startsWith(EXTENSION_ROOT) || owner.type == LOGO_VIEW) return@classDefForEach
         owner.methods.forEach { method ->
-            method.instructionList().forEachIndexed { index, instruction ->
-                if (instruction.opcode != Opcode.INVOKE_VIRTUAL || instruction.methodRef()?.descriptor() != LOGO_TAP) return@forEachIndexed
-                val tap = instruction as FiveRegisterInstruction
-                if (tap.registerCount == 2) sites += LogoSite(method, index + 1, tap.registerC)
-            }
+            method.logoTaps().mapTo(sites) { (index, register) -> LogoSite(method, index, register) }
         }
     }
     return sites
@@ -65,18 +69,29 @@ internal fun BytecodePatchContext.dashboardLogoSites(): List<LogoSite> {
  */
 internal fun BytecodePatchContext.hookLogoLongPress(): Boolean {
     val sites = dashboardLogoSites()
-    val site = sites.singleOrNull() ?: run {
+    val found = sites.singleOrNull() ?: run {
         patchLog.warning("HushTumblr settings: ${sites.size} places give the dashboard logo its tap, so a long press on the logo doesn't open the settings")
         return false
     }
     // Only once there's a site to call it from: a call to a method the extension lacks would crash Tumblr.
     requireExtensionHook(WHAT, DASHBOARD_LOGO_HOOK)
-    val method = mutableOf(site.method)
-    // The logo is only in its register on the path from the tap's call.
-    if ((method.implementation!!.instructions[site.index] as BuilderInstruction).location.labels.isNotEmpty()) {
-        patchLog.warning("HushTumblr settings: ${site.method.definingClass}->${site.method.name} branches past the dashboard logo's tap, so a long press on the logo doesn't open the settings")
+    val method = mutableOf(found.method)
+    val where = "${method.definingClass}->${method.name}"
+    // Hide the diamond and TumblrMart puts its hook into the same bind, earlier on, and either patch
+    // can run first, so the place is read again from the method as it is now.
+    val (index, register) = method.logoTaps().singleOrNull() ?: run {
+        patchLog.warning("HushTumblr settings: $where no longer gives the dashboard logo its tap once, so a long press on the logo doesn't open the settings")
         return false
     }
-    method.addInstruction(site.index, "invoke-static/range { v${site.register} .. v${site.register} }, $DASHBOARD_LOGO_HOOK")
+    // The logo is only in its register on the path from the tap's call. Without exception ranges,
+    // a label there can only be a branch target, which is also what the release check refuses.
+    val implementation = method.implementation!!
+    if (implementation.tryBlocks.isNotEmpty() ||
+        (implementation.instructions[index] as BuilderInstruction).location.labels.isNotEmpty()
+    ) {
+        patchLog.warning("HushTumblr settings: $where branches past the dashboard logo's tap or catches around it, so a long press on the logo doesn't open the settings")
+        return false
+    }
+    method.addInstruction(index, "invoke-static/range { v$register .. v$register }, $DASHBOARD_LOGO_HOOK")
     return true
 }
