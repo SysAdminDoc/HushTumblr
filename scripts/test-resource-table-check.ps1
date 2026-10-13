@@ -32,7 +32,11 @@
     check beside it that Assert-AuthenticMerge accepts, and an unsigned universal APK passes as the
     merge of the same-named bundle beside it. An unsigned split, a split signed by the other key,
     a split changed after signing, and a universal APK whose dex, native libraries, assets or res
-    files aren't the bundle's are each refused before the JDK starts, leaving nothing behind.
+    files aren't the bundle's are each refused before the JDK starts, leaving nothing behind. A
+    universal APK made only of the bundle's own files is still refused when it isn't the bundle's
+    merge: one that left an asset out, one with the base APK's resource table and nothing the split
+    adds, and one with a signed res file under another name. Those take the merge to tell, so the
+    JDK runs for them, and they leave nothing behind either.
 #>
 [CmdletBinding()]
 param(
@@ -570,7 +574,8 @@ try {
 
     # Signed for real: two keystores, A standing for Tumblr's certificate and B for anybody else's,
     # and apksigner from the build-tools aapt2 came from. The base carries a classes.dex, as Tumblr's
-    # does, so a universal APK can be held to it.
+    # does, so a universal APK can be held to it, and an asset and two raw files for a universal APK
+    # to leave out or swap.
     $keytool = Join-Path (Split-Path -Parent $Java) 'keytool.exe'
     if (-not (Test-Path -LiteralPath $keytool -PathType Leaf)) { throw "Required tool not found: $keytool" }
     $keys = Join-Path $bundleDir 'keys'
@@ -600,8 +605,11 @@ try {
     }
     $dexBase = Copy-ApkWith -From $baseApk -Name 'dex-base' -Change {
         param($archive)
-        $out = $archive.CreateEntry('classes.dex').Open()
-        try { $bytes = [System.Text.Encoding]::ASCII.GetBytes("dex`n035`0 stand-in code"); $out.Write($bytes, 0, $bytes.Length) } finally { $out.Dispose() }
+        foreach ($file in @(@{ Name = 'classes.dex'; Text = "dex`n035`0 stand-in code" }, @{ Name = 'assets/kept.txt'; Text = 'an asset the app reads' },
+                @{ Name = 'res/raw/one.txt'; Text = 'the first raw file' }, @{ Name = 'res/raw/two.txt'; Text = 'the second raw file' })) {
+            $out = $archive.CreateEntry($file.Name).Open()
+            try { $bytes = [System.Text.Encoding]::ASCII.GetBytes($file.Text); $out.Write($bytes, 0, $bytes.Length) } finally { $out.Dispose() }
+        }
     }
     $baseA = New-SignedApk -From $dexBase -Key 'a' -Name 'base-a.apk'
     $splitA = New-SignedApk -From $splitApk -Key 'a' -Name 'split-a.apk'
@@ -638,19 +646,21 @@ try {
         "The signed bundle's merge does not carry the split's resource.`n$($signedCaught.Output)"
 
     # A universal APK, which merging leaves unsigned, passes as the merge of the same-named bundle
-    # beside it, and is copied for the CLI with a record naming that bundle. One whose dex isn't
-    # the bundle's base dex is refused, and so is one carrying a native library the bundle doesn't:
+    # beside it, and is copied for the CLI with a record naming that bundle. It is held to that
+    # bundle's merge, made again for the check and deleted, so this one needs the JDK. One whose dex
+    # isn't the bundle's base dex is refused, and so is one carrying a native library the bundle doesn't:
     # both comparisons once walked each digest map as a single object and matched whatever they got.
     $universal = Join-Path $signed 'universal.apk'
     Copy-Item -LiteralPath $signedMerged -Destination $universal
     Copy-Item -LiteralPath $signedApkm -Destination (Join-Path $signed 'universal.apkm')
     $universalCopy = Join-Path $bundleDir 'merged/universal-copy.apk'
-    Get-MergedApk -Apk $universal -Destination $universalCopy -Java $noJava -DesktopJar $DesktopJar `
+    Get-MergedApk -Apk $universal -Destination $universalCopy -Java $Java -DesktopJar $DesktopJar `
         -Aapt2 $Aapt2 -PackageName 'com.tumblr' -Signers $pinned | Out-Null
     $universalRecord = Get-Content -LiteralPath "$universalCopy.authentic.json" -Raw | ConvertFrom-Json
     Assert-True ((Get-TestSha256 $universalCopy) -ceq (Get-TestSha256 $universal) -and
-        $universalRecord.signedForm -ceq (Join-Path $signed 'universal.apkm') -and $universalRecord.baseSha256 -ceq (Get-TestSha256 $baseA)) `
-        "The universal APK was not passed as the signed bundle's merge: $($universalRecord | ConvertTo-Json -Depth 5 -Compress)"
+        $universalRecord.signedForm -ceq (Join-Path $signed 'universal.apkm') -and $universalRecord.baseSha256 -ceq (Get-TestSha256 $baseA) -and
+        @(Get-ChildItem -LiteralPath (Join-Path $bundleDir 'merged') -Force -Filter '.trusted-*').Count -eq 0) `
+        "The universal APK was not passed as the signed bundle's merge, or the merge it was held to was left behind: $($universalRecord | ConvertTo-Json -Depth 5 -Compress)"
     $otherDex = Copy-ApkWith -From $universal -Name 'other-dex' -Change {
         param($archive)
         $archive.GetEntry('classes.dex').Delete()
@@ -679,9 +689,35 @@ try {
         Move-Item -LiteralPath $copy -Destination (Join-Path $signed "$($added.Name).apk")
         Copy-Item -LiteralPath $signedApkm -Destination (Join-Path $signed "$($added.Name).apkm")
     }
+    # A universal APK made of nothing but the bundle's own files passes all of that, and still isn't
+    # the bundle's merge: an asset left out, base.apk's resource table in place of the merged one
+    # (so the resource only the split carries is gone), one raw file holding the other's bytes, and
+    # a raw file there a second time under a name the merge doesn't have. Only the merge tells.
+    $baseArchive = [System.IO.Compression.ZipFile]::OpenRead($baseA)
+    try {
+        $stream = $baseArchive.GetEntry('resources.arsc').Open()
+        try { $buffer = [System.IO.MemoryStream]::new(); $stream.CopyTo($buffer); $baseTable = $buffer.ToArray() } finally { $stream.Dispose() }
+    } finally { $baseArchive.Dispose() }
+    $secondRaw = [System.Text.Encoding]::ASCII.GetBytes('the second raw file')
+    function Set-TestEntry($Archive, [string]$Name, [byte[]]$Bytes) {
+        $existing = $Archive.GetEntry($Name)
+        if ($existing) { $existing.Delete() }
+        $out = $Archive.CreateEntry($Name).Open()
+        try { $out.Write($Bytes, 0, $Bytes.Length) } finally { $out.Dispose() }
+    }
+    foreach ($unwhole in @(
+            @{ Name = 'missing-asset'; Change = { param($archive) $archive.GetEntry('assets/kept.txt').Delete() } },
+            @{ Name = 'lost-resource'; Change = { param($archive) Set-TestEntry $archive 'resources.arsc' $baseTable } },
+            @{ Name = 'swapped-res'; Change = { param($archive) Set-TestEntry $archive 'res/raw/one.txt' $secondRaw } },
+            @{ Name = 'copied-res'; Change = { param($archive) Set-TestEntry $archive 'res/raw/three.txt' $secondRaw } })) {
+        $copy = Copy-ApkWith -From $universal -Name $unwhole.Name -Change $unwhole.Change
+        Move-Item -LiteralPath $copy -Destination (Join-Path $signed "$($unwhole.Name).apk")
+        Copy-Item -LiteralPath $signedApkm -Destination (Join-Path $signed "$($unwhole.Name).apkm")
+    }
 
-    # Every refusal comes before the JDK would start (it isn't there) and leaves no merge, no record
-    # and no unpacked folder.
+    # Every refusal leaves no merge, no record and no unpacked folder. The ones a signature or a
+    # file of the bundle's decides come before the JDK would start (it isn't there). The last four
+    # are held to the bundle's merge, which the JDK makes, and that merge is gone afterwards too.
     $refusals = @(
         @{ Apk = (New-TestApkm -Name 'unsigned-split.apkm' -Apks @($baseA, $splitApk))
             Says = '*Refusing unsigned-split.apkm: split_config.xxhdpi.apk does not verify (*Nothing was merged or patched.*' }
@@ -696,20 +732,30 @@ try {
         @{ Apk = (Join-Path $signed 'other-asset.apk')
             Says = "*Refusing other-asset.apk: it does not verify, and its assets/standin.txt isn't in any APK of other-asset.apkm*" }
         @{ Apk = (Join-Path $signed 'other-res.apk')
-            Says = "*Refusing other-res.apk: it does not verify, and its res/raw/standin.txt isn't in any APK of other-res.apkm*" })
+            Says = "*Refusing other-res.apk: it does not verify, and its res/raw/standin.txt isn't in any APK of other-res.apkm*" }
+        @{ Apk = (Join-Path $signed 'missing-asset.apk'); Merged = $true
+            Says = '*Refusing missing-asset.apk: it does not verify, and it has no assets/kept.txt, which the merge of missing-asset.apkm holds*' }
+        @{ Apk = (Join-Path $signed 'lost-resource.apk'); Merged = $true
+            Says = "*Refusing lost-resource.apk: it does not verify, and its resources.arsc isn't the one the merge of lost-resource.apkm holds*" }
+        @{ Apk = (Join-Path $signed 'swapped-res.apk'); Merged = $true
+            Says = "*Refusing swapped-res.apk: it does not verify, and its res/raw/one.txt isn't the one the merge of swapped-res.apkm holds*" }
+        @{ Apk = (Join-Path $signed 'copied-res.apk'); Merged = $true
+            Says = "*Refusing copied-res.apk: it does not verify, and its res/raw/three.txt isn't in the merge of copied-res.apkm*" })
     foreach ($case in $refusals) {
         $destination = Join-Path $bundleDir ("merged/refused-" + [System.IO.Path]::GetFileNameWithoutExtension($case.Apk) + '.apk')
+        $caseJava = if ($case.Merged) { $Java } else { $noJava }
         $refused = $null
         try {
-            Get-MergedApk -Apk $case.Apk -Destination $destination -Java $noJava -DesktopJar $DesktopJar `
+            Get-MergedApk -Apk $case.Apk -Destination $destination -Java $caseJava -DesktopJar $DesktopJar `
                 -Aapt2 $Aapt2 -PackageName 'com.tumblr' -Signers $pinned | Out-Null
         } catch {
             $refused = $_.Exception.Message
         }
         Assert-True ($refused -like $case.Says -and -not (Test-Path -LiteralPath $destination) -and
             -not (Test-Path -LiteralPath "$destination.authentic.json") -and
-            @(Get-ChildItem -LiteralPath (Join-Path $bundleDir 'merged') -Force -Filter '.splits-*').Count -eq 0) `
-            "$(Split-Path -Leaf $case.Apk) was not refused before the merge: $refused"
+            @(Get-ChildItem -LiteralPath (Join-Path $bundleDir 'merged') -Force -Filter '.splits-*').Count -eq 0 -and
+            @(Get-ChildItem -LiteralPath (Join-Path $bundleDir 'merged') -Force -Filter '.trusted-*').Count -eq 0) `
+            "$(Split-Path -Leaf $case.Apk) was not refused before anything was handed on: $refused"
     }
 } finally {
     $env:BUILD_QUEUE_SCRIPT = $savedQueueScript

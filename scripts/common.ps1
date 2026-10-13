@@ -969,8 +969,11 @@ function Get-MergedApk {
         the merge of the same-named .apkm, .xapk or .apks beside it, whose APKs all pass, with
         that bundle's base dex and every native library its APKs carry byte for byte, and nothing
         but the manifest and resource table that isn't one of that bundle's files (res files by
-        content, since the merge can rename their folders), the rule Fixtures.signedForm holds the
-        fixture suite to. There is no switch to skip any of it. The
+        content, since the merge can rename their folders). Then that bundle's APKs are merged here
+        too, and the universal APK has to hold exactly that merge's files, each with the same bytes,
+        so one that left an asset out, or carries a signed res file or resource table that isn't
+        the merge's own, is refused. Fixtures.signedForm holds the fixture suite to the same rule.
+        There is no switch to skip any of it. The
         checks live in Open-AuthenticInput, which Assert-AuthenticInput runs on its own for a caller
         that refuses a list of inputs before merging the first.
 
@@ -995,7 +998,8 @@ function Get-MergedApk {
     $opened = $null
     $writing = $false
     try {
-        $opened = Open-AuthenticInput -Apk $Apk -Destination $Destination -Aapt2 $Aapt2 -PackageName $PackageName -Signers $Signers
+        $opened = Open-AuthenticInput -Apk $Apk -Destination $Destination -Java $Java -DesktopJar $DesktopJar `
+            -Aapt2 $Aapt2 -PackageName $PackageName -Signers $Signers
         $facts = $opened.Facts
         $writing = $true
         if (Test-Path -LiteralPath $record) { Remove-Item -LiteralPath $record -Force }
@@ -1044,11 +1048,15 @@ function Open-AuthenticInput {
         plain APK's file, when -Apk isn't a bundle) and Facts (what Assert-SplitsAuthentic found, or
         the same shape for a signed plain APK). Close-AuthenticInput lets go of them. Get-MergedApk
         merges or copies from it, and Assert-AuthenticInput only checks. Production scripts call
-        neither this nor Close-AuthenticInput themselves.
+        neither this nor Close-AuthenticInput themselves. -Java and -DesktopJar are for the one
+        input that needs a merge to be checked at all: an unsigned universal APK, held to the merge
+        of the bundle beside it.
     #>
     param(
         [Parameter(Mandatory = $true)][string]$Apk,
         [Parameter(Mandatory = $true)][string]$Destination,
+        [Parameter(Mandatory = $true)][string]$Java,
+        [Parameter(Mandatory = $true)][string]$DesktopJar,
         [Parameter(Mandatory = $true)][string]$Aapt2,
         [Parameter(Mandatory = $true)][string]$PackageName,
         [Parameter(Mandatory = $true)][string[]]$Signers
@@ -1127,13 +1135,45 @@ function Open-AuthenticInput {
                 # META-INF and every res file. The merger copies them, but a res file can lose a -v4 or
                 # -v21 qualifier from its folder name on the way (1,517 of them in 46.5.0.109), so res
                 # files are matched by content alone. Only AndroidManifest.xml and resources.arsc are
-                # rebuilt by the merge: the manifest is held to the package and version code above, and
-                # the resource table to nothing.
-                foreach ($pair in (Get-ApkEntryDigests -File $plain -Pattern '.').GetEnumerator()) {
+                # rebuilt by the merge, and both are held to the bundle's own merge below.
+                $plainEntries = Get-ApkEntryDigests -File $plain -Pattern '.'
+                foreach ($pair in $plainEntries.GetEnumerator()) {
                     if ($pair.Key -ceq 'AndroidManifest.xml' -or $pair.Key -ceq 'resources.arsc') { continue }
                     $signedCopy = if ($pair.Key.StartsWith('res/', [System.StringComparison]::Ordinal)) { $signedRes.Contains($pair.Value) } else { $signedEntries.Contains("$($pair.Key)`0$($pair.Value)") }
                     if (-not $signedCopy) {
                         & $refuse "it does not verify, and its $($pair.Key) isn't in any APK of $bundleLabel, so it isn't that signed build's merge"
+                    }
+                }
+                # None of that says the merge is whole, or that a file sits where the app looks for it:
+                # an APK that left an asset out passed, and so did one with a signed res file under
+                # another's name, or with the base APK's resource table and none of what the splits
+                # add to it. So the bundle's APKs, checked and locked above, are merged the way the CLI
+                # merges them, and this APK has to hold exactly that merge's files, each with the same
+                # bytes, the manifest and resource table among them. The merge is what drops a
+                # qualifier or keeps one copy of a file two APKs carry, so nothing here counts the
+                # files the APKs held between them. The merge is read through a handle of its own and
+                # deleted. Another process of the same user swapping files mid-run is a separate gap.
+                $trustedPath = Join-Path (Split-Path -Parent $Destination) ('.trusted-' + [guid]::NewGuid().ToString('N') + '.apk')
+                try {
+                    Invoke-SplitMerge -Splits $opened.SignedForm -Destination $trustedPath -Java $Java -DesktopJar $DesktopJar | Out-Null
+                    $trustedFile = [pscustomobject]@{ Member = "the merge of $bundleLabel"
+                        Handle = [System.IO.File]::Open($trustedPath, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read) }
+                    try { $trusted = Get-ApkEntryDigests -File $trustedFile -Pattern '.' } finally { $trustedFile.Handle.Dispose() }
+                } finally {
+                    Remove-Item -LiteralPath $trustedPath -Force -ErrorAction SilentlyContinue
+                }
+                foreach ($pair in $trusted.GetEnumerator()) {
+                    $own = $null
+                    if (-not $plainEntries.TryGetValue($pair.Key, [ref]$own)) {
+                        & $refuse "it does not verify, and it has no $($pair.Key), which the merge of $bundleLabel holds, so it isn't that signed build's whole merge"
+                    }
+                    if ($own -cne $pair.Value) {
+                        & $refuse "it does not verify, and its $($pair.Key) isn't the one the merge of $bundleLabel holds, so it isn't that signed build's merge"
+                    }
+                }
+                foreach ($pair in $plainEntries.GetEnumerator()) {
+                    if (-not $trusted.ContainsKey($pair.Key)) {
+                        & $refuse "it does not verify, and its $($pair.Key) isn't in the merge of $bundleLabel, so it isn't that signed build's merge"
                     }
                 }
             }
@@ -1169,11 +1209,14 @@ function Assert-AuthenticInput {
         The APKs are unpacked beside -Destination for the length of the call and are gone when it
         returns or throws. A caller given several inputs checks them all with this before it merges
         or patches the first (build-release-receipt.ps1), and still goes through Get-MergedApk for
-        each, which checks again.
+        each, which checks again. An unsigned universal APK is the exception to "nothing merged":
+        the bundle beside it is merged to hold it to, and that merge is deleted before this returns.
     #>
     param(
         [Parameter(Mandatory = $true)][string]$Apk,
         [Parameter(Mandatory = $true)][string]$Destination,
+        [Parameter(Mandatory = $true)][string]$Java,
+        [Parameter(Mandatory = $true)][string]$DesktopJar,
         [Parameter(Mandatory = $true)][string]$Aapt2,
         [Parameter(Mandatory = $true)][string]$PackageName,
         [Parameter(Mandatory = $true)][string[]]$Signers
@@ -1181,7 +1224,8 @@ function Assert-AuthenticInput {
 
     $opened = $null
     try {
-        $opened = Open-AuthenticInput -Apk $Apk -Destination $Destination -Aapt2 $Aapt2 -PackageName $PackageName -Signers $Signers
+        $opened = Open-AuthenticInput -Apk $Apk -Destination $Destination -Java $Java -DesktopJar $DesktopJar `
+            -Aapt2 $Aapt2 -PackageName $PackageName -Signers $Signers
     } finally {
         Close-AuthenticInput -Opened $opened
     }

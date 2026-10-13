@@ -333,8 +333,8 @@ if ($unfixed.Count -gt 0) {
 foreach ($apk in $Fixture) {
     $checkDir = Resolve-WithinRoot -Path (Join-Path $workRoot ("check-" + [guid]::NewGuid().ToString('N'))) -Root $workRoot
     try {
-        Assert-AuthenticInput -Apk $apk -Destination (Join-Path $checkDir 'stock-merged.apk') -Aapt2 $Aapt2 `
-            -PackageName $expectedTarget.PackageName -Signers $declaredSigners
+        Assert-AuthenticInput -Apk $apk -Destination (Join-Path $checkDir 'stock-merged.apk') -Java $Java -DesktopJar $DesktopJar `
+            -Aapt2 $Aapt2 -PackageName $expectedTarget.PackageName -Signers $declaredSigners
     } finally {
         Remove-GeneratedPath -Path $checkDir -Root $workRoot
     }
