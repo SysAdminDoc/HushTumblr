@@ -5,6 +5,8 @@
  */
 package app.hushtumblr.extension.tumblr.ui;
 
+import android.content.Context;
+import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -18,6 +20,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+import app.hushtumblr.extension.shared.ResourceType;
+import app.hushtumblr.extension.shared.ResourceUtils;
 import app.hushtumblr.extension.shared.Utils;
 import app.hushtumblr.extension.shared.diagnostics.HookStatus;
 import app.hushtumblr.extension.tumblr.settings.FamilyNames;
@@ -26,6 +30,13 @@ import app.hushtumblr.extension.tumblr.settings.Settings;
 
 /** Author-provided image descriptions displayed under their own native image frame. */
 public final class AltTextCaptions {
+    /** Tumblr's theme attribute for the text of a post, by the name the declared build gives it. */
+    private static final String POST_TEXT_COLOR = "themeMainTextColor";
+    private static final int UNREAD = -1;
+    /** [POST_TEXT_COLOR]'s id in this build, zero when it has none, read once. */
+    private static volatile int postTextAttribute = UNREAD;
+    /** Stands in for Tumblr's attribute in tests, whose themes don't have it. */
+    static Integer postTextAttributeForTests;
     private AltTextCaptions() {}
 
     // Neither side owns a view's lifetime. An old caption can still be removed if its frame moved.
@@ -75,13 +86,7 @@ public final class AltTextCaptions {
             TextView caption = new TextView(frame.getContext());
             caption.setText(text);
             caption.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-            TypedArray colors = frame.getContext().obtainStyledAttributes(new int[] { android.R.attr.textColorPrimary });
-            try {
-                caption.setTextColor(colors.getColorStateList(0) != null
-                        ? colors.getColorStateList(0) : caption.getTextColors());
-            } finally {
-                colors.recycle();
-            }
+            caption.setTextColor(captionColor(frame.getContext(), caption));
             caption.setGravity(Gravity.START);
             caption.setTextDirection(View.TEXT_DIRECTION_FIRST_STRONG);
             caption.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
@@ -128,5 +133,37 @@ public final class AltTextCaptions {
             case "image": case "photo": case "picture": case "gif": case "image description": return null;
             default: return text;
         }
+    }
+
+    /**
+     * The color for a caption: the one Tumblr's own post text has in the palette that's showing
+     * (`graywater_dashboard_textblock` colors its text with this attribute). A caption sits on the
+     * post card, and the framework's primary text color belongs to the page behind it. In True Blue
+     * that color is near white for the navy page, and a caption in it can't be read on the white
+     * card. A build without the attribute gets the primary text color, as before.
+     */
+    private static ColorStateList captionColor(Context context, TextView caption) {
+        Integer forTests = postTextAttributeForTests;
+        int postText;
+        if (forTests != null) {
+            postText = forTests;
+        } else {
+            postText = postTextAttribute;
+            if (postText == UNREAD) {
+                postText = ResourceUtils.getIdentifier(context, ResourceType.ATTR, POST_TEXT_COLOR);
+                postTextAttribute = postText;
+            }
+        }
+        for (int attribute : new int[] { postText, android.R.attr.textColorPrimary }) {
+            if (attribute == 0) continue;
+            TypedArray colors = context.obtainStyledAttributes(new int[] { attribute });
+            try {
+                ColorStateList found = colors.getColorStateList(0);
+                if (found != null) return found;
+            } finally {
+                colors.recycle();
+            }
+        }
+        return caption.getTextColors();
     }
 }

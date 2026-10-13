@@ -14,6 +14,7 @@ import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
 import android.content.res.Configuration;
+import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -64,6 +65,7 @@ public class AltTextCaptionsTest {
     }
 
     @After public void restore() {
+        AltTextCaptions.postTextAttributeForTests = null;
         Settings.SHOW_IMAGE_DESCRIPTIONS.resetToDefault();
         PatchFamilyForTests.inBuild(null);
         PatchFamilyForTests.capabilities(null);
@@ -216,6 +218,34 @@ public class AltTextCaptionsTest {
             }
             bitmap.recycle();
         }
+    }
+
+    /**
+     * A caption sits on the post card, so it takes the color Tumblr's own post text has there and
+     * not the page's primary text color. True Blue's primary color is near white, for the navy page
+     * behind its white cards. The accent color stands in for Tumblr's attribute here.
+     */
+    @Test
+    public void theCaptionTakesTumblrsPostTextColorWhereTheBuildNamesOne() {
+        Settings.SHOW_IMAGE_DESCRIPTIONS.save(true);
+        Context themed = context(false);
+        int[] wanted = { android.R.attr.colorAccent, android.R.attr.textColorPrimary };
+        TypedArray colors = themed.obtainStyledAttributes(wanted);
+        int accent = colors.getColor(0, 0);
+        int primary = colors.getColor(1, 0);
+        colors.recycle();
+        assertTrue("the two colors have to differ for this to show anything", accent != primary);
+
+        AltTextCaptions.postTextAttributeForTests = android.R.attr.colorAccent;
+        Image named = image(themed);
+        AltTextCaptions.gallery(named, description("An author's description."));
+        assertEquals(accent, caption(named).getCurrentTextColor());
+
+        // A build that names no such attribute keeps the primary text color.
+        AltTextCaptions.postTextAttributeForTests = 0;
+        Image unnamed = image(themed);
+        AltTextCaptions.gallery(unnamed, description("An author's description."));
+        assertEquals(primary, caption(unnamed).getCurrentTextColor());
     }
 
     private static Context context(boolean dark) {
