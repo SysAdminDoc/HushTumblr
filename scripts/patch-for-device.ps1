@@ -176,8 +176,11 @@ $result = Join-Path $OutDir 'result.json'
 if (Test-Path -LiteralPath $out) { throw 'The new run already has an APK output.' }
 
 Write-Host "[device] $($names.Count) patches from $(Split-Path -Leaf $bundle) onto $(Split-Path -Leaf $Apk)"
+# Every APK the merge is made from, or the plain APK, has to carry Tumblr's declared signer
+# (Get-MergedApk), before anything is merged, signed or installed.
+$declaredSigners = @(Get-DeclaredSigners -PatchList $catalog -PackageName $target.PackageName)
 $patchInput = Get-MergedApk -Apk $Apk -Destination (Join-Path $OutDir 'stock-merged.apk') `
-    -Java $Java -DesktopJar $DesktopJar
+    -Java $Java -DesktopJar $DesktopJar -Aapt2 $Aapt2 -PackageName $target.PackageName -Signers $declaredSigners
 $stockManifest = Get-ApkManifestFacts -Apk $patchInput -Aapt2 $Aapt2
 
 # A gate run that patched this exact bundle onto this APK with these patches and passed every check,
@@ -326,7 +329,7 @@ try {
     }
     foreach ($path in @((Join-Path $safeRun 'tmp'), (Join-Path $safeRun 'morphe-patch.args'),
             (Join-Path $safeRun 'stock-merged.apk'), (Join-Path $safeRun 'stock-merged.apk.source'),
-            (Join-Path $safeRun 'stock-merged.apk.xmltree'))) {
+            (Join-Path $safeRun 'stock-merged.apk.xmltree'), (Join-Path $safeRun 'stock-merged.apk.authentic.json'))) {
         $safePath = Resolve-WithinRoot -Path $path -Root $safeRun
         if (Test-Path -LiteralPath $safePath) { Remove-Item -LiteralPath $safePath -Recurse -Force }
     }

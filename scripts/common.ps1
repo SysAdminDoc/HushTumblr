@@ -408,8 +408,11 @@ function Expand-SplitBundle {
         merger reads.
 
         The archive stays open, and so unwritable, from the first name read to the last byte
-        unpacked. Hand the result to Invoke-SplitMerge, and to Remove-SplitDirectory when done.
-        Production scripts go through Get-MergedApk, which checks the APKs' signatures in between.
+        unpacked. The result goes to Lock-SplitFiles, then Invoke-SplitMerge, and to
+        Remove-SplitDirectory when done. Production scripts call none of these themselves: they
+        go through Get-MergedApk, which checks every APK's signature between the lock and the
+        merge. Only the resource table test calls them straight, for the unsigned APKs aapt2
+        builds there.
     #>
     param(
         [Parameter(Mandatory = $true)][string]$Apk,
@@ -485,14 +488,93 @@ function Expand-SplitBundle {
     return [pscustomobject]@{ Bundle = $Apk; Directory = $directory; Files = $files.ToArray() }
 }
 
+function Test-SplitBundlePath {
+    <#
+    .SYNOPSIS
+        Whether a path names a split bundle by its extension: the CLI's own list (BundleFormats).
+    #>
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    return [System.IO.Path]::GetExtension($Path).TrimStart('.').ToLowerInvariant() -in @('apkm', 'apks', 'xapk')
+}
+
+function Copy-ApkToSplitDirectory {
+    <#
+    .SYNOPSIS
+        A plain APK, copied into a new .splits-<guid> directory beside -Destination as input.apk,
+        in the shape Expand-SplitBundle returns.
+    .DESCRIPTION
+        So a plain APK is checked, and patched, from a copy nothing else can write, as a bundle's
+        APKs are. The name is fixed, so nothing in the caller's file name reaches a tool.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Apk,
+        [Parameter(Mandatory = $true)][string]$Destination
+    )
+
+    $Apk = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Apk)
+    $Destination = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Destination)
+    $parent = Split-Path -Parent $Destination
+    New-Item -ItemType Directory -Force -Path $parent | Out-Null
+    $candidate = Join-Path $parent ('.splits-' + [guid]::NewGuid().ToString('N'))
+    # Without -Force, New-Item refuses a directory that is already there, so this one is ours.
+    New-Item -ItemType Directory -Path $candidate -ErrorAction Stop | Out-Null
+    $directory = [System.IO.Path]::GetFullPath($candidate)
+    $path = Join-Path $directory 'input.apk'
+    try {
+        $source = [System.IO.File]::OpenRead($Apk)
+        try {
+            $sink = [System.IO.File]::Open($path, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write,
+                [System.IO.FileShare]::None)
+            try { $source.CopyTo($sink) } finally { $sink.Dispose() }
+        } finally { $source.Dispose() }
+    } catch {
+        Remove-Item -LiteralPath $directory -Recurse -Force -ErrorAction SilentlyContinue
+        throw
+    }
+    return [pscustomobject]@{ Bundle = $Apk; Directory = $directory
+        Files = @([pscustomobject]@{ Name = 'input.apk'; Path = $path; Member = (Split-Path -Leaf $Apk); Sha256 = $null; Handle = $null }) }
+}
+
+function Lock-SplitFiles {
+    <#
+    .SYNOPSIS
+        Open each unpacked APK so it can be read and nothing else, and hash it through that handle.
+    .DESCRIPTION
+        From here until Remove-SplitDirectory, apksigner, aapt2 and the merger can read the files
+        and nothing can write, replace or delete them, so the bytes whose signatures are checked
+        are the bytes the merger reads. MergeSplits.java holds each file to these hashes again
+        before it merges.
+    #>
+    param([Parameter(Mandatory = $true)]$Splits)
+
+    foreach ($file in @($Splits.Files)) {
+        $handle = [System.IO.File]::Open($file.Path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read,
+            [System.IO.FileShare]::Read)
+        $file.Handle = $handle
+        $sha = [System.Security.Cryptography.SHA256]::Create()
+        try {
+            $handle.Position = 0
+            $file.Sha256 = ([System.BitConverter]::ToString($sha.ComputeHash($handle)) -replace '-', '').ToLowerInvariant()
+        } finally { $sha.Dispose() }
+    }
+}
+
 function Remove-SplitDirectory {
     <#
     .SYNOPSIS
-        Delete the directory Expand-SplitBundle unpacked into, warning rather than failing.
+        Let go of the unpacked APKs and delete their directory, warning rather than failing.
     #>
     param($Splits)
 
-    if ($null -eq $Splits -or -not $Splits.Directory) { return }
+    if ($null -eq $Splits) { return }
+    foreach ($file in @($Splits.Files)) {
+        if ($null -ne $file -and $file.Handle) {
+            $file.Handle.Dispose()
+            $file.Handle = $null
+        }
+    }
+    if (-not $Splits.Directory) { return }
     try {
         if (Test-Path -LiteralPath $Splits.Directory) { Remove-Item -LiteralPath $Splits.Directory -Recurse -Force -ErrorAction Stop }
     } catch {
@@ -503,12 +585,13 @@ function Remove-SplitDirectory {
 function Invoke-SplitMerge {
     <#
     .SYNOPSIS
-        The APKs Expand-SplitBundle unpacked, merged into -Destination by the CLI's own merger
-        (MergeSplits.java), or a throw.
+        The APKs Expand-SplitBundle unpacked and Lock-SplitFiles hashed, merged into -Destination by
+        the CLI's own merger (MergeSplits.java), or a throw.
     .DESCRIPTION
         The merger is handed the directory, never the archive, so it reads the files that were
-        checked and unpacks nothing itself. There is nothing to fall back to, so a merge that
-        fails or writes no APK throws.
+        checked and unpacks nothing itself, and it is handed each file's hash, which it holds the
+        directory to before it merges: exactly those files, with exactly those bytes. There is
+        nothing to fall back to, so a merge that fails or writes no APK throws.
     #>
     param(
         [Parameter(Mandatory = $true)]$Splits,
@@ -518,6 +601,12 @@ function Invoke-SplitMerge {
     )
 
     $label = Split-Path -Leaf $Splits.Bundle
+    $digests = @(foreach ($file in @($Splits.Files)) {
+        if (-not $file.Sha256) {
+            throw "$($file.Name) in $($Splits.Directory) was never hashed (Lock-SplitFiles), so the merge can't be held to the bytes that were checked."
+        }
+        "$($file.Name):$($file.Sha256)"
+    })
     $Destination = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Destination)
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $Destination) | Out-Null
     if (Test-Path -LiteralPath $Destination) { Remove-Item -LiteralPath $Destination -Force }
@@ -530,7 +619,7 @@ function Invoke-SplitMerge {
         $ErrorActionPreference = 'Continue'
         $global:LASTEXITCODE = -1
         $output = @(& $Java '-Xmx6g' '-cp' $DesktopJar (Join-Path $PSScriptRoot 'MergeSplits.java') `
-            $Splits.Directory $Destination 2>&1 | ForEach-Object { "$_" })
+            $Splits.Directory $Destination @digests 2>&1 | ForEach-Object { "$_" })
         $exitCode = $LASTEXITCODE
     } finally {
         $ErrorActionPreference = $preference
@@ -548,11 +637,246 @@ function Invoke-SplitMerge {
     return $Destination
 }
 
+function Get-DeclaredSigners {
+    <#
+    .SYNOPSIS
+        The signer certificate digests patches-list.json declares for a package, lower case.
+    #>
+    param(
+        [Parameter(Mandatory = $true)]$PatchList,
+        [Parameter(Mandatory = $true)][string]$PackageName
+    )
+
+    $signers = @($PatchList.patches | ForEach-Object { $_.compatibility } |
+        Where-Object { $null -ne $_ -and $_.packageName -eq $PackageName } | ForEach-Object { $_.signatures } |
+        Where-Object { $_ } | ForEach-Object { "$_".Trim().ToLowerInvariant() } | Sort-Object -Unique)
+    if ($signers.Count -eq 0) { throw "patches-list.json declares no signer for $PackageName, so nothing says whose APKs to accept." }
+    return $signers
+}
+
+function Resolve-Apksigner {
+    <#
+    .SYNOPSIS
+        The apksigner of the build-tools aapt2 came from, or a throw.
+    #>
+    param([Parameter(Mandatory = $true)][string]$Aapt2)
+
+    $tools = Split-Path -Parent $Aapt2
+    foreach ($name in @('apksigner.bat', 'apksigner')) {
+        $candidate = Join-Path $tools $name
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+    }
+    throw "No apksigner beside aapt2 in $tools, so the APKs can't be checked against Tumblr's signer."
+}
+
+function Get-ApkSigners {
+    <#
+    .SYNOPSIS
+        Whether apksigner verifies an APK, and the SHA-256 digests of the signer certificates it
+        prints, lower case.
+    .DESCRIPTION
+        Every signer apksigner prints counts (each scheme's signer, and the signers a v3.1 block
+        targets at newer platforms), which is the set the fixture suite holds to the declared
+        certificates (AppCompatibilitiesMatchFixturesTest). A Source Stamp certificate is the
+        store's, not the app's, so it doesn't.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Apk,
+        [Parameter(Mandatory = $true)][string]$Apksigner
+    )
+
+    # Continue for the call alone: a JDK warning on stderr is a terminating error in Windows
+    # PowerShell 5.1 under Stop. The exit code is what gets judged.
+    $preference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        $global:LASTEXITCODE = -1
+        $lines = @(& $Apksigner verify --print-certs $Apk 2>&1 | ForEach-Object { "$_" })
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $preference
+    }
+    $signers = @($lines | Where-Object { $_ -notmatch '^\s*Source Stamp' } | ForEach-Object {
+            $match = [regex]::Match($_, 'certificate SHA-256 digest:\s*([0-9A-Fa-f]{64})\s*$')
+            if ($match.Success) { $match.Groups[1].Value.ToLowerInvariant() }
+        } | Sort-Object -Unique)
+    return [pscustomobject]@{
+        Verified = ($exitCode -eq 0)
+        Signers  = $signers
+        Said     = (@($lines | Where-Object { $_ } | Select-Object -Last 3) -join ' ')
+    }
+}
+
+function Get-SignerProblem {
+    <#
+    .SYNOPSIS
+        Why a set of signer digests isn't the declared signer, or $null when it is: at least one,
+        and every one declared.
+    #>
+    param([string[]]$Signers, [Parameter(Mandatory = $true)][string[]]$Pinned, [string]$PackageName)
+
+    $found = @($Signers | Where-Object { $_ })
+    if ($found.Count -eq 0) { return 'carries no signer certificate apksigner reports' }
+    $foreign = @($found | Where-Object { $Pinned -notcontains $_ })
+    if ($foreign.Count -gt 0) {
+        return "is signed by $($foreign -join ', '), which isn't a certificate patches-list.json declares for $PackageName"
+    }
+    return $null
+}
+
+function Get-SplitManifestIdentity {
+    <#
+    .SYNOPSIS
+        An APK's package, version code and split name, read off its manifest element with aapt2.
+    .DESCRIPTION
+        A base APK names no split. Only the manifest element's own attributes are read, up to its
+        first child element.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Apk,
+        [Parameter(Mandatory = $true)][string]$Aapt2
+    )
+
+    $preference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        $global:LASTEXITCODE = -1
+        $dump = @(& $Aapt2 dump xmltree --file AndroidManifest.xml $Apk 2>&1 | ForEach-Object { "$_" })
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $preference
+    }
+    if ($exitCode -ne 0) { throw "aapt2 could not read the manifest of ${Apk}: $(@($dump | Select-Object -Last 2) -join ' ')" }
+    $indent = -1
+    $attributes = New-Object 'System.Collections.Generic.Dictionary[string,string]' ([System.StringComparer]::Ordinal)
+    foreach ($line in $dump) {
+        if ($indent -lt 0) {
+            $element = [regex]::Match($line, '^(\s*)E:\s*manifest\s*\(')
+            if ($element.Success) { $indent = $element.Groups[1].Length }
+            continue
+        }
+        if ($line -match '^\s*E:') { break }
+        $attribute = [regex]::Match($line, '^(\s*)A:\s*([^\s(=]+)(?:\(0x[0-9a-fA-F]+\))?=(.*)$')
+        if (-not $attribute.Success -or $attribute.Groups[1].Length -le $indent) { continue }
+        $value = $attribute.Groups[3].Value.Trim()
+        $raw = $value.IndexOf(' (Raw: ')
+        if ($raw -ge 0) { $value = $value.Substring(0, $raw).Trim() }
+        if ($value.Length -ge 2 -and $value.StartsWith('"') -and $value.EndsWith('"')) { $value = $value.Substring(1, $value.Length - 2) }
+        if ($attributes.ContainsKey($attribute.Groups[2].Value)) { throw "The manifest of $Apk repeats $($attribute.Groups[2].Value)." }
+        $attributes.Add($attribute.Groups[2].Value, $value)
+    }
+    if ($indent -lt 0) { throw "aapt2 found no manifest element in $Apk." }
+    $read = {
+        param([string]$Name)
+        $value = $null
+        if ($attributes.TryGetValue($Name, [ref]$value)) { return $value }
+        return ''
+    }
+    return [pscustomobject]@{
+        Package     = (& $read 'package')
+        VersionCode = (& $read 'http://schemas.android.com/apk/res/android:versionCode')
+        Split       = (& $read 'split')
+    }
+}
+
+function Get-ApkEntryDigests {
+    <#
+    .SYNOPSIS
+        The SHA-256 of every entry of a locked APK whose name matches -Pattern, by name, read
+        through the handle Lock-SplitFiles holds.
+    #>
+    param(
+        [Parameter(Mandatory = $true)]$File,
+        [Parameter(Mandatory = $true)][string]$Pattern
+    )
+
+    Add-Type -AssemblyName System.IO.Compression
+    $File.Handle.Position = 0
+    $zip = New-Object System.IO.Compression.ZipArchive($File.Handle, [System.IO.Compression.ZipArchiveMode]::Read, $true)
+    try {
+        $map = New-Object 'System.Collections.Generic.SortedDictionary[string,string]' ([System.StringComparer]::Ordinal)
+        foreach ($entry in @($zip.Entries)) {
+            if ($entry.FullName.EndsWith('/') -or $entry.FullName -cnotmatch $Pattern) { continue }
+            if ($map.ContainsKey($entry.FullName)) { throw "$($File.Member) holds $($entry.FullName) twice." }
+            $stream = $entry.Open()
+            $sha = [System.Security.Cryptography.SHA256]::Create()
+            try { $map.Add($entry.FullName, ([System.BitConverter]::ToString($sha.ComputeHash($stream)) -replace '-', '').ToLowerInvariant()) }
+            finally { $sha.Dispose(); $stream.Dispose() }
+        }
+        return , $map
+    } finally {
+        $zip.Dispose()
+    }
+}
+
+function Assert-SplitsAuthentic {
+    <#
+    .SYNOPSIS
+        Every APK Expand-SplitBundle unpacked and Lock-SplitFiles locked, held to the declared
+        signer and to one app build, or a throw before anything is merged.
+    .DESCRIPTION
+        apksigner has to verify each APK, and every signer it prints but a Source Stamp has to be
+        a certificate patches-list.json declares for the package, the rule the fixture suite holds
+        each bundle to (AppCompatibilitiesMatchFixturesTest). An unsigned split, one whose bytes
+        changed after signing and one signed by anybody else are refused the same way. Then the
+        manifests: each APK the declared package, all of one version code, exactly one base (an
+        APK naming no split) and no split name twice. Returns the base, the version code and what
+        each APK was found to be.
+    #>
+    param(
+        [Parameter(Mandatory = $true)]$Splits,
+        [Parameter(Mandatory = $true)][string]$Aapt2,
+        [Parameter(Mandatory = $true)][string]$PackageName,
+        [Parameter(Mandatory = $true)][string[]]$Signers
+    )
+
+    $label = Split-Path -Leaf $Splits.Bundle
+    $pinned = @($Signers | ForEach-Object { "$_".Trim().ToLowerInvariant() } | Where-Object { $_ })
+    if ($pinned.Count -eq 0) { throw "No signer is declared for $PackageName, so $label can't be checked." }
+    $apksigner = Resolve-Apksigner -Aapt2 $Aapt2
+    $refuse = { param([string]$Why) throw "Refusing ${label}: $Why. Nothing was merged or patched." }
+    $apks = New-Object System.Collections.Generic.List[object]
+    foreach ($file in @($Splits.Files)) {
+        if (-not $file.Handle -or -not $file.Sha256) {
+            throw "$($file.Name) in $($Splits.Directory) was not locked and hashed (Lock-SplitFiles) before its signature was checked."
+        }
+        $signed = Get-ApkSigners -Apk $file.Path -Apksigner $apksigner
+        if (-not $signed.Verified) { & $refuse "$($file.Member) does not verify ($($signed.Said))" }
+        $problem = Get-SignerProblem -Signers $signed.Signers -Pinned $pinned -PackageName $PackageName
+        if ($problem) { & $refuse "$($file.Member) $problem" }
+        $identity = Get-SplitManifestIdentity -Apk $file.Path -Aapt2 $Aapt2
+        if ($identity.Package -cne $PackageName) { & $refuse "$($file.Member) is $($identity.Package), not $PackageName" }
+        if (-not $identity.VersionCode) { & $refuse "$($file.Member) declares no version code" }
+        $apks.Add([pscustomobject]@{ File = $file; Member = $file.Member; Name = $file.Name; Sha256 = $file.Sha256
+            Split = $identity.Split; VersionCode = $identity.VersionCode; Signers = $signed.Signers })
+    }
+    $codes = @($apks | ForEach-Object { $_.VersionCode } | Sort-Object -Unique)
+    if ($codes.Count -ne 1) { & $refuse "its APKs carry more than one version code ($($codes -join ', '))" }
+    $bases = @($apks | Where-Object { -not $_.Split })
+    if ($bases.Count -ne 1) {
+        & $refuse "it holds $($bases.Count) base APKs, APKs naming no split, where an app has one ($(@($bases | ForEach-Object { $_.Member }) -join ', '))"
+    }
+    $splitNames = @{}
+    foreach ($apk in @($apks | Where-Object { $_.Split })) {
+        $key = $apk.Split.ToUpperInvariant()
+        if ($splitNames.ContainsKey($key)) { & $refuse "$($splitNames[$key]) and $($apk.Member) are both split $($apk.Split)" }
+        $splitNames[$key] = $apk.Member
+    }
+    return [pscustomobject]@{
+        Package     = $PackageName
+        VersionCode = $codes[0]
+        Base        = $bases[0]
+        Apks        = $apks.ToArray()
+        Signers     = @($apks | ForEach-Object { $_.Signers } | Sort-Object -Unique)
+    }
+}
+
 function Get-MergedApk {
     <#
     .SYNOPSIS
-        The one APK the desktop CLI patches: a split bundle merged the way the CLI merges it,
-        written to -Destination, or the APK itself when it isn't a bundle.
+        The one APK the desktop CLI patches, written to -Destination once every APK it is made
+        from has been checked against the declared signer: a split bundle merged the way the CLI
+        merges it, or a copy of a plain APK.
     .DESCRIPTION
         morphe-desktop merges an .apkm, .apks or .xapk into <name>-merged.apk beside its output,
         patches that, and since 1.17.0 deletes it on the way out. The patched APK's resource table
@@ -563,27 +887,166 @@ function Get-MergedApk {
         with the CLI's own merger and the arguments it passes (MergeSplits.java), and hand the CLI
         the merged APK, which it patches as it is. The bundle is unpacked here, into a directory
         of the run's own, once every member name has been checked (Expand-SplitBundle), and the
-        merger reads that directory. There is nothing else to fall back to, so a merge that fails
-        or writes no APK throws. The extensions are the CLI's own list (BundleFormats); anything
-        else goes to the CLI as it is.
+        merger reads that directory.
+
+        Only base.apk's signer used to be checked, by some callers and after the merge, so an
+        unsigned or re-signed split was merged, patched, signed and installed as Tumblr's. Now
+        every APK is locked and hashed where it was unpacked (Lock-SplitFiles), and has to verify
+        with apksigner, carry only declared signers and agree with the others on the package and
+        the version code, with one base and no split twice (Assert-SplitsAuthentic), before the
+        merger reads exactly those bytes. A plain APK is copied the same way and checked the same
+        way; a universal APK that doesn't verify (merging drops every signature) passes only as
+        the merge of the same-named .apkm, .xapk or .apks beside it, whose APKs all pass, with
+        that bundle's base dex and every native library its APKs carry byte for byte, the rule
+        Fixtures.signedForm holds the fixture suite to. There is no switch to skip any of it.
+
+        Beside -Destination goes <Destination>.authentic.json, the hashes of what was merged and of
+        the base APK whose signer stands for it, which verify-injected-registers.ps1 holds a
+        -CleanMerged it is handed to (Assert-AuthenticMerge). A merge that fails or writes no APK
+        throws, and so does every refusal, before -Destination is touched.
     #>
     param(
         [Parameter(Mandatory = $true)][string]$Apk,
         [Parameter(Mandatory = $true)][string]$Destination,
         [Parameter(Mandatory = $true)][string]$Java,
-        [Parameter(Mandatory = $true)][string]$DesktopJar
+        [Parameter(Mandatory = $true)][string]$DesktopJar,
+        [Parameter(Mandatory = $true)][string]$Aapt2,
+        [Parameter(Mandatory = $true)][string]$PackageName,
+        [Parameter(Mandatory = $true)][string[]]$Signers
     )
 
     $Apk = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Apk)
     $Destination = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Destination)
-    if ([System.IO.Path]::GetExtension($Apk).TrimStart('.').ToLowerInvariant() -notin @('apkm', 'apks', 'xapk')) {
-        return $Apk
-    }
-    $splits = Expand-SplitBundle -Apk $Apk -Destination $Destination
+    $label = Split-Path -Leaf $Apk
+    $record = "$Destination.authentic.json"
+    $refuse = { param([string]$Why) throw "Refusing ${label}: $Why. Nothing was merged or patched." }
+    $splits = $null
+    $signedForm = $null
+    $writing = $false
     try {
-        return Invoke-SplitMerge -Splits $splits -Destination $Destination -Java $Java -DesktopJar $DesktopJar
+        if (Test-SplitBundlePath -Path $Apk) {
+            $splits = Expand-SplitBundle -Apk $Apk -Destination $Destination
+            Lock-SplitFiles -Splits $splits
+            $facts = Assert-SplitsAuthentic -Splits $splits -Aapt2 $Aapt2 -PackageName $PackageName -Signers $Signers
+            $writing = $true
+            if (Test-Path -LiteralPath $record) { Remove-Item -LiteralPath $record -Force }
+            Invoke-SplitMerge -Splits $splits -Destination $Destination -Java $Java -DesktopJar $DesktopJar | Out-Null
+        } else {
+            $splits = Copy-ApkToSplitDirectory -Apk $Apk -Destination $Destination
+            Lock-SplitFiles -Splits $splits
+            $plain = $splits.Files[0]
+            $pinned = @($Signers | ForEach-Object { "$_".Trim().ToLowerInvariant() } | Where-Object { $_ })
+            $identity = Get-SplitManifestIdentity -Apk $plain.Path -Aapt2 $Aapt2
+            if ($identity.Package -cne $PackageName) { & $refuse "it is $($identity.Package), not $PackageName" }
+            if ($identity.Split) { & $refuse "it is the split $($identity.Split), not a whole app" }
+            if (-not $identity.VersionCode) { & $refuse 'it declares no version code' }
+            $signed = Get-ApkSigners -Apk $plain.Path -Apksigner (Resolve-Apksigner -Aapt2 $Aapt2)
+            if ($signed.Verified) {
+                $problem = Get-SignerProblem -Signers $signed.Signers -Pinned $pinned -PackageName $PackageName
+                if ($problem) { & $refuse "it $problem" }
+                $facts = [pscustomobject]@{ VersionCode = $identity.VersionCode; Signers = $signed.Signers
+                    Base = [pscustomobject]@{ Sha256 = $plain.Sha256 }
+                    Apks = @([pscustomobject]@{ Member = $label; Name = $plain.Name; Sha256 = $plain.Sha256; Split = '' }) }
+            } else {
+                $stem = Join-Path (Split-Path -Parent $Apk) ([System.IO.Path]::GetFileNameWithoutExtension($Apk))
+                $bundle = @('.apkm', '.xapk', '.apks' | ForEach-Object { "$stem$_" } |
+                    Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }) | Select-Object -First 1
+                if (-not $bundle) {
+                    & $refuse ("it does not verify ($($signed.Said)), and no .apkm, .xapk or .apks of the same name beside it " +
+                        'holds the signed build it could be a merge of')
+                }
+                $bundleLabel = Split-Path -Leaf $bundle
+                $signedForm = Expand-SplitBundle -Apk $bundle -Destination $Destination
+                Lock-SplitFiles -Splits $signedForm
+                $facts = Assert-SplitsAuthentic -Splits $signedForm -Aapt2 $Aapt2 -PackageName $PackageName -Signers $Signers
+                if ($identity.VersionCode -cne $facts.VersionCode) {
+                    & $refuse "it does not verify, and it is version code $($identity.VersionCode) where $bundleLabel is $($facts.VersionCode)"
+                }
+                $signedCode = Get-ApkEntryDigests -File $facts.Base.File -Pattern '^classes\d*\.dex$'
+                if ($signedCode.Count -eq 0) { & $refuse "it does not verify, and the base APK of $bundleLabel holds no dex to hold it to" }
+                $libraries = New-Object 'System.Collections.Generic.SortedDictionary[string,string]' ([System.StringComparer]::Ordinal)
+                # Not $apk, which is -Apk: PowerShell names are case-insensitive.
+                foreach ($signedApk in @($facts.Apks)) {
+                    $carried = Get-ApkEntryDigests -File $signedApk.File -Pattern '^lib/'
+                    foreach ($pair in $carried) {
+                        if ($libraries.ContainsKey($pair.Key)) { & $refuse "$bundleLabel carries $($pair.Key) in two of its APKs" }
+                        $libraries.Add($pair.Key, $pair.Value)
+                    }
+                }
+                $text = { param($Map) @(foreach ($pair in $Map) { "$($pair.Key)=$($pair.Value)" }) -join "`n" }
+                if ((& $text (Get-ApkEntryDigests -File $plain -Pattern '^classes\d*\.dex$')) -cne (& $text $signedCode)) {
+                    & $refuse "it does not verify, and its dex files aren't those of the base APK of $bundleLabel, so it isn't that signed build's merge"
+                }
+                if ((& $text (Get-ApkEntryDigests -File $plain -Pattern '^lib/')) -cne (& $text $libraries)) {
+                    & $refuse "it does not verify, and its native libraries aren't those of $bundleLabel, so it isn't that signed build's merge"
+                }
+            }
+            $writing = $true
+            if (Test-Path -LiteralPath $record) { Remove-Item -LiteralPath $record -Force }
+            if (Test-Path -LiteralPath $Destination) { Remove-Item -LiteralPath $Destination -Force }
+            # The CLI patches the bytes that were checked, read through the handle that kept them.
+            $plain.Handle.Position = 0
+            $sink = [System.IO.File]::Open($Destination, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write,
+                [System.IO.FileShare]::None)
+            try { $plain.Handle.CopyTo($sink) } finally { $sink.Dispose() }
+        }
+        $merged = (Get-FileHash -LiteralPath $Destination -Algorithm SHA256).Hash.ToLowerInvariant()
+        $recordFacts = [ordered]@{
+            input        = $Apk
+            package      = $PackageName
+            versionCode  = [string]$facts.VersionCode
+            signers      = @($facts.Signers)
+            signedForm   = if ($signedForm) { $signedForm.Bundle } else { $null }
+            baseSha256   = [string]$facts.Base.Sha256
+            mergedSha256 = $merged
+            apks         = @($facts.Apks | ForEach-Object {
+                [ordered]@{ member = [string]$_.Member; name = [string]$_.Name; sha256 = [string]$_.Sha256; split = [string]$_.Split } })
+        }
+        [System.IO.File]::WriteAllText($record, ($recordFacts | ConvertTo-Json -Depth 5), (New-Object System.Text.UTF8Encoding($false)))
+        $writing = $false
+        return $Destination
+    } catch {
+        if ($writing) { Remove-Item -LiteralPath $Destination, $record -Force -ErrorAction SilentlyContinue }
+        throw
     } finally {
         Remove-SplitDirectory -Splits $splits
+        Remove-SplitDirectory -Splits $signedForm
+    }
+}
+
+function Assert-AuthenticMerge {
+    <#
+    .SYNOPSIS
+        Hold a merged clean APK to the record Get-MergedApk wrote beside it, and its base APK to
+        the one whose signer was checked, or throw.
+    .DESCRIPTION
+        A merge carries no signature of its own, so nothing in the file says its splits were
+        Tumblr's. Get-MergedApk records the hash of what it wrote and of the base APK whose signer
+        stands for it. A merged APK with no record, or bytes other than the ones recorded, or a
+        base other than the recorded one, wasn't made from APKs that passed.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Merged,
+        [Parameter(Mandatory = $true)][string]$Base,
+        [Parameter(Mandatory = $true)][string]$PackageName
+    )
+
+    $record = "$Merged.authentic.json"
+    if (-not (Test-Path -LiteralPath $record -PathType Leaf)) {
+        throw ("$Merged has no record of the signature check Get-MergedApk makes before it merges ($record), so nothing says " +
+            'the APKs it was made from were Tumblr''s. Leave -CleanMerged out to have the clean side merged and checked here.')
+    }
+    try { $facts = Get-Content -LiteralPath $record -Raw | ConvertFrom-Json }
+    catch { throw "The record beside $Merged can't be read: $($_.Exception.Message)" }
+    $mergedHash = (Get-FileHash -LiteralPath $Merged -Algorithm SHA256).Hash.ToLowerInvariant()
+    $baseHash = (Get-FileHash -LiteralPath $Base -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ([string]$facts.package -cne $PackageName) { throw "$Merged was checked as $($facts.package), not $PackageName." }
+    if ([string]$facts.mergedSha256 -cne $mergedHash) {
+        throw "$Merged changed after the APKs it was made from were checked: it hashes to $mergedHash, and the record says $($facts.mergedSha256)."
+    }
+    if ([string]$facts.baseSha256 -cne $baseHash) {
+        throw ("The clean base APK $Base hashes to $baseHash, and the base whose signer stands for $Merged hashed to " +
+            "$($facts.baseSha256), so they aren't the same build.")
     }
 }
 

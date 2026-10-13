@@ -195,11 +195,14 @@ $out = Resolve-WithinRoot -Path (Join-Path $runDir 'verify-all.apk') -Root $work
 $temp = Resolve-WithinRoot -Path (Join-Path $runDir 'verify-all-tmp') -Root $workRoot
 $result = Resolve-WithinRoot -Path (Join-Path $workRoot "verify-all-result-$runId.json") -Root $workRoot
     # What the CLI patches and what the patched table is held to, one file: a bundle's merge, made
-    # here because the CLI deletes its own, or the APK itself. A bundle that won't merge stops the
-    # run; base.apk alone lacks the splits' resources and would pass a table that lost them.
+    # here because the CLI deletes its own, or a copy of the APK. A bundle that won't merge stops the
+    # run; base.apk alone lacks the splits' resources and would pass a table that lost them. Every
+    # APK either is made from has to carry Tumblr's declared signer first (Get-MergedApk).
     $mergedApk = Resolve-WithinRoot -Path (Join-Path $runDir 'stock-merged.apk') -Root $workRoot
-    $patchInput = Get-MergedApk -Apk $Apk -Destination $mergedApk -Java $Java -DesktopJar $DesktopJar
-    if ($patchInput -eq $mergedApk) { Write-Host "[verify] merged $(Split-Path -Leaf $Apk) into one APK for the CLI" }
+    $declaredSigners = @(Get-DeclaredSigners -PatchList $catalog -PackageName $expectedTarget.PackageName)
+    $patchInput = Get-MergedApk -Apk $Apk -Destination $mergedApk -Java $Java -DesktopJar $DesktopJar `
+        -Aapt2 $Aapt2 -PackageName $expectedTarget.PackageName -Signers $declaredSigners
+    if (Test-SplitBundlePath -Path $Apk) { Write-Host "[verify] merged $(Split-Path -Leaf $Apk) into one APK for the CLI" }
     $enable = @()
     foreach ($name in $names) { $enable += '-e'; $enable += $name }
     $arguments = @('patch', '--exclusive', '--continue-on-error', '--unsigned', '-p', $Bundle,

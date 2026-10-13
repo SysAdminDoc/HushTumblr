@@ -460,8 +460,20 @@ function Write-StandIn {
         [System.Text.Encoding]::ASCII)
 }
 
+# Every APK the verifier reads is checked with apksigner, and a marker in the file says how this one
+# is signed: stand-in-unsigned doesn't verify, stand-in-foreign is signed by another certificate
+# alone, stand-in-second-signer by another one beside Tumblr's, and stand-in-stamp carries a Source
+# Stamp beside Tumblr's, which doesn't count. Without a marker the answer is Tumblr's signer.
+$foreignSigner = '0123456789abcdef' * 4
+
+# -CleanMarker marks the clean APK. -Bundle makes the clean side clean.apkm, a base.apk and a
+# config.arm64_v8a split, with -SplitMarker on the split; the java plays the merger by copying the
+# base, and logs each tool it was started for in java.log. -Merged hands the verifier a merge of its
+# own with -CleanMerged: without a record of the signature check (NoRecord), with a record of other
+# bytes (WrongMerge) or of another base APK (WrongBase), or with a true record (Valid).
 function Invoke-VerifierWithStandIns {
-    param([string]$Name, [int]$DexDiffExit, [switch]$JavaGone)
+    param([string]$Name, [int]$DexDiffExit, [switch]$JavaGone, [string]$CleanMarker, [switch]$Bundle,
+        [string]$SplitMarker, [string]$Merged = 'None')
     $case = Join-Path $standIns $Name
     New-Item -ItemType Directory -Path $case -Force | Out-Null
     $javaStandIn = Join-Path $case 'java.cmd'
@@ -471,35 +483,101 @@ if "%~1"=="-version" (
   echo openjdk version "21.0.0"
   exit /b 0
 )
+>>"%~dp0java.log" echo %~nx4
+if /i "%~nx4"=="MergeSplits.java" (
+  copy /y "%~5\base.apk" "%~6" >nul || exit /b 7
+  exit /b 0
+)
 echo [diff] structural findings: 0
 exit /b $DexDiffExit
 "@
+    # The last argument is the APK. One that holds a manifest of its own (a split) is printed as it
+    # is; any other gets Tumblr 46.5.0.109's.
     Write-StandIn (Join-Path $case 'aapt2.cmd') @"
 @echo off
+setlocal EnableExtensions DisableDelayedExpansion
+set "APK="
+:next
+if "%~1"=="" goto run
+set "APK=%~1"
+shift
+goto next
+:run
+findstr /l /c:"E: manifest" "%APK%" >nul 2>&1 && (type "%APK%"& exit /b 0)
 echo   E: manifest (line=2)
 echo     A: http://schemas.android.com/apk/res/android:versionCode(0x0101021b)=1460500109
 echo     A: http://schemas.android.com/apk/res/android:versionName(0x0101021c)="46.5.0.109" (Raw: "46.5.0.109")
 echo     A: package="$standInPackage" (Raw: "$standInPackage")
 exit /b 0
 "@
-    $delete = if ($JavaGone) { "del /f /q `"$javaStandIn`"" } else { 'rem' }
+    $delete = if ($JavaGone) { "del /f /q `"$javaStandIn`" 2>nul" } else { 'rem' }
     Write-StandIn (Join-Path $case 'apksigner.bat') @"
 @echo off
+setlocal EnableExtensions DisableDelayedExpansion
 $delete
+set "APK="
+:next
+if "%~1"=="" goto verify
+set "APK=%~1"
+shift
+goto next
+:verify
+findstr /l /c:"stand-in-unsigned" "%APK%" >nul 2>&1 && (echo DOES NOT VERIFY& echo ERROR: Missing META-INF/MANIFEST.MF& exit /b 1)
+findstr /l /c:"stand-in-foreign" "%APK%" >nul 2>&1 && (echo Signer #1 certificate SHA-256 digest: $foreignSigner& exit /b 0)
 echo Signer #1 certificate SHA-256 digest: $($metaSigner[0])
+findstr /l /c:"stand-in-second-signer" "%APK%" >nul 2>&1 && echo Signer #2 certificate SHA-256 digest: $foreignSigner
+findstr /l /c:"stand-in-stamp" "%APK%" >nul 2>&1 && echo Source Stamp Signer certificate SHA-256 digest: $foreignSigner
 exit /b 0
 "@
-    foreach ($file in 'clean.apk', 'patched.apk', 'desktop.jar', 'android.jar', 'api-versions.xml') {
+    foreach ($file in 'patched.apk', 'desktop.jar', 'android.jar', 'api-versions.xml') {
         [System.IO.File]::WriteAllText((Join-Path $case $file), 'stand-in')
+    }
+    $cleanText = if ($CleanMarker) { "stand-in`nN: $CleanMarker`n" } else { 'stand-in' }
+    [System.IO.File]::WriteAllText((Join-Path $case 'clean.apk'), $cleanText)
+    $cleanApk = Join-Path $case 'clean.apk'
+    if ($Bundle) {
+        Add-Type -AssemblyName System.IO.Compression
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        $cleanApk = Join-Path $case 'clean.apkm'
+        $splitLines = @('N: android=http://schemas.android.com/apk/res/android (line=1)', '  E: manifest (line=1)',
+            '    A: http://schemas.android.com/apk/res/android:versionCode(0x0101021b)=1460500109',
+            "    A: package=`"$standInPackage`" (Raw: `"$standInPackage`")",
+            '    A: split="config.arm64_v8a" (Raw: "config.arm64_v8a")', '      E: application (line=4)')
+        if ($SplitMarker) { $splitLines = @("N: $SplitMarker") + $splitLines }
+        $entries = [ordered]@{ 'base.apk' = $cleanText; 'config.arm64_v8a.apk' = (($splitLines -join "`n") + "`n") }
+        $archive = [System.IO.Compression.ZipFile]::Open($cleanApk, [System.IO.Compression.ZipArchiveMode]::Create)
+        try {
+            foreach ($entryName in $entries.Keys) {
+                $writer = New-Object System.IO.StreamWriter($archive.CreateEntry($entryName).Open())
+                try { $writer.Write($entries[$entryName]) } finally { $writer.Dispose() }
+            }
+        } finally { $archive.Dispose() }
+    }
+    # An array, not a hashtable: splatted to a native command, a hashtable becomes -Name:value.
+    $mergedArgument = @()
+    if ($Merged -ne 'None') {
+        $mergedApk = Join-Path $case 'merged.apk'
+        [System.IO.File]::WriteAllText($mergedApk, 'stand-in merge')
+        $mergedSha = (Get-FileHash -LiteralPath $mergedApk -Algorithm SHA256).Hash.ToLowerInvariant()
+        $baseSha = (Get-FileHash -LiteralPath (Join-Path $case 'clean.apk') -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($Merged -eq 'WrongMerge') { $mergedSha = 'f' * 64 }
+        if ($Merged -eq 'WrongBase') { $baseSha = 'e' * 64 }
+        if ($Merged -ne 'NoRecord') {
+            [System.IO.File]::WriteAllText("$mergedApk.authentic.json", ([ordered]@{ input = (Join-Path $case 'clean.apk')
+                package = $standInPackage; versionCode = '1460500109'; signers = @($metaSigner[0]); signedForm = $null
+                baseSha256 = $baseSha; mergedSha256 = $mergedSha; apks = @() } | ConvertTo-Json -Depth 5))
+        }
+        $mergedArgument = @('-CleanMerged', $mergedApk)
     }
     $ErrorActionPreference = 'Continue'
     $global:LASTEXITCODE = 0
     $output = @(& (Get-Process -Id $PID).Path -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $verifier `
-        -CleanApk (Join-Path $case 'clean.apk') -PatchedApk (Join-Path $case 'patched.apk') `
+        -CleanApk $cleanApk -PatchedApk (Join-Path $case 'patched.apk') `
         -ReportPath (Join-Path $case 'report.txt') -Java $javaStandIn -DesktopJar (Join-Path $case 'desktop.jar') `
         -Aapt2 (Join-Path $case 'aapt2.cmd') -AndroidJar (Join-Path $case 'android.jar') `
-        -ApiVersions (Join-Path $case 'api-versions.xml') 2>&1 | ForEach-Object { "$_" })
-    [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $output; Text = $output -join "`n" }
+        -ApiVersions (Join-Path $case 'api-versions.xml') @mergedArgument 2>&1 | ForEach-Object { "$_" })
+    $javaRuns = @(if (Test-Path -LiteralPath (Join-Path $case 'java.log')) { Get-Content -LiteralPath (Join-Path $case 'java.log') })
+    [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $output; Text = $output -join "`n"; JavaRuns = $javaRuns }
 }
 
 # The verifier's two 8 GB checks each wait for a slot in the machine's build queue. Here a stand-in
@@ -547,6 +625,49 @@ try {
     $queued = @(Get-Content -LiteralPath $queueLog) -join '|'
     Assert-True ($queued -ceq 'enter hushtumblr dex diff|exit hushtumblr dex diff') `
         "A DexDiff whose java could not start kept its build queue slot: $queued"
+
+    # A clean side that isn't Tumblr's alone, a merge handed over without a true record of the
+    # signature check, and a bundle with a split that doesn't verify are each refused before the
+    # merger or DexDiff starts: no java run, no queue slot taken, no comparison. The refusal is the
+    # child's error record, which both hosts wrap to the console width (and PowerShell 7 may color),
+    # so it is matched with every space, color code and gutter bar taken out of both sides.
+    $squeeze = { param([string]$Text) ($Text -replace '\x1b\[[0-9;?]*[A-Za-z]', '') -replace '[\s|]', '' }
+    $refusals = @(
+        @{ Name = 'clean-unsigned'; Arguments = @{ CleanMarker = 'stand-in-unsigned' }; Says = 'apksigner could not verify*DOES NOT VERIFY' }
+        @{ Name = 'clean-foreign'; Arguments = @{ CleanMarker = 'stand-in-foreign' }; Says = "is signed by $foreignSigner, not by Tumblr alone" }
+        @{ Name = 'clean-second-signer'; Arguments = @{ CleanMarker = 'stand-in-second-signer' }; Says = 'not by Tumblr alone' }
+        @{ Name = 'merged-no-record'; Arguments = @{ Merged = 'NoRecord' }; Says = 'has no record of the signature check' }
+        @{ Name = 'merged-other-bytes'; Arguments = @{ Merged = 'WrongMerge' }; Says = 'changed after the APKs it was made from were checked' }
+        @{ Name = 'merged-other-base'; Arguments = @{ Merged = 'WrongBase' }; Says = "aren't the same build" }
+        @{ Name = 'bundle-unsigned-split'; Arguments = @{ Bundle = $true; SplitMarker = 'stand-in-unsigned' }
+            Says = 'Refusing clean.apkm: config.arm64_v8a.apk does not verify*Nothing was merged or patched' }
+        @{ Name = 'bundle-foreign-split'; Arguments = @{ Bundle = $true; SplitMarker = 'stand-in-foreign' }
+            Says = "Refusing clean.apkm: config.arm64_v8a.apk is signed by $foreignSigner, which isn't*" })
+    foreach ($refusal in $refusals) {
+        Remove-Item -LiteralPath $queueLog -Force -ErrorAction SilentlyContinue
+        $arguments = $refusal.Arguments
+        $run = Invoke-VerifierWithStandIns -Name $refusal.Name -DexDiffExit 0 @arguments
+        Assert-True ($run.ExitCode -ne 0 -and (& $squeeze $run.Text) -like ('*' + ($refusal.Says -replace '\s', '') + '*') -and
+            $run.Text -notmatch $reached -and
+            $run.Output -notcontains '[registers] success.' -and $run.JavaRuns.Count -eq 0 -and
+            -not (Test-Path -LiteralPath $queueLog)) `
+            "The verifier did not refuse $($refusal.Name) before merging or comparing (exit $($run.ExitCode), java: $($run.JavaRuns -join ', ')).`n$($run.Text)"
+    }
+
+    # And what passes: a Source Stamp beside Tumblr's signer, a merge handed over with a true record,
+    # and a bundle whose APKs are all Tumblr's, merged once before the comparison.
+    $passes = @(
+        @{ Name = 'clean-stamp'; Arguments = @{ CleanMarker = 'stand-in-stamp' }; Java = 'DexDiff.java|HostReferences.java' }
+        @{ Name = 'merged-recorded'; Arguments = @{ Merged = 'Valid' }; Java = 'DexDiff.java|HostReferences.java' }
+        @{ Name = 'bundle-signed'; Arguments = @{ Bundle = $true; SplitMarker = 'stand-in-stamp' }
+            Java = 'MergeSplits.java|DexDiff.java|HostReferences.java' })
+    foreach ($pass in $passes) {
+        $arguments = $pass.Arguments
+        $run = Invoke-VerifierWithStandIns -Name $pass.Name -DexDiffExit 0 @arguments
+        Assert-True ($run.ExitCode -eq 0 -and $run.Text -match $reached -and $run.Output -contains '[registers] success.' -and
+            ($run.JavaRuns -join '|') -ceq $pass.Java) `
+            "The verifier did not pass $($pass.Name) (exit $($run.ExitCode), java: $($run.JavaRuns -join ', ')).`n$($run.Text)"
+    }
 } finally {
     $env:BUILD_QUEUE_SCRIPT = $savedQueueScript
     $env:BUILD_QUEUE_PRIORITY = $savedQueuePriority

@@ -44,8 +44,10 @@
     patches (Get-MergedApk), because the patched APK carries what the splits brought as well as
     base.apk's code: the Facebook sibling's 580 in-app browser shipped its own dex in
     split_heliumcore.apk, and against base.apk its methods read as some 12,000 added and 212
-    changed. The merge carries no signature, so Tumblr's signer is checked on base.apk, DexDiff
-    holds the merge to base.apk's classes*.dex byte for byte (handed base.apk as its last
+    changed. The merge carries no signature, so Tumblr's signer is checked on base.apk, and on
+    every split before the merge is made (Get-MergedApk), and a merge handed over with
+    -CleanMerged has to match the record of that check and this base.apk (Assert-AuthenticMerge).
+    DexDiff holds the merge to base.apk's classes*.dex byte for byte (handed base.apk as its last
     argument), and it fails a clean side that holds any of the bundle's own code. The device half
     runs base.apk, the same app code.
 
@@ -108,18 +110,13 @@ function Resolve-Adb {
     throw 'No adb found. Pass -Adb or set HUSHTUMBLR_ADB.'
 }
 
-# The certificate digests of every signer apksigner reports for an APK.
+# The certificate digests of every signer apksigner reports for an APK, a Source Stamp's aside
+# (Get-ApkSigners in common.ps1).
 function Get-SignerDigests {
     param([string]$Apk)
-    $apksigner = Join-Path (Split-Path -Parent $Aapt2) 'apksigner.bat'
-    if (-not (Test-Path -LiteralPath $apksigner -PathType Leaf)) { throw "No apksigner beside aapt2: $apksigner" }
-    # A newer JDK prints warnings on stderr, which Windows PowerShell 5.1 turns into a terminating
-    # error under Stop. The exit code is what gets judged.
-    $ErrorActionPreference = 'Continue'
-    $lines = @(& $apksigner verify --print-certs $Apk 2>&1 | ForEach-Object { "$_" })
-    if ($LASTEXITCODE -ne 0) { throw "apksigner could not verify ${Apk}: $($lines -join ' ')" }
-    return @($lines | Where-Object { $_ -match 'certificate SHA-256 digest: ([0-9a-f]{64})' } |
-        ForEach-Object { ($_ -replace '^.*certificate SHA-256 digest: ', '').Trim() } | Sort-Object -Unique)
+    $signed = Get-ApkSigners -Apk $Apk -Apksigner (Resolve-Apksigner -Aapt2 $Aapt2)
+    if (-not $signed.Verified) { throw "apksigner could not verify ${Apk}: $($signed.Said)" }
+    return @($signed.Signers)
 }
 
 # The split bundle a merged universal APK came from, or null: the APK has to fail apksigner, a bundle
@@ -287,21 +284,25 @@ if ($clean.package -ne $patched.package -or $clean.versionName -ne $patched.vers
     throw ("The clean APK is $($clean.package) $($clean.versionName) ($($clean.versionCode)) and the " +
         "patched one $($patched.package) $($patched.versionName) ($($patched.versionCode)); they have to be the same build.")
 }
-$metaSigners = @($catalog.patches | ForEach-Object { $_.compatibility } |
-    Where-Object { $_.packageName -eq $package } |
-    ForEach-Object { $_.signatures } | Sort-Object -Unique)
-if ($metaSigners.Count -eq 0) { throw "patches-list.json declares no signer for $package to hold the clean APK to." }
+$metaSigners = @(Get-DeclaredSigners -PatchList $catalog -PackageName $package)
+# Every signer apksigner reports has to be a declared one, as the fixture suite holds each bundle
+# (AppCompatibilitiesMatchFixturesTest). One declared signer beside one that isn't used to pass.
 $cleanSigners = @(Get-SignerDigests -Apk $cleanBase)
-if (@($cleanSigners | Where-Object { $_ -in $metaSigners }).Count -eq 0) {
-    throw "The clean APK at $CleanApk is signed by $($cleanSigners -join ', '), not by Tumblr; it is not a vendor build."
+$foreignSigners = @($cleanSigners | Where-Object { $metaSigners -notcontains $_ })
+if ($cleanSigners.Count -eq 0 -or $foreignSigners.Count -gt 0) {
+    throw "The clean APK at $CleanApk is signed by $($cleanSigners -join ', '), not by Tumblr alone; it is not a vendor build."
 }
 # The dex comparison's clean side: the whole bundle, merged as the CLI merged it before patching,
 # so a split's dex (the Facebook sibling's 580 in-app browser shipped one) is on both sides. DexDiff
-# holds it to the signed base.apk's classes*.dex. A plain APK is its own merge.
+# holds it to the signed base.apk's classes*.dex. A plain APK is its own merge. Every APK the merge
+# is made from passes the signer check first (Get-MergedApk), and a merge handed over with
+# -CleanMerged is held to the record of that check and to this base APK (Assert-AuthenticMerge).
 if (-not $CleanMerged) {
-    $CleanMerged = Get-MergedApk -Apk $CleanApk -Destination (Join-Path $work 'clean-merged.apk') -Java $Java -DesktopJar $DesktopJar
+    $CleanMerged = Get-MergedApk -Apk $CleanApk -Destination (Join-Path $work 'clean-merged.apk') -Java $Java -DesktopJar $DesktopJar `
+        -Aapt2 $Aapt2 -PackageName $package -Signers $metaSigners
 }
 if (-not (Test-Path -LiteralPath $CleanMerged -PathType Leaf)) { throw "No merged clean APK at $CleanMerged." }
+Assert-AuthenticMerge -Merged $CleanMerged -Base $cleanBase -PackageName $package
 
 # Found the way an applied record's key finds them (common.ps1), so a kept result and this run
 # can't read different stubs.
