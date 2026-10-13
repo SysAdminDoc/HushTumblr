@@ -255,6 +255,34 @@ public class SettingsEntryTest {
     }
 
     /**
+     * A Tumblr task the shortcut started keeps the shortcut's intent as its own. With a new task
+     * alone, the next tap matched that task, Android only brought it forward and no screen opened
+     * (seen on the API 36 emulator). The shortcut clears the task, so the launcher activity starts
+     * on every tap, and a shortcut published before that is pushed again with the same label.
+     */
+    @Test public void theShortcutStartsTumblrAfreshAndAnOlderOneIsReplaced() {
+        android.content.Context context = RuntimeEnvironment.getApplication();
+        android.content.pm.ShortcutManager manager = context.getSystemService(android.content.pm.ShortcutManager.class);
+        manager.pushDynamicShortcut(new android.content.pm.ShortcutInfo.Builder(context, SettingsEntry.SHORTCUT_ID)
+                .setShortLabel("HushTumblr")
+                .setLongLabel("HushTumblr settings")
+                .setIntent(new Intent(Intent.ACTION_VIEW).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                .setRank(0)
+                .build());
+
+        SettingsEntry.publishShortcutNow(context);
+
+        Intent intent = shortcut(manager, SettingsEntry.SHORTCUT_ID).getIntent();
+        assertNotNull("the shortcut carries no intent", intent);
+        org.junit.Assert.assertEquals(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK,
+                intent.getFlags() & (Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK));
+        assertTrue("the replacement doesn't ask for the screen",
+                intent.getBooleanExtra(SettingsEntry.EXTRA_OPEN_SETTINGS, false));
+        org.junit.Assert.assertEquals("one shortcut, replaced, not two", 1, manager.getDynamicShortcuts().size());
+        org.junit.Assert.assertEquals("HushTumblr settings", longLabel(manager));
+    }
+
+    /**
      * "Additional settings in the app" on Android's App info page starts the launcher activity with
      * ACTION_APPLICATION_PREFERENCES, and the screen opens over it. The action is spent, so a
      * recreated activity doesn't ask again and Tumblr goes on as if started from its icon.

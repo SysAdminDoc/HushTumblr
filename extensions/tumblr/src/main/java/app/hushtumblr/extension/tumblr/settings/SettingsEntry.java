@@ -73,6 +73,15 @@ public final class SettingsEntry {
     static final String SHORTCUT_ID = "hushtumblr_settings";
 
     /**
+     * How the shortcut starts Tumblr. A new task alone left a hole. A Tumblr task the shortcut
+     * started keeps the shortcut's intent as its own, so the next tap matched it, Android only
+     * brought that task forward, and no activity was created to ask for the screen. Clearing the
+     * task starts the launcher activity afresh on every tap, however the task began, which is what
+     * the platform's shortcut guide says a dynamic shortcut should do.
+     */
+    static final int SHORTCUT_FLAGS = Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK;
+
+    /**
      * Tumblr's exported launcher activity. The patch's App info alias points at it too, so both
      * ways in arrive at the activity Tumblr itself starts from the icon.
      */
@@ -172,8 +181,9 @@ public final class SettingsEntry {
             // Set before the attempt, so a shortcut that can't be pushed isn't tried on every screen.
             publishedLabel = longLabel;
             ShortcutInfo existing = ours(manager);
-            // One labelled in another language, or behind Tumblr's own, is pushed again below.
-            if (existing != null && existing.getRank() == 0
+            // One labelled in another language, behind Tumblr's own, or published before the
+            // shortcut cleared the task, is pushed again below.
+            if (existing != null && existing.getRank() == 0 && startsAfresh(existing)
                     && longLabel.contentEquals(existing.getLongLabel())) return;
             push(manager, shortcut(app, longLabel), existing != null);
             Logger.printInfo(() -> "Settings entry: launcher shortcut published");
@@ -231,6 +241,12 @@ public final class SettingsEntry {
         manager.addDynamicShortcuts(Collections.singletonList(shortcut));
     }
 
+    /** Whether [shortcut] carries {@link #SHORTCUT_FLAGS}, as one published by this build does. */
+    private static boolean startsAfresh(ShortcutInfo shortcut) {
+        Intent intent = shortcut.getIntent();
+        return intent != null && (intent.getFlags() & SHORTCUT_FLAGS) == SHORTCUT_FLAGS;
+    }
+
     /** The HushTumblr shortcut among the dynamic ones, or null. */
     private static ShortcutInfo ours(ShortcutManager manager) {
         for (ShortcutInfo existing : manager.getDynamicShortcuts()) {
@@ -243,7 +259,7 @@ public final class SettingsEntry {
         Intent intent = new Intent(Intent.ACTION_VIEW)
                 .setComponent(new ComponentName(app.getPackageName(), LAUNCHER_ACTIVITY))
                 .putExtra(EXTRA_OPEN_SETTINGS, true)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                .addFlags(SHORTCUT_FLAGS);
         return new ShortcutInfo.Builder(app, SHORTCUT_ID)
                 .setShortLabel("HushTumblr")
                 .setLongLabel(longLabel)

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* **Tumblr:** The HushTumblr settings shortcut on Tumblr's icon now opens the settings every time. If Tumblr was still open from the last time you used the shortcut, tapping it again only brought Tumblr back up.
 * **Tumblr:** Hide suggested communities no longer empties a category in Communities' Browse page. The communities listed there stay, and the suggestion cards still go from your dashboard and other feeds.
 * **Tumblr:** A page where every post was hidden no longer leaves a feed on "No results". The feed goes on to the next page, and shows the empty screen only after five empty pages in a row or when there's nothing more to load.
 * **Tumblr:** Hide suggested blogs and Hide suggested communities no longer empty a search's Blogs and Communities tabs. The cards still go from the dashboard and other feeds.
