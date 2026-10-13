@@ -1174,6 +1174,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                 up.setDrawable(glyph);
                 up.setFromDegrees(90);
                 up.setToDegrees(90);
+                up.setLevel(10000);
                 int size = Math.round(24 * density);
                 up.setBounds(0, 0, size, size);
                 label.setCompoundDrawablesRelative(null, null, up, null);

@@ -152,11 +152,31 @@ public final class ScreenColors {
             thumb.setCornerRadius(dp(row, 4));
             thumb.setSize(dp(row, 16), dp(row, 16));
             thumb.setColor(Color.WHITE);
-            GradientDrawable track = new GradientDrawable();
+            int inset = dp(row, 4);
+            int thumbBox = dp(row, 24);
+            GradientDrawable track = new GradientDrawable() {
+                @Override public boolean getPadding(Rect padding) {
+                    padding.set(inset, 0, inset, 0);
+                    return true;
+                }
+            };
             track.setCornerRadius(dp(row, 8));
             track.setSize(dp(row, 44), dp(row, 24));
             track.setColor(Color.WHITE);
-            toggle.setThumbDrawable(new InsetDrawable(thumb, dp(row, 4)));
+            // Switch subtracts an InsetDrawable's optical insets from its track. Keep those
+            // zero and inset the painted thumb ourselves, retaining its 24dp layout box.
+            toggle.setThumbDrawable(new InsetDrawable(thumb, 0) {
+                @Override public int getIntrinsicWidth() { return thumbBox; }
+                @Override public int getIntrinsicHeight() { return thumbBox; }
+                @Override public boolean getPadding(Rect padding) {
+                    padding.set(inset, inset, inset, inset);
+                    return true;
+                }
+                @Override protected void onBoundsChange(Rect bounds) {
+                    getDrawable().setBounds(bounds.left + inset, bounds.top + inset,
+                            bounds.right - inset, bounds.bottom - inset);
+                }
+            });
             toggle.setTrackDrawable(track);
             toggle.setSwitchMinWidth(dp(row, 44));
             toggle.setMinWidth(dp(row, 48));

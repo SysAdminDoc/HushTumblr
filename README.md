@@ -1,7 +1,7 @@
 ![HushTumblr. Tumblr, on your terms.](assets/readme-hero.png)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.0.5-92BFFF" alt="Version 0.0.5">
+  <img src="https://img.shields.io/badge/version-0.0.6-92BFFF" alt="Version 0.0.6">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License GPL-3.0"></a>
   <img src="https://img.shields.io/badge/platform-Android%208%2B-3DDC84" alt="Platform Android 8+">
   <img src="https://img.shields.io/badge/Tumblr-46.5.0.109-001935" alt="Tumblr 46.5.0.109">
@@ -39,7 +39,7 @@ Sign in with your email and Tumblr password. Google's sign-in checks the app's s
 
 Long-press the Tumblr logo at the top of your dashboard. You can also tap **HushTumblr** at the bottom of Tumblr's Settings, or long-press the Tumblr icon. Switches apply without patching again, though a few, like Disable analytics, finish after Tumblr restarts, and a Restart row at the top of the page does that for you. **Pause** keeps your saved choices and makes the switches act as off, apart from Debug logging. Changes made while patching stay in the app. The same page backs up your settings.
 
-Development source 0.0.5 includes redesigned settings pages and worker-based saves. Local tests and both Android lints pass. The preview below shows the earlier 0.0.4 interface.
+Development source 0.0.6 includes redesigned settings pages and worker-based saves. Local tests and both Android lints pass. The preview below shows the current settings pages.
 
 ![HushTumblr settings overview, Feed and Privacy pages](assets/settings-preview.png)
 
