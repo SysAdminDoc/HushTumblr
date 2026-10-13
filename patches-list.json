@@ -96,7 +96,7 @@
     },
     {
       "name": "Disable update prompts",
-      "description": "Stops Tumblr asking Google Play for a newer version and showing Play's update prompt. Starts off. Turn it on in Tumblr settings > HushTumblr > More settings > Updates.",
+      "description": "Stops Tumblr asking Google Play for a newer version and showing Play's update prompt. Starts off. Turn it on in Tumblr settings > HushTumblr > Updates.",
       "category": "Updates",
       "use": true,
       "dependencies": [
@@ -135,7 +135,7 @@
     },
     {
       "name": "Filter activity notifications",
-      "description": "Hides selected likes, reblogs, replies, follows, mentions, asks and boops from the activity list as pages load. Each switch starts off. Choose them in Tumblr settings > HushTumblr > More settings > Notifications.",
+      "description": "Hides selected likes, reblogs, replies, follows, mentions, asks and boops from the activity list as pages load. Each switch starts off. Choose them in Tumblr settings > HushTumblr > Notifications.",
       "category": "Notifications",
       "use": true,
       "dependencies": [
@@ -174,7 +174,7 @@
     },
     {
       "name": "Fix push notifications",
-      "description": "Lets the patched app sign up for push notifications. Firebase can refuse a patched Tumblr whose request doesn't name Tumblr's original signature, so this sends its fingerprint. On by default. Turn it off in Tumblr settings > HushTumblr > More settings > Notifications.",
+      "description": "Lets the patched app sign up for push notifications. Firebase can refuse a patched Tumblr whose request doesn't name Tumblr's original signature, so this sends its fingerprint. On by default. Turn it off in Tumblr settings > HushTumblr > Notifications.",
       "category": "Notifications",
       "use": true,
       "dependencies": [

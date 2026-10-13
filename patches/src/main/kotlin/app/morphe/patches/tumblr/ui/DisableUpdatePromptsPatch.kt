@@ -24,7 +24,7 @@ import app.morphe.patches.tumblr.misc.settings.settingsPatch
 val disableUpdatePromptsPatch = bytecodePatch(
     name = "Disable update prompts",
     description = "Stops Tumblr asking Google Play for a newer version and showing Play's update prompt. Starts" +
-        " off. Turn it on in Tumblr settings > HushTumblr > More settings > Updates.",
+        " off. Turn it on in Tumblr settings > HushTumblr > Updates.",
     default = true,
 ) {
     category("Updates")

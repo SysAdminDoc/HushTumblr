@@ -47,7 +47,7 @@ private const val STRING = "Ljava/lang/String;"
 val filterActivityNotificationsPatch = bytecodePatch(
     name = PATCH,
     description = "Hides selected likes, reblogs, replies, follows, mentions, asks and boops from the activity list " +
-        "as pages load. Each switch starts off. Choose them in Tumblr settings > HushTumblr > More settings > Notifications.",
+        "as pages load. Each switch starts off. Choose them in Tumblr settings > HushTumblr > Notifications.",
     default = true,
 ) {
     category("Notifications")

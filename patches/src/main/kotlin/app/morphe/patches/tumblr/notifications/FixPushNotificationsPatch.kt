@@ -77,7 +77,7 @@ val fixPushNotificationsPatch = bytecodePatch(
     name = PATCH,
     description = "Lets the patched app sign up for push notifications. Firebase can refuse a patched Tumblr whose " +
         "request doesn't name Tumblr's original signature, so this sends its fingerprint. On by default. Turn it " +
-        "off in Tumblr settings > HushTumblr > More settings > Notifications.",
+        "off in Tumblr settings > HushTumblr > Notifications.",
     default = true,
 ) {
     category("Notifications")
