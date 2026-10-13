@@ -46,6 +46,7 @@ import java.util.Map;
 import java.util.Set;
 
 import app.hushtumblr.extension.shared.L10n;
+import app.hushtumblr.extension.shared.Utils;
 import app.hushtumblr.extension.shared.settings.BaseSettings;
 import app.hushtumblr.extension.shared.settings.HushTumblrPause;
 import app.hushtumblr.extension.shared.settings.Setting;
@@ -162,7 +163,7 @@ final class SettingsNavigation extends BaseAdapter {
         restart.setSummary(L10n.t("Tumblr closes and reopens on this page."));
         restart.setIcon(SettingsIcons.icon(context, SettingsIcons.UPDATES, palette().heading));
         restart.setOnPreferenceClickListener(row -> {
-            ReopenSettingsAfterRestart.restartInto(row.getContext(), route);
+            restartWhenSaved(row.getContext(), route);
             return true;
         });
         // The row appears as the switch flips. A screen reader hears the saved message as well,
@@ -352,6 +353,32 @@ final class SettingsNavigation extends BaseAdapter {
 
     /** A change that waits for a restart was made or taken back: the restart row comes, goes or counts again. */
     void restartChanged() { rebuild(); }
+
+    /** How often a restart waiting on saves looks again. */
+    static final long RESTART_WAIT_MS = 50;
+    /** A restart the row asked for is waiting on saves, so another tap doesn't queue a second. */
+    private static volatile boolean restartWaiting;
+
+    /**
+     * The restart row's tap: Tumblr restarts into [page]. The edit worker runs saves on a pool, and
+     * a switch or Quick setups save still running there would be cut off by the restart and come
+     * back unchanged, so the restart waits until no save is left.
+     */
+    static void restartWhenSaved(Context context, String page) {
+        if (HushTumblrPreferenceFragment.hasPendingEdits()) {
+            if (restartWaiting) return;
+            restartWaiting = true;
+            // The screen can close while it waits, so the wait holds the application, not the page.
+            Context application = context.getApplicationContext();
+            Context restartFrom = application != null ? application : context;
+            Utils.runOnMainThreadDelayed(() -> {
+                restartWaiting = false;
+                restartWhenSaved(restartFrom, page);
+            }, RESTART_WAIT_MS);
+            return;
+        }
+        ReopenSettingsAfterRestart.restartInto(context, page);
+    }
 
     private void rebuild() {
         int restartWas = visible.indexOf(restart);

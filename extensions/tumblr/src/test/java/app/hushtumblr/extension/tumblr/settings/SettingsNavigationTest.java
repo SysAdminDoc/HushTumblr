@@ -490,6 +490,37 @@ public class SettingsNavigationTest {
                 .takeFresh(Setting.preferences.preferences, android.os.SystemClock.elapsedRealtime()));
     }
 
+    /**
+     * A save still on the edit worker would be cut off by the restart, so the row waits for it,
+     * and a second tap meanwhile doesn't queue another restart.
+     */
+    @Test public void theRestartRowWaitsForASaveStillRunning() {
+        List<android.content.Context> restarted = new ArrayList<>();
+        app.hushtumblr.extension.shared.settings.preference.ReopenSettingsAfterRestart.setRestarterForTests(restarted::add);
+        List<Runnable> writes = new ArrayList<>();
+        HushTumblrPreferenceFragment.editWorkerForTests = writes::add;
+        try {
+            app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.add(
+                    Settings.FIX_PUSH_NOTIFICATIONS.key);
+            page.navigation.navigate("Notifications");
+            assertTrue(HushTumblrPreferenceFragment.submitEdit(() -> { }));
+
+            tap(SettingsNavigation.RESTART);
+            tap(SettingsNavigation.RESTART);
+            ShadowLooper.idleMainLooper(SettingsNavigation.RESTART_WAIT_MS * 4, java.util.concurrent.TimeUnit.MILLISECONDS);
+            assertTrue("Tumblr restarted with a save still running", restarted.isEmpty());
+
+            writes.remove(0).run();
+            ShadowLooper.idleMainLooper(SettingsNavigation.RESTART_WAIT_MS * 4, java.util.concurrent.TimeUnit.MILLISECONDS);
+            assertEquals("the restart didn't come once the save landed, or came twice", 1, restarted.size());
+            assertEquals("Notifications", app.hushtumblr.extension.shared.settings.preference.ReopenSettingsAfterRestart
+                    .takeFresh(Setting.preferences.preferences, android.os.SystemClock.elapsedRealtime()));
+        } finally {
+            for (Runnable write : writes) write.run();
+            HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
+        }
+    }
+
     /** Asked to open on a page, as after that restart, the screen starts there with its title and no search. */
     @Test public void aScreenAskedToStartOnAPageOpensThere() {
         dialog.dismissAllowingStateLoss();
