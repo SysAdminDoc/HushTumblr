@@ -23,47 +23,109 @@
 package app.hushtumblr.extension.shared.settings.preference;
 
 import android.content.Context;
+import android.os.Build;
 import android.preference.Preference;
 import android.util.AttributeSet;
+import android.view.View;
+
+import java.lang.ref.WeakReference;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 
 import app.hushtumblr.extension.shared.L10n;
+import app.hushtumblr.extension.shared.Logger;
+import app.hushtumblr.extension.shared.Utils;
 
-/**
- * A custom preference that clears the Morphe debug log buffer when clicked.
- * Invokes the {@link LogBufferManager#clearLogBuffer} method.
- */
+/** Clears diagnostic data with one-tap Undo while storage work stays off the main thread. */
 @SuppressWarnings({"unused", "deprecation"})
 public class ClearLogBufferPreference extends Preference implements ImmediateAction {
     @Override public boolean actsOnTap() { return true; }
 
+    private static final AtomicReference<Run> OWNER = new AtomicReference<>();
+    private static final List<WeakReference<ClearLogBufferPreference>> ROWS =
+            new CopyOnWriteArrayList<>();
+
+    private static final class Run {
+        final boolean undo;
+
+        Run(boolean undo) {
+            this.undo = undo;
+        }
+    }
+
     private CharSequence clearSummary;
     private CharSequence undoSummary = L10n.t("Diagnostic data cleared. Tap again to put it back.");
+    private String busyLine;
 
     {
         // A key so the settings search can index this row. Nothing in the settings
         // framework treats it as a setting: a key with no Setting behind it is skipped.
         setKey("action_clear_diagnostic_data");
+        setPersistent(false);
         setOnPreferenceClickListener(pref -> {
-            if (LogBufferManager.canUndoClear()) {
-                LogBufferManager.UndoResult result = LogBufferManager.undoClear();
-                if (result != LogBufferManager.UndoResult.FAILED && clearSummary != null) {
-                    setSummary(clearSummary);
-                }
-                return true;
-            }
-
+            if (OWNER.get() != null) return true;
             if (clearSummary == null) clearSummary = getSummary();
-            LogBufferManager.clearLogBuffer();
-            if (LogBufferManager.canUndoClear()) setSummary(undoSummary);
+            Run run = new Run(LogBufferManager.canUndoClear());
+            if (!OWNER.compareAndSet(null, run)) return true;
+            refreshRows();
+            boolean accepted = Utils.runOnBackgroundThread(() -> {
+                try {
+                    if (run.undo) LogBufferManager.undoClear();
+                    else LogBufferManager.clearLogBuffer();
+                } catch (RuntimeException error) {
+                    Logger.printException(() -> "Failed to change diagnostic data", error);
+                    Utils.showToastLong(run.undo
+                            ? L10n.t("Couldn't put back the diagnostic data. Try again.")
+                            : L10n.t("Couldn't clear the diagnostic data. Try again."));
+                } finally {
+                    Utils.runOnMainThread(() -> finish(run));
+                }
+            });
+            if (!accepted) {
+                finish(run);
+                Utils.showToastLong(L10n.t("Couldn't start that. Try again in a moment."));
+            }
             return true;
         });
+        ROWS.add(new WeakReference<>(this));
+        refreshRows();
     }
 
     /** Supplies the two row summaries in the bundle's language. */
     public final void setClearAndUndoSummaries(CharSequence clearSummary, CharSequence undoSummary) {
         this.clearSummary = clearSummary;
         this.undoSummary = undoSummary;
-        setSummary(LogBufferManager.canUndoClear() ? undoSummary : clearSummary);
+        refresh();
+    }
+
+    private static void finish(Run run) {
+        if (OWNER.compareAndSet(run, null)) refreshRows();
+    }
+
+    private static void refreshRows() {
+        for (WeakReference<ClearLogBufferPreference> reference : ROWS) {
+            ClearLogBufferPreference row = reference.get();
+            if (row == null) ROWS.remove(reference);
+            else row.refresh();
+        }
+    }
+
+    private void refresh() {
+        Run run = OWNER.get();
+        busyLine = run == null ? null : run.undo
+                ? L10n.t("Putting diagnostic data back")
+                : L10n.t("Clearing diagnostic data");
+        setEnabled(run == null);
+        if (busyLine != null) setSummary(busyLine);
+        else if (clearSummary != null) {
+            setSummary(LogBufferManager.canUndoClear() ? undoSummary : clearSummary);
+        }
+    }
+
+    @Override protected void onBindView(View view) {
+        super.onBindView(view);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) view.setStateDescription(busyLine);
     }
 
     public ClearLogBufferPreference(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {

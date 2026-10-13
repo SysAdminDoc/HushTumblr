@@ -103,7 +103,7 @@ public final class LogBufferManager {
     private static final Object CRASH_FILE_LOCK = new Object();
     private static final Object CLEAR_UNDO_LOCK = new Object();
     private static final AtomicBoolean FILE_EXPORT_RUNNING = new AtomicBoolean();
-    private static ClearSnapshot lastClear;
+    private static volatile ClearSnapshot lastClear;
 
     /** Everything the clear row removes, kept in memory until its next tap. */
     private static final class ClearSnapshot {
@@ -780,9 +780,9 @@ public final class LogBufferManager {
 
     /** True while the clear row's next tap can restore what its previous tap removed. */
     public static boolean canUndoClear() {
-        synchronized (CLEAR_UNDO_LOCK) {
-            return lastClear != null;
-        }
+        // Settings rows are built on the main thread. A status read must not wait for the
+        // generation lock while a worker restores and syncs the crash files.
+        return lastClear != null;
     }
 
     /** Restores the most recent clear while retaining events and hook findings recorded since. */

@@ -456,12 +456,12 @@ public class SettingsL10nTest {
             addToast(shown);
             Preference clear = find(rows, "action_clear_diagnostic_data");
             clear.getOnPreferenceClickListener().onPreferenceClick(clear);
-            ShadowLooper.idleMainLooper();
+            settle();
             addToast(shown);
             if (LogBufferManager.canUndoClear()) {
                 // Whatever an earlier test left is put back, and the undo says so in a toast too.
                 clear.getOnPreferenceClickListener().onPreferenceClick(clear);
-                ShadowLooper.idleMainLooper();
+                settle();
                 addToast(shown);
             }
             dialog.dismissAllowingStateLoss();

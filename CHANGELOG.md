@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* **Tumblr:** Clearing diagnostic data and putting it back use a shared worker operation. Rows show progress, prevent repeated actions and keep failed restores available to retry.
 * Development source is 0.0.5. The new save and recovery paths still need validation.
 * **Tumblr:** Word lists, tab order and switches save on a worker. Busy controls keep the saved value visible, block repeated taps and report failures. Replacement settings pages refresh when an edit finishes.
 * **Tumblr:** Backup previews and import results count word lists and tab order alongside switches. Import and Undo messages now refer to settings, and the setup guide explains which data the backup includes.
