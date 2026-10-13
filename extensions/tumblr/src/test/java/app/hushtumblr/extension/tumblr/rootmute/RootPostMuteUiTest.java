@@ -694,6 +694,47 @@ public class RootPostMuteUiTest {
         assertTrue(later.isEmpty());
     }
 
+    @Test public void aReadTheFullWorkerRefusesOpensTheRetryAndShowsTheListOnceThereIsRoom() throws Exception {
+        mute("7101");
+        File saved = RootPostMutes.fileForTests;
+        byte[] good = Files.readAllBytes(saved.toPath());
+        RootPostMutes.resetForTests();
+        AlertDialog dialog;
+        Button retry;
+        try (WorkerPoolForTests full = WorkerPoolForTests.fill()) {
+            RootPostMutes.workerForTests = null;
+            account("account-a");
+            assertNull(RootPostMutes.capture());
+            ShadowToast.reset();
+            dialog = RootPostMuteUi.manage(controller.get());
+            assertNotNull("an account whose read never started still counts as loading", dialog);
+            assertNull(ShadowToast.getTextOfLatestToast());
+            layoutManager(dialog);
+            assertTrue(notice(dialog).isShown());
+            assertEquals("Couldn't read this account's muted posts. Nothing was changed or deleted.",
+                    notice(dialog).getText().toString());
+            retry = dialog.getWindow().getDecorView().findViewWithTag("root_mute_retry");
+            assertTrue(retry.isShown()); assertTrue(retry.isEnabled());
+            // Still no room. This retry is refused as well, and the button is there to press again.
+            retry.performClick();
+            layoutManager(dialog);
+            assertTrue(dialog.isShowing());
+            assertTrue(notice(dialog).getText().toString().startsWith("Couldn't read"));
+            assertTrue(retry.isShown()); assertTrue(retry.isEnabled());
+            assertNull(RootPostMutes.capture());
+            assertArrayEquals(good, Files.readAllBytes(saved.toPath()));
+        }
+        RootPostMutes.workerForTests = Runnable::run;
+        retry.performClick();
+        layoutManager(dialog);
+        assertEquals(java.util.Set.of("7101"), RootPostMutes.capture().roots);
+        ListView list = find(dialog.getWindow().getDecorView(), ListView.class);
+        assertEquals(1, list.getCount() - list.getHeaderViewsCount());
+        assertFalse(retry.isShown()); assertFalse(notice(dialog).isShown());
+        assertArrayEquals(good, Files.readAllBytes(saved.toPath()));
+        dialog.dismiss();
+    }
+
     /** How far the bottom of [text], a child of the list's [header], sits below the list's visible rows. */
     private static int below(ListView list, View header, View text) {
         return header.getTop() + text.getBottom() - (list.getHeight() - list.getPaddingBottom());

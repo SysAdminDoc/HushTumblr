@@ -29,6 +29,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import app.hushtumblr.extension.shared.SettingsContextRule;
+import app.hushtumblr.extension.shared.WorkerPoolForTests;
 import app.hushtumblr.extension.shared.diagnostics.HookStatus;
 import app.hushtumblr.extension.shared.settings.PauseForTests;
 import app.hushtumblr.extension.shared.settings.HushTumblrPause;
@@ -90,7 +91,7 @@ public class RootPostMutesTest {
         RootPostMutes.resetForTests();
         return saved;
     }
-    /** Commits [id] against a document that can't be read. */
+    /** Commits [id] when its document can't be read, or when the worker has no room to read it. */
     private RootPostMutes.Session unread(String id) {
         begin(id); RootPostMutes.commitAccount(); RootPostMutes.requestExited();
         assertNull(RootPostMutes.capture());
@@ -341,6 +342,52 @@ public class RootPostMutesTest {
         assertNull(RootPostMutes.capture()); assertNotNull(RootPostMutes.unreadable());
         assertFalse(RootPostMutes.active()); assertTrue(file.isDirectory());
         RootPostMutes.logout(); assertNull(RootPostMutes.unreadable());
+    }
+
+    @Test public void aReadTheFullWorkerRefusesIsUnreadableAndARetryLoadsItOnceThereIsRoom() throws Exception {
+        byte[] good = savedMute("account-a", "11");
+        RootPostMutes.Session refused;
+        RootPostMutes.workerForTests = null;
+        try (WorkerPoolForTests full = WorkerPoolForTests.fill()) {
+            // Nothing is wrong with the document. Its read never started, and nothing else would start one.
+            refused = unread("account-a");
+            assertFalse(RootPostMutes.active()); assertFalse(RootPostMutes.shouldHide(post("11")));
+            // A retry the worker refuses too answers no and leaves the account where it was.
+            assertFalse(retry(refused));
+            assertNull(RootPostMutes.capture()); assertSame(refused, RootPostMutes.unreadable());
+            assertArrayEquals(good, Files.readAllBytes(file.toPath()));
+            assertArrayEquals("a refused read left something beside the document",
+                    new String[]{file.getName()}, temporary.getRoot().list());
+        }
+        RootPostMutes.workerForTests = Runnable::run;
+        assertTrue(retry(refused));
+        assertNull(RootPostMutes.unreadable());
+        assertEquals(java.util.Set.of("11"), RootPostMutes.capture().roots);
+        assertTrue(RootPostMutes.shouldHide(post("11")));
+        assertArrayEquals(good, Files.readAllBytes(file.toPath()));
+    }
+
+    @Test public void aRefusedReadOfAnAccountAlreadyReplacedLeavesTheNewAccountsOwnRefusalStanding() throws Exception {
+        RootPostMutes.workerForTests = null;
+        AtomicBoolean replaced = new AtomicBoolean();
+        // Observers run inside a commit, once the account is set and before its read is handed over.
+        Runnable observer = () -> {
+            if (RootPostMutes.accountSnapshot() == null || !replaced.compareAndSet(false, true)) return;
+            begin("account-b"); RootPostMutes.commitAccount(); RootPostMutes.requestExited();
+        };
+        RootPostMutes.addAccountObserver(observer);
+        RootPostMutes.Session standing;
+        try (WorkerPoolForTests full = WorkerPoolForTests.fill()) {
+            begin("account-a"); RootPostMutes.commitAccount(); RootPostMutes.requestExited();
+            assertTrue("nothing replaced the account inside its commit", replaced.get());
+            // Account b's read was refused first. Account a's refusal lands after it, for an account that's gone.
+            standing = RootPostMutes.unreadable();
+            assertNotNull("the replaced account's refusal hid the new account's own", standing);
+            assertEquals(RootPostMutes.accountSnapshot().generation, standing.generation);
+        }
+        RootPostMutes.workerForTests = Runnable::run;
+        assertTrue(retry(standing));
+        assertNotNull(RootPostMutes.capture()); assertNull(RootPostMutes.unreadable());
     }
 
     @Test public void aDamagedDocumentKeepsItsBytesThroughFailedReadsAndLoadsOnceRepaired() throws Exception {
