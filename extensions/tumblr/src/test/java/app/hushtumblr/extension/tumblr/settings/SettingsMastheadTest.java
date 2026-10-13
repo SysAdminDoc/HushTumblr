@@ -51,7 +51,9 @@ public class SettingsMastheadTest {
         assertNotNull(title);
         AccessibilityNodeInfo node = title.createAccessibilityNodeInfo();
         assertTrue(node.isHeading());
-        assertEquals("HushTumblr", dialog.getDialog().getWindow().getAttributes().getTitle().toString());
+        // The name a screen reader announces the window by. The attributes' own title is the
+        // window manager's debug name, which Window.setTitle never touches.
+        assertEquals("HushTumblr", String.valueOf(dialog.getDialog().getWindow().getAttributes().accessibilityTitle));
         assertNotNull(text(dialog.getView(), L10n.t("Make Tumblr feel like yours.")));
     }
 
@@ -81,7 +83,10 @@ public class SettingsMastheadTest {
         assertTrue(list.getHeight() >= dp(48));
     }
 
-    @Test public void aLongTranslatedTitleCompactsWhenANarrowTallViewportLeavesNoUsableList() {
+    // Real text measuring: the default lays every string out one pixel a letter on a single line,
+    // so the heading never grows tall enough to crowd the list.
+    @Test @org.robolectric.annotation.GraphicsMode(org.robolectric.annotation.GraphicsMode.Mode.NATIVE)
+    public void aLongTranslatedTitleCompactsWhenANarrowTallViewportLeavesNoUsableList() {
         SettingsDialog dialog = show(2f);
         ViewGroup root = (ViewGroup) dialog.getView();
         String title = "Pause, Sicherungskopien und Diagnoseeinstellungen";
@@ -126,7 +131,7 @@ public class SettingsMastheadTest {
         TextView subtitle = text(dialog.getView(), L10n.t("Ads, reblogs and word filters"));
         assertNotNull(subtitle);
         assertEquals(View.VISIBLE, subtitle.getVisibility());
-        assertEquals(L10n.t("Feed"), dialog.getDialog().getWindow().getAttributes().getTitle().toString());
+        assertEquals(L10n.t("Feed"), String.valueOf(dialog.getDialog().getWindow().getAttributes().accessibilityTitle));
         TextView hideAds = text(dialog.getView(), L10n.t("Hide ads"));
         assertNotNull("Retry lost the Feed preferences", hideAds);
         assertTrue(hideAds.isShown());

@@ -142,13 +142,25 @@ public final class SettingsContextRule extends ExternalResource {
         // The sandbox is shared with whatever runs next, and a test is free to swap the context
         // for one of its own.
         Utils.setContext(RuntimeEnvironment.getApplication());
+        boolean pending;
         try {
-            Field worker = app.hushtumblr.extension.tumblr.settings.HushTumblrPreferenceFragment
-                    .class.getDeclaredField("editWorkerForTests");
+            Class<?> page = app.hushtumblr.extension.tumblr.settings.HushTumblrPreferenceFragment.class;
+            Field worker = page.getDeclaredField("editWorkerForTests");
             worker.setAccessible(true);
             worker.set(null, null);
+            // An edit a test left queued, or a refresh retry it never ran, is counted for as long
+            // as the sandbox lives: Resume, Quick setups and every page refresh after it then do
+            // nothing, in whichever test happens to run next.
+            Field edits = page.getDeclaredField("pendingEdits");
+            edits.setAccessible(true);
+            pending = ((java.util.concurrent.atomic.AtomicInteger) edits.get(null)).getAndSet(0) != 0;
+            Field retry = page.getDeclaredField("savedRefreshRetryScheduled");
+            retry.setAccessible(true);
+            pending |= retry.getBoolean(null);
+            retry.setBoolean(null, false);
         } catch (ReflectiveOperationException exception) {
             throw new IllegalStateException("Could not clear the settings edit worker", exception);
         }
+        if (pending) throw new AssertionError("The test left a settings edit pending");
     }
 }

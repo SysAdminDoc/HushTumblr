@@ -78,6 +78,8 @@ public class SettingsNavigationTest {
     private ActivityController<Activity> controller;
     private SettingsDialog dialog;
     private HushTumblrPreferenceFragment page;
+    /** Whether a test put the window in touch mode, which the next test's window would start in. */
+    private boolean touch;
 
     @Before public void open() {
         PatchFamily.inBuildForTests = EnumSet.allOf(PatchFamily.class);
@@ -88,6 +90,7 @@ public class SettingsNavigationTest {
     }
 
     @After public void close() {
+        if (touch) touchMode(false);
         controller.close();
         PatchFamily.inBuildForTests = null;
         PatchFamily.capabilitiesForTests = null;
@@ -429,6 +432,7 @@ public class SettingsNavigationTest {
      * on every page, first on a page without a pause line and under the home page's status card.
      */
     @Test public void aPauseOrAChangeWaitingOnARestartBringsUpTheRestartRow() {
+        touchMode(true);
         page.navigation.navigate("Pause, backup and diagnostics");
         tap(BaseSettings.PAUSED.key);
         layout(dialog.getView());
@@ -613,9 +617,10 @@ public class SettingsNavigationTest {
             assertEquals("Couldn't start that. Try again in a moment.", ShadowToast.getTextOfLatestToast());
             assertFalse(Settings.HIDE_WATCH_IT_ROWS.savedValue());
         } finally {
+            // The worker first: the save's own refresh would otherwise queue behind it and never run.
+            HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
             for (Runnable write : writes) write.run();
             ShadowLooper.idleMainLooper();
-            HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
             for (BooleanSetting setting : QuickSetupKeys.DEFAULTS) setting.resetToDefault();
             app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.clear();
         }
@@ -982,6 +987,7 @@ public class SettingsNavigationTest {
         android.view.accessibility.AccessibilityManager a11y = controller.get().getSystemService(android.view.accessibility.AccessibilityManager.class);
         org.robolectric.Shadows.shadowOf(a11y).setEnabled(true);
         org.robolectric.Shadows.shadowOf(a11y).setTouchExplorationEnabled(true);
+        touchMode(true);
         layout(dialog.getView());
         int about = position("section_About");
         assertTrue("About starts off screen", about > list().getLastVisiblePosition());
@@ -1060,10 +1066,7 @@ public class SettingsNavigationTest {
     @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
     @Config(qualifiers = "w390dp-h200dp-night-xhdpi")
     public void aNewPageStartsAtTheTopAfterThePreviousPageWasScrolled() {
-        Object root = org.robolectric.util.ReflectionHelpers.callInstanceMethod(
-                dialog.getDialog().getWindow().getDecorView(), "getViewRootImpl");
-        org.robolectric.util.ReflectionHelpers.callInstanceMethod(root, "ensureTouchMode",
-                org.robolectric.util.ReflectionHelpers.ClassParameter.from(boolean.class, true));
+        touchMode(true);
         try {
             layout(dialog.getView(), 400);
             assertTrue(list().isInTouchMode());
@@ -1097,8 +1100,7 @@ public class SettingsNavigationTest {
             assertEquals(homePosition, list().getFirstVisiblePosition());
             assertEquals(homeOffset, list().getChildAt(0).getTop());
         } finally {
-            org.robolectric.util.ReflectionHelpers.callInstanceMethod(root, "ensureTouchMode",
-                    org.robolectric.util.ReflectionHelpers.ClassParameter.from(boolean.class, false));
+            touchMode(false);
         }
     }
 
@@ -1158,6 +1160,8 @@ public class SettingsNavigationTest {
             page.navigation.open(section);
             capture(section.getTitle().toString().toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z]+", "-"));
         }
+        // The search box is on the home page, so the search starts there.
+        page.navigation.back();
         findSearch(dialog.getView()).setText("links");
         ShadowLooper.idleMainLooper(1, java.util.concurrent.TimeUnit.SECONDS);
         capture("search-results");
@@ -1320,6 +1324,19 @@ public class SettingsNavigationTest {
             assertTrue(image.compress(Bitmap.CompressFormat.PNG, 100, out));
         }
         image.recycle();
+    }
+
+    /**
+     * Puts the screen's window in touch mode, as it is on a phone, a screen reader's included. Out
+     * of it the list keeps a selected row: a row added above takes the selection's place rather
+     * than the top, and a scroll to a row that takes no taps lands on the next one that does.
+     */
+    private void touchMode(boolean on) {
+        Object root = org.robolectric.util.ReflectionHelpers.callInstanceMethod(
+                dialog.getDialog().getWindow().getDecorView(), "getViewRootImpl");
+        org.robolectric.util.ReflectionHelpers.callInstanceMethod(root, "ensureTouchMode",
+                org.robolectric.util.ReflectionHelpers.ClassParameter.from(boolean.class, on));
+        touch = on;
     }
 
     private static void layout(View root) {

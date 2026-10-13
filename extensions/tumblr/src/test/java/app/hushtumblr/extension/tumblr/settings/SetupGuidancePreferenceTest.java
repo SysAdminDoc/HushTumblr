@@ -132,7 +132,7 @@ public class SetupGuidancePreferenceTest {
         assertTrue(copy.contains("email already linked to that account"));
         assertTrue(copy.contains("reset link sent to your email to set a Tumblr password"));
         assertTrue(copy.contains("It's separate from your Google password."));
-        assertTrue(copy.contains("doesn't include your Tumblr account, posts, downloaded files or Morphe Manager's signing key"));
+        assertTrue(copy.contains("doesn't include your Tumblr account, posts, downloaded files, local mute list or Morphe Manager's signing key"));
         assertTrue(copy.contains("same key keeps the app's data"));
         assertTrue(copy.contains("different key can't update this one"));
         assertTrue(copy.contains("Android may refuse to install an older version"));

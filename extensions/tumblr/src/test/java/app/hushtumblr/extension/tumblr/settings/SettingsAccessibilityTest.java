@@ -229,8 +229,10 @@ public class SettingsAccessibilityTest {
         assertTrue(info.getActionList().contains(AccessibilityNodeInfo.AccessibilityAction.ACTION_CLICK));
         assertNotNull("the back icon is missing", back.getDrawable());
 
-        View title = ((android.view.ViewGroup) back.getParent()).getChildAt(1);
-        assertEquals("HushTumblr", String.valueOf(((TextView) title).getText()));
+        // Back sits over the heading block: the brand line, then the page's title.
+        android.view.ViewGroup block = (android.view.ViewGroup) ((android.view.ViewGroup) back.getParent()).getChildAt(1);
+        View title = block.getChildAt(1);
+        assertEquals("Your settings", String.valueOf(((TextView) title).getText()));
         assertTrue("the screen's title isn't a heading", node(title).isHeading());
     }
 

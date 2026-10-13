@@ -461,6 +461,8 @@ public class SettingsEntryTest {
 
     @Test public void aLogoOutsideAnActivityLeavesTheLongPressAlone() {
         View logo = new android.widget.FrameLayout(RuntimeEnvironment.getApplication());
+        // A press nothing takes goes on to the parent for a context menu, so the logo has one.
+        new android.widget.FrameLayout(RuntimeEnvironment.getApplication()).addView(logo);
         SettingsEntry.onDashboardLogo(logo);
         org.junit.Assert.assertFalse("a press with no screen to open over was taken", logo.performLongClick());
     }

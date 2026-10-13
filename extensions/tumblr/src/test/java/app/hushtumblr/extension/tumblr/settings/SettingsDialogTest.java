@@ -163,6 +163,9 @@ public class SettingsDialogTest {
         assertEquals(summary, row.getSummary());
         save.performClick();
         assertEquals("a repeated Save queued another write", 1, queued.size());
+        // From here the worker runs at once: the refresh the save's own write asks for would
+        // otherwise stay queued behind it, and count as an edit pending for every test after.
+        HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
         queued.remove(0).run();
         ShadowLooper.idleMainLooper();
         assertFalse(editor.isShowing());
@@ -195,6 +198,8 @@ public class SettingsDialogTest {
         assertNotSame(oldEditor, editor);
         EditText field = editor.findViewById(android.R.id.edit);
         field.setText("a newer unsaved draft");
+        // The save's own write asks for a refresh, which runs at once rather than staying queued.
+        HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
         queued.remove(0).run();
         ShadowLooper.idleMainLooper();
         assertTrue(replacement.getDialog().isShowing());
@@ -357,6 +362,8 @@ public class SettingsDialogTest {
         dialog.getListView().performItemClick(null, 3, 3);
         dialog.getButton(AlertDialog.BUTTON_NEUTRAL).performClick();
         assertEquals("a repeated tab action queued another write", 1, queued.size());
+        // The save's own write asks for a refresh, which runs at once rather than staying queued.
+        HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
         queued.remove(0).run();
         ShadowLooper.idleMainLooper();
         assertTrue(dialog.isShowing());

@@ -1001,19 +1001,29 @@ public class SettingsBackupTest {
                     SettingsBackup.apply(SettingsBackup.parse(fileWith(Settings.HIDE_ADVERTISING_ID, false)));
                     settle();
                     Map<String, ?> imported = store();
-                    if (batch) {
-                        Map<Setting<?>, Object> changed = new LinkedHashMap<>();
-                        changed.put(Settings.HIDE_ADVERTISING_ID, true);
-                        changed.put(Settings.FIX_PUSH_NOTIFICATIONS, false);
-                        try {
-                            Setting.saveAll(changed);
-                            fail(mode + " was reported as saved");
-                        } catch (Setting.BatchFailed failed) {
-                            assertTrue(mode, failed.restored);
+                    // The refresh a landed commit asks for waits on the worker for the settings
+                    // lock, so it runs after the rollback. The test worker runs on this thread,
+                    // which holds that lock, so here it waits in a list for the save to return.
+                    List<Runnable> waiting = new ArrayList<>();
+                    HushTumblrPreferenceFragment.editWorkerForTests = waiting::add;
+                    try {
+                        if (batch) {
+                            Map<Setting<?>, Object> changed = new LinkedHashMap<>();
+                            changed.put(Settings.HIDE_ADVERTISING_ID, true);
+                            changed.put(Settings.FIX_PUSH_NOTIFICATIONS, false);
+                            try {
+                                Setting.saveAll(changed);
+                                fail(mode + " was reported as saved");
+                            } catch (Setting.BatchFailed failed) {
+                                assertTrue(mode, failed.restored);
+                            }
+                        } else {
+                            assertFalse(mode + " was reported as saved", Settings.HIDE_ADVERTISING_ID.save(true));
                         }
-                    } else {
-                        assertFalse(mode + " was reported as saved", Settings.HIDE_ADVERTISING_ID.save(true));
+                    } finally {
+                        HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
                     }
+                    for (Runnable task : waiting) task.run();
                     settle();
                     assertFalse(mode + " changed the imported choice", Settings.HIDE_ADVERTISING_ID.savedValue());
                     assertTrue(mode + " changed another switch", Settings.FIX_PUSH_NOTIFICATIONS.savedValue());
