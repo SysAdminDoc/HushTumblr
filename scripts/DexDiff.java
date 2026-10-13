@@ -274,7 +274,7 @@ public class DexDiff {
 
     private static final Map<String, Integer> MUTATION_COLUMNS = Map.ofEntries(
             Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1), Map.entry("activityNotifications", 7),
-            Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 4),
+            Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 4), Map.entry("timelinePaging", 5),
             Map.entry("timelineCarousel", 3), Map.entry("postBridge", 3), Map.entry("paidPostBridge", 6), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
             Map.entry("followButton", 3), Map.entry("footerButton", 3), Map.entry("postTags", 5),
             Map.entry("noteCounts", 5), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
@@ -2516,7 +2516,8 @@ public class DexDiff {
          * timeline list hook, each owning only the capability of its own bridge.
          */
         static List<String> users(Contract rule) {
-            return rule.target.equals("featureSwitch") || rule.target.equals("timelineList") || rule.target.equals("accountIdentity") || rule.target.equals("postJsonPresence")
+            return rule.target.equals("featureSwitch") || rule.target.equals("timelineList") || rule.target.equals("timelinePaging")
+                    || rule.target.equals("accountIdentity") || rule.target.equals("postJsonPresence")
                     ? List.of(rule.strings.get(rule.strings.size() - 1).split(",")) : List.of();
         }
 
@@ -3250,6 +3251,118 @@ public class DexDiff {
                 found &= hookAt(old, actual(old), 0, c.strings.get(0), List.of(items), items, List.of());
             }
             capability(c.callee, found);
+        }
+
+        /**
+         * The question a timeline fragment asks about each loaded page. Tumblr hands every page to one
+         * method of the fragment, which takes an empty one for the end of the feed. Right after its
+         * own items.isEmpty() the hook gets the fragment, the load type, the page's next link and
+         * that answer: 0 runs Tumblr's code, 1 takes the page's links and loads the next page the
+         * way the fragment's own scroll does, 2 runs a copy of Tumblr's empty first page branch.
+         * Each member is read from the clean method, so the injected block is held to Tumblr's own.
+         */
+        void timelinePaging(Contract c) {
+            if (users(c).stream().noneMatch(this::flag)) return;
+            String hook = c.strings.get(0), fragment = c.strings.get(1), links = c.strings.get(2), link = c.strings.get(3);
+            String reason = hook + " doesn't go on from an emptied page the way its rule says";
+            ClassDef owner = clean.classes.get(fragment);
+            List<Method> deliveries = new ArrayList<>();
+            if (owner != null) for (Method candidate : owner.getMethods()) {
+                List<? extends CharSequence> p = candidate.getParameterTypes();
+                if (!isStatic(candidate) && candidate.getImplementation() != null && candidate.getReturnType().equals("V") && p.size() == 5
+                        && p.get(1).toString().equals("Ljava/util/List;") && p.get(2).toString().equals(links)
+                        && p.get(3).toString().equals("Ljava/util/Map;") && p.get(4).toString().equals("Z")) deliveries.add(candidate);
+            }
+            Method old = unique(deliveries, "timeline page delivery");
+            if (old == null) return;
+            List<Instruction> b = instructions(old);
+            String mode = old.getParameterTypes().get(0).toString(), paging = mode + "->PAGINATION:" + mode;
+            int self = parameter(old, -1), type = parameter(old, 0), items = parameter(old, 1), page = parameter(old, 2);
+            int asked = firstIndex(b, 0, i -> callIs(i, Opcode.INVOKE_INTERFACE, "Ljava/util/List;->isEmpty()Z", items)), place = asked + 2;
+            Instruction kept = get(b, asked + 1), one = get(b, place), constant = get(b, place + 2);
+            boolean shape = asked >= 0 && kept != null && kept.getOpcode() == Opcode.MOVE_RESULT && one != null && one.getOpcode() == Opcode.CONST_4
+                    && constant != null && old.getImplementation().getRegisterCount() <= 16 && !old.getImplementation().getTryBlocks().iterator().hasNext();
+            int answer = shape ? firstRegister(kept) : -1, scratch = shape ? firstRegister(one) : -1;
+            shape = shape && literalIs(one, Opcode.CONST_4, scratch, 1) && movesTo(get(b, place + 1), answer, Opcode.IF_EQZ)
+                    && constant.getOpcode() == Opcode.SGET_OBJECT && paging.equals(String.valueOf(reference(constant)))
+                    && (movePair(get(b, place + 3), Opcode.IF_NE, type, firstRegister(constant)) || movePair(get(b, place + 3), Opcode.IF_NE, firstRegister(constant), type))
+                    && scratch < self && scratch != answer && answer != self && answer != type && answer != page;
+            // Nothing branches before the hook or writes what it reads, so it's asked once a page.
+            for (int k = 0; shape && k < place; k++) shape = !(b.get(k) instanceof OffsetInstruction) && b.get(k).getOpcode().canContinue()
+                    && !writes(b.get(k), self) && !writes(b.get(k), type) && !writes(b.get(k), page);
+            // Tumblr's own branch for an empty first page: the last-page flag, the empty view, return.
+            int first = shape ? target(old, place + 3) : -1;
+            FieldReference end = field(get(b, first));
+            MethodReference view = called(get(b, first + 1));
+            shape = shape && first > place + 3 && end != null && end.getType().equals("Z") && fieldIs(get(b, first), Opcode.IPUT_BOOLEAN, end.toString(), scratch, self)
+                    && view != null && view.getDefiningClass().equals(fragment) && descriptor(view).equals("()V")
+                    && callIs(get(b, first + 1), Opcode.INVOKE_VIRTUAL, view.toString(), self) && get(b, first + 2) != null && get(b, first + 2).getOpcode() == Opcode.RETURN_VOID;
+            Set<String> getters = new TreeSet<>();
+            List<Integer> stores = new ArrayList<>(), drops = new ArrayList<>();
+            for (int k = 0; k < b.size(); k++) {
+                Instruction i = b.get(k);
+                MethodReference getter = called(i);
+                if (getter != null && i.getOpcode() == Opcode.INVOKE_VIRTUAL && getter.getDefiningClass().equals(links)
+                        && descriptor(getter).equals("()" + link) && arguments(i).equals(List.of(page))) getters.add(getter.toString());
+                FieldReference f = field(i);
+                if (f == null || i.getOpcode() != Opcode.IPUT_OBJECT || ((TwoRegisterInstruction) i).getRegisterB() != self) continue;
+                if (f.getType().equals("Landroid/os/Parcelable;") && firstRegister(i) == page) stores.add(k);
+                if (f.getType().equals("Lretrofit2/Call;") && f.getDefiningClass().equals(fragment)) drops.add(k);
+            }
+            shape = shape && getters.size() == 1 && stores.size() == 1 && drops.size() == 1 && stores.get(0) > place && drops.get(0) > place;
+            FieldReference linkField = shape ? field(b.get(stores.get(0))) : null;
+            MethodReference settle = shape ? called(get(b, drops.get(0) + 1)) : null;
+            shape = shape && fieldIs(get(b, stores.get(0) + 1), Opcode.IPUT_BOOLEAN, end.toString(), firstRegister(get(b, stores.get(0) + 1)), self)
+                    && settle != null && settle.getDefiningClass().equals(fragment) && descriptor(settle).equals("(" + mode + ")V")
+                    && callIs(get(b, drops.get(0) + 1), Opcode.INVOKE_VIRTUAL, settle.toString(), self, type);
+            List<Method> loads = new ArrayList<>();
+            for (Method candidate : owner.getMethods()) if (!isStatic(candidate) && !AccessFlags.PRIVATE.isSet(candidate.getAccessFlags())
+                    && candidate.getImplementation() != null && descriptor(candidate).equals("(" + mode + "Z)V")) loads.add(candidate);
+            Method load = unique(loads, "timeline page load");
+            if (load == null) return;
+            // Tumblr's own next-page call, made when a scroll nears the end: the constant, true, the load.
+            boolean own = false;
+            for (Method candidate : owner.getMethods()) {
+                List<Instruction> body = instructions(candidate);
+                for (int k = 2; k < body.size(); k++) own |= called(body.get(k)) != null && body.get(k).getOpcode() == Opcode.INVOKE_VIRTUAL
+                        && load.toString().equals(called(body.get(k)).toString()) && arguments(body.get(k)).size() == 3
+                        && movesTo(body.get(k - 2), arguments(body.get(k)).get(1), Opcode.SGET_OBJECT) && paging.equals(String.valueOf(reference(body.get(k - 2))))
+                        && literalIs(body.get(k - 1), Opcode.CONST_4, arguments(body.get(k)).get(2), 1);
+            }
+            if (!shape || !own) { fail("timeline page delivery changed, so " + hook + " has no proven place in " + old); return; }
+
+            Method m = actual(old);
+            List<Integer> sites = calls(m, hook, 1);
+            if (m == null || sites.size() != 1) return;
+            int at = sites.get(0), start = at - 4, stock = at + 14;
+            List<Instruction> body = instructions(m);
+            boolean injected = start >= 0 && stock < body.size()
+                    && literalIs(get(body, start), Opcode.CONST_4, scratch, 0)
+                    && movesTo(get(body, start + 1), page, Opcode.IF_EQZ) && target(m, start + 1) == at
+                    && callIs(get(body, start + 2), Opcode.INVOKE_VIRTUAL, getters.iterator().next(), page)
+                    && movesTo(get(body, start + 3), scratch, Opcode.MOVE_RESULT_OBJECT)
+                    && callIs(body.get(at), Opcode.INVOKE_STATIC, hook, self, type, scratch, answer)
+                    && movesTo(get(body, at + 1), scratch, Opcode.MOVE_RESULT)
+                    && movesTo(get(body, at + 2), scratch, Opcode.IF_EQZ) && target(m, at + 2) == stock
+                    && literalIs(get(body, at + 3), Opcode.CONST_4, answer, 1)
+                    && movePair(get(body, at + 4), Opcode.IF_EQ, scratch, answer) && target(m, at + 4) == at + 8
+                    && fieldIs(get(body, at + 5), Opcode.IPUT_BOOLEAN, end.toString(), answer, self)
+                    && callIs(get(body, at + 6), Opcode.INVOKE_VIRTUAL, view.toString(), self)
+                    && get(body, at + 7).getOpcode() == Opcode.RETURN_VOID
+                    && fieldIs(get(body, at + 8), Opcode.IPUT_OBJECT, linkField.toString(), page, self)
+                    && movesTo(get(body, at + 9), scratch, Opcode.SGET_OBJECT) && paging.equals(String.valueOf(reference(get(body, at + 9))))
+                    && movePair(get(body, at + 10), Opcode.IF_EQ, type, scratch) && target(m, at + 10) == at + 12
+                    && callIs(get(body, at + 11), Opcode.INVOKE_VIRTUAL, settle.toString(), self, type)
+                    && callIs(get(body, at + 12), Opcode.INVOKE_VIRTUAL, load.toString(), self, scratch, answer)
+                    && get(body, at + 13).getOpcode() == Opcode.RETURN_VOID;
+            if (!injected) { fail(reason + " in " + m); return; }
+            remove(m, start, stock);
+            anchor(m, start, place, hook);
+            fallthroughOnly(old, place, hook);
+            // The scratch local and the register Tumblr kept its own answer in, which was a parameter's.
+            vouch(m, at, List.of(scratch, answer));
+            // A shared hook's rule sits in the settings column, which asks for no family control. This one reads switches.
+            controls(patched.methods.get(hook), true);
         }
 
         static boolean callIs(Instruction i, Opcode op, String ref, Integer... args) {
@@ -5444,6 +5557,7 @@ public class DexDiff {
                     case "settingsRow": settingsRow(c); break;
                     case "featureSwitch": featureSwitch(c); break;
                     case "timelineList": timelineList(c); break;
+                    case "timelinePaging": timelinePaging(c); break;
                     case "nativeTimestamps": nativeTimestamps(c); break;
                     case "timelineCarousel": timelineCarousel(c); break;
                     case "postBridge": postBridge(c); break;

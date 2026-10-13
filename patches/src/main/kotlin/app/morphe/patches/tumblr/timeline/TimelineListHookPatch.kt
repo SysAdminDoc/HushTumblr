@@ -43,9 +43,12 @@ internal val TIMELINE_LISTS = listOf(
  *
  * Both constructors take the items straight from Tumblr's JSON adapters, so every dashboard, blog,
  * likes and search page passes through. Found by reading Tumblr 46.5.0.109 (2026-10-11).
+ *
+ * A page the filter empties would read to Tumblr as the end of the feed, so [timelinePagingPatch]
+ * comes with it and sends the fragment on to the next page.
  */
 internal val timelineListHookPatch = bytecodePatch {
-    dependsOn(settingsPatch, tumblrExtensionPatch)
+    dependsOn(settingsPatch, tumblrExtensionPatch, timelinePagingPatch)
 
     execute {
         // Every target is found before the first edit, so a refusal leaves the APK as it was.

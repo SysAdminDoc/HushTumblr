@@ -158,6 +158,8 @@ public final class RootMuteDexFixture {
                 method(LOCAL, "X6", "V", AccessFlags.PRIVATE.getValue(), 12, render, MODE, LIST),
                 method(LOCAL, "e6", "V", AccessFlags.PROTECTED.getValue(), 1, code(end())),
                 method(LOCAL, "Y6", "V", AccessFlags.PROTECTED.getValue(), 7, code(end()), LIST, MODE, LIST, LIST, "I", "I")));
+        // Muting a root can empty a page, so this fragment carries the page delivery and its paging question too.
+        methods.addAll(FeatureDexFixture.pagingMethods(patched ? "good" : "clean"));
         if (patched) {
             methods.add(method(LOCAL, "hushTimelineItems", LIST, PUBLIC, 3,
                     code(type(Opcode.NEW_INSTANCE, 0, "Ljava/util/ArrayList;"), field(Opcode.IGET_OBJECT, 1, 2, LOCAL,

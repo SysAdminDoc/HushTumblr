@@ -81,6 +81,12 @@ public final class FeatureDexFixture {
     private static final String HEADER = "Lcom/tumblr/rumblr/model/post/PostHeaderContext;";
     private static final String PAID_POST = BASE + "timeline/HushPaidPost;";
     private static final String TIMELINE_FILTER = BASE + "timeline/TimelineFilter;";
+    private static final String TIMELINE_PAGING = BASE + "timeline/TimelinePaging;";
+    private static final String TIMELINE_FRAGMENT = "Lcom/tumblr/ui/fragment/TimelineFragment;";
+    private static final String PAGINATION_FRAGMENT = "Lcom/tumblr/ui/fragment/PaginationFragment;";
+    private static final String PAGE_LINKS = "Lcom/tumblr/timeline/model/link/TimelinePaginationLink;";
+    private static final String PAGE_LINK = "Lcom/tumblr/timeline/model/link/Link;";
+    private static final String LOAD_TYPE = "Lrbk;";
     private static final String FEATURE = "Lfixture/Feature;";
     private static final String FEATURE_CHECK = "Lfixture/FeatureCheck;";
     private static final String FEATURE_SWITCHES = BASE + "flags/FeatureSwitches;";
@@ -406,6 +412,76 @@ public final class FeatureDexFixture {
         }
         if (hooked) classes.put(TIMELINE_FILTER, List.of(method(TIMELINE_FILTER, "filter", LIST, true, 2,
                 List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 1)), LIST)));
+        // The filter can empty a page, so the fragment's question about an empty page comes with it.
+        paging(classes, hooked ? "good" : "clean");
+    }
+
+    private static Instruction member(Opcode opcode, int value, int receiver, String owner, String name, String type) {
+        return new ImmutableInstruction22c(opcode, value, receiver, new ImmutableFieldReference(owner, name, type));
+    }
+
+    private static Instruction loadType(int register) {
+        return new ImmutableInstruction21c(Opcode.SGET_OBJECT, register, new ImmutableFieldReference(LOAD_TYPE, "PAGINATION", LOAD_TYPE));
+    }
+
+    /**
+     * A timeline fragment as Tumblr's page delivery leaves it: this in v3, the load type in v4, the
+     * items in v5, the page links in v6, the extras in v7 and the cache flag in v8. An empty page
+     * returns for a next page and shows the empty view for a first one; any other drops the request,
+     * settles the load and keeps the links. Unless clean, the paging question sits right after the
+     * kept isEmpty() answer.
+     */
+    static List<Method> pagingMethods(String variant) {
+        ImmutableMethodReference load = ref(TIMELINE_FRAGMENT, "v6", VOID, LOAD_TYPE, "Z");
+        ImmutableMethodReference emptyView = ref(TIMELINE_FRAGMENT, "N4", VOID), settle = ref(TIMELINE_FRAGMENT, "Q5", VOID, LOAD_TYPE);
+        List<Instruction> body = new ArrayList<>(List.of(
+                invoke(Opcode.INVOKE_INTERFACE, ref(LIST, "isEmpty", "Z"), 5), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 7),
+                new ImmutableInstruction11n(Opcode.CONST_4, 1, 1), new ImmutableInstruction21t(Opcode.IF_EQZ, 7, 0),
+                loadType(5), new ImmutableInstruction22t(Opcode.IF_NE, 4, 5, 0),
+                invoke(Opcode.INVOKE_VIRTUAL, ref(TIMELINE_FRAGMENT, "P5", VOID), 3), end(),
+                member(Opcode.IPUT_BOOLEAN, 1, 3, PAGINATION_FRAGMENT, "l", "Z"), invoke(Opcode.INVOKE_VIRTUAL, emptyView, 3), end(),
+                new ImmutableInstruction11n(Opcode.CONST_4, 7, 0), member(Opcode.IPUT_OBJECT, 7, 3, TIMELINE_FRAGMENT, "W", "Lretrofit2/Call;"),
+                invoke(Opcode.INVOKE_VIRTUAL, settle, 3, 4),
+                member(Opcode.IPUT_OBJECT, 6, 3, PAGINATION_FRAGMENT, "k", "Landroid/os/Parcelable;"),
+                member(Opcode.IPUT_BOOLEAN, 7, 3, PAGINATION_FRAGMENT, "l", "Z"),
+                invoke(Opcode.INVOKE_VIRTUAL, ref(PAGE_LINKS, "e", PAGE_LINK), 6), new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 6), end()));
+        captionBranch(body, 3, 11); captionBranch(body, 5, 8);
+        if (!variant.equals("clean") && !variant.equals("missing")) {
+            int at = variant.equals("late") ? 3 : 2;
+            List<Instruction> hook = new ArrayList<>(List.of(
+                    new ImmutableInstruction11n(Opcode.CONST_4, 1, 0), new ImmutableInstruction21t(Opcode.IF_EQZ, 6, 0),
+                    invoke(Opcode.INVOKE_VIRTUAL, ref(PAGE_LINKS, variant.equals("wrong-next") ? "f" : "e", PAGE_LINK), 6),
+                    new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1),
+                    invoke(Opcode.INVOKE_STATIC, ref(TIMELINE_PAGING, "onPage", "I", OBJECT, OBJECT, OBJECT, "Z"), 3, 4, 1, 7),
+                    new ImmutableInstruction11x(Opcode.MOVE_RESULT, 1), new ImmutableInstruction21t(Opcode.IF_EQZ, 1, 0),
+                    new ImmutableInstruction11n(Opcode.CONST_4, 7, 1), new ImmutableInstruction22t(Opcode.IF_EQ, 1, 7, 0),
+                    member(Opcode.IPUT_BOOLEAN, 7, 3, PAGINATION_FRAGMENT, variant.equals("wrong-flag") ? "m" : "l", "Z"),
+                    invoke(Opcode.INVOKE_VIRTUAL, emptyView, 3), end(),
+                    member(Opcode.IPUT_OBJECT, 6, 3, PAGINATION_FRAGMENT, "k", "Landroid/os/Parcelable;"), loadType(1),
+                    new ImmutableInstruction22t(Opcode.IF_EQ, 4, 1, 0), invoke(Opcode.INVOKE_VIRTUAL, settle, 3, 4),
+                    invoke(Opcode.INVOKE_VIRTUAL, variant.equals("wrong-load") ? ref(TIMELINE_FRAGMENT, "w6", VOID, LOAD_TYPE, "Z") : load, 3, 1, 7), end()));
+            body.addAll(at, hook);
+            // Tumblr's own two branches moved with their targets, and the block's four land inside it or right after.
+            captionBranch(body, at + 1, at + 4); captionBranch(body, at + 6, at + 18); captionBranch(body, at + 8, at + 12);
+            captionBranch(body, at + 14, at + 16); captionBranch(body, 21, 29); captionBranch(body, 23, 26);
+        }
+        return List.of(method(TIMELINE_FRAGMENT, "n4", VOID, false, 9, body, LOAD_TYPE, LIST, PAGE_LINKS, "Ljava/util/Map;", "Z"),
+                method(TIMELINE_FRAGMENT, "v6", VOID, false, 3, List.of(end()), LOAD_TYPE, "Z"),
+                // The fragment's own next-page call, made when a scroll nears the end.
+                method(TIMELINE_FRAGMENT, "Z5", VOID, false, 3,
+                        List.of(loadType(0), new ImmutableInstruction11n(Opcode.CONST_4, 1, 1), invoke(Opcode.INVOKE_VIRTUAL, load, 2, 0, 1), end())),
+                method(TIMELINE_FRAGMENT, "N4", VOID, false, 1, List.of(end())), method(TIMELINE_FRAGMENT, "P5", VOID, false, 1, List.of(end())),
+                method(TIMELINE_FRAGMENT, "Q5", VOID, false, 2, List.of(end()), LOAD_TYPE));
+    }
+
+    /** The timeline fragment, with the hook that asks what to do with an emptied page unless clean. */
+    private static void paging(Map<String, List<Method>> classes, String variant) {
+        classes.put(TIMELINE_FRAGMENT, pagingMethods(variant));
+        if (variant.equals("clean")) return;
+        List<Instruction> answer = new ArrayList<>();
+        if (!variant.equals("uncontrolled")) answer.addAll(List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0)));
+        answer.addAll(List.of(new ImmutableInstruction11n(Opcode.CONST_4, 0, 0), new ImmutableInstruction11x(Opcode.RETURN, 0)));
+        classes.put(TIMELINE_PAGING, List.of(method(TIMELINE_PAGING, "onPage", "I", true, 5, answer, OBJECT, OBJECT, OBJECT, "Z")));
     }
 
     private static void carousel(Map<String, List<Method>> classes, String variant) {
@@ -701,6 +777,14 @@ public final class FeatureDexFixture {
             timeline(classes, variant); postBridge(classes, "good");
             smallCase(root, "feature-small-timeline-" + variant, classes, "hideReblogs", variant.equals("good") ? ""
                     : variant.equals("missing") ? "has 0 calls" : variant.equals("late") ? "is not where its rule puts it" : "doesn't take what its rule hands it");
+        }
+        for (String variant : List.of("good", "missing", "wrong-next", "wrong-flag", "wrong-load", "late", "uncontrolled")) {
+            reset(); enable("hideReblogs");
+            Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
+            timeline(classes, "good"); postBridge(classes, "good"); paging(classes, variant);
+            smallCase(root, "feature-small-paging-" + variant, classes, "hideReblogs", variant.equals("good") ? ""
+                    : variant.equals("missing") ? "has 0 calls" : variant.equals("late") ? "is not where its rule puts it"
+                    : variant.equals("uncontrolled") ? "no compiled family control" : "doesn't go on from an emptied page the way its rule says");
         }
         for (String variant : List.of("good", "missing", "wrong-getter", "null")) {
             reset(); enable("hideSuggestedBlogs");

@@ -49,6 +49,9 @@ import app.hushtumblr.extension.tumblr.rootmute.RootPostMutes;
  *
  * <p>The post switches (reblogs, video, photo and text posts, and the word list) are
  * {@link PostRules}'. A heading never goes with a post they take out.
+ *
+ * <p>A page that loses every item comes back empty, and Tumblr takes an empty page for the end of
+ * a feed. {@link TimelinePaging} is told, so the fragment showing the page loads the next one.
  */
 public final class TimelineFilter {
     private TimelineFilter() {}
@@ -151,6 +154,8 @@ public final class TimelineFilter {
                 if (removedBy[i] == null) kept.add(items.get(i));
                 else HookStatus.counted(removedBy[i], heading[i] ? "heading removed" : removal(removedBy[i]));
             }
+            // Tumblr takes an empty page for the end of the feed, so the fragment is told to go on.
+            if (kept.isEmpty()) TimelinePaging.emptied(removedBy[0]);
             return kept;
         } catch (Throwable failure) {
             HookStatus.threw(rules.owner(), "timeline filter", failure);
