@@ -55,7 +55,7 @@ public class AsyncToggleTest {
     @After public void close() {
         HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
         while (!work.isEmpty()) work.remove().run();
-        ShadowLooper.idleMainLooper();
+        ShadowLooper.idleMainLooper(250, TimeUnit.MILLISECONDS);
         controller.close();
         PatchFamily.inBuildForTests = null;
         Settings.HIDE_ADS.save(true);
@@ -180,6 +180,28 @@ public class AsyncToggleTest {
 
         assertTrue(row.isChecked());
         assertTrue(row.isEnabled());
+    }
+
+    @Test public void aRejectedExternalRefreshKeepsReplacementBackupRowsBusyUntilRetry() {
+        HushTumblrPreferenceFragment.editWorkerForTests = task -> { throw new RejectedExecutionException(); };
+        Settings.CHECK_FOR_RELEASES.save(true);
+        ShadowLooper.idleMainLooper();
+        assertTrue(HushTumblrPreferenceFragment.hasPendingEdits());
+        HushTumblrPreferenceFragment oldPage = page;
+        page = new HushTumblrPreferenceFragment();
+        controller.get().getFragmentManager().beginTransaction()
+                .remove(oldPage).add(android.R.id.content, page).commitNow();
+        assertEquals("Saving changes", page.findPreference("action_undo_import").getSummary());
+
+        HushTumblrPreferenceFragment.editWorkerForTests = work::add;
+        ShadowLooper.idleMainLooper(250, TimeUnit.MILLISECONDS);
+        assertEquals(1, work.size());
+        work.remove().run();
+        ShadowLooper.idleMainLooper();
+
+        assertFalse(HushTumblrPreferenceFragment.hasPendingEdits());
+        assertTrue(row(Settings.CHECK_FOR_RELEASES.key).isChecked());
+        assertTrue(page.findPreference("action_export_settings").isEnabled());
     }
 
     @Test public void aQueuedEditKeepsNotificationsAndReplacementOffTheTransactionLock() throws Exception {

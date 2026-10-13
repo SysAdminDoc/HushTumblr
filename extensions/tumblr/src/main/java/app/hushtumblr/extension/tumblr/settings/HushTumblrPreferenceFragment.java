@@ -199,7 +199,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
 
     /** Wait for external writes and rollback off main before refreshing an app-owned row. */
     static void scheduleSavedChangeRefresh() {
-        if (hasPendingEdits() || savedRefreshRetryScheduled) return;
+        if (hasPendingEdits()) return;
         if (!submitEdit(() -> {
             synchronized (app.hushtumblr.extension.shared.settings.Setting.class) {
                 // The transaction that sent the notification must release its rollback lock.

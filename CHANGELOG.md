@@ -5,7 +5,7 @@
 * **Tumblr:** A local mute that can't refresh the feed or undo itself keeps an Unmute post action. Recovery changes only that post and preserves later edits to the account's muted list.
 * **Tumblr:** Clearing diagnostic data and putting it back use a shared worker operation. Rows show progress, prevent repeated actions and keep failed restores available to retry.
 * Development source is 0.0.5. The new save and recovery paths still need validation.
-* **Tumblr:** Word lists, tab order and switches save on a worker. Busy controls keep the saved value visible, block repeated taps and report failures. Replacement settings pages refresh when an edit finishes.
+* **Tumblr:** Word lists, tab order and switches save on a worker. Busy controls keep the saved value visible, block repeated taps and report failures. Replacement settings pages refresh when an edit finishes. Backup actions stay busy while a failed refresh waits to retry.
 * **Tumblr:** Backup previews and import results count word lists and tab order alongside switches. Import and Undo messages now refer to settings, and the setup guide explains which data the backup includes.
 * **Tumblr:** Settings controls now show focus and disabled states consistently. Search and word fields have clearer boundaries, and dialog actions wrap without losing their touch targets at large text sizes.
 * **Tumblr:** Word editors keep a label above the list, explain when changes are saved and show save errors beside the draft. Long explanations and errors scroll with the editor while Save and Cancel stay within reach.
