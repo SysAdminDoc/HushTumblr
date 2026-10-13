@@ -31,8 +31,8 @@
     anybody else's: a bundle whose APKs all carry the declared key merges, with a record of the
     check beside it that Assert-AuthenticMerge accepts, and an unsigned universal APK passes as the
     merge of the same-named bundle beside it. An unsigned split, a split signed by the other key,
-    a split changed after signing and a universal APK whose dex isn't the bundle's are each refused
-    before the JDK starts, leaving nothing behind.
+    a split changed after signing, and a universal APK whose dex, native libraries, assets or res
+    files aren't the bundle's are each refused before the JDK starts, leaving nothing behind.
 #>
 [CmdletBinding()]
 param(
@@ -665,6 +665,19 @@ try {
     }
     Move-Item -LiteralPath $otherLibs -Destination (Join-Path $signed 'other-libs.apk')
     Copy-Item -LiteralPath $signedApkm -Destination (Join-Path $signed 'other-libs.apkm')
+    # Past the code and libraries, everything but the manifest and resource table has to be one of
+    # the bundle's files too: an added asset is refused by name, and a res file by its content,
+    # since the merge may move a res file to a folder without its -v4 or -v21 qualifier.
+    foreach ($added in @(@{ Name = 'other-asset'; Entry = 'assets/standin.txt' }, @{ Name = 'other-res'; Entry = 'res/raw/standin.txt' })) {
+        $entryName = $added.Entry
+        $copy = Copy-ApkWith -From $universal -Name $added.Name -Change {
+            param($archive)
+            $out = $archive.CreateEntry($entryName).Open()
+            try { $bytes = [System.Text.Encoding]::ASCII.GetBytes('stand-in file'); $out.Write($bytes, 0, $bytes.Length) } finally { $out.Dispose() }
+        }
+        Move-Item -LiteralPath $copy -Destination (Join-Path $signed "$($added.Name).apk")
+        Copy-Item -LiteralPath $signedApkm -Destination (Join-Path $signed "$($added.Name).apkm")
+    }
 
     # Every refusal comes before the JDK would start (it isn't there) and leaves no merge, no record
     # and no unpacked folder.
@@ -678,7 +691,11 @@ try {
         @{ Apk = (Join-Path $signed 'other-dex.apk')
             Says = "*Refusing other-dex.apk: it does not verify, and its dex files aren't those of the base APK of other-dex.apkm*" }
         @{ Apk = (Join-Path $signed 'other-libs.apk')
-            Says = "*Refusing other-libs.apk: it does not verify, and its native libraries aren't those of other-libs.apkm*" })
+            Says = "*Refusing other-libs.apk: it does not verify, and its native libraries aren't those of other-libs.apkm*" }
+        @{ Apk = (Join-Path $signed 'other-asset.apk')
+            Says = "*Refusing other-asset.apk: it does not verify, and its assets/standin.txt isn't in any APK of other-asset.apkm*" }
+        @{ Apk = (Join-Path $signed 'other-res.apk')
+            Says = "*Refusing other-res.apk: it does not verify, and its res/raw/standin.txt isn't in any APK of other-res.apkm*" })
     foreach ($case in $refusals) {
         $destination = Join-Path $bundleDir ("merged/refused-" + [System.IO.Path]::GetFileNameWithoutExtension($case.Apk) + '.apk')
         $refused = $null

@@ -121,8 +121,9 @@ internal object Fixtures {
      * An APK that verifies vouches for itself. One that doesn't has to be the merge of the APKMirror
      * bundle of the same name beside it: merging rewrites the resource table and the manifest, so
      * no signature survives it. Its code has to be that bundle's byte for byte, every dex file the
-     * same as base.apk's and every native library the same as its split's, and then the bundle's
-     * base.apk, signed by Tumblr, stands for it. An APK that doesn't verify and isn't such a merge
+     * same as base.apk's and every native library the same as its split's, and every other file but
+     * the manifest and resource table has to be one of the bundle's (res files by content, since the
+     * merge can rename their folders). Then the bundle's base.apk, signed by Tumblr, stands for it. An APK that doesn't verify and isn't such a merge
      * fails, so a re-signed or edited build can't pass for Tumblr's.
      */
     fun signedForm(apk: File): Signed = signedForms[apk]
@@ -137,6 +138,9 @@ internal object Fixtures {
         }
         val base = File.createTempFile("fixture-signed-base", ".apk").apply { deleteOnExit() }
         val expectedLibraries = sortedMapOf<String, String>()
+        // Every name and digest the bundle's APKs carry, and the digests of their res files.
+        val signedEntries = HashSet<String>()
+        val signedResources = HashSet<String>()
         ZipFile(bundle).use { zip ->
             val apks = zip.entries().asSequence().filter { it.name.endsWith(".apk") }.toList()
             val baseEntry = apks.singleOrNull { it.name == "base.apk" }
@@ -146,8 +150,11 @@ internal object Fixtures {
                 val split = if (entry === baseEntry) base else File.createTempFile("fixture-split", ".apk")
                 try {
                     if (split !== base) zip.getInputStream(entry).use { input -> split.outputStream().use { input.copyTo(it) } }
-                    val libraries = ZipFile(split).use { digests(it) { name -> name.startsWith("lib/") } }
-                    for ((name, digest) in libraries) {
+                    val carried = ZipFile(split).use { digests(it) { true } }
+                    for ((name, digest) in carried) {
+                        signedEntries += "$name\u0000$digest"
+                        if (name.startsWith("res/")) signedResources += digest
+                        if (!name.startsWith("lib/")) continue
                         assertTrue("${bundle.name}: $name is in two of its APKs", expectedLibraries.put(name, digest) == null)
                     }
                 } finally {
@@ -157,11 +164,24 @@ internal object Fixtures {
         }
         val signedCode = ZipFile(base).use { digests(it, ::isDex) }
         assertTrue("${bundle.name}!base.apk holds no dex", signedCode.isNotEmpty())
-        val (mergedCode, mergedLibraries) = ZipFile(apk).use { digests(it, ::isDex) to digests(it) { name -> name.startsWith("lib/") } }
+        val merged = ZipFile(apk).use { digests(it) { true } }
         assertEquals("${apk.name} does not verify, and its dex files aren't ${bundle.name}'s base.apk's",
-            signedCode, mergedCode)
+            signedCode, merged.filterKeys(::isDex).toSortedMap())
         assertEquals("${apk.name} does not verify, and its native libraries aren't ${bundle.name}'s",
-            expectedLibraries, mergedLibraries)
+            expectedLibraries, merged.filterKeys { it.startsWith("lib/") }.toSortedMap())
+        // The merger copies everything else, though a res file can lose a -v4 or -v21 qualifier
+        // from its folder name, so res files are matched by content. Only the manifest and the
+        // resource table are rebuilt. scripts/common.ps1 (Open-AuthenticInput) holds a universal
+        // APK to the same rule.
+        val foreign = merged.filter { (name, digest) ->
+            when {
+                name == "AndroidManifest.xml" || name == "resources.arsc" -> false
+                name.startsWith("res/") -> digest !in signedResources
+                else -> "$name\u0000$digest" !in signedEntries
+            }
+        }.keys
+        assertTrue("${apk.name} does not verify, and ${foreign.take(5)} in it aren't in any APK of ${bundle.name}",
+            foreign.isEmpty())
         return Signed("${bundle.name}!base.apk", base)
     }
 

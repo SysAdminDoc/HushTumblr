@@ -958,8 +958,10 @@ function Get-MergedApk {
         merger reads exactly those bytes. A plain APK is copied the same way and checked the same
         way; a universal APK that doesn't verify (merging drops every signature) passes only as
         the merge of the same-named .apkm, .xapk or .apks beside it, whose APKs all pass, with
-        that bundle's base dex and every native library its APKs carry byte for byte, the rule
-        Fixtures.signedForm holds the fixture suite to. There is no switch to skip any of it. The
+        that bundle's base dex and every native library its APKs carry byte for byte, and nothing
+        but the manifest and resource table that isn't one of that bundle's files (res files by
+        content, since the merge can rename their folders), the rule Fixtures.signedForm holds the
+        fixture suite to. There is no switch to skip any of it. The
         checks live in Open-AuthenticInput, which Assert-AuthenticInput runs on its own for a caller
         that refuses a list of inputs before merging the first.
 
@@ -1088,12 +1090,19 @@ function Open-AuthenticInput {
                 $signedCode = Get-ApkEntryDigests -File $facts.Base.File -Pattern '^classes\d*\.dex$'
                 if ($signedCode.Count -eq 0) { & $refuse "it does not verify, and the base APK of $bundleLabel holds no dex to hold it to" }
                 $libraries = New-Object 'System.Collections.Generic.SortedDictionary[string,string]' ([System.StringComparer]::Ordinal)
+                # Every name and digest the bundle's APKs carry, and the digests of their res files,
+                # for the last check below.
+                $signedEntries = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::Ordinal)
+                $signedRes = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::Ordinal)
                 # Not $apk, which is -Apk: PowerShell names are case-insensitive. A dictionary goes
                 # through GetEnumerator(): foreach over the dictionary itself runs once, with the
                 # dictionary, so every key read as empty and every comparison below matched.
                 foreach ($signedApk in @($facts.Apks)) {
-                    $carried = Get-ApkEntryDigests -File $signedApk.File -Pattern '^lib/'
+                    $carried = Get-ApkEntryDigests -File $signedApk.File -Pattern '.'
                     foreach ($pair in $carried.GetEnumerator()) {
+                        [void]$signedEntries.Add("$($pair.Key)`0$($pair.Value)")
+                        if ($pair.Key.StartsWith('res/', [System.StringComparison]::Ordinal)) { [void]$signedRes.Add($pair.Value) }
+                        if (-not $pair.Key.StartsWith('lib/', [System.StringComparison]::Ordinal)) { continue }
                         if ($libraries.ContainsKey($pair.Key)) { & $refuse "$bundleLabel carries $($pair.Key) in two of its APKs" }
                         $libraries.Add($pair.Key, $pair.Value)
                     }
@@ -1104,6 +1113,19 @@ function Open-AuthenticInput {
                 }
                 if ((& $text (Get-ApkEntryDigests -File $plain -Pattern '^lib/')) -cne (& $text $libraries)) {
                     & $refuse "it does not verify, and its native libraries aren't those of $bundleLabel, so it isn't that signed build's merge"
+                }
+                # The rest of the merge is the bundle's too, byte for byte: assets, Java resources,
+                # META-INF and every res file. The merger copies them, but a res file can lose a -v4 or
+                # -v21 qualifier from its folder name on the way (1,517 of them in 46.5.0.109), so res
+                # files are matched by content alone. Only AndroidManifest.xml and resources.arsc are
+                # rebuilt by the merge: the manifest is held to the package and version code above, and
+                # the resource table to nothing.
+                foreach ($pair in (Get-ApkEntryDigests -File $plain -Pattern '.').GetEnumerator()) {
+                    if ($pair.Key -ceq 'AndroidManifest.xml' -or $pair.Key -ceq 'resources.arsc') { continue }
+                    $signedCopy = if ($pair.Key.StartsWith('res/', [System.StringComparison]::Ordinal)) { $signedRes.Contains($pair.Value) } else { $signedEntries.Contains("$($pair.Key)`0$($pair.Value)") }
+                    if (-not $signedCopy) {
+                        & $refuse "it does not verify, and its $($pair.Key) isn't in any APK of $bundleLabel, so it isn't that signed build's merge"
+                    }
                 }
             }
             $opened.Plain = $plain

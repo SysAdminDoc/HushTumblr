@@ -264,8 +264,9 @@ if (-not $CleanApk) {
 if (-not (Test-Path -LiteralPath $CleanApk -PathType Leaf)) { throw "No clean APK at $CleanApk." }
 # Tumblr ships only the split bundle, so a universal APK kept beside it is a merge whose v2 and v3
 # signature blocks no longer verify. Its signed form is the same-named bundle's base.apk, taken only
-# when every classes*.dex of the merge is byte-identical to base.apk's, as Fixtures.signedForm holds
-# the Kotlin fixture tests. An APK that doesn't verify and isn't such a merge still fails below.
+# when every classes*.dex of the merge is byte-identical to base.apk's. Get-MergedApk below holds the
+# rest of the merge to that bundle, the way Fixtures.signedForm holds the Kotlin fixture tests. An APK
+# that doesn't verify and isn't such a merge still fails below.
 $signedBundle = Get-SignedBundleFor -Apk $CleanApk
 $cleanSource = if ($signedBundle) { $signedBundle } else { $CleanApk }
 # Resolve the signed container before extracting the single clean baseline. The static and device
