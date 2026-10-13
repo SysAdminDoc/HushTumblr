@@ -130,7 +130,7 @@ public class SettingsNavigationTest {
         Preference row = (Preference) list().getItemAtPosition(last);
         assertEquals(HushTumblrPreferenceFragment.SUPPORT, row.getKey());
         assertEquals("Support HushTumblr", String.valueOf(row.getTitle()));
-        assertEquals("Buy me a coffee on Ko-fi", String.valueOf(row.getSummary()));
+        assertNull("the Ko-fi row carries a title and nothing under it", row.getSummary());
         assertEquals("Report a problem", String.valueOf(((Preference) list().getItemAtPosition(last - 1)).getTitle()));
         assertEquals("About", String.valueOf(((Preference) list().getItemAtPosition(last - 2)).getTitle()));
         assertTrue(list().getAdapter().isEnabled(last));

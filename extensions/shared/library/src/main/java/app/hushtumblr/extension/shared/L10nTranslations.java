@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(796);
+        Map<String, String> table = new HashMap<>(794);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -134,8 +134,6 @@ public final class L10nTranslations {
                 "Vor dem Wechsel des Builds sichern");
         table.put("Browse settings",
                 "Einstellungen durchsuchen");
-        table.put("Buy me a coffee on Ko-fi",
-                "Spendier mir einen Kaffee auf Ko-fi");
         table.put("Cancel",
                 "Abbrechen");
         table.put("Changed %1$d setting",
@@ -182,11 +180,11 @@ public final class L10nTranslations {
                 "Die Diagnosedaten konnten nicht gel\u00f6scht werden. Versuch es erneut.");
         table.put("Couldn't import the settings, and couldn't put back the ones you had. Check the settings on this screen.",
                 "Die Einstellungen lie\u00dfen sich nicht importieren, und deine vorherigen lie\u00dfen sich nicht wiederherstellen. Pr\u00fcfe die Einstellungen auf diesem Bildschirm.");
+        table.put("Couldn't import the settings. Nothing was changed.",
+                "Die Einstellungen lie\u00dfen sich nicht importieren. Es wurde nichts ge\u00e4ndert.");
     }
 
     private static void fillDe1(Map<String, String> table) {
-        table.put("Couldn't import the settings. Nothing was changed.",
-                "Die Einstellungen lie\u00dfen sich nicht importieren. Es wurde nichts ge\u00e4ndert.");
         table.put("Couldn't open that file. Nothing was changed.",
                 "Diese Datei lie\u00df sich nicht \u00f6ffnen. Es wurde nichts ge\u00e4ndert.");
         table.put("Couldn't open the file picker. Try again.",
@@ -305,11 +303,11 @@ public final class L10nTranslations {
                 "Likes ausblenden");
         table.put("Hide mention notifications",
                 "Erw\u00e4hnungen ausblenden");
+        table.put("Hide note counts",
+                "Anzahl der Anmerkungen ausblenden");
     }
 
     private static void fillDe2(Map<String, String> table) {
-        table.put("Hide note counts",
-                "Anzahl der Anmerkungen ausblenden");
         table.put("Hide photo posts",
                 "Fotobeitr\u00e4ge ausblenden");
         table.put("Hide posts with these words",
@@ -428,11 +426,11 @@ public final class L10nTranslations {
                 "Sucht nach: %1$s");
         table.put("Make Tumblr feel like yours.",
                 "Mach Tumblr zu deinem Tumblr.");
+        table.put("Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.",
+                "F\u00e4rbt neu ge\u00f6ffnete Dunkelmodus-Bildschirme schwarz oder in der beim Patchen gew\u00e4hlten dunklen Farbe. Offene Bildschirme behalten ihre Farben bis zum Neustart von Tumblr.");
     }
 
     private static void fillDe3(Map<String, String> table) {
-        table.put("Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.",
-                "F\u00e4rbt neu ge\u00f6ffnete Dunkelmodus-Bildschirme schwarz oder in der beim Patchen gew\u00e4hlten dunklen Farbe. Offene Bildschirme behalten ihre Farben bis zum Neustart von Tumblr.");
         table.put("Manage muted posts",
                 "Stummgeschaltete Posts verwalten");
         table.put("Marks blogs that follow your primary blog when you follow them.",
@@ -551,11 +549,11 @@ public final class L10nTranslations {
                 "Versionshinweise");
         table.put("Remove ad tracking permissions",
                 "Werbe-Tracking-Berechtigungen entfernen");
+        table.put("Removes the tap-to-reveal blur only when Tumblr confirms this account may view the content.",
+                "Entfernt die Unsch\u00e4rfe zum Antippen nur, wenn Tumblr best\u00e4tigt, dass dieses Konto den Inhalt sehen darf.");
     }
 
     private static void fillDe4(Map<String, String> table) {
-        table.put("Removes the tap-to-reveal blur only when Tumblr confirms this account may view the content.",
-                "Entfernt die Unsch\u00e4rfe zum Antippen nur, wenn Tumblr best\u00e4tigt, dass dieses Konto den Inhalt sehen darf.");
         table.put("Reorder the bottom bar",
                 "Untere Leiste neu ordnen");
         table.put("Report a problem",
@@ -674,11 +672,11 @@ public final class L10nTranslations {
                 "Entfernt den Communities-Tab aus der unteren Leiste und beendet die Communities-Tipps im Beitragseditor.");
         table.put("Takes the Explore and search button off the bottom bar.",
                 "Entfernt die Schaltfl\u00e4che f\u00fcr Entdecken und Suche aus der unteren Leiste.");
+        table.put("Takes the Follow button out of the header of posts from blogs you don't follow yet.",
+                "Entfernt den Folgen-Button aus dem Kopf von Beitr\u00e4gen aus Blogs, denen du noch nicht folgst.");
     }
 
     private static void fillDe5(Map<String, String> table) {
-        table.put("Takes the Follow button out of the header of posts from blogs you don't follow yet.",
-                "Entfernt den Folgen-Button aus dem Kopf von Beitr\u00e4gen aus Blogs, denen du noch nicht folgst.");
         table.put("Takes the Notifications button off the bottom bar.",
                 "Entfernt die Schaltfl\u00e4che Benachrichtigungen aus der unteren Leiste.");
         table.put("Takes the Save button out of the footer under posts, when Tumblr shows one.",
@@ -797,11 +795,11 @@ public final class L10nTranslations {
                 "Tumblrs eigene Einstellungen");
         table.put("Tumblr's own switch for hiding the date on every post.",
                 "Tumblrs eigener Schalter, der das Datum an jedem Beitrag ausblendet.");
+        table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
+                "Die Webadressen von Tumblr sind in den Android-Einstellungen f\u00fcr diese App ausgew\u00e4hlt, deshalb \u00f6ffnen sich ihre Links hier.");
     }
 
     private static void fillDe6(Map<String, String> table) {
-        table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
-                "Die Webadressen von Tumblr sind in den Android-Einstellungen f\u00fcr diese App ausgew\u00e4hlt, deshalb \u00f6ffnen sich ihre Links hier.");
         table.put("TumblrMart buttons",
                 "TumblrMart-Buttons");
         table.put("Turn off screenshot sharing",
@@ -879,7 +877,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(796);
+        Map<String, String> table = new HashMap<>(794);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -963,8 +961,6 @@ public final class L10nTranslations {
                 "Haz una copia de seguridad antes de cambiar de compilaci\u00f3n");
         table.put("Browse settings",
                 "Explorar ajustes");
-        table.put("Buy me a coffee on Ko-fi",
-                "Inv\u00edtame a un caf\u00e9 en Ko-fi");
         table.put("Cancel",
                 "Cancelar");
         table.put("Changed %1$d setting",
@@ -1011,11 +1007,11 @@ public final class L10nTranslations {
                 "No se pudieron borrar los datos de diagn\u00f3stico. Int\u00e9ntalo de nuevo.");
         table.put("Couldn't import the settings, and couldn't put back the ones you had. Check the settings on this screen.",
                 "No se pudo importar la configuraci\u00f3n ni restaurar la que ten\u00edas. Revisa los ajustes de esta pantalla.");
+        table.put("Couldn't import the settings. Nothing was changed.",
+                "No se pudo importar la configuraci\u00f3n. No se cambi\u00f3 nada.");
     }
 
     private static void fillEs1(Map<String, String> table) {
-        table.put("Couldn't import the settings. Nothing was changed.",
-                "No se pudo importar la configuraci\u00f3n. No se cambi\u00f3 nada.");
         table.put("Couldn't open that file. Nothing was changed.",
                 "No se pudo abrir ese archivo. No se cambi\u00f3 nada.");
         table.put("Couldn't open the file picker. Try again.",
@@ -1134,11 +1130,11 @@ public final class L10nTranslations {
                 "Ocultar Me gusta");
         table.put("Hide mention notifications",
                 "Ocultar notificaciones de menciones");
+        table.put("Hide note counts",
+                "Ocultar el n\u00famero de notas");
     }
 
     private static void fillEs2(Map<String, String> table) {
-        table.put("Hide note counts",
-                "Ocultar el n\u00famero de notas");
         table.put("Hide photo posts",
                 "Ocultar publicaciones con fotos");
         table.put("Hide posts with these words",
@@ -1257,11 +1253,11 @@ public final class L10nTranslations {
                 "Busca: %1$s");
         table.put("Make Tumblr feel like yours.",
                 "Haz que Tumblr sea m\u00e1s tuyo.");
+        table.put("Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.",
+                "Pone en negro las nuevas pantallas del modo oscuro, o usa el color oscuro elegido al aplicar los parches. Las pantallas abiertas conservan sus colores hasta que reinicies Tumblr.");
     }
 
     private static void fillEs3(Map<String, String> table) {
-        table.put("Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.",
-                "Pone en negro las nuevas pantallas del modo oscuro, o usa el color oscuro elegido al aplicar los parches. Las pantallas abiertas conservan sus colores hasta que reinicies Tumblr.");
         table.put("Manage muted posts",
                 "Gestionar publicaciones silenciadas");
         table.put("Marks blogs that follow your primary blog when you follow them.",
@@ -1380,11 +1376,11 @@ public final class L10nTranslations {
                 "Notas de la versi\u00f3n");
         table.put("Remove ad tracking permissions",
                 "Quitar permisos de seguimiento publicitario");
+        table.put("Removes the tap-to-reveal blur only when Tumblr confirms this account may view the content.",
+                "Quita el desenfoque que se revela al tocar solo cuando Tumblr confirma que esta cuenta puede ver el contenido.");
     }
 
     private static void fillEs4(Map<String, String> table) {
-        table.put("Removes the tap-to-reveal blur only when Tumblr confirms this account may view the content.",
-                "Quita el desenfoque que se revela al tocar solo cuando Tumblr confirma que esta cuenta puede ver el contenido.");
         table.put("Reorder the bottom bar",
                 "Reordenar la barra inferior");
         table.put("Report a problem",
@@ -1503,11 +1499,11 @@ public final class L10nTranslations {
                 "Quita la pesta\u00f1a Comunidades de la barra inferior y detiene los consejos sobre comunidades en el editor de publicaciones.");
         table.put("Takes the Explore and search button off the bottom bar.",
                 "Quita el bot\u00f3n de Explorar y b\u00fasqueda de la barra inferior.");
+        table.put("Takes the Follow button out of the header of posts from blogs you don't follow yet.",
+                "Quita el bot\u00f3n Seguir de la cabecera de las publicaciones de blogs que a\u00fan no sigues.");
     }
 
     private static void fillEs5(Map<String, String> table) {
-        table.put("Takes the Follow button out of the header of posts from blogs you don't follow yet.",
-                "Quita el bot\u00f3n Seguir de la cabecera de las publicaciones de blogs que a\u00fan no sigues.");
         table.put("Takes the Notifications button off the bottom bar.",
                 "Quita el bot\u00f3n de Notificaciones de la barra inferior.");
         table.put("Takes the Save button out of the footer under posts, when Tumblr shows one.",
@@ -1626,11 +1622,11 @@ public final class L10nTranslations {
                 "Configuraci\u00f3n propia de Tumblr");
         table.put("Tumblr's own switch for hiding the date on every post.",
                 "El interruptor propio de Tumblr para ocultar la fecha de cada publicaci\u00f3n.");
+        table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
+                "Las direcciones web de Tumblr est\u00e1n seleccionadas para esta app en los ajustes de Android, as\u00ed que sus enlaces se abren aqu\u00ed.");
     }
 
     private static void fillEs6(Map<String, String> table) {
-        table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
-                "Las direcciones web de Tumblr est\u00e1n seleccionadas para esta app en los ajustes de Android, as\u00ed que sus enlaces se abren aqu\u00ed.");
         table.put("TumblrMart buttons",
                 "los botones de TumblrMart");
         table.put("Turn off screenshot sharing",
@@ -1708,7 +1704,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(796);
+        Map<String, String> table = new HashMap<>(794);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -1792,8 +1788,6 @@ public final class L10nTranslations {
                 "Cadangkan sebelum mengganti build");
         table.put("Browse settings",
                 "Jelajahi pengaturan");
-        table.put("Buy me a coffee on Ko-fi",
-                "Traktir aku secangkir kopi di Ko-fi");
         table.put("Cancel",
                 "Batal");
         table.put("Changed %1$d setting",
@@ -1840,11 +1834,11 @@ public final class L10nTranslations {
                 "Tidak dapat menghapus data diagnostik. Coba lagi.");
         table.put("Couldn't import the settings, and couldn't put back the ones you had. Check the settings on this screen.",
                 "Pengaturan tidak dapat diimpor, dan pengaturan sebelumnya tidak dapat dikembalikan. Periksa pengaturan di layar ini.");
+        table.put("Couldn't import the settings. Nothing was changed.",
+                "Pengaturan tidak dapat diimpor. Tidak ada yang diubah.");
     }
 
     private static void fillIn1(Map<String, String> table) {
-        table.put("Couldn't import the settings. Nothing was changed.",
-                "Pengaturan tidak dapat diimpor. Tidak ada yang diubah.");
         table.put("Couldn't open that file. Nothing was changed.",
                 "File itu tidak dapat dibuka. Tidak ada yang diubah.");
         table.put("Couldn't open the file picker. Try again.",
@@ -1963,11 +1957,11 @@ public final class L10nTranslations {
                 "Sembunyikan suka");
         table.put("Hide mention notifications",
                 "Sembunyikan notifikasi sebutan");
+        table.put("Hide note counts",
+                "Sembunyikan jumlah nota");
     }
 
     private static void fillIn2(Map<String, String> table) {
-        table.put("Hide note counts",
-                "Sembunyikan jumlah nota");
         table.put("Hide photo posts",
                 "Sembunyikan postingan foto");
         table.put("Hide posts with these words",
@@ -2086,11 +2080,11 @@ public final class L10nTranslations {
                 "Mencari: %1$s");
         table.put("Make Tumblr feel like yours.",
                 "Buat Tumblr sesuai keinginanmu.");
+        table.put("Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.",
+                "Membuat layar Mode Gelap yang baru dibuka berwarna hitam, atau warna gelap yang dipilih saat memasang patch. Layar yang terbuka mempertahankan warnanya sampai Tumblr dimulai ulang.");
     }
 
     private static void fillIn3(Map<String, String> table) {
-        table.put("Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.",
-                "Membuat layar Mode Gelap yang baru dibuka berwarna hitam, atau warna gelap yang dipilih saat memasang patch. Layar yang terbuka mempertahankan warnanya sampai Tumblr dimulai ulang.");
         table.put("Manage muted posts",
                 "Kelola postingan yang dibisukan");
         table.put("Marks blogs that follow your primary blog when you follow them.",
@@ -2209,11 +2203,11 @@ public final class L10nTranslations {
                 "Catatan rilis");
         table.put("Remove ad tracking permissions",
                 "Hapus izin pelacakan iklan");
+        table.put("Removes the tap-to-reveal blur only when Tumblr confirms this account may view the content.",
+                "Menghapus buram yang dibuka dengan ketukan hanya jika Tumblr mengonfirmasi bahwa akun ini boleh melihat konten tersebut.");
     }
 
     private static void fillIn4(Map<String, String> table) {
-        table.put("Removes the tap-to-reveal blur only when Tumblr confirms this account may view the content.",
-                "Menghapus buram yang dibuka dengan ketukan hanya jika Tumblr mengonfirmasi bahwa akun ini boleh melihat konten tersebut.");
         table.put("Reorder the bottom bar",
                 "Atur ulang bilah bawah");
         table.put("Report a problem",
@@ -2332,11 +2326,11 @@ public final class L10nTranslations {
                 "Menghapus tab Komunitas dari bilah bawah dan menghentikan tips Komunitas di editor postingan.");
         table.put("Takes the Explore and search button off the bottom bar.",
                 "Menghapus tombol Jelajahi dan pencarian dari bilah bawah.");
+        table.put("Takes the Follow button out of the header of posts from blogs you don't follow yet.",
+                "Menghapus tombol Ikuti dari bagian atas postingan dari blog yang belum kamu ikuti.");
     }
 
     private static void fillIn5(Map<String, String> table) {
-        table.put("Takes the Follow button out of the header of posts from blogs you don't follow yet.",
-                "Menghapus tombol Ikuti dari bagian atas postingan dari blog yang belum kamu ikuti.");
         table.put("Takes the Notifications button off the bottom bar.",
                 "Menghapus tombol Notifikasi dari bilah bawah.");
         table.put("Takes the Save button out of the footer under posts, when Tumblr shows one.",
@@ -2455,11 +2449,11 @@ public final class L10nTranslations {
                 "Pengaturan Tumblr sendiri");
         table.put("Tumblr's own switch for hiding the date on every post.",
                 "Tombol milik Tumblr sendiri untuk menyembunyikan tanggal di setiap postingan.");
+        table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
+                "Alamat web Tumblr dipilih untuk aplikasi ini di pengaturan Android, jadi tautannya terbuka di sini.");
     }
 
     private static void fillIn6(Map<String, String> table) {
-        table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
-                "Alamat web Tumblr dipilih untuk aplikasi ini di pengaturan Android, jadi tautannya terbuka di sini.");
         table.put("TumblrMart buttons",
                 "tombol TumblrMart");
         table.put("Turn off screenshot sharing",
@@ -2537,7 +2531,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(796);
+        Map<String, String> table = new HashMap<>(794);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -2621,8 +2615,6 @@ public final class L10nTranslations {
                 "Fa\u00e7a backup antes de trocar de compila\u00e7\u00e3o");
         table.put("Browse settings",
                 "Explorar configura\u00e7\u00f5es");
-        table.put("Buy me a coffee on Ko-fi",
-                "Me pague um caf\u00e9 no Ko-fi");
         table.put("Cancel",
                 "Cancelar");
         table.put("Changed %1$d setting",
@@ -2669,11 +2661,11 @@ public final class L10nTranslations {
                 "N\u00e3o foi poss\u00edvel limpar os dados de diagn\u00f3stico. Tente novamente.");
         table.put("Couldn't import the settings, and couldn't put back the ones you had. Check the settings on this screen.",
                 "N\u00e3o foi poss\u00edvel importar as configura\u00e7\u00f5es nem restaurar as que voc\u00ea tinha. Confira as configura\u00e7\u00f5es nesta tela.");
+        table.put("Couldn't import the settings. Nothing was changed.",
+                "N\u00e3o foi poss\u00edvel importar as configura\u00e7\u00f5es. Nada foi alterado.");
     }
 
     private static void fillPt_rBR1(Map<String, String> table) {
-        table.put("Couldn't import the settings. Nothing was changed.",
-                "N\u00e3o foi poss\u00edvel importar as configura\u00e7\u00f5es. Nada foi alterado.");
         table.put("Couldn't open that file. Nothing was changed.",
                 "N\u00e3o foi poss\u00edvel abrir esse arquivo. Nada foi alterado.");
         table.put("Couldn't open the file picker. Try again.",
@@ -2792,11 +2784,11 @@ public final class L10nTranslations {
                 "Ocultar curtidas");
         table.put("Hide mention notifications",
                 "Ocultar notifica\u00e7\u00f5es de men\u00e7\u00f5es");
+        table.put("Hide note counts",
+                "Ocultar a contagem de notas");
     }
 
     private static void fillPt_rBR2(Map<String, String> table) {
-        table.put("Hide note counts",
-                "Ocultar a contagem de notas");
         table.put("Hide photo posts",
                 "Ocultar posts de foto");
         table.put("Hide posts with these words",
@@ -2915,11 +2907,11 @@ public final class L10nTranslations {
                 "Procura: %1$s");
         table.put("Make Tumblr feel like yours.",
                 "Deixe o Tumblr com a sua cara.");
+        table.put("Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.",
+                "Deixa as novas telas do modo escuro pretas ou com a cor escura escolhida ao aplicar os patches. As telas abertas mant\u00eam suas cores at\u00e9 o Tumblr reiniciar.");
     }
 
     private static void fillPt_rBR3(Map<String, String> table) {
-        table.put("Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.",
-                "Deixa as novas telas do modo escuro pretas ou com a cor escura escolhida ao aplicar os patches. As telas abertas mant\u00eam suas cores at\u00e9 o Tumblr reiniciar.");
         table.put("Manage muted posts",
                 "Gerenciar posts silenciados");
         table.put("Marks blogs that follow your primary blog when you follow them.",
@@ -3038,11 +3030,11 @@ public final class L10nTranslations {
                 "Notas da vers\u00e3o");
         table.put("Remove ad tracking permissions",
                 "Remover permiss\u00f5es de rastreamento de an\u00fancios");
+        table.put("Removes the tap-to-reveal blur only when Tumblr confirms this account may view the content.",
+                "Remove o desfoque de toque para revelar somente quando o Tumblr confirma que esta conta pode ver o conte\u00fado.");
     }
 
     private static void fillPt_rBR4(Map<String, String> table) {
-        table.put("Removes the tap-to-reveal blur only when Tumblr confirms this account may view the content.",
-                "Remove o desfoque de toque para revelar somente quando o Tumblr confirma que esta conta pode ver o conte\u00fado.");
         table.put("Reorder the bottom bar",
                 "Reordenar a barra de baixo");
         table.put("Report a problem",
@@ -3161,11 +3153,11 @@ public final class L10nTranslations {
                 "Tira a aba Comunidades da barra inferior e para as dicas sobre comunidades no editor de posts.");
         table.put("Takes the Explore and search button off the bottom bar.",
                 "Tira o bot\u00e3o de Explorar e busca da barra de baixo.");
+        table.put("Takes the Follow button out of the header of posts from blogs you don't follow yet.",
+                "Tira o bot\u00e3o Seguir do topo dos posts de blogs que voc\u00ea ainda n\u00e3o segue.");
     }
 
     private static void fillPt_rBR5(Map<String, String> table) {
-        table.put("Takes the Follow button out of the header of posts from blogs you don't follow yet.",
-                "Tira o bot\u00e3o Seguir do topo dos posts de blogs que voc\u00ea ainda n\u00e3o segue.");
         table.put("Takes the Notifications button off the bottom bar.",
                 "Tira o bot\u00e3o de Notifica\u00e7\u00f5es da barra de baixo.");
         table.put("Takes the Save button out of the footer under posts, when Tumblr shows one.",
@@ -3284,11 +3276,11 @@ public final class L10nTranslations {
                 "Configura\u00e7\u00f5es do pr\u00f3prio Tumblr");
         table.put("Tumblr's own switch for hiding the date on every post.",
                 "A op\u00e7\u00e3o do pr\u00f3prio Tumblr para ocultar a data de cada post.");
+        table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
+                "Os endere\u00e7os web do Tumblr est\u00e3o selecionados para este app nas configura\u00e7\u00f5es do Android, ent\u00e3o os links deles abrem aqui.");
     }
 
     private static void fillPt_rBR6(Map<String, String> table) {
-        table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
-                "Os endere\u00e7os web do Tumblr est\u00e3o selecionados para este app nas configura\u00e7\u00f5es do Android, ent\u00e3o os links deles abrem aqui.");
         table.put("TumblrMart buttons",
                 "os bot\u00f5es da TumblrMart");
         table.put("Turn off screenshot sharing",
@@ -3366,7 +3358,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(796);
+        Map<String, String> table = new HashMap<>(794);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -3450,8 +3442,6 @@ public final class L10nTranslations {
                 "Derlemeyi de\u011fi\u015ftirmeden \u00f6nce yedekleyin");
         table.put("Browse settings",
                 "Ayarlar\u0131 ke\u015ffet");
-        table.put("Buy me a coffee on Ko-fi",
-                "Ko-fi'de bana bir kahve \u0131smarla");
         table.put("Cancel",
                 "\u0130ptal");
         table.put("Changed %1$d setting",
@@ -3498,11 +3488,11 @@ public final class L10nTranslations {
                 "Tan\u0131lama verileri temizlenemedi. Tekrar dene.");
         table.put("Couldn't import the settings, and couldn't put back the ones you had. Check the settings on this screen.",
                 "Ayarlar i\u00e7e aktar\u0131lamad\u0131 ve \u00f6nceki ayarlar\u0131n geri y\u00fcklenemedi. Bu ekrandaki ayarlar\u0131 kontrol et.");
+        table.put("Couldn't import the settings. Nothing was changed.",
+                "Ayarlar i\u00e7e aktar\u0131lamad\u0131. Hi\u00e7bir \u015fey de\u011fi\u015ftirilmedi.");
     }
 
     private static void fillTr1(Map<String, String> table) {
-        table.put("Couldn't import the settings. Nothing was changed.",
-                "Ayarlar i\u00e7e aktar\u0131lamad\u0131. Hi\u00e7bir \u015fey de\u011fi\u015ftirilmedi.");
         table.put("Couldn't open that file. Nothing was changed.",
                 "Bu dosya a\u00e7\u0131lamad\u0131. Hi\u00e7bir \u015fey de\u011fi\u015ftirilmedi.");
         table.put("Couldn't open the file picker. Try again.",
@@ -3621,11 +3611,11 @@ public final class L10nTranslations {
                 "Be\u011fenileri gizle");
         table.put("Hide mention notifications",
                 "Bahsetme bildirimlerini gizle");
+        table.put("Hide note counts",
+                "Not say\u0131lar\u0131n\u0131 gizle");
     }
 
     private static void fillTr2(Map<String, String> table) {
-        table.put("Hide note counts",
-                "Not say\u0131lar\u0131n\u0131 gizle");
         table.put("Hide photo posts",
                 "Foto\u011fraf g\u00f6nderilerini gizle");
         table.put("Hide posts with these words",
@@ -3744,11 +3734,11 @@ public final class L10nTranslations {
                 "Aranan: %1$s");
         table.put("Make Tumblr feel like yours.",
                 "Tumblr sana g\u00f6re olsun.");
+        table.put("Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.",
+                "Yeni a\u00e7\u0131lan Karanl\u0131k Mod ekranlar\u0131n\u0131 siyah veya yama s\u0131ras\u0131nda se\u00e7ilen koyu renkte g\u00f6sterir. A\u00e7\u0131k ekranlar Tumblr yeniden ba\u015flat\u0131lana kadar renklerini korur.");
     }
 
     private static void fillTr3(Map<String, String> table) {
-        table.put("Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.",
-                "Yeni a\u00e7\u0131lan Karanl\u0131k Mod ekranlar\u0131n\u0131 siyah veya yama s\u0131ras\u0131nda se\u00e7ilen koyu renkte g\u00f6sterir. A\u00e7\u0131k ekranlar Tumblr yeniden ba\u015flat\u0131lana kadar renklerini korur.");
         table.put("Manage muted posts",
                 "Susturulan g\u00f6nderileri y\u00f6net");
         table.put("Marks blogs that follow your primary blog when you follow them.",
@@ -3867,11 +3857,11 @@ public final class L10nTranslations {
                 "S\u00fcr\u00fcm notlar\u0131");
         table.put("Remove ad tracking permissions",
                 "Reklam izleme izinlerini kald\u0131r");
+        table.put("Removes the tap-to-reveal blur only when Tumblr confirms this account may view the content.",
+                "Dokunarak kald\u0131r\u0131lan bulan\u0131kl\u0131\u011f\u0131 yaln\u0131zca Tumblr bu hesab\u0131n i\u00e7eri\u011fi g\u00f6rebilece\u011fini do\u011frulad\u0131\u011f\u0131nda kald\u0131r\u0131r.");
     }
 
     private static void fillTr4(Map<String, String> table) {
-        table.put("Removes the tap-to-reveal blur only when Tumblr confirms this account may view the content.",
-                "Dokunarak kald\u0131r\u0131lan bulan\u0131kl\u0131\u011f\u0131 yaln\u0131zca Tumblr bu hesab\u0131n i\u00e7eri\u011fi g\u00f6rebilece\u011fini do\u011frulad\u0131\u011f\u0131nda kald\u0131r\u0131r.");
         table.put("Reorder the bottom bar",
                 "Alt \u00e7ubu\u011fu yeniden s\u0131rala");
         table.put("Report a problem",
@@ -3990,11 +3980,11 @@ public final class L10nTranslations {
                 "Topluluklar sekmesini alt \u00e7ubuktan kald\u0131r\u0131r ve g\u00f6nderi d\u00fczenleyicideki Topluluklar ipu\u00e7lar\u0131n\u0131 durdurur.");
         table.put("Takes the Explore and search button off the bottom bar.",
                 "Ke\u015ffet ve arama d\u00fc\u011fmesini alt \u00e7ubuktan kald\u0131r\u0131r.");
+        table.put("Takes the Follow button out of the header of posts from blogs you don't follow yet.",
+                "Hen\u00fcz takip etmedi\u011fin bloglar\u0131n g\u00f6nderilerinin ba\u015fl\u0131\u011f\u0131ndaki Takip et d\u00fc\u011fmesini kald\u0131r\u0131r.");
     }
 
     private static void fillTr5(Map<String, String> table) {
-        table.put("Takes the Follow button out of the header of posts from blogs you don't follow yet.",
-                "Hen\u00fcz takip etmedi\u011fin bloglar\u0131n g\u00f6nderilerinin ba\u015fl\u0131\u011f\u0131ndaki Takip et d\u00fc\u011fmesini kald\u0131r\u0131r.");
         table.put("Takes the Notifications button off the bottom bar.",
                 "Bildirimler d\u00fc\u011fmesini alt \u00e7ubuktan kald\u0131r\u0131r.");
         table.put("Takes the Save button out of the footer under posts, when Tumblr shows one.",
@@ -4113,11 +4103,11 @@ public final class L10nTranslations {
                 "Tumblr'\u0131n kendi ayarlar\u0131");
         table.put("Tumblr's own switch for hiding the date on every post.",
                 "Her g\u00f6nderideki tarihi gizlemek i\u00e7in Tumblr'\u0131n kendi anahtar\u0131.");
+        table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
+                "Tumblr'\u0131n web adresleri Android ayarlar\u0131nda bu uygulama i\u00e7in se\u00e7ili, bu y\u00fczden ba\u011flant\u0131lar\u0131 burada a\u00e7\u0131l\u0131r.");
     }
 
     private static void fillTr6(Map<String, String> table) {
-        table.put("Tumblr's web addresses are selected for this app in Android's settings, so their links open here.",
-                "Tumblr'\u0131n web adresleri Android ayarlar\u0131nda bu uygulama i\u00e7in se\u00e7ili, bu y\u00fczden ba\u011flant\u0131lar\u0131 burada a\u00e7\u0131l\u0131r.");
         table.put("TumblrMart buttons",
                 "TumblrMart d\u00fc\u011fmeleri");
         table.put("Turn off screenshot sharing",

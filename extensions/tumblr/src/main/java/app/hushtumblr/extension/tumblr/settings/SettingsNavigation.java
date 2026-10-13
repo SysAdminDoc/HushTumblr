@@ -83,7 +83,7 @@ final class SettingsNavigation extends BaseAdapter {
      * go at most one level deep.
      */
     private final Preference moreHeading;
-    /** The home page's last row, which opens HushTumblr's Ko-fi page in a browser. */
+    /** The home page's last row, which opens HushTumblr's Ko-fi page in a browser. A title, no summary. */
     private final Preference support;
     /** Just above Support: a new GitHub bug report with this install's versions filled in. */
     private final Preference report;
@@ -146,7 +146,7 @@ final class SettingsNavigation extends BaseAdapter {
         browse.setTitle(L10n.t("Browse settings"));
         moreHeading = new HushTumblrPreferenceFragment.Heading(context);
         moreHeading.setTitle(L10n.t("More settings"));
-        support = link(context, L10n.t("Support HushTumblr"), L10n.t("Buy me a coffee on Ko-fi"), SettingsIcons.COFFEE);
+        support = link(context, L10n.t("Support HushTumblr"), null, SettingsIcons.COFFEE);
         support.setKey(HushTumblrPreferenceFragment.SUPPORT);
         support.setOnPreferenceClickListener(row -> { HushTumblrPreferenceFragment.openSupport(row.getContext()); return true; });
         report = link(context, L10n.t("Report a problem"),
