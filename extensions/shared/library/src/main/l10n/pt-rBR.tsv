@@ -376,6 +376,8 @@ No muted posts. Use a post's menu to mute it on this device.	Nenhum post silenci
 Updating muted posts	Atualizando posts silenciados
 Couldn't update muted posts. Your list is unchanged. Try again.	Não foi possível atualizar os posts silenciados. Sua lista não mudou. Tente de novo.
 Couldn't restore muted posts. Try again.	Não foi possível restaurar os posts silenciados. Tente de novo.
+Couldn't read this account's muted posts. Nothing was changed or deleted.	Não foi possível ler os posts silenciados desta conta. Nada foi alterado nem apagado.
+Reading muted posts	Lendo posts silenciados
 The active account changed. Reopen Manage muted posts to see its list.	A conta ativa mudou. Abra Gerenciar posts silenciados novamente para ver a lista dela.
 Unmute post %1$s	Reexibir o post %1$s
 Saving changes	Salvando alterações

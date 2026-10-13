@@ -25,6 +25,8 @@ import android.widget.TextView;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -45,6 +47,7 @@ import org.robolectric.annotation.Config;
 import org.robolectric.annotation.GraphicsMode;
 import org.robolectric.shadows.ShadowAlertDialog;
 import org.robolectric.shadows.ShadowLooper;
+import org.robolectric.shadows.ShadowToast;
 
 import app.hushtumblr.extension.shared.SettingsContextRule;
 import app.hushtumblr.extension.shared.WorkerPoolForTests;
@@ -580,6 +583,115 @@ public class RootPostMuteUiTest {
             assertTrue(tag + " can't be scrolled into view", below(list, header, text) <= 0);
         }
         dialog.dismiss();
+    }
+
+    /** Restarts with [document] where account-a's list belongs, so its read fails. */
+    private File unreadable(byte[] document) throws Exception {
+        File saved = RootPostMutes.fileForTests;
+        Files.write(saved.toPath(), document);
+        RootPostMutes.resetForTests();
+        account("account-a");
+        assertNull(RootPostMutes.capture());
+        return saved;
+    }
+
+    @Test public void aLoadingAccountGetsTheNotYetNoticeAndAFailedReadOpensARetryWithNoPrivateDetail() throws Exception {
+        mute("7101");
+        File saved = RootPostMutes.fileForTests;
+        // Cut short, the document still holds the account key and the muted post.
+        String cut = new String(Files.readAllBytes(saved.toPath()), StandardCharsets.UTF_8).replace("}", "");
+        assertTrue(cut, cut.contains("7101"));
+        Files.write(saved.toPath(), cut.getBytes(StandardCharsets.UTF_8));
+        RootPostMutes.resetForTests();
+        List<Runnable> queued = new ArrayList<>(); RootPostMutes.workerForTests = queued::add;
+        account("account-a");
+        ShadowToast.reset();
+        assertNull(RootPostMuteUi.manage(controller.get()));
+        assertEquals("Muted posts aren't available for this account yet", ShadowToast.getTextOfLatestToast());
+        queued.remove(0).run();
+        ShadowToast.reset();
+        AlertDialog dialog = RootPostMuteUi.manage(controller.get());
+        assertNotNull(dialog);
+        assertNull(ShadowToast.getTextOfLatestToast());
+        layoutManager(dialog);
+        View decor = dialog.getWindow().getDecorView();
+        assertTrue(notice(dialog).isShown());
+        assertEquals("Couldn't read this account's muted posts. Nothing was changed or deleted.",
+                notice(dialog).getText().toString());
+        Button retry = decor.findViewWithTag("root_mute_retry");
+        assertTrue(retry.isShown()); assertTrue(retry.isEnabled());
+        assertFalse(dialog.getButton(AlertDialog.BUTTON_NEUTRAL).isEnabled());
+        ListView list = find(decor, ListView.class);
+        assertEquals(0, list.getCount() - list.getHeaderViewsCount());
+        StringBuilder all = new StringBuilder();
+        shownText(decor, all);
+        String shown = all.toString();
+        assertFalse("a muted post is on the screen: " + shown, shown.contains("7101"));
+        assertFalse("an account key is on the screen: " + shown, shown.matches("(?s).*[0-9a-f]{64}.*"));
+        assertFalse("the file's name is on the screen: " + shown, shown.contains(saved.getName()));
+        assertFalse("an unread list reads as an empty one: " + shown, shown.contains("No muted posts"));
+        dialog.dismiss();
+    }
+
+    @Test public void retryReadsOnceOnTheWorkerKeepsDamagedBytesAndShowsTheRepairedList() throws Exception {
+        mute("7101");
+        byte[] good = Files.readAllBytes(RootPostMutes.fileForTests.toPath());
+        byte[] damaged = "{broken".getBytes(StandardCharsets.UTF_8);
+        File saved = unreadable(damaged);
+        AlertDialog dialog = RootPostMuteUi.manage(controller.get());
+        layoutManager(dialog);
+        View decor = dialog.getWindow().getDecorView();
+        Button retry = decor.findViewWithTag("root_mute_retry");
+        retry.performClick();
+        layoutManager(dialog);
+        assertTrue(dialog.isShowing());
+        assertTrue(notice(dialog).getText().toString().startsWith("Couldn't read"));
+        assertTrue(retry.isShown()); assertTrue(retry.isEnabled());
+        assertArrayEquals(damaged, Files.readAllBytes(saved.toPath()));
+        List<Runnable> queued = new ArrayList<>(); RootPostMutes.workerForTests = queued::add;
+        retry.performClick(); retry.performClick();
+        assertEquals(1, queued.size());
+        assertFalse(retry.isEnabled());
+        assertEquals("Reading muted posts", notice(dialog).getText().toString());
+        assertNull(RootPostMutes.capture());
+        Files.write(saved.toPath(), good);
+        queued.get(0).run();
+        layoutManager(dialog);
+        assertEquals(java.util.Set.of("7101"), RootPostMutes.capture().roots);
+        ListView list = find(decor, ListView.class);
+        assertEquals(1, list.getCount() - list.getHeaderViewsCount());
+        assertFalse(retry.isShown()); assertFalse(notice(dialog).isShown());
+        TextView help = decor.findViewWithTag("root_mute_help");
+        assertTrue(help.isShown());
+        assertTrue(dialog.getButton(AlertDialog.BUTTON_NEUTRAL).isEnabled());
+        // The recovered list is the working one: its row unmutes as usual.
+        RootPostMutes.workerForTests = Runnable::run;
+        clickFirstPost(dialog);
+        assertTrue(RootPostMutes.capture().roots.isEmpty());
+        dialog.dismiss();
+    }
+
+    @Test public void anAccountChangeClosesTheUnreadManagerAndItsQueuedRetryCannotReachTheNextAccount() throws Exception {
+        mute("7101");
+        byte[] good = Files.readAllBytes(RootPostMutes.fileForTests.toPath());
+        File saved = unreadable("{broken".getBytes(StandardCharsets.UTF_8));
+        AlertDialog dialog = RootPostMuteUi.manage(controller.get());
+        layoutManager(dialog);
+        Button retry = dialog.getWindow().getDecorView().findViewWithTag("root_mute_retry");
+        List<Runnable> queued = new ArrayList<>(); RootPostMutes.workerForTests = queued::add;
+        retry.performClick();
+        assertEquals(1, queued.size());
+        Files.write(saved.toPath(), good);
+        RootPostMutes.workerForTests = Runnable::run;
+        account("account-b");
+        ShadowLooper.idleMainLooper();
+        assertFalse("The old account's failure stayed open", dialog.isShowing());
+        queued.get(0).run();
+        assertTrue(RootPostMutes.capture().roots.isEmpty());
+        // The retained button belongs to a closed window and the old account.
+        List<Runnable> later = new ArrayList<>(); RootPostMutes.workerForTests = later::add;
+        retry.performClick();
+        assertTrue(later.isEmpty());
     }
 
     /** How far the bottom of [text], a child of the list's [header], sits below the list's visible rows. */

@@ -379,6 +379,8 @@ No muted posts. Use a post's menu to mute it on this device.	Tidak ada postingan
 Updating muted posts	Memperbarui postingan yang dibisukan
 Couldn't update muted posts. Your list is unchanged. Try again.	Tidak dapat memperbarui postingan yang dibisukan. Daftar Anda tidak berubah. Coba lagi.
 Couldn't restore muted posts. Try again.	Tidak dapat memulihkan postingan yang dibisukan. Coba lagi.
+Couldn't read this account's muted posts. Nothing was changed or deleted.	Tidak dapat membaca postingan yang dibisukan untuk akun ini. Tidak ada yang diubah atau dihapus.
+Reading muted posts	Membaca postingan yang dibisukan
 The active account changed. Reopen Manage muted posts to see its list.	Akun aktif telah berubah. Buka kembali Kelola postingan yang dibisukan untuk melihat daftarnya.
 Unmute post %1$s	Tampilkan kembali postingan %1$s
 Saving changes	Menyimpan perubahan

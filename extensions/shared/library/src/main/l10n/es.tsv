@@ -379,6 +379,8 @@ No muted posts. Use a post's menu to mute it on this device.	No hay publicacione
 Updating muted posts	Actualizando publicaciones silenciadas
 Couldn't update muted posts. Your list is unchanged. Try again.	No se pudieron actualizar las publicaciones silenciadas. Tu lista no ha cambiado. Inténtalo de nuevo.
 Couldn't restore muted posts. Try again.	No se pudieron restaurar las publicaciones silenciadas. Inténtalo de nuevo.
+Couldn't read this account's muted posts. Nothing was changed or deleted.	No se pudieron leer las publicaciones silenciadas de esta cuenta. No se cambió ni se eliminó nada.
+Reading muted posts	Leyendo publicaciones silenciadas
 The active account changed. Reopen Manage muted posts to see its list.	La cuenta activa ha cambiado. Vuelve a abrir Gestionar publicaciones silenciadas para ver su lista.
 Unmute post %1$s	Dejar de silenciar la publicación %1$s
 Saving changes	Guardando cambios

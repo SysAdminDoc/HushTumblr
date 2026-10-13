@@ -379,6 +379,8 @@ No muted posts. Use a post's menu to mute it on this device.	Keine stummgeschalt
 Updating muted posts	Stummgeschaltete Posts werden aktualisiert
 Couldn't update muted posts. Your list is unchanged. Try again.	Stummgeschaltete Posts konnten nicht aktualisiert werden. Deine Liste ist unverändert. Versuche es noch einmal.
 Couldn't restore muted posts. Try again.	Stummgeschaltete Posts konnten nicht wiederhergestellt werden. Versuche es noch einmal.
+Couldn't read this account's muted posts. Nothing was changed or deleted.	Die stummgeschalteten Posts dieses Kontos konnten nicht gelesen werden. Es wurde nichts geändert oder gelöscht.
+Reading muted posts	Stummgeschaltete Posts werden gelesen
 The active account changed. Reopen Manage muted posts to see its list.	Das aktive Konto hat sich geändert. Öffne „Stummgeschaltete Posts verwalten“ erneut, um seine Liste zu sehen.
 Unmute post %1$s	Post %1$s wieder anzeigen
 Saving changes	Änderungen werden gespeichert

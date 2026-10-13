@@ -110,6 +110,8 @@ final class RootPostMuteUi {
 
     static AlertDialog manage(Context context) {
         RootPostMutes.Session account = RootPostMutes.capture();
+        // A failed read opens the manager too, which says so and offers a retry. A loading account doesn't.
+        if (account == null) account = RootPostMutes.unreadable();
         Activity owner = activity(context);
         if (account == null || owner == null || owner.isFinishing() || owner.isDestroyed()) {
             Utils.showToastShort(L10n.t("Muted posts aren't available for this account yet")); return null;
@@ -125,8 +127,9 @@ final class RootPostMuteUi {
         final ListView list;
         final List<String> roots = new ArrayList<>();
         final BaseAdapter rows;
-        final TextView empty;
+        final TextView help, limits, empty;
         final UndoPanel feedback;
+        final Button retry;
         final Runnable accountChanged;
         boolean alive = true, busy;
 
@@ -149,11 +152,20 @@ final class RootPostMuteUi {
             feedback = new UndoPanel(context, this::ready, this::setBusy, ignored -> refreshRows(), ignored -> controls());
             feedback.setVisibility(View.GONE);
             header.addView(feedback);
-            TextView help = paragraph(context, L10n.t("Stored only on this device for this Tumblr account. Tap a post to unmute it. Up to 500 posts are kept per account."));
+            retry = new Button(context);
+            retry.setTag("root_mute_retry");
+            retry.setText(L10n.t("Retry"));
+            ScreenColors.DEFAULT.secondaryAction(retry);
+            retry.setVisibility(View.GONE);
+            retry.setOnClickListener(ignored -> readAgain());
+            LinearLayout.LayoutParams retryPosition = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            retryPosition.gravity = Gravity.END;
+            header.addView(retry, retryPosition);
+            help = paragraph(context, L10n.t("Stored only on this device for this Tumblr account. Tap a post to unmute it. Up to 500 posts are kept per account."));
             help.setTag("root_mute_help");
             header.addView(help);
             // Says the policy only. Which other accounts have a list, or how many, never shows here.
-            TextView limits = paragraph(context, L10n.t("This device keeps muted post lists for eight accounts. When a ninth account mutes a post, the list that's gone longest without a change is deleted."));
+            limits = paragraph(context, L10n.t("This device keeps muted post lists for eight accounts. When a ninth account mutes a post, the list that's gone longest without a change is deleted."));
             limits.setTag("root_mute_limits");
             header.addView(limits);
             empty = paragraph(context, L10n.t("No muted posts. Use a post's menu to mute it on this device."));
@@ -244,14 +256,33 @@ final class RootPostMuteUi {
             list.setSelection(0);
         }
 
+        /** One read at a time, on the worker. A reply for a closed window or another account is dropped. */
+        void readAgain() {
+            if (!ready() || busy || RootPostMutes.capture() != null) return;
+            setBusy(true);
+            feedback.message(L10n.t("Reading muted posts"));
+            RootPostMutes.retry(account, ignored -> {
+                if (!ready()) return;
+                setBusy(false);
+                feedback.setVisibility(View.GONE);
+                refreshRows();
+            });
+        }
+
         void refreshRows() {
             if (!ready()) return;
             RootPostMutes.Session current = RootPostMutes.capture();
-            if (current == null || !RootPostMutes.current(account)) return;
+            if (!RootPostMutes.current(account)) return;
+            // A list that couldn't be read says so and offers another try. It never shows as empty.
+            boolean unread = current == null;
+            if (unread) feedback.message(L10n.t("Couldn't read this account's muted posts. Nothing was changed or deleted."));
+            retry.setVisibility(unread ? View.VISIBLE : View.GONE);
+            help.setVisibility(unread ? View.GONE : View.VISIBLE);
+            limits.setVisibility(unread ? View.GONE : View.VISIBLE);
             roots.clear();
-            roots.addAll(current.roots);
+            if (!unread) roots.addAll(current.roots);
             Collections.reverse(roots);
-            empty.setVisibility(roots.isEmpty() ? View.VISIBLE : View.GONE);
+            empty.setVisibility(unread || !roots.isEmpty() ? View.GONE : View.VISIBLE);
             rows.notifyDataSetChanged();
             controls();
         }
@@ -264,7 +295,10 @@ final class RootPostMuteUi {
             controls();
         }
 
-        void controls() { dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setEnabled(!busy && !roots.isEmpty()); }
+        void controls() {
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setEnabled(!busy && !roots.isEmpty());
+            retry.setEnabled(!busy);
+        }
     }
 
     /** A failed write retains recovery. A refused rebind removes only its root, preserving later edits. */
