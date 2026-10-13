@@ -198,6 +198,19 @@ Tumblr's own settings	Tumblr'ın kendi ayarları
 Finding them	Nerede bulunur
 Notifications	Bildirimler
 In Tumblr: %1$s	Tumblr'da: %1$s
+# context: a row on the Tumblr's own settings page: a short name for one of Tumblr's controls, then what it covers.
+Dashboard order and suggestions	Pano sırası ve öneriler
+Whether Following puts the best posts first, and which suggested posts Tumblr adds to your dashboard.	Takip Edilenler'in en iyi gönderileri önce gösterip göstermeyeceği ve Tumblr'ın panona hangi önerilen gönderileri eklediği.
+Autoplay	Otomatik oynatma
+Whether GIFs and videos play by themselves: always, only on Wi-Fi or never.	GIF'lerin ve videoların kendiliğinden oynayıp oynamayacağı: her zaman, yalnızca Wi-Fi'da veya hiçbir zaman.
+Post dates	Gönderi tarihleri
+Tumblr's own switch for hiding the date on every post.	Her gönderideki tarihi gizlemek için Tumblr'ın kendi anahtarı.
+Filtered tags and words	Filtrelenen etiketler ve kelimeler
+Tags and post content Tumblr hides for your account on every device, and its mature content choices.	Tumblr'ın hesabın için her cihazda gizlediği etiketler ve gönderi içerikleri ile yetişkin içerik seçenekleri.
+Color palette	Renk paleti
+Tumblr's color themes. Dark background color only changes the dark ones.	Tumblr'ın renk temaları. Koyu arka plan rengi yalnızca koyu olanları değiştirir.
+Push notifications	Anlık bildirimler
+Which activity sends you a notification, for every blog or for one.	Hangi etkinliğin sana bildirim göndereceği, tüm bloglar için veya tek bir blog için.
 # Rows added for HushTumblr.
 Ad tracking	Reklam takibi
 Android sends tumblr.com links to a patched Tumblr only after you select those addresses for it. Selecting them sends their links here. Your other link settings stay as they are.	Android, tumblr.com bağlantılarını yamalı Tumblr'a ancak bu adresleri onun için seçtikten sonra gönderir. Adresleri seçersen bağlantıları buraya gelir. Diğer bağlantı ayarların aynı kalır.

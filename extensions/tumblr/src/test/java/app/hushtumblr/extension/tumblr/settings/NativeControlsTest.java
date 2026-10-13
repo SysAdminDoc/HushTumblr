@@ -10,6 +10,8 @@
 package app.hushtumblr.extension.tumblr.settings;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
 import android.content.ContextWrapper;
@@ -23,7 +25,7 @@ import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,8 +38,8 @@ public class NativeControlsTest {
     @Rule public final SettingsContextRule settingsContext = new SettingsContextRule();
 
     /**
-     * Two paths in the shape the rows take. The step names are stand-ins: the real ones are read
-     * from the declared Tumblr build when its paths are walked.
+     * Two paths in the shape the rows take. The step names are stand-ins, so the label rules are
+     * tested apart from the rows the page lists.
      */
     private static final NativeControls.Control THEME = new NativeControls.Control("App theme",
             "Light, dark or the phone's own theme.",
@@ -49,9 +51,32 @@ public class NativeControlsTest {
             new NativeControls.Step("settings_title", "Settings"),
             new NativeControls.Step("notifications_title", "Notifications"));
 
-    /** No row names a path nobody has walked in the declared build. */
-    @Test public void noPathIsListedBeforeItIsWalkedInTheDeclaredBuild() {
-        assertEquals(Collections.emptyList(), NativeControls.controls());
+    /**
+     * The rows, each a path walked in Tumblr 46.5.0.109. With none of Tumblr's strings to read, a
+     * path shows HushTumblr's English copy of every label.
+     */
+    @Test public void theWalkedControlsAreListedWithTheirPaths() {
+        Context context = RuntimeEnvironment.getApplication();
+        List<String> rows = new ArrayList<>();
+        for (NativeControls.Control control : NativeControls.controls()) {
+            rows.add(control.title + ": " + NativeControls.path(context, control));
+        }
+        assertEquals(Arrays.asList(
+                "Dashboard order and suggestions: Settings > Preferences > Content",
+                "Autoplay: Settings > Preferences > Media auto-play",
+                "Post dates: Settings > Preferences > Interface",
+                "Filtered tags and words: Settings > Preferences > Content filtering",
+                "Color palette: Settings > Preferences > Color palette",
+                "Push notifications: Settings > Notifications"), rows);
+    }
+
+    /** Every row says what the control covers and starts from Tumblr's Settings screen. */
+    @Test public void everyRowSaysWhatItCoversAndStartsAtTumblrsSettings() {
+        for (NativeControls.Control control : NativeControls.controls()) {
+            assertFalse(control.title, control.covers.trim().isEmpty());
+            assertTrue(control.title, control.path.size() >= 2);
+            assertEquals(control.title, "settings_hub_title", control.path.get(0).resource);
+        }
     }
 
     @Test public void eachStepFallsBackToHushTumblrsEnglishWhenTheBuildHasNoSuchLabel() {

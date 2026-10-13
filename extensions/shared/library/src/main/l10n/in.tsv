@@ -198,6 +198,19 @@ Tumblr's own settings	Pengaturan Tumblr sendiri
 Finding them	Cara menemukannya
 Notifications	Notifikasi
 In Tumblr: %1$s	Di Tumblr: %1$s
+# context: a row on the Tumblr's own settings page: a short name for one of Tumblr's controls, then what it covers.
+Dashboard order and suggestions	Urutan dasbor dan saran
+Whether Following puts the best posts first, and which suggested posts Tumblr adds to your dashboard.	Apakah Mengikuti menampilkan postingan terbaik lebih dulu, dan postingan saran mana yang ditambahkan Tumblr ke dasbormu.
+Autoplay	Putar otomatis
+Whether GIFs and videos play by themselves: always, only on Wi-Fi or never.	Apakah GIF dan video diputar sendiri: selalu, hanya dengan Wi-Fi, atau tidak pernah.
+Post dates	Tanggal postingan
+Tumblr's own switch for hiding the date on every post.	Tombol milik Tumblr sendiri untuk menyembunyikan tanggal di setiap postingan.
+Filtered tags and words	Tag dan kata yang difilter
+Tags and post content Tumblr hides for your account on every device, and its mature content choices.	Tag dan isi postingan yang disembunyikan Tumblr untuk akunmu di semua perangkat, serta pilihan konten dewasanya.
+Color palette	Palet warna
+Tumblr's color themes. Dark background color only changes the dark ones.	Tema warna Tumblr. Warna latar gelap hanya mengubah tema yang gelap.
+Push notifications	Notifikasi push
+Which activity sends you a notification, for every blog or for one.	Aktivitas mana yang mengirimimu notifikasi, untuk semua blog atau satu blog.
 # Rows added for HushTumblr.
 Ad tracking	Pelacakan iklan
 Android sends tumblr.com links to a patched Tumblr only after you select those addresses for it. Selecting them sends their links here. Your other link settings stay as they are.	Android mengirim tautan tumblr.com ke Tumblr yang ditambal hanya setelah Anda memilih alamat itu untuknya. Memilihnya mengarahkan tautannya ke sini. Pengaturan tautan Anda yang lain tidak berubah.

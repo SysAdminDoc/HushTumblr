@@ -198,6 +198,19 @@ Tumblr's own settings	Configuración propia de Tumblr
 Finding them	Dónde encontrarlas
 Notifications	Notificaciones
 In Tumblr: %1$s	En Tumblr: %1$s
+# context: a row on the Tumblr's own settings page: a short name for one of Tumblr's controls, then what it covers.
+Dashboard order and suggestions	Orden del panel y sugerencias
+Whether Following puts the best posts first, and which suggested posts Tumblr adds to your dashboard.	Si Siguiendo muestra primero las mejores publicaciones y qué publicaciones sugeridas añade Tumblr a tu panel.
+Autoplay	Reproducción automática
+Whether GIFs and videos play by themselves: always, only on Wi-Fi or never.	Si los GIF y los vídeos se reproducen solos: siempre, solo con Wi-Fi o nunca.
+Post dates	Fechas de las publicaciones
+Tumblr's own switch for hiding the date on every post.	El interruptor propio de Tumblr para ocultar la fecha de cada publicación.
+Filtered tags and words	Etiquetas y palabras filtradas
+Tags and post content Tumblr hides for your account on every device, and its mature content choices.	Las etiquetas y el contenido que Tumblr oculta para tu cuenta en todos los dispositivos, y sus opciones de contenido para adultos.
+Color palette	Paleta de colores
+Tumblr's color themes. Dark background color only changes the dark ones.	Los temas de color de Tumblr. Color de fondo oscuro solo cambia los oscuros.
+Push notifications	Notificaciones push
+Which activity sends you a notification, for every blog or for one.	Qué actividad te envía una notificación, para todos los blogs o para uno.
 # Rows added for HushTumblr.
 Ad tracking	Seguimiento publicitario
 Android sends tumblr.com links to a patched Tumblr only after you select those addresses for it. Selecting them sends their links here. Your other link settings stay as they are.	Android envía los enlaces de tumblr.com a un Tumblr parcheado solo después de que selecciones esas direcciones para él. Al seleccionarlas, sus enlaces llegan aquí. Tus otros ajustes de enlaces no cambian.

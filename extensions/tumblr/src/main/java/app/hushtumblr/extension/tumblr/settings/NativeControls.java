@@ -27,8 +27,11 @@ import app.hushtumblr.extension.shared.ResourceUtils;
  * strings, in the language Tumblr shows, so the path reads the way its menus do. A label a build
  * doesn't have falls back to HushTumblr's copy of the English.
  *
- * <p>No rows yet: each path has to be walked in Tumblr 46.5.0.109 and its string names read from
- * the build before it's listed here, and a path nobody has checked would send people the wrong way.
+ * <p>Every path here was walked in Tumblr 46.5.0.109 and each step's string name read from that
+ * build. Tumblr's server sends the labels of most switches on its Preferences screen (Best stuff
+ * first, Hide timestamps, Suggested posts), so the build has no string for them: those rows stop at
+ * the section heading the switch sits under, which the build does name. A path nobody has checked
+ * would send people the wrong way, so a new row waits for its walk.
  */
 final class NativeControls {
     private NativeControls() {}
@@ -63,7 +66,31 @@ final class NativeControls {
 
     /** Tumblr's controls in the order the rows show them, with the declared build's string names. */
     static List<Control> controls() {
-        return Collections.emptyList();
+        // The gear on the account tab opens SettingsHubActivity, titled by settings_hub_title, and
+        // its Preferences row opens SettingsPreferencesActivity.
+        Step settings = new Step("settings_hub_title", "Settings");
+        Step preferences = new Step("settings_hub_row_preferences", "Preferences");
+        return Collections.unmodifiableList(Arrays.asList(
+                new Control(L10n.t("Dashboard order and suggestions"),
+                        L10n.t("Whether Following puts the best posts first, and which suggested posts Tumblr adds "
+                            + "to your dashboard."),
+                        settings, preferences, new Step("settings_preferences_section_content", "Content")),
+                new Control(L10n.t("Autoplay"),
+                        L10n.t("Whether GIFs and videos play by themselves: always, only on Wi-Fi or never."),
+                        settings, preferences, new Step("setting_media_autoplay", "Media auto-play")),
+                new Control(L10n.t("Post dates"),
+                        L10n.t("Tumblr's own switch for hiding the date on every post."),
+                        settings, preferences, new Step("settings_preferences_section_interface", "Interface")),
+                new Control(L10n.t("Filtered tags and words"),
+                        L10n.t("Tags and post content Tumblr hides for your account on every device, and its "
+                            + "mature content choices."),
+                        settings, preferences, new Step("settings_preferences_content_filtering", "Content filtering")),
+                new Control(L10n.t("Color palette"),
+                        L10n.t("Tumblr's color themes. Dark background color only changes the dark ones."),
+                        settings, preferences, new Step("setting_label_theme", "Color palette")),
+                new Control(L10n.t("Push notifications"),
+                        L10n.t("Which activity sends you a notification, for every blog or for one."),
+                        settings, new Step("settings_hub_row_notifications", "Notifications"))));
     }
 
     /** The row's summary: what the control covers, then the path to it. */
