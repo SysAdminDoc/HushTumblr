@@ -3251,13 +3251,15 @@ try {
         & git -C $gateRepo config user.name 'Gate Contract'
         & git -C $gateRepo config user.email 'gate@example.invalid'
         Initialize-HookFixtureCatalog $gateRepo
-        foreach ($suite in @('scripts/test-script-contracts.ps1', 'scripts/test-tumblr-sources.ps1')) {
+        foreach ($suite in @('scripts/test-script-contracts.ps1', 'scripts/test-tumblr-sources.ps1',
+                'scripts/test-injected-registers.ps1', 'scripts/test-resource-table-check.ps1')) {
             Set-Content -LiteralPath (Join-Path $gateRepo $suite) -Encoding UTF8 -Value @(
                 'param([string]$Root)', 'exit 0')
         }
         & git -C $gateRepo add patches-list.json scripts/patch-target.ps1 `
             gradle/wrapper/gradle-wrapper.properties gradle/wrapper/gradle-wrapper.jar `
-            scripts/build-advisories.ps1 scripts/test-script-contracts.ps1 scripts/test-tumblr-sources.ps1
+            scripts/build-advisories.ps1 scripts/test-script-contracts.ps1 scripts/test-tumblr-sources.ps1 `
+            scripts/test-injected-registers.ps1 scripts/test-resource-table-check.ps1
         $gateMarker = Join-Path $hookRoot 'gate-ran.txt'
         $gateStub = Join-Path $hookRoot 'gate-wrapper.ps1'
         Set-Content -LiteralPath $gateStub -Encoding UTF8 -Value @(

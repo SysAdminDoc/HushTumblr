@@ -629,7 +629,8 @@ try {
     Assert-True ($record.package -ceq 'com.tumblr' -and [string]$record.versionCode -ceq '1460500109' -and
         (@($record.signers) -join ',') -ceq $pinned[0] -and $record.baseSha256 -ceq (Get-TestSha256 $baseA) -and
         $record.mergedSha256 -ceq (Get-TestSha256 $signedMerged) -and @($record.apks).Count -eq 2 -and
-        (@($record.apks | ForEach-Object { "$($_.member)=$($_.split)" } | Sort-Object) -join ';') -ceq 'base.apk=;split_config.xxhdpi.apk=config.xxhdpi') `
+        # AAPT2 adds the density qualifier's API 4 floor to the manifest split name.
+        (@($record.apks | ForEach-Object { "$($_.member)=$($_.split)" } | Sort-Object) -join ';') -ceq 'base.apk=;split_config.xxhdpi.apk=config.xxhdpi_v4') `
         "The record of the signed merge is wrong: $($record | ConvertTo-Json -Depth 5 -Compress)"
     Assert-AuthenticMerge -Merged $signedMerged -Base $baseA -PackageName 'com.tumblr'
     $signedCaught = Invoke-Check -Stock $signedMerged -Patched $baseApk -Name 'signed-merged-stock'
