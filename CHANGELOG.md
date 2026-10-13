@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* **Tumblr:** Hide suggested communities no longer empties a category in Communities' Browse page. The communities listed there stay, and the suggestion cards still go from your dashboard and other feeds.
 * **Tumblr:** A page where every post was hidden no longer leaves a feed on "No results". The feed goes on to the next page, and shows the empty screen only after five empty pages in a row or when there's nothing more to load.
 * **Tumblr:** Hide suggested blogs and Hide suggested communities no longer empty a search's Blogs and Communities tabs. The cards still go from the dashboard and other feeds.
 * **Tumblr:** Visible image descriptions now use the same text color as the post, so they're readable in Tumblr's default True Blue palette. They used to come out light gray on the white card.

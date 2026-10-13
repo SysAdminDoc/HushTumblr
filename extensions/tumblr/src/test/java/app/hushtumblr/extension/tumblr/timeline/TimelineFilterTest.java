@@ -292,14 +292,38 @@ public class TimelineFilterTest {
         }
         String report = String.join("\n", HookStatus.report(""));
         assertTrue(report, report.contains(TimelineFilter.KEPT_RESULT + " 4"));
-        assertTrue(report, report.contains(TimelineFilter.KEPT_RESULT + " 3"));
+        assertTrue(report, report.contains(TimelineFilter.KEPT_RESULT + " 2"));
         assertFalse(report, report.contains("card removed"));
         assertFalse(report, report.contains("heading removed"));
 
         assertEquals("the control: a dashboard loses them", Collections.emptyList(),
                 TimelineItems.onTheDashboard(blogs));
-        assertEquals(Collections.emptyList(), TimelineItems.onTheDashboard(communities));
+        assertEquals("a row is a line of a list and stays", Arrays.asList(communities.get(1)),
+                TimelineItems.onTheDashboard(communities));
         assertEquals(Arrays.asList(mixed.get(2)), TimelineItems.onTheDashboard(mixed));
+    }
+
+    /**
+     * Communities' Browse page lists a category's communities as rows, and loads them through the
+     * dashboard's own response. A row is a line of that list and never a suggestion, so a page of
+     * them comes back as the very list Tumblr built, heading and all, and no page is emptied. A
+     * card between posts still goes.
+     */
+    @Test
+    public void aListOfCommunitiesKeepsItsRows() {
+        Settings.HIDE_SUGGESTED_COMMUNITIES.save(true);
+        List<Object> category = Arrays.asList(TimelineItems.of(TimelineObjectType.TITLE),
+                TimelineItems.of(TimelineObjectType.COMMUNITY_ROW), TimelineItems.of(TimelineObjectType.COMMUNITY_ROW));
+        HookStatus.clear();
+        assertSame(category, TimelineItems.onTheDashboard(category));
+        String report = String.join("\n", HookStatus.report(""));
+        assertFalse(report, report.contains("card removed"));
+        assertFalse(report, report.contains("heading removed"));
+        assertFalse(report, report.contains(TimelinePaging.EMPTIED));
+
+        List<Object> feed = Arrays.asList(TimelineItems.post(), TimelineItems.of(TimelineObjectType.COMMUNITY_CARD),
+                TimelineItems.of(TimelineObjectType.COMMUNITY_ROW));
+        assertEquals(Arrays.asList(feed.get(0), feed.get(2)), TimelineItems.onTheDashboard(feed));
     }
 
     /** The rest of the filter doesn't ask where a page came from: an ad in search results still goes. */

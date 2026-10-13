@@ -83,11 +83,14 @@ public final class TimelineFilter {
             "BLOG_CARD", "COMPACT_BLOG_CARD", "BLOG_ROW", "TINY_BLOG_CAROUSEL_CARD")));
 
     /**
-     * Communities Tumblr suggests you join. A community's own header card isn't here: it heads that
+     * Communities Tumblr suggests you join: the card a feed shows, alone or in a carousel. A
+     * {@code COMMUNITY_ROW} isn't one. It's a line in a list of communities, the ones under a
+     * category of Communities' Browse page or in a search's Communities tab. Browse loads through
+     * the dashboard's own response, so only the kind tells its list from a feed, and with rows in
+     * here a category came up empty. A community's own header card isn't here either: it heads that
      * community's page.
      */
-    static final Set<String> COMMUNITY_TYPES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-            "COMMUNITY_CARD", "COMMUNITY_ROW")));
+    static final Set<String> COMMUNITY_TYPES = Collections.singleton("COMMUNITY_CARD");
 
     /** Tumblr TV's "Watch it" rows and the video hub cards in them. */
     static final Set<String> WATCH_IT_TYPES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
