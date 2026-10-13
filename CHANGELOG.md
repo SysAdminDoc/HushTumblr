@@ -13,7 +13,7 @@
 * **Tumblr:** The status card puts Pause or Resume below its message. Both actions save on a worker and prevent repeated taps. Choice dialogs share the page styling, and tab-order rows show an upward arrow for their move action.
 * **Tumblr:** A local mute that can't refresh the feed or undo itself keeps an Unmute post action. Recovery changes only that post and preserves later edits to the account's muted list.
 * **Tumblr:** Clearing diagnostic data and putting it back use a shared worker operation. Rows show progress, prevent repeated actions and keep failed restores available to retry.
-* Development source is 0.0.5. The new save and recovery paths still need validation.
+* **Tooling:** Settings title checks compile against the public Android SDK.
 * **Tumblr:** Word lists, tab order and switches save on a worker. Busy controls keep the saved value visible, block repeated taps and report failures. Replacement settings pages refresh when an edit finishes. Backup actions stay busy while a failed refresh waits to retry.
 * **Tumblr:** Backup previews and import results count word lists and tab order alongside switches. Import and Undo messages now refer to settings, and the setup guide explains which data the backup includes.
 * **Tumblr:** Settings controls now show focus and disabled states consistently. Search and word fields have clearer boundaries, and dialog actions wrap without losing their touch targets at large text sizes.

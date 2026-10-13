@@ -53,7 +53,8 @@ public class SettingsMastheadTest {
         assertTrue(node.isHeading());
         // The name a screen reader announces the window by. The attributes' own title is the
         // window manager's debug name, which Window.setTitle never touches.
-        assertEquals("HushTumblr", String.valueOf(dialog.getDialog().getWindow().getAttributes().accessibilityTitle));
+        assertEquals("HushTumblr", String.valueOf(ReflectionHelpers.<CharSequence>getField(
+                dialog.getDialog().getWindow().getAttributes(), "accessibilityTitle")));
         assertNotNull(text(dialog.getView(), L10n.t("Make Tumblr feel like yours.")));
     }
 
@@ -131,7 +132,8 @@ public class SettingsMastheadTest {
         TextView subtitle = text(dialog.getView(), L10n.t("Ads, reblogs and word filters"));
         assertNotNull(subtitle);
         assertEquals(View.VISIBLE, subtitle.getVisibility());
-        assertEquals(L10n.t("Feed"), String.valueOf(dialog.getDialog().getWindow().getAttributes().accessibilityTitle));
+        assertEquals(L10n.t("Feed"), String.valueOf(ReflectionHelpers.<CharSequence>getField(
+                dialog.getDialog().getWindow().getAttributes(), "accessibilityTitle")));
         TextView hideAds = text(dialog.getView(), L10n.t("Hide ads"));
         assertNotNull("Retry lost the Feed preferences", hideAds);
         assertTrue(hideAds.isShown());
