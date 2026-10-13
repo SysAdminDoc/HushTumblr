@@ -7,6 +7,7 @@ package app.hushtumblr.extension.tumblr.timeline;
 
 import com.tumblr.rumblr.model.BlazedPost;
 import com.tumblr.rumblr.model.Display;
+import com.tumblr.rumblr.model.RelatedBlogsJsonAdapter;
 import com.tumblr.rumblr.model.SponsoredState;
 import com.tumblr.rumblr.model.TimelineObject;
 import com.tumblr.rumblr.model.TimelineObjectType;
@@ -15,6 +16,10 @@ import com.tumblr.rumblr.model.post.DisplayType;
 import com.tumblr.rumblr.model.post.blocks.ImageBlock;
 import com.tumblr.rumblr.model.post.blocks.TextBlock;
 import com.tumblr.rumblr.model.post.blocks.VideoBlock;
+import com.tumblr.rumblr.response.SearchResultsResponseJsonAdapter;
+import com.tumblr.rumblr.response.WrappedTimelineResponseJsonAdapter;
+import com.tumblr.rumblr.response.timeline.LikesResponseJsonAdapter;
+import com.tumblr.rumblr.response.timeline.PostsResponseJsonAdapter;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -92,10 +97,46 @@ public final class TimelineItems {
         return aPageLoses(of(type));
     }
 
-    /** True when a page with [item] between two posts comes back without it. */
+    /** True when a dashboard page with [item] between two posts comes back without it. */
     private static boolean aPageLoses(TimelineObject item) {
         List<Object> page = Arrays.asList(post(), item, post());
-        return TimelineFilter.filter(page).size() == 2;
+        return onTheDashboard(page).size() == 2;
+    }
+
+    /**
+     * What the filter makes of [page] while Tumblr parses a page of the dashboard, or of any other
+     * feed that loads the same response. The filter tells feeds from search results by the adapter
+     * on the call stack, so the call goes through a class with that adapter's name.
+     */
+    public static List<?> onTheDashboard(List<?> page) {
+        return WrappedTimelineResponseJsonAdapter.fromJson(() -> TimelineFilter.filter(page));
+    }
+
+    /** What the filter makes of [page] while Tumblr parses a page of a blog's posts. */
+    public static List<?> onABlog(List<?> page) {
+        return PostsResponseJsonAdapter.fromJson(() -> TimelineFilter.filter(page));
+    }
+
+    /** What the filter makes of [page] while Tumblr parses a page of likes. */
+    public static List<?> inLikes(List<?> page) {
+        return LikesResponseJsonAdapter.fromJson(() -> TimelineFilter.filter(page));
+    }
+
+    /** What the filter makes of [page] while Tumblr parses a page of any tab of a search. */
+    public static List<?> inSearchResults(List<?> page) {
+        return SearchResultsResponseJsonAdapter.fromJson(() -> TimelineFilter.filter(page));
+    }
+
+    /**
+     * What the filter makes of [page] as the blogs offered beside a blog card, when that card is
+     * itself in a page of search results or, with [inSearch] false, in a dashboard page.
+     */
+    public static List<?> besideABlogCard(List<?> page, boolean inSearch) {
+        return inSearch
+                ? SearchResultsResponseJsonAdapter.fromJson(
+                        () -> RelatedBlogsJsonAdapter.fromJson(() -> TimelineFilter.filter(page)))
+                : WrappedTimelineResponseJsonAdapter.fromJson(
+                        () -> RelatedBlogsJsonAdapter.fromJson(() -> TimelineFilter.filter(page)));
     }
 
     /** A post Tumblr's model would carry, with [blocks] as its own content and no trail. */

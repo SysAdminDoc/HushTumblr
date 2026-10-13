@@ -54,6 +54,12 @@ Turning an ad-request flag off is a second line behind the feed filter, not a re
 - **Lists to filter**, both reached from Moshi with the parsed list as the first argument:
   - `Timeline.<init>(List, PaginationLink)` (wrapped by `WrappedTimelineResponse`, the dashboard path).
   - `TimelineResponse.<init>(List, PaginationLink, Map)`, the base of `PostsResponse` (blog posts), `LikesResponse` and `BlogSearchResponse`.
+- **What a page was parsed for.** A page with items is only built inside a generated Moshi adapter's `fromJson`, so that adapter is on the call stack when the list hook runs, and Moshi finds these adapters by name, so their names are kept. `Timeline.<init>(List, PaginationLink)` is called from `TimelineJsonAdapter.fromJson` alone. Ten adapters read a `Timeline` field, and each asks Moshi for it in its constructor (`const-class Timeline`):
+  - Search: `response.SearchResultsResponseJsonAdapter`. Every search tab is a `GraywaterSearchResultsFragment` (`SearchActivity$f.X(I)` builds nothing else). It loads `TumblrCommonService.searchTimeline` (`GET timeline/search`) and then `searchTimelinePagination`, the only two calls that return a `SearchResultsResponse`. Blog and community cards here are results, so the two suggestion switches leave them.
+  - Feeds: `response.WrappedTimelineResponseJsonAdapter` (dashboard, Explore, hubs, the Communities tab), `response.CommunityHubResponseJsonAdapter` (`/v2/hubs/{hub_name}/timeline`, a tag's page) and `model.RelatedBlogsJsonAdapter` (the blogs offered beside a blog card).
+  - The rest, where the cards are left alone: `response.PostNotesResponse`, `response.PostResponse`, `response.VideoHubResponse`, `model.post.PostReplyPreview`, `model.note.RichNote` and `model.answertime.AnswertimeResponse`.
+  - `TimelineResponse.<init>` is called from the `fromJson` of the `TimelineResponse`, `PostsResponse`, `LikesResponse` and `BlogSearchResponse` adapters, the last three through their own constructors. All four count as feeds.
+  - `TumblrCommunitiesTimelineService.browsePage` (`/v2/communities/categories`) and `categoryPage` load a `WrappedTimelineResponse` like the dashboard does, so nothing on the stack tells those two lists from a feed.
 - `post.Post` is partly renamed. Its Blaze data is `BlazeCampaign` (field `Q1`, getter `G()`) and `BlazeControl` (field `c2`, getter `h0()`). A post on your own blog can carry both, so they don't mark a paid placement on their own.
 
 ## Settings hub

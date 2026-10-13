@@ -6,6 +6,7 @@
 package app.hushtumblr.extension.tumblr.timeline;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -25,6 +26,7 @@ import org.robolectric.annotation.Config;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -254,6 +256,98 @@ public class TimelineFilterTest {
         assertSame(page, TimelineFilter.filter(page));
     }
 
+    /**
+     * Every tab of a search loads its pages as a search response, and there a blog or community card
+     * is what was searched for. With both switches on the Blogs tab's cards and rows, the Communities
+     * tab's, and a mixed page with headings and a carousel all come back as the very list Tumblr
+     * built, while the same pages in a dashboard lose every card.
+     */
+    @Test
+    public void aSearchKeepsTheBlogsAndCommunitiesItFound() {
+        Settings.HIDE_SUGGESTED_BLOGS.save(true);
+        Settings.HIDE_SUGGESTED_COMMUNITIES.save(true);
+        List<Object> blogs = Arrays.asList(TimelineItems.of(TimelineObjectType.BLOG_CARD),
+                TimelineItems.of(TimelineObjectType.BLOG_ROW), TimelineItems.of(TimelineObjectType.COMPACT_BLOG_CARD));
+        List<Object> communities = Arrays.asList(TimelineItems.of(TimelineObjectType.COMMUNITY_CARD),
+                TimelineItems.of(TimelineObjectType.COMMUNITY_ROW));
+        List<Object> mixed = Arrays.asList(TimelineItems.of(TimelineObjectType.TITLE),
+                TimelineItems.carousel(TimelineObjectType.CAROUSEL,
+                        TimelineItems.of(TimelineObjectType.TINY_BLOG_CAROUSEL_CARD)),
+                TimelineItems.post(), TimelineItems.of(TimelineObjectType.TITLE),
+                TimelineItems.of(TimelineObjectType.COMMUNITY_CARD), TimelineItems.of(TimelineObjectType.TITLE));
+
+        for (List<Object> page : Arrays.asList(blogs, communities, mixed)) {
+            assertSame(page, TimelineItems.inSearchResults(page));
+        }
+        String report = String.join("\n", HookStatus.report(""));
+        assertTrue(report, report.contains(TimelineFilter.KEPT_RESULT + " 4"));
+        assertTrue(report, report.contains(TimelineFilter.KEPT_RESULT + " 3"));
+        assertFalse(report, report.contains("card removed"));
+        assertFalse(report, report.contains("heading removed"));
+
+        assertEquals("the control: a dashboard loses them", Collections.emptyList(),
+                TimelineItems.onTheDashboard(blogs));
+        assertEquals(Collections.emptyList(), TimelineItems.onTheDashboard(communities));
+        assertEquals(Arrays.asList(mixed.get(2)), TimelineItems.onTheDashboard(mixed));
+    }
+
+    /** The rest of the filter doesn't ask where a page came from: an ad in search results still goes. */
+    @Test
+    public void aSearchStillLosesItsAds() {
+        Settings.HIDE_SUGGESTED_BLOGS.save(true);
+        List<Object> page = Arrays.asList(TimelineItems.of(TimelineObjectType.BLOG_CARD),
+                TimelineItems.of(TimelineObjectType.GEMINI_AD), TimelineItems.of(TimelineObjectType.BLOG_CARD));
+        assertEquals(Arrays.asList(page.get(0), page.get(2)), TimelineItems.inSearchResults(page));
+    }
+
+    /**
+     * The cards go from each response that's a feed: the dashboard's, a blog's posts and likes. A
+     * page built under no response the filter knows keeps them, and the report says so.
+     */
+    @Test
+    public void theCardsGoOnlyFromAPageKnownToBeAFeed() {
+        Settings.HIDE_SUGGESTED_BLOGS.save(true);
+        List<Object> page = Arrays.asList(TimelineItems.post(), TimelineItems.of(TimelineObjectType.BLOG_CARD));
+        List<Object> left = Arrays.asList(page.get(0));
+        assertEquals(left, TimelineItems.onTheDashboard(page));
+        assertEquals(left, TimelineItems.onABlog(page));
+        assertEquals(left, TimelineItems.inLikes(page));
+        assertEquals("the blogs beside a dashboard's card", left, TimelineItems.besideABlogCard(page, false));
+        assertSame("the blogs beside a search result", page, TimelineItems.besideABlogCard(page, true));
+
+        HookStatus.clear();
+        assertSame(page, TimelineFilter.filter(page));
+        String report = String.join("\n", HookStatus.report(""));
+        assertTrue(report, report.contains(TimelineFilter.KEPT_UNKNOWN + " 1"));
+    }
+
+    /**
+     * How the filter reads the call stack: a search adapter anywhere on it means results, a feed's
+     * adapter without one means a feed, and a class that only looks like one means neither.
+     */
+    @Test
+    public void thePageIsKnownByTheAdapterParsingIt() {
+        String search = PageSource.SEARCH_RESULTS;
+        assertEquals(7, PageSource.FEEDS.size());
+        for (String feed : PageSource.FEEDS) {
+            assertEquals(feed, PageSource.FEED, PageSource.of(frames("okhttp3.Call", feed, "app.Hook")));
+            assertEquals(feed, PageSource.RESULTS, PageSource.of(frames(search, feed)));
+            assertEquals(feed, PageSource.RESULTS, PageSource.of(frames(feed, search)));
+        }
+        assertEquals(PageSource.RESULTS, PageSource.of(frames(search)));
+        assertEquals(PageSource.UNKNOWN, PageSource.of(frames()));
+        assertEquals(PageSource.UNKNOWN, PageSource.of(frames("com.tumblr.rumblr.model.TimelineJsonAdapter",
+                "com.tumblr.rumblr.response.PostNotesResponseJsonAdapter",
+                "com.tumblr.rumblr.response.SearchResultsResponse", search + "$Companion",
+                "com.tumblr.rumblr.response.WrappedTimelineResponse")));
+    }
+
+    private static StackTraceElement[] frames(String... owners) {
+        StackTraceElement[] frames = new StackTraceElement[owners.length];
+        for (int i = 0; i < owners.length; i++) frames[i] = new StackTraceElement(owners[i], "fromJson", null, -1);
+        return frames;
+    }
+
     @Test
     public void aCarouselGoesByItsFirstItem() {
         Settings.HIDE_SUGGESTED_BLOGS.save(true);
@@ -266,7 +360,7 @@ public class TimelineFilterTest {
                 TimelineItems.of(TimelineObjectType.BLOG_CARD));
         Object empty = TimelineItems.carousel(TimelineObjectType.CAROUSEL);
         List<Object> page = Arrays.asList(blogs, TimelineItems.post(), avatars, posts, empty);
-        List<?> shown = TimelineFilter.filter(page);
+        List<?> shown = TimelineItems.onTheDashboard(page);
         assertEquals(Arrays.asList(page.get(1), posts, empty), shown);
     }
 
@@ -278,7 +372,7 @@ public class TimelineFilterTest {
                 TimelineItems.of(TimelineObjectType.BLOG_CARD));
         TimelineFilter.carouselItemsForTests = null;
         List<Object> page = Arrays.asList(blogs, TimelineItems.post());
-        assertSame(page, TimelineFilter.filter(page));
+        assertSame(page, TimelineItems.onTheDashboard(page));
     }
 
     /**
@@ -292,7 +386,7 @@ public class TimelineFilterTest {
                 TimelineItems.of(TimelineObjectType.TITLE), TimelineItems.of(TimelineObjectType.COMMUNITY_CARD),
                 TimelineItems.post(), TimelineItems.of(TimelineObjectType.TITLE), TimelineItems.post(),
                 TimelineItems.of(TimelineObjectType.TITLE));
-        List<?> shown = TimelineFilter.filter(page);
+        List<?> shown = TimelineItems.onTheDashboard(page);
         assertEquals(Arrays.asList(page.get(3), page.get(4), page.get(5)), shown);
         String report = String.join("\n", HookStatus.report(""));
         assertTrue(report, report.contains("heading removed 3"));
@@ -315,26 +409,26 @@ public class TimelineFilterTest {
         Settings.HIDE_SUGGESTED_COMMUNITIES.save(true);
         List<Object> page = Arrays.asList(TimelineItems.of(TimelineObjectType.COMMUNITY_HUB_HEADER_CARD),
                 TimelineItems.post());
-        assertSame(page, TimelineFilter.filter(page));
+        assertSame(page, TimelineItems.onTheDashboard(page));
     }
 
     /**
-     * Each of [kinds] goes with [setting] on, and stays with it off, paused, or without its patch's
-     * capability.
+     * In a dashboard page each of [kinds] goes with [setting] on, and stays with it off, paused, or
+     * without its patch's capability.
      */
     private static void checkCards(BooleanSetting setting, Set<String> kinds) {
         for (String kind : kinds) {
             List<Object> page = Arrays.asList(TimelineItems.post(), TimelineItems.of(TimelineObjectType.valueOf(kind)),
                     TimelineItems.post());
-            assertSame(kind + " with the switch off", page, TimelineFilter.filter(page));
+            assertSame(kind + " with the switch off", page, TimelineItems.onTheDashboard(page));
             setting.save(true);
-            List<?> shown = TimelineFilter.filter(page);
+            List<?> shown = TimelineItems.onTheDashboard(page);
             assertEquals(kind, Arrays.asList(page.get(0), page.get(2)), shown);
             PauseForTests.pause(HushTumblrPause.Reason.SWITCH);
-            assertSame(kind + " paused", page, TimelineFilter.filter(page));
+            assertSame(kind + " paused", page, TimelineItems.onTheDashboard(page));
             PauseForTests.resume();
             PatchFamilyForTests.capabilities(EnumSet.of(PatchFamily.Capability.TIMELINE_ADS));
-            assertSame(kind + " without the patch", page, TimelineFilter.filter(page));
+            assertSame(kind + " without the patch", page, TimelineItems.onTheDashboard(page));
             PatchFamilyForTests.capabilities(EnumSet.allOf(PatchFamily.Capability.class));
             setting.resetToDefault();
         }
