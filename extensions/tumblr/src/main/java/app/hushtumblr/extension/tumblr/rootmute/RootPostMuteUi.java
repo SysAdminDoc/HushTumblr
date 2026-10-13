@@ -150,7 +150,12 @@ final class RootPostMuteUi {
             feedback.setVisibility(View.GONE);
             header.addView(feedback);
             TextView help = paragraph(context, L10n.t("Stored only on this device for this Tumblr account. Tap a post to unmute it. Up to 500 posts are kept per account."));
+            help.setTag("root_mute_help");
             header.addView(help);
+            // Says the policy only. Which other accounts have a list, or how many, never shows here.
+            TextView limits = paragraph(context, L10n.t("This device keeps muted post lists for eight accounts. When a ninth account mutes a post, the list that's gone longest without a change is deleted."));
+            limits.setTag("root_mute_limits");
+            header.addView(limits);
             empty = paragraph(context, L10n.t("No muted posts. Use a post's menu to mute it on this device."));
             header.addView(empty);
             list.addHeaderView(header, null, false);

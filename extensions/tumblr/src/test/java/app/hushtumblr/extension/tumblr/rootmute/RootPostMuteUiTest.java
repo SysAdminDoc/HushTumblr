@@ -523,6 +523,79 @@ public class RootPostMuteUiTest {
         dialog.dismiss();
     }
 
+    @Test public void theManagerStatesBothRetentionLimitsAndShowsNothingOfAnotherAccount() {
+        mute("7101");
+        account("account-b"); mute("7202");
+        AlertDialog dialog = RootPostMuteUi.manage(controller.get());
+        layoutManager(dialog);
+        View decor = dialog.getWindow().getDecorView();
+        TextView limits = decor.findViewWithTag("root_mute_limits");
+        assertNotNull(limits);
+        assertTrue(limits.isShown());
+        // The copy names both numbers, so a changed limit has to change the copy with it.
+        assertEquals(500, RootPostMuteStore.MAX_ROOTS);
+        assertEquals(8, RootPostMuteStore.MAX_ACCOUNTS);
+        StringBuilder all = new StringBuilder();
+        shownText(decor, all);
+        String shown = all.toString();
+        assertTrue(shown, shown.contains("Up to 500 posts are kept per account."));
+        assertEquals("This device keeps muted post lists for eight accounts. When a ninth account mutes a post, "
+                + "the list that's gone longest without a change is deleted.", limits.getText().toString());
+        assertTrue(shown, shown.contains("7202"));
+        assertFalse("another account's post is on the screen: " + shown, shown.contains("7101"));
+        assertFalse("an account key is on the screen: " + shown, shown.matches("(?s).*[0-9a-f]{64}.*"));
+        dialog.dismiss();
+    }
+
+    @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(qualifiers = "ar-rEG-w390dp-h844dp-night-xhdpi")
+    public void bothRetentionLimitsStayReadableAtTwiceTheTextSizeInRtl() {
+        Configuration config = new Configuration(controller.get().getResources().getConfiguration());
+        config.fontScale = 2f;
+        controller.get().getResources().updateConfiguration(config, null);
+        for (int i = 1; i <= 20; i++) mute(String.valueOf(1000 + i));
+        controller.visible();
+        AlertDialog dialog = RootPostMuteUi.manage(controller.get());
+        ShadowLooper.idleMainLooper();
+        View decor = dialog.getWindow().getDecorView();
+        measure(decor, 716, 1688);
+        ListView list = find(decor, ListView.class);
+        for (String tag : new String[]{"root_mute_help", "root_mute_limits"}) {
+            TextView text = decor.findViewWithTag(tag);
+            assertNotNull(tag, text);
+            android.text.Layout lines = text.getLayout();
+            assertNotNull(tag, lines);
+            assertTrue(tag, lines.getLineCount() > 1);
+            assertEquals(tag + " lost its end", text.getText().length(), lines.getLineEnd(lines.getLineCount() - 1));
+            int room = text.getWidth() - text.getCompoundPaddingLeft() - text.getCompoundPaddingRight();
+            for (int line = 0; line < lines.getLineCount(); line++) {
+                assertEquals(tag, 0, lines.getEllipsisCount(line));
+                assertTrue(tag + " runs past its edge", lines.getLineMax(line) <= room);
+            }
+            assertTrue(tag + " is cut off", text.getHeight()
+                    >= lines.getHeight() + text.getCompoundPaddingTop() + text.getCompoundPaddingBottom());
+            // The header can be taller than the list at this size, so its end is reached by scrolling.
+            View header = (View) text.getParent();
+            for (int tries = 0; tries < 8 && below(list, header, text) > 0; tries++) list.scrollListBy(below(list, header, text));
+            assertTrue(tag + " can't be scrolled into view", below(list, header, text) <= 0);
+        }
+        dialog.dismiss();
+    }
+
+    /** How far the bottom of [text], a child of the list's [header], sits below the list's visible rows. */
+    private static int below(ListView list, View header, View text) {
+        return header.getTop() + text.getBottom() - (list.getHeight() - list.getPaddingBottom());
+    }
+
+    private static void shownText(View view, StringBuilder into) {
+        if (view.getVisibility() != View.VISIBLE) return;
+        if (view instanceof TextView) into.append(((TextView) view).getText()).append('\n');
+        if (view.getContentDescription() != null) into.append(view.getContentDescription()).append('\n');
+        if (view instanceof ViewGroup) for (int i = 0; i < ((ViewGroup) view).getChildCount(); i++) {
+            shownText(((ViewGroup) view).getChildAt(i), into);
+        }
+    }
+
     private static void clickFirstPost(AlertDialog dialog) {
         layoutManager(dialog);
         ListView list = find(dialog.getWindow().getDecorView(), ListView.class);

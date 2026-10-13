@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(766);
+        Map<String, String> table = new HashMap<>(768);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -739,6 +739,8 @@ public final class L10nTranslations {
                 "Dieser Build enth\u00e4lt die Teile nicht, die %1$s behandeln.");
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
                 "Dieser Build behandelt %1$s. Es fehlen die Teile f\u00fcr %2$s.");
+        table.put("This device keeps muted post lists for eight accounts. When a ninth account mutes a post, the list that's gone longest without a change is deleted.",
+                "Dieses Ger\u00e4t speichert Listen stummgeschalteter Posts f\u00fcr acht Konten. Wenn ein neuntes Konto einen Post stummschaltet, wird die Liste gel\u00f6scht, die am l\u00e4ngsten unver\u00e4ndert ist.");
         table.put("This list is too large for a settings backup. Shorten it before saving. Your draft is still here.",
                 "Diese Liste ist zu gro\u00df f\u00fcr eine Einstellungssicherung. K\u00fcrze sie vor dem Speichern. Dein Entwurf bleibt hier.");
         table.put("This phone has no file picker, so there's no way to choose a file here.",
@@ -795,11 +797,11 @@ public final class L10nTranslations {
                 "Post wieder anzeigen");
         table.put("Unmute post %1$s",
                 "Post %1$s wieder anzeigen");
-        table.put("Unmute posts or clear this account's private list",
-                "Posts wieder anzeigen oder die private Liste dieses Kontos leeren");
     }
 
     private static void fillDe6(Map<String, String> table) {
+        table.put("Unmute posts or clear this account's private list",
+                "Posts wieder anzeigen oder die private Liste dieses Kontos leeren");
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
                 "Bis zum Fortsetzen verh\u00e4lt sich jeder Schalter au\u00dfer der Debug-Protokollierung, als w\u00e4re er aus. Was beim Patchen festgelegt wurde, bleibt aktiv.");
         table.put("Update instructions",
@@ -849,7 +851,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(766);
+        Map<String, String> table = new HashMap<>(768);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -1538,6 +1540,8 @@ public final class L10nTranslations {
                 "Esta versi\u00f3n no incluye las partes que se encargan de %1$s.");
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
                 "Esta versi\u00f3n se encarga de %1$s. Faltan las partes para %2$s.");
+        table.put("This device keeps muted post lists for eight accounts. When a ninth account mutes a post, the list that's gone longest without a change is deleted.",
+                "Este dispositivo guarda listas de publicaciones silenciadas para ocho cuentas. Cuando una novena cuenta silencia una publicaci\u00f3n, se elimina la lista que lleva m\u00e1s tiempo sin cambios.");
         table.put("This list is too large for a settings backup. Shorten it before saving. Your draft is still here.",
                 "Esta lista es demasiado grande para una copia de los ajustes. Ac\u00f3rtala antes de guardarla. Tu borrador sigue aqu\u00ed.");
         table.put("This phone has no file picker, so there's no way to choose a file here.",
@@ -1594,11 +1598,11 @@ public final class L10nTranslations {
                 "Dejar de silenciar la publicaci\u00f3n");
         table.put("Unmute post %1$s",
                 "Dejar de silenciar la publicaci\u00f3n %1$s");
-        table.put("Unmute posts or clear this account's private list",
-                "Dejar de silenciar publicaciones o vaciar la lista privada de esta cuenta");
     }
 
     private static void fillEs6(Map<String, String> table) {
+        table.put("Unmute posts or clear this account's private list",
+                "Dejar de silenciar publicaciones o vaciar la lista privada de esta cuenta");
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
                 "Hasta que reanudes, todos los interruptores, salvo el Registro de depuraci\u00f3n, funcionan como si estuvieran desactivados. Lo que se aplic\u00f3 al parchear se mantiene.");
         table.put("Update instructions",
@@ -1648,7 +1652,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(766);
+        Map<String, String> table = new HashMap<>(768);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -2337,6 +2341,8 @@ public final class L10nTranslations {
                 "Build ini tidak menyertakan bagian yang menangani %1$s.");
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
                 "Build ini menangani %1$s. Bagian untuk %2$s tidak ada.");
+        table.put("This device keeps muted post lists for eight accounts. When a ninth account mutes a post, the list that's gone longest without a change is deleted.",
+                "Perangkat ini menyimpan daftar postingan yang dibisukan untuk delapan akun. Saat akun kesembilan membisukan postingan, daftar yang paling lama tidak berubah akan dihapus.");
         table.put("This list is too large for a settings backup. Shorten it before saving. Your draft is still here.",
                 "Daftar ini terlalu besar untuk cadangan pengaturan. Persingkat sebelum menyimpan. Draf Anda masih ada di sini.");
         table.put("This phone has no file picker, so there's no way to choose a file here.",
@@ -2393,11 +2399,11 @@ public final class L10nTranslations {
                 "Tampilkan kembali postingan");
         table.put("Unmute post %1$s",
                 "Tampilkan kembali postingan %1$s");
-        table.put("Unmute posts or clear this account's private list",
-                "Tampilkan kembali postingan atau kosongkan daftar pribadi akun ini");
     }
 
     private static void fillIn6(Map<String, String> table) {
+        table.put("Unmute posts or clear this account's private list",
+                "Tampilkan kembali postingan atau kosongkan daftar pribadi akun ini");
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
                 "Sampai Anda melanjutkan, semua sakelar kecuali Pencatatan debug dianggap nonaktif. Yang diatur saat Anda menambal tetap aktif.");
         table.put("Update instructions",
@@ -2447,7 +2453,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(766);
+        Map<String, String> table = new HashMap<>(768);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -3136,6 +3142,8 @@ public final class L10nTranslations {
                 "Esta vers\u00e3o n\u00e3o inclui as partes que cuidam de %1$s.");
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
                 "Esta vers\u00e3o cuida de %1$s. Faltam as partes para %2$s.");
+        table.put("This device keeps muted post lists for eight accounts. When a ninth account mutes a post, the list that's gone longest without a change is deleted.",
+                "Este dispositivo mant\u00e9m listas de posts silenciados para oito contas. Quando uma nona conta silencia um post, a lista que est\u00e1 h\u00e1 mais tempo sem mudan\u00e7as \u00e9 apagada.");
         table.put("This list is too large for a settings backup. Shorten it before saving. Your draft is still here.",
                 "Esta lista \u00e9 grande demais para um backup das configura\u00e7\u00f5es. Reduza-a antes de salvar. Seu rascunho continua aqui.");
         table.put("This phone has no file picker, so there's no way to choose a file here.",
@@ -3192,11 +3200,11 @@ public final class L10nTranslations {
                 "Reexibir post");
         table.put("Unmute post %1$s",
                 "Reexibir o post %1$s");
-        table.put("Unmute posts or clear this account's private list",
-                "Volte a mostrar posts ou limpe a lista privada desta conta");
     }
 
     private static void fillPt_rBR6(Map<String, String> table) {
+        table.put("Unmute posts or clear this account's private list",
+                "Volte a mostrar posts ou limpe a lista privada desta conta");
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
                 "At\u00e9 voc\u00ea retomar, todas as op\u00e7\u00f5es, menos o Registro de depura\u00e7\u00e3o, funcionam como se estivessem desligadas. O que foi definido ao aplicar os patches continua ativo.");
         table.put("Update instructions",
@@ -3246,7 +3254,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(766);
+        Map<String, String> table = new HashMap<>(768);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -3935,6 +3943,8 @@ public final class L10nTranslations {
                 "Bu s\u00fcr\u00fcm %1$s ile ilgilenen par\u00e7alar\u0131 i\u00e7ermiyor.");
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
                 "Bu s\u00fcr\u00fcm %1$s ile ilgileniyor. %2$s i\u00e7in par\u00e7alar eksik.");
+        table.put("This device keeps muted post lists for eight accounts. When a ninth account mutes a post, the list that's gone longest without a change is deleted.",
+                "Bu cihaz sekiz hesap i\u00e7in susturulan g\u00f6nderi listesi saklar. Dokuzuncu bir hesap g\u00f6nderi susturdu\u011funda, en uzun s\u00fcredir de\u011fi\u015fmeyen liste silinir.");
         table.put("This list is too large for a settings backup. Shorten it before saving. Your draft is still here.",
                 "Bu liste ayar yede\u011fi i\u00e7in \u00e7ok b\u00fcy\u00fck. Kaydetmeden \u00f6nce k\u0131salt\u0131n. Tasla\u011f\u0131n\u0131z h\u00e2l\u00e2 burada.");
         table.put("This phone has no file picker, so there's no way to choose a file here.",
@@ -3991,11 +4001,11 @@ public final class L10nTranslations {
                 "G\u00f6nderiyi yeniden g\u00f6ster");
         table.put("Unmute post %1$s",
                 "%1$s g\u00f6nderisini yeniden g\u00f6ster");
-        table.put("Unmute posts or clear this account's private list",
-                "G\u00f6nderilerin susturmas\u0131n\u0131 kald\u0131r\u0131n veya bu hesab\u0131n \u00f6zel listesini temizleyin");
     }
 
     private static void fillTr6(Map<String, String> table) {
+        table.put("Unmute posts or clear this account's private list",
+                "G\u00f6nderilerin susturmas\u0131n\u0131 kald\u0131r\u0131n veya bu hesab\u0131n \u00f6zel listesini temizleyin");
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
                 "Devam ettirene kadar Hata ay\u0131klama g\u00fcnl\u00fc\u011f\u00fc d\u0131\u015f\u0131ndaki her anahtar kapal\u0131ym\u0131\u015f gibi davran\u0131r. Yamalad\u0131\u011f\u0131nda ayarlananlar devrede kal\u0131r.");
         table.put("Update instructions",

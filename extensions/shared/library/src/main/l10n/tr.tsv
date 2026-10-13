@@ -364,6 +364,7 @@ Post muted locally	Gönderi bu cihazda susturuldu
 Muted posts restored	Susturulan gönderiler geri yüklendi
 Muted posts aren't available for this account yet	Susturulan gönderiler bu hesap için henüz kullanılamıyor
 Stored only on this device for this Tumblr account. Tap a post to unmute it. Up to 500 posts are kept per account.	Yalnızca bu cihazda ve bu Tumblr hesabı için saklanır. Susturmayı kaldırmak için bir gönderiye dokunun. Hesap başına en fazla 500 gönderi saklanır.
+This device keeps muted post lists for eight accounts. When a ninth account mutes a post, the list that's gone longest without a change is deleted.	Bu cihaz sekiz hesap için susturulan gönderi listesi saklar. Dokuzuncu bir hesap gönderi susturduğunda, en uzun süredir değişmeyen liste silinir.
 Post	Gönderi
 Clear muted posts	Susturulan gönderileri temizle
 Post unmuted	Gönderinin susturması kaldırıldı
