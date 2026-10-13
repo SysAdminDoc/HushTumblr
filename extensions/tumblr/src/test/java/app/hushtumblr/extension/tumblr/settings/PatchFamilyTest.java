@@ -368,12 +368,14 @@ public class PatchFamilyTest {
     public void dependentOptionsCannotReportAFilterOnWhenItsMasterIsOff() {
         Settings.HIDE_REBLOGS.save(false);
         Settings.KEEP_TAGGED_REBLOGS.save(true);
+        Settings.KEEP_REBLOGS_WITH_CONTENT.save(true);
         Settings.HIDE_POSTS_WITH_WORDS.save(false);
         for (BooleanSetting scope : Arrays.asList(Settings.WORDS_CURRENT_TEXT, Settings.WORDS_REBLOG_TRAIL,
                 Settings.WORDS_TAGS, Settings.WORDS_SUMMARY)) scope.save(true);
         Set<PatchFamily> build = EnumSet.of(PatchFamily.HIDE_REBLOGS, PatchFamily.HIDE_POSTS_WITH_WORDS);
         List<String> off = PatchFamily.reportLines(build, false);
-        assertEquals("Hide reblogs: disabled by its switch (hushtumblr_hide_reblogs=off, hushtumblr_keep_tagged_reblogs=on)", off.get(0));
+        assertEquals("Hide reblogs: disabled by its switch (hushtumblr_hide_reblogs=off, hushtumblr_keep_tagged_reblogs=on, "
+                + "hushtumblr_keep_reblogs_with_content=on)", off.get(0));
         assertEquals("Hide posts with these words: disabled by its switch (hushtumblr_hide_posts_with_words=off, "
                 + "hushtumblr_words_current_text=on, hushtumblr_words_reblog_trail=on, hushtumblr_words_tags=on, "
                 + "hushtumblr_words_summary=on)", off.get(1));
@@ -385,7 +387,19 @@ public class PatchFamilyTest {
         List<String> paused = PatchFamily.reportLines(build, true);
         for (int i = 0; i < 2; i++) assertEquals(on.get(i).replace(": on (", ": disabled while paused (saved "), paused.get(i));
         assertTrue(Settings.KEEP_TAGGED_REBLOGS.savedValue());
+        assertTrue(Settings.KEEP_REBLOGS_WITH_CONTENT.savedValue());
         assertTrue(Settings.WORDS_REBLOG_TRAIL.savedValue());
+    }
+
+    /** The reblog exceptions are options of Hide reblogs: no patch, status flag or hook of their own. */
+    @Test
+    public void theReblogExceptionsAddNoPatchOrHook() throws Exception {
+        assertEquals(Arrays.asList(Settings.HIDE_REBLOGS, Settings.KEEP_TAGGED_REBLOGS, Settings.KEEP_REBLOGS_WITH_CONTENT),
+                PatchFamily.HIDE_REBLOGS.switches);
+        assertEquals(EnumSet.of(PatchFamily.Capability.REBLOG_POSTS), PatchFamily.HIDE_REBLOGS.expectedCapabilities());
+        JSONArray patches = new JSONObject(new String(Files.readAllBytes(patchesList().toPath()),
+                StandardCharsets.UTF_8)).getJSONArray("patches");
+        assertEquals("an option of a patch isn't a patch", patches.length() - 1, PatchFamily.values().length);
     }
 
     @Test

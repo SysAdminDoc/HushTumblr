@@ -257,6 +257,10 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting KEEP_TAGGED_REBLOGS =
             new BooleanSetting("hushtumblr_keep_tagged_reblogs", FALSE);
 
+    /** Keep reblogs whose own content isn't empty, while leaving the other enabled post rules in force. */
+    public static final BooleanSetting KEEP_REBLOGS_WITH_CONTENT =
+            new BooleanSetting("hushtumblr_keep_reblogs_with_content", FALSE);
+
     /**
      * Posts with a video anywhere in them, the reblog trail included, leave each page of posts
      * Tumblr loads ({@link app.hushtumblr.extension.tumblr.timeline.PostRules}).

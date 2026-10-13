@@ -267,6 +267,7 @@ public class SettingsBackupTest {
                 Settings.HIDE_NOTIFICATIONS_COUNT,
                 Settings.HIDE_REBLOGS,
                 Settings.KEEP_TAGGED_REBLOGS,
+                Settings.KEEP_REBLOGS_WITH_CONTENT,
                 Settings.HIDE_NOTIFICATION_LIKES,
                 Settings.HIDE_NOTIFICATION_REBLOGS,
                 Settings.HIDE_NOTIFICATION_REPLIES,
@@ -2358,17 +2359,43 @@ public class SettingsBackupTest {
     public void olderReblogBackupsKeepTheirOriginalBehaviorAndUndoRestoresTheException() throws Exception {
         for (int schema : new int[]{1, 2}) {
             Settings.KEEP_TAGGED_REBLOGS.save(true);
+            Settings.KEEP_REBLOGS_WITH_CONTENT.save(true);
             JSONObject file = new JSONObject().put("format", SettingsBackup.FORMAT).put("schema", schema)
                     .put("settings", new JSONObject().put(Settings.HIDE_REBLOGS.key, true));
             SettingsBackup.apply(SettingsBackup.parse(file.toString()));
             assertTrue(Settings.HIDE_REBLOGS.savedValue());
             assertFalse(Settings.KEEP_TAGGED_REBLOGS.savedValue());
+            assertFalse(Settings.KEEP_REBLOGS_WITH_CONTENT.savedValue());
             assertEquals(SettingsBackup.UndoResult.UNDONE, SettingsBackup.undo());
             assertTrue(Settings.KEEP_TAGGED_REBLOGS.savedValue());
+            assertTrue(Settings.KEEP_REBLOGS_WITH_CONTENT.savedValue());
         }
         SettingsBackup.apply(SettingsBackup.parse(new JSONObject().put("format", SettingsBackup.FORMAT)
                 .put("schema", 2).put("settings", new JSONObject().put(Settings.HIDE_ADS.key, true)).toString()));
         assertTrue(Settings.KEEP_TAGGED_REBLOGS.savedValue());
+        assertTrue(Settings.KEEP_REBLOGS_WITH_CONTENT.savedValue());
+    }
+
+    @Test
+    public void theAddedContentReblogExceptionRoundTripsAndUndoes() throws Exception {
+        String key = Settings.KEEP_REBLOGS_WITH_CONTENT.key;
+        assertFalse(new JSONObject(SettingsBackup.create()).getJSONObject("settings").getBoolean(key));
+        Settings.KEEP_REBLOGS_WITH_CONTENT.save(true);
+        String file = SettingsBackup.create();
+        assertTrue(new JSONObject(file).getJSONObject("settings").getBoolean(key));
+        Settings.KEEP_REBLOGS_WITH_CONTENT.save(false);
+        SettingsBackup.Snapshot snapshot = SettingsBackup.parse(file);
+        assertEquals(0, snapshot.unknown);
+        assertEquals(1, snapshot.switchChanges());
+        String preview = SettingsBackupPreference.previewMessage(snapshot);
+        assertTrue(preview, preview.contains(L10n.f("%1$s (%2$s to %3$s)", L10n.t("Keep reblogs with added content"),
+                L10n.t("Off"), L10n.t("On"))));
+        assertEquals(1, SettingsBackup.apply(snapshot));
+        assertTrue(Settings.KEEP_REBLOGS_WITH_CONTENT.savedValue());
+        assertFalse("the file turned on a switch it carries as off", Settings.HIDE_REBLOGS.savedValue());
+        assertEquals("a file read back is the file", file, SettingsBackup.create());
+        assertEquals(SettingsBackup.UndoResult.UNDONE, SettingsBackup.undo());
+        assertFalse(Settings.KEEP_REBLOGS_WITH_CONTENT.savedValue());
     }
 
     @Test

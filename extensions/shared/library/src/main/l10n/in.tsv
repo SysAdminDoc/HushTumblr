@@ -337,6 +337,8 @@ Hide reply notifications	Sembunyikan notifikasi balasan
 Hides these from newly loaded activity pages. Push notifications keep Tumblr's settings.	Menyembunyikannya dari halaman aktivitas yang baru dimuat. Notifikasi push tetap memakai pengaturan Tumblr.
 Keep tagged reblogs	Pertahankan reblog bertag
 When reblogs are hidden, keep ones with tags. Other post filters still apply.	Saat reblog disembunyikan, pertahankan yang memiliki tag. Filter postingan lainnya tetap berlaku.
+Keep reblogs with added content	Pertahankan reblog dengan konten tambahan
+When reblogs are hidden, keep ones where the reblogger added something of their own. Other post filters still apply.	Saat reblog disembunyikan, pertahankan yang diberi tambahan sendiri oleh pembuat reblog. Filter postingan lainnya tetap berlaku.
 Match current post text	Cocokkan teks postingan saat ini
 Match reblog trail text	Cocokkan teks rantai reblog
 Match current post tags	Cocokkan tag postingan saat ini

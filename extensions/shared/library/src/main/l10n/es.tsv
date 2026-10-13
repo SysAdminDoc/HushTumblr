@@ -337,6 +337,8 @@ Hide reply notifications	Ocultar notificaciones de respuestas
 Hides these from newly loaded activity pages. Push notifications keep Tumblr's settings.	Las oculta en las páginas de actividad que se carguen. Las notificaciones push conservan los ajustes de Tumblr.
 Keep tagged reblogs	Conservar reblogs con etiquetas
 When reblogs are hidden, keep ones with tags. Other post filters still apply.	Al ocultar reblogs, conserva los que tengan etiquetas. Los demás filtros siguen aplicándose.
+Keep reblogs with added content	Conservar reblogs con contenido añadido
+When reblogs are hidden, keep ones where the reblogger added something of their own. Other post filters still apply.	Al ocultar reblogs, conserva aquellos en los que quien rebloguea añadió algo propio. Los demás filtros siguen aplicándose.
 Match current post text	Buscar en el texto de la publicación actual
 Match reblog trail text	Buscar en el texto de la cadena de reblogs
 Match current post tags	Buscar en las etiquetas de la publicación actual

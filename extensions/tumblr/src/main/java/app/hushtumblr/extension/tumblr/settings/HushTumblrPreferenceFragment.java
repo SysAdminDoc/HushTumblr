@@ -432,6 +432,11 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                     L10n.t("Keep tagged reblogs"),
                     L10n.t("When reblogs are hidden, keep ones with tags. Other post filters still apply."),
                     SettingsIcons.BLOCK);
+            patchToggle(feed, context, build, PatchFamily.HIDE_REBLOGS, Settings.KEEP_REBLOGS_WITH_CONTENT,
+                    L10n.t("Keep reblogs with added content"),
+                    L10n.t("When reblogs are hidden, keep ones where the reblogger added something of their own. "
+                        + "Other post filters still apply."),
+                    SettingsIcons.BLOCK);
             patchToggle(feed, context, build, PatchFamily.MUTE_ROOT_POSTS, Settings.MUTE_ROOT_POSTS,
                     L10n.t("Mute posts locally"),
                     L10n.t("Add posts to a private list from their menu. Originals and their reblogs stay hidden for this account."),

@@ -337,6 +337,8 @@ Hide reply notifications	Yanıt bildirimlerini gizle
 Hides these from newly loaded activity pages. Push notifications keep Tumblr's settings.	Yeni yüklenen etkinlik sayfalarında bunları gizler. Anlık bildirimler Tumblr ayarlarını kullanmaya devam eder.
 Keep tagged reblogs	Etiketli yeniden bloglamaları tut
 When reblogs are hidden, keep ones with tags. Other post filters still apply.	Yeniden bloglamalar gizlenirken etiketli olanları tutar. Diğer gönderi filtreleri uygulanmaya devam eder.
+Keep reblogs with added content	Eklenen içeriği olan yeniden bloglamaları tut
+When reblogs are hidden, keep ones where the reblogger added something of their own. Other post filters still apply.	Yeniden bloglamalar gizlenirken, yeniden bloglayanın kendi eklemesi olanları tutar. Diğer gönderi filtreleri uygulanmaya devam eder.
 Match current post text	Geçerli gönderi metninde eşleştir
 Match reblog trail text	Yeniden bloglama zinciri metninde eşleştir
 Match current post tags	Geçerli gönderi etiketlerinde eşleştir

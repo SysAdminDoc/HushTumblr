@@ -498,6 +498,7 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
             case "hushtumblr_hide_notifications_count": return L10n.t("Hide the Notifications count");
             case "hushtumblr_hide_reblogs": return L10n.t("Hide reblogs");
             case "hushtumblr_keep_tagged_reblogs": return L10n.t("Keep tagged reblogs");
+            case "hushtumblr_keep_reblogs_with_content": return L10n.t("Keep reblogs with added content");
             case "hushtumblr_hide_notification_likes": return L10n.t("Hide likes");
             case "hushtumblr_hide_notification_reblogs": return L10n.t("Hide reblog notifications");
             case "hushtumblr_hide_notification_replies": return L10n.t("Hide reply notifications");

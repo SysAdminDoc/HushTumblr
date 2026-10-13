@@ -125,6 +125,7 @@ public final class SettingsBackup {
             Settings.HIDE_NOTIFICATIONS_COUNT,
             Settings.HIDE_REBLOGS,
             Settings.KEEP_TAGGED_REBLOGS,
+            Settings.KEEP_REBLOGS_WITH_CONTENT,
             Settings.HIDE_NOTIFICATION_LIKES,
             Settings.HIDE_NOTIFICATION_REBLOGS,
             Settings.HIDE_NOTIFICATION_REPLIES,
@@ -691,8 +692,9 @@ public final class SettingsBackup {
             }
         }
         if ((Integer) schema < 3 && ordered.containsKey(Settings.HIDE_REBLOGS)) {
-            // Old Hide reblogs backups had no tagged-reblog exception.
+            // Old Hide reblogs backups had no exceptions.
             ordered.put(Settings.KEEP_TAGGED_REBLOGS, false);
+            ordered.put(Settings.KEEP_REBLOGS_WITH_CONTENT, false);
         }
         if ((Integer) schema < 3 && (ordered.containsKey(Settings.HIDE_POSTS_WITH_WORDS)
                 || texts.containsKey(TextSettings.HIDDEN_WORDS))) {

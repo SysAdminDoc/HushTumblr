@@ -270,7 +270,7 @@ public class PausedHooksTest {
     }
 
     private static List<BooleanSetting> dependentSwitches() {
-        return Arrays.asList(Settings.KEEP_TAGGED_REBLOGS, Settings.WORDS_CURRENT_TEXT,
+        return Arrays.asList(Settings.KEEP_TAGGED_REBLOGS, Settings.KEEP_REBLOGS_WITH_CONTENT, Settings.WORDS_CURRENT_TEXT,
                 Settings.WORDS_REBLOG_TRAIL, Settings.WORDS_TAGS, Settings.WORDS_SUMMARY);
     }
 
@@ -523,7 +523,7 @@ public class PausedHooksTest {
         TextSettings.HIDDEN_WORDS.save(TimelineItems.PROBE_WORD);
         TextSettings.ALLOWED_WORDS.save("");
         for (BooleanSetting option : dependentSwitches()) {
-            boolean retention = option == Settings.KEEP_TAGGED_REBLOGS;
+            boolean retention = option == Settings.KEEP_TAGGED_REBLOGS || option == Settings.KEEP_REBLOGS_WITH_CONTENT;
             BooleanSetting parent = retention ? Settings.HIDE_REBLOGS : Settings.HIDE_POSTS_WITH_WORDS;
             List<?> page = Collections.singletonList(new TimelineObject(new OptionPost(option), false));
             parent.save(true);
@@ -555,6 +555,7 @@ public class PausedHooksTest {
         @Override public TimelineObjectType getTimelineObjectType() { return TimelineObjectType.POST; }
         @Override public List<?> hushContent() {
             return option == Settings.WORDS_CURRENT_TEXT ? Collections.singletonList(new TextBlock(TimelineItems.PROBE_WORD))
+                    : option == Settings.KEEP_REBLOGS_WITH_CONTENT ? Collections.singletonList(new TextBlock("added"))
                     : Collections.emptyList();
         }
         @Override public List<?> hushTrail() {
@@ -566,7 +567,9 @@ public class PausedHooksTest {
                     : option == Settings.KEEP_TAGGED_REBLOGS ? Collections.singletonList("personal") : Collections.emptyList();
         }
         @Override public String hushSummary() { return option == Settings.WORDS_SUMMARY ? TimelineItems.PROBE_WORD : null; }
-        @Override public String hushRebloggedFrom() { return option == Settings.KEEP_TAGGED_REBLOGS ? "100" : null; }
+        @Override public String hushRebloggedFrom() {
+            return option == Settings.KEEP_TAGGED_REBLOGS || option == Settings.KEEP_REBLOGS_WITH_CONTENT ? "100" : null;
+        }
     }
 
     /**

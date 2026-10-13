@@ -52,6 +52,7 @@ public final class PostRules {
 
     final boolean reblogs;
     final boolean keepTaggedReblogs;
+    final boolean keepReblogsWithContent;
     final boolean video;
     final boolean photo;
     final boolean text;
@@ -63,11 +64,12 @@ public final class PostRules {
     final boolean wordsTags;
     final boolean wordsSummary;
 
-    PostRules(boolean reblogs, boolean keepTaggedReblogs, boolean video, boolean photo, boolean text,
-              List<String> words, List<String> allowedWords, boolean wordsCurrentText, boolean wordsReblogTrail,
-              boolean wordsTags, boolean wordsSummary) {
+    PostRules(boolean reblogs, boolean keepTaggedReblogs, boolean keepReblogsWithContent, boolean video,
+              boolean photo, boolean text, List<String> words, List<String> allowedWords, boolean wordsCurrentText,
+              boolean wordsReblogTrail, boolean wordsTags, boolean wordsSummary) {
         this.reblogs = reblogs;
         this.keepTaggedReblogs = keepTaggedReblogs;
+        this.keepReblogsWithContent = keepReblogsWithContent;
         this.video = video;
         this.photo = photo;
         this.text = text;
@@ -103,7 +105,8 @@ public final class PostRules {
                 ? wordList(TextSettings.HIDDEN_WORDS.get()) : Collections.emptyList();
         if (!reblogs && !video && !photo && !text && words.isEmpty()) return null;
         List<String> allowed = words.isEmpty() ? Collections.emptyList() : cachedWordList(TextSettings.ALLOWED_WORDS.get(), true);
-        return new PostRules(reblogs, reblogs && Settings.KEEP_TAGGED_REBLOGS.get(), video, photo, text,
+        return new PostRules(reblogs, reblogs && Settings.KEEP_TAGGED_REBLOGS.get(),
+                reblogs && Settings.KEEP_REBLOGS_WITH_CONTENT.get(), video, photo, text,
                 words, allowed, current, trail, tags, summary);
     }
 
@@ -132,7 +135,8 @@ public final class PostRules {
         HushPost post = postOf(payload);
         if (post == null) return null;
         List<?> trail = reblogs || video || photo || text || !words.isEmpty() && wordsReblogTrail ? post.hushTrail() : null;
-        if (reblogs && isReblog(post, trail) && !(keepTaggedReblogs && hasCurrentTags(post))) return FamilyNames.HIDE_REBLOGS;
+        if (reblogs && isReblog(post, trail) && !(keepTaggedReblogs && hasCurrentTags(post))
+                && !(keepReblogsWithContent && hasCurrentContent(post))) return FamilyNames.HIDE_REBLOGS;
         if (video || photo || text) {
             Kind kind = kindOf(post, trail);
             if (video && kind == Kind.VIDEO) return FamilyNames.HIDE_VIDEO_POSTS;
@@ -163,6 +167,16 @@ public final class PostRules {
         for (Object tag : tags) {
             if (tag instanceof String && ((String) tag).codePoints()
                     .anyMatch(point -> !Character.isWhitespace(point) && !Character.isSpaceChar(point))) return true;
+        }
+        return false;
+    }
+
+    /** Only blocks added on this reblog count. What the trail carries is someone else's contribution. */
+    static boolean hasCurrentContent(HushPost post) {
+        List<?> own = post.hushContent();
+        if (own == null) return false;
+        for (Object block : own) {
+            if (block != null) return true;
         }
         return false;
     }
