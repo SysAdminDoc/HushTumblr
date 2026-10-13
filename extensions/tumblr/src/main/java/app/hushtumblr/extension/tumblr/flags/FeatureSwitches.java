@@ -82,10 +82,13 @@ public final class FeatureSwitches {
         // at the end of sign-up.
         claim(claims, "HIDE_TUMBLR_TV", FamilyNames.HIDE_TUMBLR_TV,
                 "TUMBLR_TV_MOBILE_NAV", "TUMBLR_TV_ONBOARDING_REDIRECT");
-        // The Communities tab in the bottom bar (RootActivity's tab list), and the Communities tips
-        // in the post editor (CanvasActivity).
+        // The Communities tips in the post editor (CanvasActivity). The tab's own flag,
+        // COMMUNITIES_TAB_BAR_ITEM, is left to Tumblr on purpose. Off, the tab leaves RootActivity's
+        // list, and the bottom bar then skips the one method that decides the tab's button and finds
+        // its badge: the button stays on the bar with nothing behind it, and the next unread count is
+        // written to a badge that was never found. BottomBarTabs hides the button instead.
         claim(claims, "HIDE_COMMUNITIES_TAB", FamilyNames.HIDE_COMMUNITIES_TAB,
-                "COMMUNITIES_TAB_BAR_ITEM", "COMMUNITIES_TOOLTIPS");
+                "COMMUNITIES_TOOLTIPS");
         // Blaze, paying Tumblr to promote a post: the entry points in your blog's header and on the
         // dashboard and notifications, the nudge after you post, and the settings and landing page
         // banners. The landing page banner has no reader in 46.5.0.109.

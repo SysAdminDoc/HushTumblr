@@ -45,9 +45,13 @@ class FlagPatchesFixtureTest {
     fun `Hide Tumblr TV claims flags Tumblr has and turns its switch on`() =
         check(hideTumblrTvPatch, "hideTumblrTv", "tumblrTvFlags", "TUMBLR_TV_MOBILE_NAV", "TUMBLR_TV_ONBOARDING_REDIRECT")
 
+    /**
+     * Only the post editor's tips. The tab's own flag, COMMUNITIES_TAB_BAR_ITEM, is left to Tumblr, and
+     * BottomBarTabsFixtureTest holds why and checks the claim table doesn't name it.
+     */
     @Test
-    fun `Hide the Communities tab claims flags Tumblr has and turns its switch on`() =
-        check(hideCommunitiesTabPatch, "hideCommunitiesTab", "communitiesTabFlags", "COMMUNITIES_TAB_BAR_ITEM", "COMMUNITIES_TOOLTIPS")
+    fun `Hide the Communities tab claims a flag Tumblr has and turns its switch on`() =
+        check(hideCommunitiesTabPatch, "hideCommunitiesTab", "communitiesTabFlags", "COMMUNITIES_TOOLTIPS")
 
     @Test
     fun `Hide Blaze prompts claims flags Tumblr has and turns its switch on`() =

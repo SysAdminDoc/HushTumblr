@@ -80,6 +80,11 @@ public final class BottomBarTabsForTests {
         return hides(BottomBarTabs.NOTIFICATIONS);
     }
 
+    /** PausedHooksTest's probe for Hide the Communities tab. */
+    public static boolean hidesTheCommunitiesTab() {
+        return hides(BottomBarTabs.COMMUNITIES);
+    }
+
     private static boolean hides(String tab) {
         Map<String, Integer> ids = standInIds();
         try {

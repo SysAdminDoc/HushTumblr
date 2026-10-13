@@ -107,8 +107,10 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_hide_tumblr_tv", FALSE, true);
 
     /**
-     * The Communities tab leaves the bottom bar, and the post editor stops showing Communities tips
-     * ({@link app.hushtumblr.extension.tumblr.flags.FeatureSwitches}). Off to start.
+     * The bottom bar doesn't show the Communities tab's button; the tab itself stays in Tumblr's
+     * list ({@link app.hushtumblr.extension.tumblr.ui.BottomBarTabs}). The post editor stops
+     * showing Communities tips ({@link app.hushtumblr.extension.tumblr.flags.FeatureSwitches}).
+     * Off to start.
      */
     public static final BooleanSetting HIDE_COMMUNITIES_TAB =
             new BooleanSetting("hushtumblr_hide_communities_tab", FALSE, true);

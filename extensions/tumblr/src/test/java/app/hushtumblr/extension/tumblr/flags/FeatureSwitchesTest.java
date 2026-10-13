@@ -8,6 +8,7 @@ package app.hushtumblr.extension.tumblr.flags;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.After;
@@ -26,6 +27,7 @@ import app.hushtumblr.extension.shared.diagnostics.HookStatus;
 import app.hushtumblr.extension.shared.settings.BooleanSetting;
 import app.hushtumblr.extension.tumblr.settings.PatchFamily;
 import app.hushtumblr.extension.tumblr.settings.PatchFamilyForTests;
+import app.hushtumblr.extension.tumblr.settings.Settings;
 
 /**
  * The table behind the feature hook. What each family's switch does to its flags, paused and
@@ -101,6 +103,27 @@ public class FeatureSwitchesTest {
             PatchFamilyForTests.inBuild(null);
         }
         assertEquals(new ArrayList<String>(), wrong);
+    }
+
+    /**
+     * Hide the Communities tab answers for the post editor's tips and leaves the tab's own flag to
+     * Tumblr. Off, that flag takes the tab out of Tumblr's list, and Tumblr's bottom bar then never
+     * runs the one method that hides the tab's button, which stays on the bar with nothing behind
+     * it. BottomBarTabs hides the button instead.
+     */
+    @Test
+    public void theCommunitiesTabsOwnFlagStaysTumblrs() {
+        try {
+            PatchFamilyForTests.inBuild(EnumSet.allOf(PatchFamily.class));
+            Settings.HIDE_COMMUNITIES_TAB.save(true);
+            assertNull(FeatureSwitches.claimOn("COMMUNITIES_TAB_BAR_ITEM"));
+            assertTrue(FeatureSwitches.isEnabled(flag("COMMUNITIES_TAB_BAR_ITEM"), true));
+            assertFalse(FeatureSwitches.isEnabled(flag("COMMUNITIES_TAB_BAR_ITEM"), false));
+            assertFalse("the post editor's tips still go", FeatureSwitches.isEnabled(flag("COMMUNITIES_TOOLTIPS"), true));
+        } finally {
+            Settings.HIDE_COMMUNITIES_TAB.resetToDefault();
+            PatchFamilyForTests.inBuild(null);
+        }
     }
 
     /**

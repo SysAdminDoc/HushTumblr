@@ -42,7 +42,7 @@ family|muteRootPosts|Mute posts locally|rootPostMutes
 family|revealAllowedMatureContent|Reveal allowed mature content|accountSafeMatureReveal
 family|hideAdFreeBanner|Hide the ad-free banner|adFreeBannerFlags
 family|hideTumblrTv|Hide Tumblr TV|tumblrTvFlags
-family|hideCommunitiesTab|Hide the Communities tab|communitiesTabFlags
+family|hideCommunitiesTab|Hide the Communities tab|communitiesTabFlags,communitiesTabButton
 family|hideBlazePrompts|Hide Blaze prompts|blazePromptFlags
 family|turnOffScreenshotSharing|Turn off screenshot sharing|screenshotSharingFlags
 family|disableUpdatePrompts|Disable update prompts|updatePromptFlags
@@ -118,7 +118,9 @@ mutation|postTags|postTags|Lapp/hushtumblr/extension/tumblr/ui/PostParts;->hideT
 mutation|noteCounts|noteCounts|Lapp/hushtumblr/extension/tumblr/ui/PostFooter;->noteCount(I)I|Lapp/hushtumblr/extension/tumblr/ui/PostFooter;->communityCommentsText(Ljava/lang/String;)Ljava/lang/String;|Lapp/hushtumblr/extension/tumblr/ui/PostFooter;->textCount(Ljava/lang/String;)Ljava/lang/String;|Lapp/hushtumblr/extension/tumblr/ui/PostFooter;->notesTitle(Ljava/lang/String;)Ljava/lang/String;|Lapp/hushtumblr/extension/tumblr/ui/PostFooter;->communityReactionsText(Ljava/lang/String;I)Ljava/lang/String;
 # The badge hook and the view id only the bottom bar looks up.
 mutation|unreadDots|unreadDots|Lapp/hushtumblr/extension/tumblr/ui/BottomBar;->unreadBadge(Landroid/widget/TextView;)Landroid/widget/TextView;|Lcom/tumblr/R$id;->dashboard_badge
-mutation|exploreTab,notificationsTab,tabOrder|bottomBarTabs|Lapp/hushtumblr/extension/tumblr/ui/BottomBarTabs;->arrangeTabs(Ljava/util/List;)V|Lapp/hushtumblr/extension/tumblr/ui/BottomBarTabs;->arrangeBar(Landroid/view/ViewGroup;)V|Lcom/tumblr/R$id;->dashboard_badge
+# The tab list and bar hooks. Hide the Communities tab hides its button through the bar hook too,
+# and keeps its feature switch capability for the post editor's tips.
+mutation|exploreTab,notificationsTab,tabOrder,communitiesTabButton|bottomBarTabs|Lapp/hushtumblr/extension/tumblr/ui/BottomBarTabs;->arrangeTabs(Ljava/util/List;)V|Lapp/hushtumblr/extension/tumblr/ui/BottomBarTabs;->arrangeBar(Landroid/view/ViewGroup;)V|Lcom/tumblr/R$id;->dashboard_badge
 # The activity and Compose theme hooks, and the card surface attribute only the Compose colors read.
 mutation|themeBackground|darkBackground|Lapp/hushtumblr/extension/tumblr/ui/DarkBackground;->onActivityTheme(Landroid/app/Activity;)V|Lapp/hushtumblr/extension/tumblr/ui/DarkBackground;->onComposeTheme(Landroid/content/res/Resources$Theme;)V|Lcom/tumblr/themes/R$attr;->themeMainContentBackgroundColor
 # The diamond's question, the TumblrMart button hook, the two search bar room hooks and the

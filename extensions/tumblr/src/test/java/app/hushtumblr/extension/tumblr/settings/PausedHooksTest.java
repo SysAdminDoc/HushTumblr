@@ -179,9 +179,11 @@ public class PausedHooksTest {
         // The Tumblr TV tab's flag answers off.
         probes.put(Settings.HIDE_TUMBLR_TV, Collections.singletonList(
                 () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("TUMBLR_TV_MOBILE_NAV"), true)));
-        // The Communities tab's flag answers off.
-        probes.put(Settings.HIDE_COMMUNITIES_TAB, Collections.singletonList(
-                () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("COMMUNITIES_TAB_BAR_ITEM"), true)));
+        // The Communities tab's button goes when the bar is built, and the post editor's Communities
+        // tips flag answers off. The tab's own flag is left to Tumblr (FeatureSwitches).
+        probes.put(Settings.HIDE_COMMUNITIES_TAB, Arrays.asList(
+                BottomBarTabsForTests::hidesTheCommunitiesTab,
+                () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("COMMUNITIES_TOOLTIPS"), true)));
         // The Blaze button in your blog's header answers off.
         probes.put(Settings.HIDE_BLAZE_PROMPTS, Collections.singletonList(
                 () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("BLAZE_DASHBOARD_ENTRYPOINT_IN_USER_BLOG_HEADER"), true)));

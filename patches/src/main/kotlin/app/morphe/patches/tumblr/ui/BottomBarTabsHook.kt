@@ -48,8 +48,9 @@ private const val VIEW_GROUP = "Landroid/view/ViewGroup;"
 
 /**
  * Hands Tumblr's tab list and its bottom bar to `BottomBarTabs`, for Hide the Explore tab, Hide
- * the Notifications tab and Reorder the bottom bar. Each of them depends on this and turns on only
- * its own switch and target, so the hooks do nothing for a patch that isn't in the build.
+ * the Notifications tab, Hide the Communities tab and Reorder the bottom bar. Each of them depends
+ * on this and turns on only its own switch and target, so the hooks do nothing for a patch that
+ * isn't in the build.
  */
 internal val bottomBarTabsHookPatch = bytecodePatch {
     dependsOn(tumblrExtensionPatch)

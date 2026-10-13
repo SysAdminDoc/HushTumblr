@@ -61,6 +61,7 @@ public class BottomBarTabsTest {
         PatchFamilyForTests.capabilities(null);
         Settings.HIDE_EXPLORE_TAB.resetToDefault();
         Settings.HIDE_NOTIFICATIONS_TAB.resetToDefault();
+        Settings.HIDE_COMMUNITIES_TAB.resetToDefault();
         Settings.REORDER_TABS.resetToDefault();
         TextSettings.TAB_ORDER.resetToDefault();
         BottomBarTabsForTests.forget();
@@ -111,7 +112,10 @@ public class BottomBarTabsTest {
         assertEquals(BottomBarTabsForTests.tabs(), tabs);
     }
 
-    /** Tumblr TV and Communities, when their own switches keep them out, are skipped by the order. */
+    /**
+     * Tumblr TV, when its own switch keeps it out, and Communities, when Tumblr's own flag does, are
+     * skipped by the order.
+     */
     @Test
     public void aTabMissingFromTumblrsListIsSkipped() {
         Settings.REORDER_TABS.save(true);
@@ -171,6 +175,7 @@ public class BottomBarTabsTest {
 
         assertEquals(View.GONE, button(root, "Search").getVisibility());
         assertEquals(View.VISIBLE, button(root, "Notifications").getVisibility());
+        assertEquals(View.VISIBLE, button(root, "Communities").getVisibility());
         assertEquals(View.VISIBLE, button(root, "Dashboard").getVisibility());
         assertEquals(View.VISIBLE, button(root, "Account").getVisibility());
 
@@ -188,6 +193,67 @@ public class BottomBarTabsTest {
         BottomBarTabs.arrangeBar(root);
         assertEquals(View.VISIBLE, button(root, "Search").getVisibility());
         assertEquals(View.VISIBLE, button(root, "Notifications").getVisibility());
+        assertEquals(View.VISIBLE, button(root, "Communities").getVisibility());
+    }
+
+    /**
+     * Communities goes the way Explore and Notifications do: its button, once the bar is built, and
+     * never its place in Tumblr's list. Tumblr's bar sets a tab up only while it's in the list, and
+     * what it skips for one that isn't includes the only call that hides the Communities button.
+     */
+    @Test
+    public void theCommunitiesSwitchTakesItsButtonAndLeavesTheTabInTheList() {
+        Settings.HIDE_COMMUNITIES_TAB.save(true);
+        List<Object> tabs = BottomBarTabsForTests.tabs();
+        BottomBarTabs.arrangeTabs(tabs);
+        assertEquals("the tab stays in Tumblr's list", BottomBarTabsForTests.tabs(), tabs);
+        FrameLayout root = BottomBarTabsForTests.root(ids);
+
+        BottomBarTabs.arrangeBar(root);
+
+        assertEquals(View.GONE, button(root, "Communities").getVisibility());
+        for (String kept : Arrays.asList("Dashboard", "Search", "TumblrTV", "Notifications", "Account")) {
+            assertEquals(kept, View.VISIBLE, button(root, kept).getVisibility());
+        }
+        String report = String.join("\n", HookStatus.report());
+        assertTrue(report, report.contains(BottomBarTabs.TAB_HIDDEN + " 1"));
+    }
+
+    /**
+     * The bar Tumblr builds when Communities isn't in its list: nothing touched the tab's button, so
+     * it shows the way the layout has it, with no tab behind it. The switch takes it all the same.
+     */
+    @Test
+    public void theCommunitiesButtonGoesWhenTumblrLeftTheTabOutOfItsList() {
+        Settings.HIDE_COMMUNITIES_TAB.save(true);
+        List<Object> tabs = new ArrayList<>(Arrays.asList(Tab.Dashboard, Tab.Search, Tab.Notifications, Tab.Account));
+        BottomBarTabs.arrangeTabs(tabs);
+        FrameLayout root = BottomBarTabsForTests.root(ids);
+        assertEquals("the layout shows it", View.VISIBLE, button(root, "Communities").getVisibility());
+
+        BottomBarTabs.arrangeBar(root);
+
+        assertEquals(View.GONE, button(root, "Communities").getVisibility());
+    }
+
+    /** Every bar Tumblr builds in a run loses the button, the first one after a start included. */
+    @Test
+    public void everyBarBuiltLosesTheCommunitiesButton() {
+        Settings.HIDE_COMMUNITIES_TAB.save(true);
+        for (int built = 1; built <= 2; built++) {
+            FrameLayout root = BottomBarTabsForTests.root(ids);
+            BottomBarTabs.arrangeBar(root);
+            assertEquals("bar " + built, View.GONE, button(root, "Communities").getVisibility());
+        }
+    }
+
+    @Test
+    public void aBuildWithoutTheCommunitiesButtonHookLeavesTheButton() {
+        PatchFamilyForTests.capabilities(EnumSet.complementOf(EnumSet.of(PatchFamily.Capability.COMMUNITIES_TAB_BUTTON)));
+        Settings.HIDE_COMMUNITIES_TAB.save(true);
+        FrameLayout root = BottomBarTabsForTests.root(ids);
+        BottomBarTabs.arrangeBar(root);
+        assertEquals(View.VISIBLE, button(root, "Communities").getVisibility());
     }
 
     @Test

@@ -29,7 +29,8 @@ import app.hushtumblr.extension.tumblr.settings.Settings;
 import app.hushtumblr.extension.tumblr.settings.TextSettings;
 
 /**
- * The bottom bar's tabs: Hide the Explore tab, Hide the Notifications tab and Reorder the bottom bar.
+ * The bottom bar's tabs: Hide the Explore tab, Hide the Notifications tab, Hide the Communities tab
+ * and Reorder the bottom bar.
  *
  * <p>Tumblr builds one list of its tabs, once a run, and everything else follows it: the bar's
  * buttons are bound in its order, a tap finds its tab by the button's place in it, the pages are
@@ -40,8 +41,14 @@ import app.hushtumblr.extension.tumblr.settings.TextSettings;
  *
  * <p>A hidden tab stays in the list and only its button goes, since Tumblr's links into a tab and
  * its saved place would land on the wrong tab, or none, if the list lost one. Dashboard and Account
- * can't be hidden, so the bar always has a tab to open on. Tumblr TV and Communities have their
- * own switches, which keep them out of the list altogether; the order then skips them.
+ * can't be hidden, so the bar always has a tab to open on. Tumblr TV has its own switch, which
+ * turns its flag off and so keeps it out of the list altogether; the order then skips it.
+ *
+ * <p>Communities is hidden here and not by its flag. Tumblr's bar decides the Communities button
+ * only for a tab that's in the list. With the flag off the tab isn't, so the button keeps the
+ * layout's own visible state with no tap behind it, and the tab's badge is never looked up although
+ * Tumblr writes the next unread count to it. The flag stays Tumblr's, the bar builds the tab as it
+ * always does, and the button goes afterwards like Explore's.
  *
  * <p>Off, paused, before the settings are read, or with an order naming no tab, the list and the
  * bar stay Tumblr's.
@@ -56,6 +63,7 @@ public final class BottomBarTabs {
     /** The tabs that have a hide switch here. */
     static final String EXPLORE = "Search";
     static final String NOTIFICATIONS = "Notifications";
+    static final String COMMUNITIES = "Communities";
 
     /** Each tab's button on the bar, a view id. Resource names are kept. */
     static final Map<String, String> BUTTONS;
@@ -133,6 +141,12 @@ public final class BottomBarTabs {
                     Settings.HIDE_NOTIFICATIONS_TAB);
         } catch (Throwable failure) {
             HookStatus.threw(FamilyNames.HIDE_NOTIFICATIONS_TAB, "bottom bar", failure);
+        }
+        try {
+            hide(root, COMMUNITIES, PatchFamily.Capability.COMMUNITIES_TAB_BUTTON, FamilyNames.HIDE_COMMUNITIES_TAB,
+                    Settings.HIDE_COMMUNITIES_TAB);
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.HIDE_COMMUNITIES_TAB, "bottom bar", failure);
         }
         try {
             arrangeButtons(root);

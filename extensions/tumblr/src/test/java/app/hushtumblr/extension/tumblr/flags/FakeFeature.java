@@ -46,7 +46,8 @@ public enum FakeFeature {
     TUMBLR_TV_MOBILE_NAV,
     TUMBLR_TV_ONBOARDING_REDIRECT,
 
-    // Hide the Communities tab
+    // Hide the Communities tab. It claims the tips only: the tab's own flag is here as one it
+    // leaves to Tumblr.
     COMMUNITIES_TAB_BAR_ITEM,
     COMMUNITIES_TOOLTIPS,
 

@@ -186,6 +186,7 @@ public enum PatchFamily {
         AD_FREE_BANNER_FLAGS(HIDE_AD_FREE_BANNER, "adFreeBannerFlags", "Hide the ad-free banner"),
         TUMBLR_TV_FLAGS(HIDE_TUMBLR_TV, "tumblrTvFlags", "Hide Tumblr TV"),
         COMMUNITIES_TAB_FLAGS(HIDE_COMMUNITIES_TAB, "communitiesTabFlags", "Hide the Communities tab"),
+        COMMUNITIES_TAB_BUTTON(HIDE_COMMUNITIES_TAB, "communitiesTabButton", "Hide the Communities tab"),
         BLAZE_PROMPT_FLAGS(HIDE_BLAZE_PROMPTS, "blazePromptFlags", "Hide Blaze prompts"),
         REVIEW_PROMPT(SKIP_REVIEW_PROMPTS, "reviewPrompt", "Skip review prompts"),
         SCREENSHOT_SHARING_FLAGS(TURN_OFF_SCREENSHOT_SHARING, "screenshotSharingFlags", "Turn off screenshot sharing"),
