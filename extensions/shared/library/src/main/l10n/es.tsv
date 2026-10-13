@@ -2,8 +2,8 @@
 # After editing, run python scripts/gen-l10n.py from the repository root.
 %1$d item in that file isn't a setting this version of HushTumblr knows, so it'll be left out.	%1$d elemento de ese archivo no es un ajuste que conozca esta versión de HushTumblr, así que se omitirá.
 %1$d items in that file aren't settings this version of HushTumblr knows, so they'll be left out.	%1$d elementos de ese archivo no son ajustes que conozca esta versión de HushTumblr, así que se omitirán.
-%1$d switch will change.	Cambiará %1$d interruptor.
-%1$d switches will change.	Cambiarán %1$d interruptores.
+%1$d setting will change.	Cambiará %1$d ajuste.
+%1$d settings will change.	Cambiarán %1$d ajustes.
 %1$s. It was set when you patched, so Pause can't turn it off. To rule it out, patch again and leave out that patch.	%1$s. Este cambio se aplicó al parchear, así que Pausar no puede desactivarlo. Para descartarlo, vuelve a parchear sin ese parche.
 %1$s. They were set when you patched, so Pause can't turn them off. To rule one out, patch again and leave out the patch in brackets after it.	%1$s. Estos cambios se aplicaron al parchear, así que Pausar no puede desactivarlos. Para descartar uno, vuelve a parchear sin el parche que aparece entre paréntesis después de él.
 A diagnostic report is already being saved.	Ya se está guardando un informe de diagnóstico.
@@ -14,7 +14,7 @@ Back	Atrás
 Cancel	Cancelar
 Clear diagnostic data	Borrar datos de diagnóstico
 Copy quick report	Copiar informe rápido
-Couldn't import the settings, and couldn't put back the ones you had. Check the switches on this screen.	No se pudo importar la configuración ni restaurar la que tenías. Revisa los interruptores de esta pantalla.
+Couldn't import the settings, and couldn't put back the ones you had. Check the settings on this screen.	No se pudo importar la configuración ni restaurar la que tenías. Revisa los ajustes de esta pantalla.
 Couldn't import the settings. Nothing was changed.	No se pudo importar la configuración. No se cambió nada.
 Couldn't open that file. Nothing was changed.	No se pudo abrir ese archivo. No se cambió nada.
 Couldn't open the file picker. Try again.	No se pudo abrir el selector de archivos. Inténtalo de nuevo.
@@ -33,7 +33,7 @@ Export diagnostic report	Exportar informe de diagnóstico
 Export settings	Exportar configuración
 Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.	Desactiva todos los interruptores de HushTumblr, salvo el Registro de depuración, la próxima vez que se abra Tumblr. Lo que elegiste al parchear se mantiene y tus preferencias quedan guardadas.
 Links, updates, backup and more	Enlaces, actualizaciones, copia de seguridad y más
-Save your switches to a file. They cover all the accounts in this Tumblr app. Pause and Debug logging aren't included, and neither is the release check.	Guarda tus interruptores en un archivo. Cubren todas las cuentas de esta app de Tumblr. La pausa y el Registro de depuración no se incluyen, y la búsqueda de nuevas versiones tampoco.
+Save your settings to a file, including word lists and tab order. These choices apply to all accounts in this Tumblr app. Pause, Debug logging and release checks aren't included.	Guarda tus ajustes en un archivo, incluidas las listas de palabras y el orden de las pestañas. Estas elecciones se aplican a todas las cuentas de esta app de Tumblr. No se incluyen la pausa, el Registro de depuración ni la búsqueda de nuevas versiones.
 Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.	Configuración exportada. La app que guarda el archivo no dejó que HushTumblr lo volviera a leer, así que no se comprobó.
 The app holding that file is taking too long, so HushTumblr stopped waiting. Nothing was changed.	La app que guarda ese archivo tarda demasiado, así que HushTumblr dejó de esperar. No se cambió nada.
 The app holding the last settings file still hasn't answered. Try again later.	La app del último archivo de configuración aún no ha respondido. Inténtalo más tarde.
@@ -75,8 +75,8 @@ Set when you patched	Aplicado al parchear
 Settings couldn't open	No se pudo abrir la configuración
 Settings couldn't refresh completely. Reopen settings and try again.	No se pudo actualizar la configuración por completo. Vuelve a abrirla e inténtalo de nuevo.
 Settings exported.	Configuración exportada.
-Settings imported. %1$d switch changed.	Configuración importada. Cambió %1$d interruptor.
-Settings imported. %1$d switches changed.	Configuración importada. Cambiaron %1$d interruptores.
+Settings imported. %1$d setting changed.	Configuración importada. Cambió %1$d ajuste.
+Settings imported. %1$d settings changed.	Configuración importada. Cambiaron %1$d ajustes.
 Source code and issues	Código fuente e incidencias
 Stays in while paused	Se mantiene durante la pausa
 Tap to turn it back on.	Toca para volver a activarlo.
@@ -97,7 +97,7 @@ This phone has no file picker, so there's no way to choose a file here.	Este tel
 Version	Versión
 Record patch activity and show errors for a bug report. Leave off during normal use.	Registra la actividad de los parches y muestra errores para un informe. Déjalo desactivado en el uso normal.
 You paused HushTumblr.	Pausaste HushTumblr.
-Your switches already match that file, so nothing will change.	Tus interruptores ya coinciden con ese archivo, así que no cambiará nada.
+Your settings already match that file, so nothing will change.	Tus ajustes ya coinciden con ese archivo, así que no cambiará nada.
 Copy a short report to the clipboard.	Copia un informe breve en el portapapeles.
 Settings imported.	Configuración importada.
 No app on this phone can open the link. The address is %1$s.	Ninguna app de este teléfono puede abrir el enlace. La dirección es %1$s.
@@ -166,14 +166,14 @@ Tumblr's original signature is added to the app	La firma original de Tumblr se a
 %1$s (%2$s to %3$s)	%1$s (de %2$s a %3$s)
 Your choice is saved, but this build doesn't include the patch for it.	Tu elección está guardada, pero esta versión no incluye el parche para ella.
 Undoing import	Deshaciendo importación
-Import undone. Your earlier switches are back.	Importación deshecha. Se restauraron tus ajustes anteriores.
-Undo ended because a saved switch changed.	Ya no se puede deshacer porque cambió un ajuste guardado.
+Import undone. Your earlier settings are back.	Importación deshecha. Se restauraron tus ajustes anteriores.
+Undo ended because a saved setting changed.	Ya no se puede deshacer porque cambió un ajuste guardado.
 There's no import to undo.	No hay ninguna importación que deshacer.
-Couldn't undo the import. Your imported switches are unchanged.	No se pudo deshacer la importación. Tus ajustes importados no cambiaron.
-Couldn't undo the import or restore the imported switches. Check the switches on this screen.	No se pudo deshacer la importación ni restaurar los ajustes importados. Revisa los ajustes de esta pantalla.
-Restore the switches from before the last import. Editing a switch or restarting Tumblr ends Undo.	Restaura los ajustes anteriores a la última importación. Cambiar un ajuste o reiniciar Tumblr termina la opción de deshacer.
+Couldn't undo the import. Your imported settings are unchanged.	No se pudo deshacer la importación. Tus ajustes importados no cambiaron.
+Couldn't undo the import or restore the imported settings. Check the settings on this screen.	No se pudo deshacer la importación ni restaurar los ajustes importados. Revisa los ajustes de esta pantalla.
+Restore the settings from before the last import. Editing a setting or restarting Tumblr ends Undo.	Restaura los ajustes anteriores a la última importación. Cambiar un ajuste o reiniciar Tumblr termina la opción de deshacer.
 Undo import	Deshacer importación
-Choose a settings file. Review each switch's name and old and new values before importing. Your choices apply to all accounts in this Tumblr app.	Elige un archivo de ajustes. Revisa el nombre y los valores anteriores y nuevos de cada ajuste antes de importar. Tus elecciones se aplican a todas las cuentas de esta app de Tumblr.
+Choose a settings file. Review each setting's name and old and new values before importing. Your choices apply to all accounts in this Tumblr app.	Elige un archivo de ajustes. Revisa el nombre y los valores anteriores y nuevos de cada ajuste antes de importar. Tus elecciones se aplican a todas las cuentas de esta app de Tumblr.
 On	Activado
 Off	Desactivado
 Copy a quick report or save the full one to %1$s. Links, IDs, cookies and sign-in tokens are left out. Check it for other private text before you share it.	Copia un informe rápido o guarda el completo en %1$s. Se omiten enlaces, ID, cookies y tokens de inicio de sesión. Revisa si contiene otros datos privados antes de compartirlo.
@@ -200,7 +200,7 @@ In Tumblr: %1$s	En Tumblr: %1$s
 # Rows added for HushTumblr.
 Ad tracking	Seguimiento publicitario
 Android sends tumblr.com links to a patched Tumblr only after you select those addresses for it. Selecting them sends their links here. Your other link settings stay as they are.	Android envía los enlaces de tumblr.com a un Tumblr parcheado solo después de que selecciones esas direcciones para él. Al seleccionarlas, sus enlaces llegan aquí. Tus otros ajustes de enlaces no cambian.
-Export settings saves HushTumblr's switches. It doesn't include your Tumblr account, posts, downloaded files or Morphe Manager's signing key. Keep the settings file and a backup of Manager's signing key somewhere you can find them.	Exportar ajustes guarda los interruptores de HushTumblr. No incluye tu cuenta de Tumblr, tus publicaciones, los archivos descargados ni la clave de firma de Morphe Manager. Guarda el archivo de ajustes y una copia de la clave de firma de Manager en un lugar donde puedas encontrarlos.
+Export settings saves HushTumblr's settings, including word lists and tab order. It doesn't include your Tumblr account, posts, downloaded files, local mute list or Morphe Manager's signing key. Keep the settings file and a backup of Manager's signing key somewhere you can find them.	Exportar ajustes guarda los ajustes de HushTumblr, incluidas las listas de palabras y el orden de las pestañas. No incluye tu cuenta de Tumblr, tus publicaciones, los archivos descargados, la lista local de publicaciones silenciadas ni la clave de firma de Morphe Manager. Guarda el archivo de ajustes y una copia de la clave de firma de Manager en un lugar donde puedas encontrarlos.
 If you joined through Google or don't know your Tumblr password, ask for a password reset on Tumblr's login screen. Enter the email already linked to that account, then use the reset link sent to your email to set a Tumblr password. It's separate from your Google password.	Si te registraste con Google o no sabes tu contraseña de Tumblr, pide restablecer la contraseña en la pantalla de inicio de sesión de Tumblr. Introduce el correo ya vinculado a esa cuenta y usa el enlace enviado a tu correo para establecer una contraseña de Tumblr. Es distinta de tu contraseña de Google.
 Lets a patched Tumblr sign up for push notifications when Google would turn it away.	Permite que un Tumblr parcheado se registre para recibir notificaciones push cuando Google lo rechazaría.
 Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.	Abre la configuración de Tumblr desde el engranaje de tu pestaña de cuenta. HushTumblr no cambia ninguna de estas opciones.
@@ -377,3 +377,10 @@ Couldn't update muted posts. Your list is unchanged. Try again.	No se pudieron a
 Couldn't restore muted posts. Try again.	No se pudieron restaurar las publicaciones silenciadas. Inténtalo de nuevo.
 The active account changed. Reopen Manage muted posts to see its list.	La cuenta activa ha cambiado. Vuelve a abrir Gestionar publicaciones silenciadas para ver su lista.
 Unmute post %1$s	Dejar de silenciar la publicación %1$s
+Saving changes	Guardando cambios
+Saving the setting	Guardando el ajuste
+Clearing diagnostic data	Borrando datos de diagnóstico
+Putting diagnostic data back	Restaurando datos de diagnóstico
+Couldn't clear the diagnostic data. Try again.	No se pudieron borrar los datos de diagnóstico. Inténtalo de nuevo.
+Couldn't update this feed. The post is still muted locally.	No se pudo actualizar este feed. La publicación sigue silenciada localmente.
+Unmute post	Dejar de silenciar la publicación

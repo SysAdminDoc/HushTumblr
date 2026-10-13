@@ -400,12 +400,13 @@ public class SettingsBackupTest {
         assertEquals(0, snapshot.unknown);
         assertEquals(2, snapshot.switchChanges());
         String preview = SettingsBackupPreference.previewMessage(snapshot);
-        assertTrue(preview, preview.startsWith(L10n.f("%1$s (%2$s to %3$s)", L10n.t("Words to hide"),
+        assertTrue(preview, preview.startsWith(L10n.quantity(2, "%1$d setting will change.",
+                "%1$d settings will change.", 2) + "\n\n" + L10n.f("%1$s (%2$s to %3$s)", L10n.t("Words to hide"),
                 L10n.isolate("something else"), L10n.isolate("cat, dog pics, bird"))));
         assertTrue(preview, preview.contains("\n\n" + L10n.t("Tab order") + " (" + L10n.t("Tumblr's order") + " to "));
         assertFalse("text settings were counted as switches: " + preview, preview.contains("switch"));
 
-        assertEquals("text settings aren't counted as switches", 0, SettingsBackup.apply(snapshot));
+        assertEquals("word lists and tab order are counted as settings", 2, SettingsBackup.apply(snapshot));
         assertEquals(words, TextSettings.HIDDEN_WORDS.savedValue());
         assertEquals(words, TextSettings.HIDDEN_WORDS.persistedValue());
         assertEquals(order, TextSettings.TAB_ORDER.persistedValue());
@@ -460,7 +461,7 @@ public class SettingsBackupTest {
             assertEquals(String.valueOf(badOrder), Collections.singletonList(TextSettings.TAB_ORDER), snapshot.skipped);
             String preview = SettingsBackupPreference.previewMessage(snapshot);
             assertTrue(preview, preview.endsWith("\n\n" + leftOut));
-            assertEquals(1, SettingsBackup.apply(snapshot));
+            assertEquals(2, SettingsBackup.apply(snapshot));
             assertFalse(Settings.HIDE_ADVERTISING_ID.savedValue());
             assertEquals("dog", TextSettings.HIDDEN_WORDS.persistedValue());
             assertEquals("a value that failed its check was written", "Account", TextSettings.TAB_ORDER.persistedValue());
@@ -475,7 +476,7 @@ public class SettingsBackupTest {
             SettingsBackup.Snapshot snapshot = SettingsBackup.parse(file.toString());
             assertEquals(String.valueOf(badWords), Collections.singletonList(TextSettings.HIDDEN_WORDS), snapshot.skipped);
             assertEquals(0, snapshot.switchChanges());
-            assertEquals(L10n.t("Your switches already match that file, so nothing will change.") + "\n\n"
+            assertEquals(L10n.t("Your settings already match that file, so nothing will change.") + "\n\n"
                     + L10n.f("%1$s: the value in that file can't be used, so it'll be left out.", L10n.t("Words to hide")),
                     SettingsBackupPreference.previewMessage(snapshot));
         }
@@ -643,7 +644,7 @@ public class SettingsBackupTest {
                 settle();
             }
             assertEquals("Couldn't import the settings, and couldn't put back the ones you had. "
-                    + "Check the switches on this screen.", ShadowToast.getTextOfLatestToast());
+                    + "Check the settings on this screen.", ShadowToast.getTextOfLatestToast());
             assertEquals(false, store().get(Settings.HIDE_ADVERTISING_ID.key));
             assertFalse(Settings.HIDE_ADVERTISING_ID.savedValue());
             assertFalse("the screen shows a switch the store doesn't hold", row.isChecked());
@@ -695,7 +696,7 @@ public class SettingsBackupTest {
             settle();
             assertNull("Undo opened another confirmation", ShadowAlertDialog.getLatestAlertDialog());
             assertNull("Undo opened a picker", shadowOf(activity).getNextStartedActivityForResult());
-            assertEquals("Import undone. Your earlier switches are back.", ShadowToast.getTextOfLatestToast());
+            assertEquals("Import undone. Your earlier settings are back.", ShadowToast.getTextOfLatestToast());
             assertTrue(Settings.HIDE_ADVERTISING_ID.savedValue());
             assertTrue(((SwitchPreference) page.findPreference(Settings.HIDE_ADVERTISING_ID.key)).isChecked());
             assertFalse(undo.isEnabled());
@@ -715,7 +716,7 @@ public class SettingsBackupTest {
             Settings.FIX_PUSH_NOTIFICATIONS.save(false);
             settle();
             assertFalse(undo.isEnabled());
-            assertEquals("Undo ended because a saved switch changed.", undo.getSummary().toString());
+            assertEquals("Undo ended because a saved setting changed.", undo.getSummary().toString());
             assertEquals(SettingsBackup.UndoResult.EXPIRED, SettingsBackup.undo());
             assertFalse(Settings.HIDE_ADVERTISING_ID.savedValue());
             assertFalse("Undo overwrote the later edit", Settings.FIX_PUSH_NOTIFICATIONS.savedValue());
@@ -734,7 +735,7 @@ public class SettingsBackupTest {
             assertTrue(Settings.HIDE_ADVERTISING_ID.save(false));
             settle();
             assertFalse(undo.isEnabled());
-            assertEquals("Undo ended because a saved switch changed.", undo.getSummary().toString());
+            assertEquals("Undo ended because a saved setting changed.", undo.getSummary().toString());
             assertEquals(SettingsBackup.UndoResult.EXPIRED, SettingsBackup.undo());
             assertFalse("Undo overwrote the final saved edit", Settings.HIDE_ADVERTISING_ID.savedValue());
             assertEquals(false, store().get(Settings.HIDE_ADVERTISING_ID.key));
@@ -1117,7 +1118,7 @@ public class SettingsBackupTest {
         SettingsBackup.Snapshot snapshot = SettingsBackup.parse(fileWith(Settings.HIDE_ADVERTISING_ID, false,
                 Settings.FIX_PUSH_NOTIFICATIONS, false));
         String unavailable = "Your choice is saved, but this build doesn't include the patch for it.";
-        assertEquals("2 switches will change.\n\nHide advertising ID (On to Off)\n\nFix push notifications (On to Off)\n"
+        assertEquals("2 settings will change.\n\nHide advertising ID (On to Off)\n\nFix push notifications (On to Off)\n"
                 + unavailable, SettingsBackupPreference.previewMessage(snapshot));
         assertEquals(2, SettingsBackup.apply(snapshot));
         assertFalse(Settings.FIX_PUSH_NOTIFICATIONS.savedValue());
@@ -1128,7 +1129,7 @@ public class SettingsBackupTest {
         PatchFamily.inBuildForTests = EnumSet.of(PatchFamily.HIDE_ADVERTISING_ID);
         PatchFamily.capabilitiesForTests = null;
         snapshot = SettingsBackup.parse(fileWith(Settings.FIX_PUSH_NOTIFICATIONS, false));
-        assertEquals("1 switch will change.\n\nFix push notifications (On to Off)\n" + unavailable,
+        assertEquals("1 setting will change.\n\nFix push notifications (On to Off)\n" + unavailable,
                 SettingsBackupPreference.previewMessage(snapshot));
         assertEquals(1, SettingsBackup.apply(snapshot));
         assertFalse(Settings.FIX_PUSH_NOTIFICATIONS.savedValue());
@@ -1547,7 +1548,7 @@ public class SettingsBackupTest {
             java.util.concurrent.ExecutorService worker = java.util.concurrent.Executors.newSingleThreadExecutor();
             try {
                 // This is the interleaving formerly possible after the editor's separate budget check.
-                assertEquals(Integer.valueOf(0), worker.submit(() -> SettingsBackup.apply(file)).get(5, TimeUnit.SECONDS));
+                assertEquals(Integer.valueOf(1), worker.submit(() -> SettingsBackup.apply(file)).get(5, TimeUnit.SECONDS));
             } finally {
                 worker.shutdownNow();
             }
@@ -1644,7 +1645,7 @@ public class SettingsBackupTest {
             deliver(activity, tap(activity, page, IMPORT_ROW), new String(SettingsFileProvider.get(uri), StandardCharsets.UTF_8));
             AlertDialog preview = shownPreview();
             String review = String.valueOf(shadowOf(preview).getMessage());
-            assertTrue(review.startsWith(SettingsBackup.ALLOWLIST.size() + " switches will change.\n\n"));
+            assertTrue(review.startsWith(SettingsBackup.ALLOWLIST.size() + " settings will change.\n\n"));
             for (Map.Entry<BooleanSetting, Boolean> entry : exported.entrySet()) {
                 assertTrue(entry.getKey().key, review.contains(SettingsBackupPreference.switchName(entry.getKey())
                         + " (" + (entry.getValue() ? "Off to On" : "On to Off") + ")"));
@@ -1696,7 +1697,7 @@ public class SettingsBackupTest {
             deliver(activity, started, file.toString());
             AlertDialog preview = shownPreview();
             assertEquals("Import settings", String.valueOf(shadowOf(preview).getTitle()));
-            assertEquals("2 switches will change.\n\nHide advertising ID (On to Off)\n\nFix push notifications (On to Off)"
+            assertEquals("2 settings will change.\n\nHide advertising ID (On to Off)\n\nFix push notifications (On to Off)"
                     + "\n\n1 item in that file isn't a setting this version of "
                     + "HushTumblr knows, so it'll be left out.", String.valueOf(shadowOf(preview).getMessage()));
             assertEquals("the preview wrote something", before, store());
@@ -1705,7 +1706,7 @@ public class SettingsBackupTest {
 
             preview.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
             settle();
-            assertEquals("Settings imported. 2 switches changed. Restart Tumblr to apply these settings.",
+            assertEquals("Settings imported. 2 settings changed. Restart Tumblr to apply these settings.",
                     ShadowToast.getTextOfLatestToast());
             assertFalse(Settings.HIDE_ADVERTISING_ID.savedValue());
             assertFalse(Settings.FIX_PUSH_NOTIFICATIONS.savedValue());
@@ -1723,7 +1724,7 @@ public class SettingsBackupTest {
             HushTumblrPreferenceFragment page = SettingsL10nTest.pageOf(SettingsL10nTest.show(activity));
             deliver(activity, tap(activity, page, IMPORT_ROW), SettingsBackup.create());
             AlertDialog preview = shownPreview();
-            assertEquals("Your switches already match that file, so nothing will change.",
+            assertEquals("Your settings already match that file, so nothing will change.",
                     String.valueOf(shadowOf(preview).getMessage()));
             assertEquals("OK", String.valueOf(preview.getButton(AlertDialog.BUTTON_POSITIVE).getText()));
             assertFalse(preview.getButton(AlertDialog.BUTTON_NEGATIVE).isShown());
@@ -1795,12 +1796,12 @@ public class SettingsBackupTest {
 
             deliver(rebuilt, started, file);
             AlertDialog preview = shownPreview();
-            assertEquals("1 switch will change.\n\nFix push notifications (On to Off)",
+            assertEquals("1 setting will change.\n\nFix push notifications (On to Off)",
                     String.valueOf(shadowOf(preview).getMessage()));
             preview.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
             settle();
             assertFalse(Settings.FIX_PUSH_NOTIFICATIONS.savedValue());
-            assertEquals("Settings imported. 1 switch changed. Restart Tumblr to apply these settings.",
+            assertEquals("Settings imported. 1 setting changed. Restart Tumblr to apply these settings.",
                     ShadowToast.getTextOfLatestToast());
         }
     }
@@ -1833,7 +1834,7 @@ public class SettingsBackupTest {
             deliver(controller.get(), tap(controller.get(), page, IMPORT_ROW), file);
             AlertDialog first = shownPreview();
             String message = String.valueOf(shadowOf(first).getMessage());
-            assertEquals("2 switches will change.\n\nHide advertising ID (On to Off)\n\nFix push notifications (On to Off)", message);
+            assertEquals("2 settings will change.\n\nHide advertising ID (On to Off)\n\nFix push notifications (On to Off)", message);
 
             controller.recreate();
             ShadowLooper.idleMainLooper();
@@ -2239,6 +2240,7 @@ public class SettingsBackupTest {
             settle();
             shownPreview().getButton(AlertDialog.BUTTON_POSITIVE).performClick();
             settle();
+            assertTrue(ShadowToast.getTextOfLatestToast().startsWith("Settings imported. 2 settings changed."));
             assertEquals(HushTumblrPreferenceFragment.wordsSummary("one\ntwo"),
                     page.findPreference(HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW).getSummary());
             assertEquals(HushTumblrPreferenceFragment.tabOrderSummary(order),
@@ -2368,7 +2370,7 @@ public class SettingsBackupTest {
         Settings.KEEP_TAGGED_REBLOGS.save(false);
         Settings.WORDS_CURRENT_TEXT.save(true);
         TextSettings.ALLOWED_WORDS.save("");
-        SettingsBackup.apply(file);
+        assertEquals(3, SettingsBackup.apply(file));
         assertTrue(Settings.KEEP_TAGGED_REBLOGS.savedValue());
         assertFalse(Settings.WORDS_CURRENT_TEXT.savedValue());
         assertEquals("café\n猫\nquote\"\\", TextSettings.ALLOWED_WORDS.savedValue());

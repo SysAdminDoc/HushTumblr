@@ -89,6 +89,7 @@ public class SettingsDialogTest {
     @After
     public void tearDown() {
         HushTumblrPreferenceFragment.failNextInitialization = null;
+        HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
         SettingsDialog.failNextMount = null;
         Settings.CHECK_FOR_RELEASES.resetToDefault();
         controller.close();
@@ -136,6 +137,73 @@ public class SettingsDialogTest {
             assertNotNull(ShadowToast.getTextOfLatestToast());
             editor.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();
         }
+    }
+
+    @Test
+    public void aQueuedWordsSaveKeepsTheConfirmedValueAndIgnoresRepeatedClicks() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        TextSettings.HIDDEN_WORDS.save("earlier words");
+        HushTumblrPreferenceFragment page = pageOf(show(controller.get()));
+        Preference row = page.findPreference(HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW);
+        CharSequence summary = row.getSummary();
+        click(row);
+        AlertDialog editor = ShadowAlertDialog.getLatestAlertDialog();
+        EditText field = editor.findViewById(android.R.id.edit);
+        field.setText("saved first\nsaved second");
+        List<Runnable> queued = new ArrayList<>();
+        HushTumblrPreferenceFragment.editWorkerForTests = queued::add;
+        Button save = editor.getButton(AlertDialog.BUTTON_POSITIVE);
+        save.performClick();
+        assertEquals(1, queued.size());
+        assertTrue(editor.isShowing());
+        assertFalse(field.isEnabled());
+        assertFalse(save.isEnabled());
+        assertFalse(editor.getButton(AlertDialog.BUTTON_NEGATIVE).isEnabled());
+        assertEquals("earlier words", TextSettings.HIDDEN_WORDS.persistedValue());
+        assertEquals(summary, row.getSummary());
+        save.performClick();
+        assertEquals("a repeated Save queued another write", 1, queued.size());
+        queued.remove(0).run();
+        ShadowLooper.idleMainLooper();
+        assertFalse(editor.isShowing());
+        assertEquals("saved first\nsaved second", TextSettings.HIDDEN_WORDS.persistedValue());
+        assertEquals(HushTumblrPreferenceFragment.wordsSummary("saved first\nsaved second"), row.getSummary());
+    }
+
+    @Test
+    public void anOldWordsSaveDoesNotCloseOrReplaceAReplacementDialogsDraft() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        TextSettings.HIDDEN_WORDS.save("earlier words");
+        SettingsDialog original = show(controller.get());
+        HushTumblrPreferenceFragment page = pageOf(original);
+        click(page.findPreference(HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW));
+        AlertDialog oldEditor = ShadowAlertDialog.getLatestAlertDialog();
+        ((EditText) oldEditor.findViewById(android.R.id.edit)).setText("saved first\nsaved second");
+        List<Runnable> queued = new ArrayList<>();
+        HushTumblrPreferenceFragment.editWorkerForTests = queued::add;
+        oldEditor.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+        assertEquals(1, queued.size());
+        original.dismiss();
+        controller.get().getFragmentManager().executePendingTransactions();
+        ShadowLooper.idleMainLooper();
+        assertFalse(oldEditor.isShowing());
+        SettingsDialog replacement = show(controller.get());
+        HushTumblrPreferenceFragment current = pageOf(replacement);
+        Preference currentRow = current.findPreference(HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW);
+        click(currentRow);
+        AlertDialog editor = ShadowAlertDialog.getLatestAlertDialog();
+        assertNotSame(oldEditor, editor);
+        EditText field = editor.findViewById(android.R.id.edit);
+        field.setText("a newer unsaved draft");
+        queued.remove(0).run();
+        ShadowLooper.idleMainLooper();
+        assertTrue(replacement.getDialog().isShowing());
+        assertTrue(editor.isShowing());
+        assertEquals("a newer unsaved draft", field.getText().toString());
+        assertTrue(field.isEnabled());
+        assertTrue(editor.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled());
+        assertEquals("saved first\nsaved second", TextSettings.HIDDEN_WORDS.persistedValue());
+        assertEquals(HushTumblrPreferenceFragment.wordsSummary("saved first\nsaved second"), currentRow.getSummary());
     }
 
     @Test
@@ -258,6 +326,46 @@ public class SettingsDialogTest {
             assertEquals(summary, row.getSummary());
             for (int i = 0; i < labels.getCount(); i++) assertEquals(earlier.get(i), labels.getItem(i));
         }
+        dialog.dismiss();
+    }
+
+    @Test
+    public void aQueuedTabMoveKeepsTheConfirmedOrderAndBlocksRepeatedMovesAndReset() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        TextSettings.TAB_ORDER.save("");
+        HushTumblrPreferenceFragment page = pageOf(show(controller.get()));
+        Preference row = page.findPreference(HushTumblrPreferenceFragment.TAB_ORDER_ROW);
+        CharSequence summary = row.getSummary();
+        click(row);
+        AlertDialog dialog = ShadowAlertDialog.getLatestAlertDialog();
+        android.widget.ListAdapter labels = dialog.getListView().getAdapter();
+        List<Object> earlier = new ArrayList<>();
+        for (int i = 0; i < labels.getCount(); i++) earlier.add(labels.getItem(i));
+        String moved = app.hushtumblr.extension.tumblr.ui.BottomBarTabs.join(
+                app.hushtumblr.extension.tumblr.ui.BottomBarTabs.movedUp(
+                        app.hushtumblr.extension.tumblr.ui.BottomBarTabs.choices(""), 2));
+        List<Runnable> queued = new ArrayList<>();
+        HushTumblrPreferenceFragment.editWorkerForTests = queued::add;
+        dialog.getListView().performItemClick(null, 2, 2);
+        assertEquals(1, queued.size());
+        assertFalse(dialog.getListView().isEnabled());
+        assertFalse(dialog.getButton(AlertDialog.BUTTON_NEUTRAL).isEnabled());
+        assertFalse(dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled());
+        assertEquals("", TextSettings.TAB_ORDER.persistedValue());
+        assertEquals(summary, row.getSummary());
+        for (int i = 0; i < labels.getCount(); i++) assertEquals(earlier.get(i), labels.getItem(i));
+        dialog.getListView().performItemClick(null, 3, 3);
+        dialog.getButton(AlertDialog.BUTTON_NEUTRAL).performClick();
+        assertEquals("a repeated tab action queued another write", 1, queued.size());
+        queued.remove(0).run();
+        ShadowLooper.idleMainLooper();
+        assertTrue(dialog.isShowing());
+        assertTrue(dialog.getListView().isEnabled());
+        assertTrue(dialog.getButton(AlertDialog.BUTTON_NEUTRAL).isEnabled());
+        assertTrue(dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled());
+        assertEquals(moved, TextSettings.TAB_ORDER.persistedValue());
+        assertEquals(HushTumblrPreferenceFragment.tabOrderSummary(moved), row.getSummary());
+        assertFalse("the visible order was not updated", earlier.get(1).equals(labels.getItem(1)));
         dialog.dismiss();
     }
 

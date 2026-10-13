@@ -53,6 +53,14 @@ public final class SettingsContextRule extends ExternalResource {
     @Override
     protected void before() {
         Utils.setContext(RuntimeEnvironment.getApplication());
+        try {
+            Field worker = app.hushtumblr.extension.tumblr.settings.HushTumblrPreferenceFragment
+                    .class.getDeclaredField("editWorkerForTests");
+            worker.setAccessible(true);
+            worker.set(null, (java.util.function.Consumer<Runnable>) Runnable::run);
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException("Could not install the settings edit worker", exception);
+        }
         // Robolectric hands every test method a fresh application and preference cache, but
         // Setting's store is a static captured when its class first loaded in this sandbox,
         // which is whichever class ran first. A fragment resolves its own store from the
@@ -128,5 +136,13 @@ public final class SettingsContextRule extends ExternalResource {
         // The sandbox is shared with whatever runs next, and a test is free to swap the context
         // for one of its own.
         Utils.setContext(RuntimeEnvironment.getApplication());
+        try {
+            Field worker = app.hushtumblr.extension.tumblr.settings.HushTumblrPreferenceFragment
+                    .class.getDeclaredField("editWorkerForTests");
+            worker.setAccessible(true);
+            worker.set(null, null);
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException("Could not clear the settings edit worker", exception);
+        }
     }
 }

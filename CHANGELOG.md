@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+* Development source is 0.0.5. The new save and recovery paths still need validation.
+* **Tumblr:** Word lists, tab order and switches save on a worker. Busy controls keep the saved value visible, block repeated taps and report failures. Replacement settings pages refresh when an edit finishes.
+* **Tumblr:** Backup previews and import results count word lists and tab order alongside switches. Import and Undo messages now refer to settings, and the setup guide explains which data the backup includes.
 * **Tumblr:** Settings controls now show focus and disabled states consistently. Search and word fields have clearer boundaries, and dialog actions wrap without losing their touch targets at large text sizes.
 * **Tumblr:** Word editors keep a label above the list, explain when changes are saved and show save errors beside the draft. Long explanations and errors scroll with the editor while Save and Cancel stay within reach.
 * **Tumblr:** The muted-post manager keeps Undo in its own window. Failed changes leave the list available to retry, empty lists explain how to mute a post, and switching accounts closes the old list. Undo also respects Android's accessibility timeout.

@@ -2,8 +2,8 @@
 # After editing, run python scripts/gen-l10n.py from the repository root.
 %1$d item in that file isn't a setting this version of HushTumblr knows, so it'll be left out.	O dosyadaki %1$d öğe, HushTumblr'ın bu sürümünün tanıdığı ayarlardan değil, bu yüzden atlanacak.
 %1$d items in that file aren't settings this version of HushTumblr knows, so they'll be left out.	O dosyadaki %1$d öğe, HushTumblr'ın bu sürümünün tanıdığı ayarlardan değil, bu yüzden atlanacak.
-%1$d switch will change.	%1$d anahtar değişecek.
-%1$d switches will change.	%1$d anahtar değişecek.
+%1$d setting will change.	%1$d ayar değişecek.
+%1$d settings will change.	%1$d ayar değişecek.
 %1$s. It was set when you patched, so Pause can't turn it off. To rule it out, patch again and leave out that patch.	%1$s. Yamaladığında ayarlandığı için Duraklatma bunu kapatamaz. Bunu elemek için yeniden yamala ve o yamayı dışarıda bırak.
 %1$s. They were set when you patched, so Pause can't turn them off. To rule one out, patch again and leave out the patch in brackets after it.	%1$s. Yamaladığında ayarlandıkları için Duraklatma bunları kapatamaz. Birini elemek için yeniden yamala ve onun ardından parantez içinde yazan yamayı dışarıda bırak.
 A diagnostic report is already being saved.	Bir tanılama raporu zaten kaydediliyor.
@@ -14,7 +14,7 @@ Back	Geri
 Cancel	İptal
 Clear diagnostic data	Tanılama verilerini temizle
 Copy quick report	Hızlı raporu kopyala
-Couldn't import the settings, and couldn't put back the ones you had. Check the switches on this screen.	Ayarlar içe aktarılamadı ve önceki ayarların geri yüklenemedi. Bu ekrandaki anahtarları kontrol et.
+Couldn't import the settings, and couldn't put back the ones you had. Check the settings on this screen.	Ayarlar içe aktarılamadı ve önceki ayarların geri yüklenemedi. Bu ekrandaki ayarları kontrol et.
 Couldn't import the settings. Nothing was changed.	Ayarlar içe aktarılamadı. Hiçbir şey değiştirilmedi.
 Couldn't open that file. Nothing was changed.	Bu dosya açılamadı. Hiçbir şey değiştirilmedi.
 Couldn't open the file picker. Try again.	Dosya seçici açılamadı. Tekrar dene.
@@ -33,7 +33,7 @@ Export diagnostic report	Tanılama raporunu dışa aktar
 Export settings	Ayarları dışa aktar
 Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.	Tumblr bir sonraki açılışında Hata ayıklama günlüğü dışındaki tüm HushTumblr anahtarlarını kapatır. Yamalarken seçtiklerin kalır ve tercihlerin kayıtlı kalır.
 Links, updates, backup and more	Bağlantılar, güncellemeler, yedekleme ve daha fazlası
-Save your switches to a file. They cover all the accounts in this Tumblr app. Pause and Debug logging aren't included, and neither is the release check.	Anahtarlarını bir dosyaya kaydet. Anahtarlar bu Tumblr uygulamasındaki tüm hesaplar için geçerlidir. Duraklatma ve Hata ayıklama günlüğü dahil edilmez, sürüm denetimi de edilmez.
+Save your settings to a file, including word lists and tab order. These choices apply to all accounts in this Tumblr app. Pause, Debug logging and release checks aren't included.	Sözcük listeleri ve sekme sırası dahil ayarlarını bir dosyaya kaydet. Bu seçimler Tumblr uygulamasındaki tüm hesaplar için geçerlidir. Duraklatma, Hata ayıklama günlüğü ve sürüm denetimi dahil edilmez.
 Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.	Ayarlar dışa aktarıldı. Dosyayı tutan uygulama HushTumblr'ın onu geri okumasına izin vermedi, bu yüzden kontrol edilmedi.
 The app holding that file is taking too long, so HushTumblr stopped waiting. Nothing was changed.	O dosyayı tutan uygulama çok uzun sürüyor, bu yüzden HushTumblr beklemeyi bıraktı. Hiçbir şey değiştirilmedi.
 The app holding the last settings file still hasn't answered. Try again later.	Son ayar dosyasını tutan uygulama hâlâ yanıt vermedi. Daha sonra tekrar dene.
@@ -75,8 +75,8 @@ Set when you patched	Yamaladığında ayarlananlar
 Settings couldn't open	Ayarlar açılamadı
 Settings couldn't refresh completely. Reopen settings and try again.	Ayarlar tamamen yenilenemedi. Ayarları yeniden açıp tekrar dene.
 Settings exported.	Ayarlar dışa aktarıldı.
-Settings imported. %1$d switch changed.	Ayarlar içe aktarıldı. %1$d anahtar değişti.
-Settings imported. %1$d switches changed.	Ayarlar içe aktarıldı. %1$d anahtar değişti.
+Settings imported. %1$d setting changed.	Ayarlar içe aktarıldı. %1$d ayar değişti.
+Settings imported. %1$d settings changed.	Ayarlar içe aktarıldı. %1$d ayar değişti.
 Source code and issues	Kaynak kodu ve sorunlar
 Stays in while paused	Duraklatılsa da devrede kalır
 Tap to turn it back on.	Yeniden açmak için dokun.
@@ -97,7 +97,7 @@ This phone has no file picker, so there's no way to choose a file here.	Bu telef
 Version	Sürüm
 Record patch activity and show errors for a bug report. Leave off during normal use.	Hata raporu için yama etkinliğini kaydeder ve hataları gösterir. Normal kullanımda kapalı bırakın.
 You paused HushTumblr.	HushTumblr'ı duraklattın.
-Your switches already match that file, so nothing will change.	Anahtarların zaten o dosyayla aynı, bu yüzden hiçbir şey değişmeyecek.
+Your settings already match that file, so nothing will change.	Ayarların zaten o dosyayla aynı, bu yüzden hiçbir şey değişmeyecek.
 Copy a short report to the clipboard.	Kısa raporu panoya kopyalar.
 Settings imported.	Ayarlar içe aktarıldı.
 No app on this phone can open the link. The address is %1$s.	Bu telefondaki hiçbir uygulama bağlantıyı açamıyor. Adres: %1$s.
@@ -166,14 +166,14 @@ Tumblr's original signature is added to the app	Tumblr'ın orijinal imzası uygu
 %1$s (%2$s to %3$s)	%1$s (%2$s yerine %3$s)
 Your choice is saved, but this build doesn't include the patch for it.	Seçimin kaydedildi ama bu sürüm onun yamasını içermiyor.
 Undoing import	İçe aktarma geri alınıyor
-Import undone. Your earlier switches are back.	İçe aktarma geri alındı. Önceki anahtar ayarlarınız geri geldi.
-Undo ended because a saved switch changed.	Kayıtlı bir anahtar değiştiği için geri alma sona erdi.
+Import undone. Your earlier settings are back.	İçe aktarma geri alındı. Önceki ayarların geri geldi.
+Undo ended because a saved setting changed.	Kayıtlı bir ayar değiştiği için geri alma sona erdi.
 There's no import to undo.	Geri alınacak içe aktarma yok.
-Couldn't undo the import. Your imported switches are unchanged.	İçe aktarma geri alınamadı. İçe aktarılan anahtarlarınız değişmedi.
-Couldn't undo the import or restore the imported switches. Check the switches on this screen.	İçe aktarma geri alınamadı ve içe aktarılan anahtarlar geri yüklenemedi. Bu ekrandaki anahtarları kontrol edin.
-Restore the switches from before the last import. Editing a switch or restarting Tumblr ends Undo.	Son içe aktarmadan önceki anahtarları geri yükleyin. Bir anahtarı düzenlemek veya Tumblr'ı yeniden başlatmak geri almayı sona erdirir.
+Couldn't undo the import. Your imported settings are unchanged.	İçe aktarma geri alınamadı. İçe aktarılan ayarların değişmedi.
+Couldn't undo the import or restore the imported settings. Check the settings on this screen.	İçe aktarma geri alınamadı ve içe aktarılan ayarlar geri yüklenemedi. Bu ekrandaki ayarları kontrol et.
+Restore the settings from before the last import. Editing a setting or restarting Tumblr ends Undo.	Son içe aktarmadan önceki ayarları geri yükle. Bir ayarı değiştirmek veya Tumblr'ı yeniden başlatmak geri almayı sona erdirir.
 Undo import	İçe aktarmayı geri al
-Choose a settings file. Review each switch's name and old and new values before importing. Your choices apply to all accounts in this Tumblr app.	Bir ayar dosyası seçin. İçe aktarmadan önce her anahtarın adını, eski ve yeni değerlerini inceleyin. Seçimleriniz bu Tumblr uygulamasındaki tüm hesaplara uygulanır.
+Choose a settings file. Review each setting's name and old and new values before importing. Your choices apply to all accounts in this Tumblr app.	Bir ayar dosyası seç. İçe aktarmadan önce her ayarın adını, eski ve yeni değerlerini incele. Seçimlerin bu Tumblr uygulamasındaki tüm hesaplara uygulanır.
 On	Açık
 Off	Kapalı
 Copy a quick report or save the full one to %1$s. Links, IDs, cookies and sign-in tokens are left out. Check it for other private text before you share it.	Hızlı bir rapor kopyalayın veya tam raporu %1$s konumuna kaydedin. Bağlantılar, kimlikler, çerezler ve giriş belirteçleri dışarıda bırakılır. Paylaşmadan önce diğer özel metinleri kontrol edin.
@@ -200,7 +200,7 @@ In Tumblr: %1$s	Tumblr'da: %1$s
 # Rows added for HushTumblr.
 Ad tracking	Reklam takibi
 Android sends tumblr.com links to a patched Tumblr only after you select those addresses for it. Selecting them sends their links here. Your other link settings stay as they are.	Android, tumblr.com bağlantılarını yamalı Tumblr'a ancak bu adresleri onun için seçtikten sonra gönderir. Adresleri seçersen bağlantıları buraya gelir. Diğer bağlantı ayarların aynı kalır.
-Export settings saves HushTumblr's switches. It doesn't include your Tumblr account, posts, downloaded files or Morphe Manager's signing key. Keep the settings file and a backup of Manager's signing key somewhere you can find them.	Ayarları dışa aktar, HushTumblr'ın anahtarlarını kaydeder. Tumblr hesabın, gönderilerin, indirilen dosyalar ve Morphe Manager'ın imza anahtarı dahil değildir. Ayar dosyasını ve Manager'ın imza anahtarının yedeğini bulabileceğin bir yerde sakla.
+Export settings saves HushTumblr's settings, including word lists and tab order. It doesn't include your Tumblr account, posts, downloaded files, local mute list or Morphe Manager's signing key. Keep the settings file and a backup of Manager's signing key somewhere you can find them.	Ayarları dışa aktar, sözcük listeleri ve sekme sırası dahil HushTumblr'ın ayarlarını kaydeder. Tumblr hesabın, gönderilerin, indirilen dosyalar, yerel sessize alma listesi ve Morphe Manager'ın imza anahtarı dahil değildir. Ayar dosyasını ve Manager'ın imza anahtarının yedeğini bulabileceğin bir yerde sakla.
 If you joined through Google or don't know your Tumblr password, ask for a password reset on Tumblr's login screen. Enter the email already linked to that account, then use the reset link sent to your email to set a Tumblr password. It's separate from your Google password.	Google üzerinden kaydolduysanız veya Tumblr parolanızı bilmiyorsanız, Tumblr'ın giriş ekranından parola sıfırlama isteyin. Bu hesaba zaten bağlı e-posta adresini girin, ardından e-postanıza gönderilen bağlantıyla bir Tumblr parolası belirleyin. Bu parola Google parolanızdan ayrıdır.
 Lets a patched Tumblr sign up for push notifications when Google would turn it away.	Google geri çevirecekken yamalı Tumblr'ın anlık bildirimlere kaydolmasını sağlar.
 Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.	Tumblr ayarlarını hesap sekmenizdeki dişli simgesinden açın. HushTumblr bunların hiçbirini değiştirmez.
@@ -377,3 +377,10 @@ Couldn't update muted posts. Your list is unchanged. Try again.	Susturulan gönd
 Couldn't restore muted posts. Try again.	Susturulan gönderiler geri yüklenemedi. Tekrar dene.
 The active account changed. Reopen Manage muted posts to see its list.	Etkin hesap değişti. Listenin görüntülenmesi için Susturulan gönderileri yönet bölümünü yeniden aç.
 Unmute post %1$s	%1$s gönderisini yeniden göster
+Saving changes	Değişiklikler kaydediliyor
+Saving the setting	Ayar kaydediliyor
+Clearing diagnostic data	Tanılama verileri temizleniyor
+Putting diagnostic data back	Tanılama verileri geri yükleniyor
+Couldn't clear the diagnostic data. Try again.	Tanılama verileri temizlenemedi. Tekrar dene.
+Couldn't update this feed. The post is still muted locally.	Bu akış güncellenemedi. Gönderi bu cihazda hâlâ susturulmuş durumda.
+Unmute post	Gönderiyi yeniden göster

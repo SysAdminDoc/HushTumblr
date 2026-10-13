@@ -105,7 +105,7 @@ public class SettingsScreenDefaultsTest {
             SwitchPreference row = find(open(controller).getPreferenceScreen(), key);
             assertNotNull("no row for " + key, row);
 
-            row.setChecked(!row.isChecked());
+            row.callChangeListener(!row.isChecked());
             ShadowLooper.idleMainLooper();
 
             assertTrue("the turned switch wasn't stored", store().contains(key));

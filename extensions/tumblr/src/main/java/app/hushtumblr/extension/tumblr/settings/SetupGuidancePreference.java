@@ -161,8 +161,8 @@ public final class SetupGuidancePreference extends DialogPreference {
             action(L10n.t(getContext(), "Open link settings"), this::openLinkSettings);
 
             heading(L10n.t(getContext(), "Back up before changing builds"));
-            paragraph(L10n.t(getContext(), "Export settings saves HushTumblr's switches. It doesn't include your "
-                + "Tumblr account, posts, downloaded files or Morphe Manager's signing "
+            paragraph(L10n.t(getContext(), "Export settings saves HushTumblr's settings, including word lists and tab order. It doesn't include your "
+                + "Tumblr account, posts, downloaded files, local mute list or Morphe Manager's signing "
                 + "key. Keep the settings file and a backup of Manager's signing key "
                 + "somewhere you can find them."));
             paragraph(L10n.t(getContext(), "An update signed with the same key keeps the app's data. A build signed "

@@ -710,7 +710,7 @@ public final class SettingsBackup {
      * Writes the switches and text settings a file changes, all of them in one preference commit.
      * A setting the file doesn't name, or names with a value that failed its check, is left as it is.
      *
-     * @return how many switches changed, the number the toast gives. Text settings aren't counted.
+     * @return how many settings changed, including word lists and tab order, for result feedback.
      * @throws ApplyFailed when the commit failed. {@link Setting#saveAll} puts the switches
      *                     back, live and stored; {@link ApplyFailed#rolledBack} says whether that
      *                     worked for every one of them.
@@ -724,11 +724,7 @@ public final class SettingsBackup {
             write(changes);
             pendingUndo = new Undo(before, current());
             undoExpired = false;
-            int switches = 0;
-            for (Setting<?> setting : changes.keySet()) {
-                if (setting instanceof BooleanSetting) switches++;
-            }
-            return switches;
+            return changes.size();
         }
     }
 

@@ -231,11 +231,22 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
             Utils.runOnMainThreadNowOrLater(() -> onPreferenceChanged(sharedPreferences, key));
 
     private void onPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        // Action rows use their own keys and completion callbacks. Their worker notifications
+        // must not make the UI wait for the save/rollback lock before discovering no row exists.
+        Preference changed = key == null ? null : findPreference(key);
+        if (destroyed || changed == null) return;
+        if (!changed.isPersistent()) {
+            onNonPersistentPreferenceChanged(key);
+            return;
+        }
         synchronized (Setting.class) {
             // A background save and its rollback must finish before the UI adopts their result.
             syncSavedPreferenceChange(sharedPreferences, key);
         }
     }
+
+    /** App-owned rows can refresh after a durable worker save without taking its lock on main. */
+    protected void onNonPersistentPreferenceChanged(String key) { }
 
     private void syncSavedPreferenceChange(SharedPreferences sharedPreferences, String key) {
         // Not gated on isAdded(): a dialog's Save and its own close are two posted messages, and

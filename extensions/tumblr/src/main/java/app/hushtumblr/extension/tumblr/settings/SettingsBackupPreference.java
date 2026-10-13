@@ -75,7 +75,7 @@ import app.hushtumblr.extension.tumblr.ui.BottomBarTabs;
  * about a request is kept on the page. Its code says which it was, and the file's address comes
  * with the result.
  *
- * <p>An import reads the file first and shows each saved-switch change by name. Nothing is written
+ * <p>An import reads the file first and shows each saved-setting change by name. Nothing is written
  * until the person says so, and then everything is written in one commit. The preview is kept in
  * the page's saved state, so a rotation or a trip away from Tumblr brings it back.
  *
@@ -152,12 +152,22 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
      */
     private static WeakReference<HushTumblrPreferenceFragment> latestPage = new WeakReference<>(null);
 
+    /** An accepted edit can finish after its original page has been replaced. */
+    static void refreshCurrentPage() {
+        Utils.runOnMainThreadNowOrLater(() -> {
+            if (OWNER.get() == null) setRowsBusy(0, null);
+            if (HushTumblrPreferenceFragment.hasPendingEdits()) return;
+            HushTumblrPreferenceFragment current = latestPage.get();
+            if (current != null && current.isAdded()) current.refreshSwitches();
+        });
+    }
+
     @Nullable private static SharedPreferences observedStore;
     private static final SharedPreferences.OnSharedPreferenceChangeListener undoListener = (store, key) -> {
         if (key != null && !SettingsBackup.carries(key)) return;
         Utils.runOnMainThread(() -> {
             // Review successful saved revisions after the write and any rollback finish.
-            if (OWNER.get() == null) setRowsBusy(0, null);
+            if (OWNER.get() == null) HushTumblrPreferenceFragment.scheduleSavedChangeRefresh();
         });
     };
 
@@ -400,14 +410,10 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
     static String previewMessage(SettingsBackup.Snapshot snapshot) {
         synchronized (Setting.class) {
             Map<Setting<?>, Object> changes = snapshot.changes();
-            int switches = 0;
-            for (Setting<?> setting : changes.keySet()) {
-                if (setting instanceof BooleanSetting) switches++;
-            }
+            int changed = changes.size();
             StringBuilder message = new StringBuilder(changes.isEmpty()
-                    ? L10n.t("Your switches already match that file, so nothing will change.")
-                    : switches == 0 ? ""
-                    : L10n.quantity(switches, "%1$d switch will change.", "%1$d switches will change.", switches));
+                    ? L10n.t("Your settings already match that file, so nothing will change.")
+                    : L10n.quantity(changed, "%1$d setting will change.", "%1$d settings will change.", changed));
             for (Map.Entry<Setting<?>, Object> entry : changes.entrySet()) {
                 if (entry.getKey() instanceof StringSetting) {
                     StringSetting text = (StringSetting) entry.getKey();
@@ -539,12 +545,12 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
             page.pendingImport = null;
             return;
         }
-        int switches = snapshot.switchChanges();
+        int changed = snapshot.switchChanges();
         AlertDialog.Builder builder = new AlertDialog.Builder(HushTumblrPreferenceFragment.themed(activity))
                 .setTitle(L10n.t("Import settings"))
                 .setMessage(previewMessage(snapshot))
                 .setOnCancelListener(dialog -> answered(page));
-        if (switches == 0) {
+        if (changed == 0) {
             builder.setPositiveButton(L10n.t("OK"), (dialog, which) -> answered(page));
         } else {
             builder.setPositiveButton(L10n.t("Import"), (dialog, which) -> {
@@ -584,7 +590,7 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
                     Utils.showToastLong(failure.rolledBack
                             ? L10n.t("Couldn't import the settings. Nothing was changed.")
                             : L10n.t("Couldn't import the settings, and couldn't put back the ones you had. "
-                                    + "Check the switches on this screen."));
+                                    + "Check the settings on this screen."));
                 } finally {
                     Utils.runOnMainThread(() -> {
                         AbstractPreferenceFragment.settingImportInProgress = false;
@@ -605,10 +611,10 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
         }
     }
 
-    /** What the toast after an import says: how many switches changed. */
-    static String importedMessage(int switches) {
-        return afterBulk(switches == 0 ? L10n.t("Settings imported.") : L10n.quantity(switches,
-                "Settings imported. %1$d switch changed.", "Settings imported. %1$d switches changed.", switches));
+    /** What the toast after an import says: how many saved settings changed. */
+    static String importedMessage(int changed) {
+        return afterBulk(changed == 0 ? L10n.t("Settings imported.") : L10n.quantity(changed,
+                "Settings imported. %1$d setting changed.", "Settings imported. %1$d settings changed.", changed));
     }
 
     private static String afterBulk(String message) {
@@ -626,16 +632,16 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
             accepted = Utils.runOnBackgroundThread(() -> {
                 try {
                     switch (SettingsBackup.undo()) {
-                        case UNDONE: Utils.showToastLong(afterBulk(L10n.t("Import undone. Your earlier switches are back."))); break;
-                        case EXPIRED: Utils.showToastLong(L10n.t("Undo ended because a saved switch changed.")); break;
+                        case UNDONE: Utils.showToastLong(afterBulk(L10n.t("Import undone. Your earlier settings are back."))); break;
+                        case EXPIRED: Utils.showToastLong(L10n.t("Undo ended because a saved setting changed.")); break;
                         case NOTHING: Utils.showToastLong(L10n.t("There's no import to undo.")); break;
                     }
                 } catch (SettingsBackup.ApplyFailed failure) {
                     Logger.printInfo(() -> "Settings import undo failed: " + failure.getMessage()
                             + (failure.rolledBack ? ", rolled back" : ", not rolled back"));
                     Utils.showToastLong(failure.rolledBack
-                            ? L10n.t("Couldn't undo the import. Your imported switches are unchanged.")
-                            : L10n.t("Couldn't undo the import or restore the imported switches. Check the switches on this screen."));
+                            ? L10n.t("Couldn't undo the import. Your imported settings are unchanged.")
+                            : L10n.t("Couldn't undo the import or restore the imported settings. Check the settings on this screen."));
                 } finally {
                     Utils.runOnMainThread(() -> {
                         AbstractPreferenceFragment.settingImportInProgress = false;
@@ -765,6 +771,12 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
     }
 
     private void showResting() {
+        if (HushTumblrPreferenceFragment.hasPendingEdits()) {
+            busyLine = L10n.t("Saving changes");
+            setEnabled(false);
+            setSummary(busyLine);
+            return;
+        }
         busyLine = null;
         if (rowAction != UNDO) {
             setEnabled(true);
@@ -775,9 +787,9 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
         setEnabled(state == SettingsBackup.UndoState.AVAILABLE);
         switch (state) {
             case AVAILABLE:
-                setSummary(L10n.t("Restore the switches from before the last import. Editing a switch or restarting Tumblr ends Undo."));
+                setSummary(L10n.t("Restore the settings from before the last import. Editing a setting or restarting Tumblr ends Undo."));
                 break;
-            case EXPIRED: setSummary(L10n.t("Undo ended because a saved switch changed.")); break;
+            case EXPIRED: setSummary(L10n.t("Undo ended because a saved setting changed.")); break;
             case NONE: setSummary(restingSummary); break;
         }
     }
