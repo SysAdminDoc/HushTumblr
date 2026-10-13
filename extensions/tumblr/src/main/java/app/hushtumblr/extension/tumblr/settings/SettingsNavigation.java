@@ -635,7 +635,9 @@ final class SettingsNavigation extends BaseAdapter {
                 page.resumeFromOverview();
             } else {
                 // Toggle owns the durable worker save. Setting its visual check alone never saves.
-                if (pause instanceof SwitchPreference) pause.callChangeListener(!nextPaused);
+                // The framework's callChangeListener is protected, so the listener is called here.
+                Preference.OnPreferenceChangeListener save = pause.getOnPreferenceChangeListener();
+                if (pause instanceof SwitchPreference && save != null) save.onPreferenceChange(pause, !nextPaused);
             }
             rebuild();
         });

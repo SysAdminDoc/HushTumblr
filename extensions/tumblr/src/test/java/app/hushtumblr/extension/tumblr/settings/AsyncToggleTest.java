@@ -52,6 +52,16 @@ public class AsyncToggleTest {
         HushTumblrPreferenceFragment.editWorkerForTests = work::add;
     }
 
+    /**
+     * A tap's change on [row], through its change listener as the framework's callChangeListener
+     * does: true when nothing refuses it. That method is protected on android.preference.Preference,
+     * so tests outside its package call this.
+     */
+    static boolean change(android.preference.Preference row, Object value) {
+        android.preference.Preference.OnPreferenceChangeListener listener = row.getOnPreferenceChangeListener();
+        return listener == null || listener.onPreferenceChange(row, value);
+    }
+
     @After public void close() {
         HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
         while (!work.isEmpty()) work.remove().run();
@@ -67,12 +77,12 @@ public class AsyncToggleTest {
         SwitchPreference row = row(Settings.HIDE_ADS.key);
         CharSequence summary = row.getSummary();
         assertFalse(row.isPersistent());
-        assertFalse(row.callChangeListener(false));
+        assertFalse(change(row, false));
         assertTrue(row.isChecked());
         assertTrue(Settings.HIDE_ADS.persistedValue());
         assertFalse(row.isEnabled());
         assertEquals("Saving the setting", row.getSummary());
-        assertFalse(row.callChangeListener(false));
+        assertFalse(change(row, false));
         assertEquals(1, work.size());
 
         work.remove().run();
@@ -86,9 +96,10 @@ public class AsyncToggleTest {
 
     @Test public void returningToDefaultRemovesTheKeyInTheWorker() {
         Settings.HIDE_ADS.save(false);
+        settle();
         page.refreshSwitches();
         SwitchPreference row = row(Settings.HIDE_ADS.key);
-        assertFalse(row.callChangeListener(true));
+        assertFalse(change(row, true));
         assertTrue(Setting.preferences.preferences.contains(Settings.HIDE_ADS.key));
 
         work.remove().run();
@@ -102,7 +113,7 @@ public class AsyncToggleTest {
         SwitchPreference row = row(Settings.HIDE_ADS.key);
         for (FailingStore.Fault fault : new FailingStore.Fault[]{FailingStore.Fault.COMMIT_FALSE,
                 FailingStore.Fault.COMMIT_THROWS}) {
-            assertFalse(row.callChangeListener(false));
+            assertFalse(change(row, false));
             try (FailingStore ignored = FailingStore.install(fault)) {
                 work.remove().run();
             }
@@ -112,6 +123,7 @@ public class AsyncToggleTest {
             assertTrue(row.isEnabled());
             assertEquals("The setting couldn't finish updating. Its saved value is shown.",
                     ShadowToast.getTextOfLatestToast());
+            settle();
         }
     }
 
@@ -119,7 +131,7 @@ public class AsyncToggleTest {
         HushTumblrPreferenceFragment.editWorkerForTests = task -> { throw new RejectedExecutionException(); };
         SwitchPreference row = row(Settings.HIDE_ADS.key);
 
-        assertFalse(row.callChangeListener(false));
+        assertFalse(change(row, false));
 
         assertTrue(row.isChecked());
         assertTrue(row.isEnabled());
@@ -129,16 +141,16 @@ public class AsyncToggleTest {
 
     @Test public void anAvailabilityRefreshCannotEnableTheSwitchDuringItsSave() {
         SwitchPreference row = row(Settings.HIDE_ADS.key);
-        row.callChangeListener(false);
+        change(row, false);
         page.refreshSwitches();
         assertFalse(row.isEnabled());
-        assertFalse(row.callChangeListener(false));
+        assertFalse(change(row, false));
         assertEquals(1, work.size());
     }
 
     @Test public void anAcceptedSaveRetainsRestartDebtAfterThePageCloses() {
         SwitchPreference row = row(Settings.HIDE_TUMBLR_TV.key);
-        row.callChangeListener(true);
+        change(row, true);
         controller.get().getFragmentManager().beginTransaction().remove(page).commitNow();
 
         work.remove().run();
@@ -150,7 +162,7 @@ public class AsyncToggleTest {
     }
 
     @Test public void aSaveFinishingAfterReplacementRefreshesTheNewPage() {
-        row(Settings.HIDE_ADS.key).callChangeListener(false);
+        change(row(Settings.HIDE_ADS.key), false);
         HushTumblrPreferenceFragment oldPage = page;
         page = new HushTumblrPreferenceFragment();
         controller.get().getFragmentManager().beginTransaction()
@@ -205,7 +217,7 @@ public class AsyncToggleTest {
     }
 
     @Test public void aQueuedEditKeepsNotificationsAndReplacementOffTheTransactionLock() throws Exception {
-        row(Settings.HIDE_ADS.key).callChangeListener(false);
+        change(row(Settings.HIDE_ADS.key), false);
         CountDownLatch held = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
         AtomicBoolean timedOut = new AtomicBoolean();
@@ -239,6 +251,18 @@ public class AsyncToggleTest {
         work.remove().run();
         ShadowLooper.idleMainLooper();
         assertFalse(row(Settings.HIDE_ADS.key).isChecked());
+    }
+
+    /**
+     * Runs what the worker has queued. A write to the store, a test's own or a failed save's
+     * rollback, queues a refresh ahead of the next switch's save, which would run in its place.
+     */
+    private void settle() {
+        ShadowLooper.idleMainLooper();
+        while (!work.isEmpty()) {
+            work.remove().run();
+            ShadowLooper.idleMainLooper();
+        }
     }
 
     private SwitchPreference row(String key) {

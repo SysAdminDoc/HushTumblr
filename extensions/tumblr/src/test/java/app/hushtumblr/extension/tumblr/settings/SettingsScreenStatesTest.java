@@ -129,11 +129,11 @@ public class SettingsScreenStatesTest {
             assertNotNull(card);
             assertNotNull(pause);
 
-            pause.callChangeListener(true);
+            AsyncToggleTest.change(pause, true);
             ShadowLooper.idleMainLooper();
             assertTrue(summary(card), summary(card).endsWith(L10n.t("HushTumblr pauses when Tumblr restarts.")));
 
-            pause.callChangeListener(false);
+            AsyncToggleTest.change(pause, false);
             ShadowLooper.idleMainLooper();
             assertFalse(summary(card), summary(card).contains(L10n.t("HushTumblr pauses when Tumblr restarts.")));
         }
@@ -152,9 +152,11 @@ public class SettingsScreenStatesTest {
 
             card.getOnPreferenceClickListener().onPreferenceClick(card);
             ShadowLooper.idleMainLooper();
-            assertEquals(L10n.t("HushTumblr turns back on when Tumblr restarts."), summary(card));
+            assertEquals("the tap left the toast " + ShadowToast.getTextOfLatestToast() + " and edits pending "
+                    + HushTumblrPreferenceFragment.hasPendingEdits(),
+                    L10n.t("HushTumblr turns back on when Tumblr restarts."), summary(card));
 
-            ((SwitchPreference) page.findPreference(BaseSettings.PAUSED.key)).callChangeListener(true);
+            AsyncToggleTest.change(page.findPreference(BaseSettings.PAUSED.key), true);
             ShadowLooper.idleMainLooper();
             assertTrue(summary(card), summary(card).endsWith(L10n.t("Tap to turn it back on.")));
         }
