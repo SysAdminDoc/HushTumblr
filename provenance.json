@@ -213,7 +213,10 @@
     },
     {
       "paths": [
-        "extensions/shared/library/src/main/java/app/hushtumblr/extension/shared/settings/preference/ReopenSettingsAfterRestart.java"
+        "extensions/shared/library/src/main/java/app/hushtumblr/extension/shared/settings/preference/QuickSetups.java",
+        "extensions/shared/library/src/main/java/app/hushtumblr/extension/shared/settings/preference/ReopenSettingsAfterRestart.java",
+        "extensions/shared/library/src/main/java/app/hushtumblr/extension/shared/settings/preference/ReportProblem.java",
+        "extensions/shared/library/src/main/java/app/hushtumblr/extension/shared/settings/preference/SettingsSearch.java"
       ],
       "origin": "ported",
       "upstream": "https://github.com/SysAdminDoc/HushPinterest",
@@ -222,7 +225,7 @@
         "https://github.com/SysAdminDoc/hushfeed"
       ],
       "license": "GPL-3.0-only",
-      "changes": "The settings standard written for HushPinterest, copied later than the rest of the fork. Renamed for Tumblr: package app.hushtumblr.extension.shared and the HushTumblrPause class in place of HushPinterestPause. Nothing else changed."
+      "changes": "The settings standard written for HushPinterest, copied later than the rest of the fork. Renamed for Tumblr: package app.hushtumblr.extension.shared and the HushTumblrPause class in place of HushPinterestPause. QuickSetups saves a choice in one commit on the settings worker, since a HushTumblr switch row saves only through that worker and setting its check alone stores nothing. The rest is unchanged."
     }
   ]
 }
