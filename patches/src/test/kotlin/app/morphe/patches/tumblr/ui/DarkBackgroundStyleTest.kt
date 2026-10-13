@@ -77,6 +77,47 @@ class DarkBackgroundStyleTest {
         )
     }
 
+    /**
+     * Tumblr's newer layouts, the redesigned post card among them, read the design system's surfaces
+     * and not the palette's, so a style without them leaves those gray.
+     */
+    @Test
+    fun `the design system's pages take the color and its bars and panels a step up`() {
+        val styles = styles(
+            "themePrimaryColor", "themeMainContentBackgroundColor", "themeHighlightedContentBackgroundColor",
+            *DARK_FLAT_SURFACES.toTypedArray(), *DARK_RAISED_SURFACES.toTypedArray(),
+        )
+        styles.addDarkBackgroundStyle(0xFF121212.toInt())
+
+        val items = itemsOf(styles)
+        for (surface in DARK_FLAT_SURFACES) assertEquals(surface, "#ff121212", items[surface])
+        for (surface in DARK_RAISED_SURFACES) assertEquals(surface, "#ff1f1f1f", items[surface])
+        assertEquals("a panel is as far from the page as a highlighted surface", items[HIGHLIGHTED_ATTRIBUTE], items["st_chrome_panel"])
+        assertEquals(3 + DARK_FLAT_SURFACES.size + DARK_RAISED_SURFACES.size, items.size)
+    }
+
+    /** Cards cover most of a feed, so the redesigned card gets the color itself, as the older card does. */
+    @Test
+    fun `the redesigned post card takes the color and a surface no style sets is left out`() {
+        val styles = styles(
+            "themePrimaryColor", "themeMainContentBackgroundColor", "st_chrome", "st_content_panel", "st_chrome_panel",
+        )
+        styles.addDarkBackgroundStyle(0xFF000000.toInt())
+
+        val items = itemsOf(styles)
+        assertEquals(items["themeMainContentBackgroundColor"], items["st_content_panel"])
+        assertEquals("#ff000000", items["st_content_panel"])
+        assertEquals("#ff000000", items["st_chrome"])
+        assertEquals("#ff0d0d0d", items["st_chrome_panel"])
+        assertEquals(5, items.size)
+    }
+
+    @Test
+    fun `no surface is named twice`() {
+        val named = DARK_BACKGROUND_ATTRIBUTES + HIGHLIGHTED_ATTRIBUTE + DARK_FLAT_SURFACES + DARK_RAISED_SURFACES
+        assertEquals(named.size, named.toSet().size)
+    }
+
     @Test
     fun `styles that never set the screen color are refused`() {
         val styles = styles("themeMainContentBackgroundColor")

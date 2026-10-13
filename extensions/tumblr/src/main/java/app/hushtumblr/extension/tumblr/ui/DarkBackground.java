@@ -6,6 +6,7 @@
 package app.hushtumblr.extension.tumblr.ui;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.res.Resources;
 import android.util.TypedValue;
 
@@ -31,7 +32,15 @@ import app.hushtumblr.extension.tumblr.settings.Settings;
  * screen color is Tumblr's {@code dark_theme_primary_color}, which is also what the System palette
  * picks at night. Every other palette, light ones included, stays as Tumblr made it.
  *
- * <p>A theme a screen already drew with keeps its colors, so the summary says a restart shows it.
+ * <p>Tumblr's newer screens, its settings among them, are drawn with its design system, whose
+ * Compose colors aren't read from a theme at all. Each palette has its own set, built once from
+ * fixed grays, so the Dark palette's set calls in here for its two surface grays:
+ * {@link #designPage} for the gray behind a screen and {@link #designPanel} for the lighter one of
+ * a bar, a row or a dialog. They answer the style's color and a step up from it. Only the Dark
+ * palette's set asks, which is the one the System palette uses at night too.
+ *
+ * <p>A theme a screen already drew with keeps its colors, and the design system's set is built once
+ * for as long as Tumblr runs, so the summary says a restart shows it.
  */
 public final class DarkBackground {
     private DarkBackground() {}
@@ -42,6 +51,31 @@ public final class DarkBackground {
     /** The theme attribute for the screen color, and the Dark palette's color resource behind it. */
     static final String SCREEN_ATTRIBUTE = "themePrimaryColor";
     static final String DARK_SCREEN_COLOR = "dark_theme_primary_color";
+
+    /** What the report counts: a theme painted, a theme of another palette, and the design system's colors. */
+    static final String THEME_PAINTED = "dark theme painted";
+    static final String OTHER_PALETTE = "other palette left alone";
+    static final String DESIGN_PAINTED = "design colors painted";
+    static final String DESIGN_EARLY = "design colors read early";
+
+    /**
+     * How much lighter than the page a bar, a row or a dialog is, on each of red, green and blue. The
+     * patch raises the style's highlighted surfaces by the same step, and its fixture test holds the
+     * two together.
+     */
+    static final int RAISE_STEP = 0x0D;
+
+    /** The design system's colors left as Tumblr made them. */
+    private static final long[] TUMBLRS_OWN = new long[0];
+
+    /**
+     * What the design system's two surface grays turn into, the page then the panel, each packed the
+     * way Compose keeps a color. {@link #TUMBLRS_OWN} when they stay Tumblr's, null until the first
+     * one is asked for. Decided once, since Tumblr reads them all in one go and keeps what it built.
+     * A test clears it to decide again.
+     */
+    @Nullable
+    static volatile long[] designColors;
 
     /**
      * Resource ids looked up once: the style, the attribute and the color. Zero for a missing one.
@@ -92,10 +126,102 @@ public final class DarkBackground {
         if (found[0] == 0) return false;
         Predicate<Resources.Theme> forcedDark = darkForTests;
         boolean dark = forcedDark != null ? forcedDark.test(theme) : isDark(theme, found[1], found[2]);
-        if (!dark) return false;
+        if (!dark) {
+            // Tumblr draws some Compose pieces with its default palette whatever the person picked,
+            // so a run that paints nothing still shows in the report.
+            HookStatus.counted(FamilyNames.DARK_BACKGROUND, OTHER_PALETTE);
+            return false;
+        }
         theme.applyStyle(found[0], true);
-        HookStatus.counted(FamilyNames.DARK_BACKGROUND, "dark theme painted");
+        HookStatus.counted(FamilyNames.DARK_BACKGROUND, THEME_PAINTED);
         return true;
+    }
+
+    /**
+     * Placed where the Dark palette's design colors have read the gray behind a screen. Answers the
+     * color picked when patching while the switch is on, and [tumblrs] otherwise. Never throws.
+     */
+    public static long designPage(long tumblrs) {
+        return designColor(tumblrs, 0);
+    }
+
+    /**
+     * Placed where the Dark palette's design colors have read the gray of a bar, a row or a dialog.
+     * Answers a step up from the color picked when patching while the switch is on, and [tumblrs]
+     * otherwise. Never throws.
+     */
+    public static long designPanel(long tumblrs) {
+        return designColor(tumblrs, 1);
+    }
+
+    private static long designColor(long tumblrs, int which) {
+        try {
+            long[] decided = designColors;
+            if (decided == null) {
+                // Kept before the answer is worked out, so a failure there leaves every gray Tumblr's.
+                designColors = TUMBLRS_OWN;
+                decided = decideDesignColors();
+                designColors = decided;
+            }
+            // Anything but a solid color packed the plain way isn't a gray this knows how to replace.
+            return decided.length == 0 || !isSolidColor(tumblrs) ? tumblrs : decided[which];
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.DARK_BACKGROUND, "design colors", failure);
+            return tumblrs;
+        }
+    }
+
+    /**
+     * The design system's page and panel colors for this run, or {@link #TUMBLRS_OWN}: off, paused,
+     * without the hook or the style, or read before the settings are ready. One answer covers every
+     * gray, so a set is never half painted.
+     */
+    private static long[] decideDesignColors() {
+        if (!Utils.settingsReady()) {
+            HookStatus.counted(FamilyNames.DARK_BACKGROUND, DESIGN_EARLY);
+            return TUMBLRS_OWN;
+        }
+        if (!PatchFamily.Capability.THEME_BACKGROUND.installed()) return TUMBLRS_OWN;
+        HookStatus.invoked(FamilyNames.DARK_BACKGROUND);
+        if (!Settings.DARK_BACKGROUND.get()) return TUMBLRS_OWN;
+        Context context = Utils.getContext();
+        if (context == null) return TUMBLRS_OWN;
+        Resources resources = context.getResources();
+        int[] found = ids(resources, context.getPackageName());
+        Integer page = styleColor(resources, found[0], found[1]);
+        if (page == null) return TUMBLRS_OWN;
+        HookStatus.counted(FamilyNames.DARK_BACKGROUND, DESIGN_PAINTED);
+        return new long[] {packed(page), packed(raised(page))};
+    }
+
+    /** The solid color [style] gives [attribute], or null when either is missing or it isn't a color. */
+    @Nullable
+    static Integer styleColor(Resources resources, int style, int attribute) {
+        if (style == 0 || attribute == 0) return null;
+        Resources.Theme styled = resources.newTheme();
+        styled.applyStyle(style, true);
+        TypedValue value = new TypedValue();
+        if (!styled.resolveAttribute(attribute, value, true)) return null;
+        if (value.type < TypedValue.TYPE_FIRST_COLOR_INT || value.type > TypedValue.TYPE_LAST_COLOR_INT) return null;
+        return value.data | 0xFF000000;
+    }
+
+    /** [color] with {@link #RAISE_STEP} added to each of red, green and blue, as far as white. */
+    static int raised(int color) {
+        int red = Math.min(0xFF, (color >> 16 & 0xFF) + RAISE_STEP);
+        int green = Math.min(0xFF, (color >> 8 & 0xFF) + RAISE_STEP);
+        int blue = Math.min(0xFF, (color & 0xFF) + RAISE_STEP);
+        return 0xFF000000 | red << 16 | green << 8 | blue;
+    }
+
+    /** An ARGB color the way Compose keeps one in a long: in the upper half, the lower half zero for sRGB. */
+    static long packed(int color) {
+        return (color & 0xFFFFFFFFL) << 32;
+    }
+
+    /** Whether [color] is a solid sRGB color as {@link #packed} writes one. */
+    static boolean isSolidColor(long color) {
+        return (color & 0xFFFFFFFFL) == 0L && color >>> 56 == 0xFFL;
     }
 
     /** Whether [theme]'s screen color is the Dark palette's own. */

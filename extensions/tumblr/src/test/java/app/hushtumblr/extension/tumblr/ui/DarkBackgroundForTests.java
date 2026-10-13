@@ -31,4 +31,21 @@ public final class DarkBackgroundForTests {
             DarkBackground.darkForTests = null;
         }
     }
+
+    /**
+     * PausedHooksTest's probe for the design system's colors: true when the Dark palette's page gray
+     * comes back as another color. A framework dark theme stands in for the patch's style, and the
+     * answer is worked out afresh each time, as a start of Tumblr would.
+     */
+    public static boolean paintsTheDesignColors() {
+        long gray = DarkBackground.packed(0xFF0D0D0D);
+        DarkBackground.ids = new int[] {android.R.style.Theme_Material, android.R.attr.colorBackground, 0};
+        DarkBackground.designColors = null;
+        try {
+            return DarkBackground.designPage(gray) != gray;
+        } finally {
+            DarkBackground.ids = null;
+            DarkBackground.designColors = null;
+        }
+    }
 }

@@ -5,6 +5,7 @@
  */
 package app.morphe.patches.tumblr.ui
 
+import app.morphe.patcher.StringComparisonType
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.PatchException
@@ -22,10 +23,13 @@ import app.morphe.patches.tumblr.lookup.mutableOf
 import app.morphe.patches.tumblr.lookup.only
 import app.morphe.patches.tumblr.lookup.requireExtensionHook
 import app.morphe.patches.tumblr.lookup.requireShape
+import app.morphe.patches.tumblr.lookup.sameAs
+import app.morphe.patches.tumblr.lookup.strings
 import app.morphe.patches.tumblr.misc.extension.EXTENSION_PACKAGE
 import app.morphe.patches.tumblr.misc.extension.enableCapability
 import app.morphe.patches.tumblr.misc.extension.enableStatus
 import app.morphe.patches.tumblr.misc.extension.parameterRegisterNumber
+import app.morphe.patches.tumblr.misc.extension.patchLog
 import app.morphe.patches.tumblr.misc.extension.requireStatusMethod
 import app.morphe.patches.tumblr.misc.extension.tumblrExtensionPatch
 import app.morphe.patches.tumblr.misc.settings.EXTENSION_ROOT
@@ -35,8 +39,12 @@ import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
+import com.android.tools.smali.dexlib2.iface.instruction.OffsetInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.WideLiteralInstruction
+import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 import org.w3c.dom.Document
 import org.w3c.dom.Element
@@ -46,6 +54,8 @@ private const val PATCH = "Dark background color"
 internal const val DARK_BACKGROUND = "$EXTENSION_PACKAGE/ui/DarkBackground;"
 internal const val ACTIVITY_THEME_HOOK = "$DARK_BACKGROUND->onActivityTheme(Landroid/app/Activity;)V"
 internal const val COMPOSE_THEME_HOOK = "$DARK_BACKGROUND->onComposeTheme(Landroid/content/res/Resources\$Theme;)V"
+internal const val DESIGN_PAGE_HOOK = "$DARK_BACKGROUND->designPage(J)J"
+internal const val DESIGN_PANEL_HOOK = "$DARK_BACKGROUND->designPanel(J)J"
 
 /** The style the patch adds. The extension's `DarkBackground.STYLE` looks it up by this name. */
 internal const val DARK_BACKGROUND_STYLE = "HushTumblrDarkBackground"
@@ -75,6 +85,31 @@ internal const val HIGHLIGHT_STEP = 0x0D
 /** The framework's own background attribute, set too when Tumblr's styles name it. */
 internal const val WINDOW_BACKGROUND_ATTRIBUTE = "android:colorBackground"
 
+/**
+ * The design system's surfaces, which Tumblr's newer layouts read in place of the palette attributes
+ * above, that take the color. The Dark palette gives the first four one gray, `ds_colorGray95`
+ * (#0d0d0d): the screen behind a design system page, the container behind content, and the side and
+ * top menus. The last is the redesigned post card, the next gray up (`ds_colorGray90`, #1a1a1a). It
+ * takes the color too, as the older card surface above does, since cards cover most of a feed.
+ */
+internal val DARK_FLAT_SURFACES =
+    listOf("st_chrome", "st_content_mobile_container", "st_side_menu", "st_top_menu", "st_content_panel")
+
+/**
+ * The design system's surfaces that sit on a page, `ds_colorGray90` in the Dark palette as well: the
+ * bar over a page, a panel on one and a dialog. They take the color raised by [HIGHLIGHT_STEP], so
+ * each still stands apart from the page under it.
+ */
+internal val DARK_RAISED_SURFACES = listOf("st_chrome_mobile", "st_chrome_panel", "st_modal")
+
+/**
+ * The note Compose's compiler leaves in the design system's theme function, as far as its source
+ * line, and the two grays above as the design system's own color list writes them.
+ */
+internal const val DESIGN_THEME_NOTE = "com.tumblr.compose.ds.DsTheme ("
+internal const val DARK_PAGE_GRAY = 0xFF0D0D0DL
+internal const val DARK_PANEL_GRAY = 0xFF1A1A1AL
+
 /** The lightest a color may be, as relative luminance, so the palette's light text stays readable on it. */
 private const val MAX_LUMINANCE = 0.05
 
@@ -87,6 +122,7 @@ private const val BLACK = -0x1000000
 private const val ACTIVITY = "Landroid/app/Activity;"
 private const val CONTEXT = "Landroid/content/Context;"
 private const val THEME_WRAPPER = "Landroid/view/ContextThemeWrapper;"
+private const val CONFIGURATION = "Landroid/content/res/Configuration;"
 
 /** The kept attribute class and the card surface attribute Tumblr's Compose colors read. */
 private const val THEME_ATTRIBUTES = "Lcom/tumblr/themes/R\$attr;"
@@ -145,12 +181,13 @@ private fun luminance(color: Int): Double {
 private fun NodeList.elements(): List<Element> = (0 until length).mapNotNull { item(it) as? Element }
 
 /**
- * Adds [DARK_BACKGROUND_STYLE] to Tumblr's default styles: each of [DARK_BACKGROUND_ATTRIBUTES] set
- * to [color], [HIGHLIGHTED_ATTRIBUTE] a step lighter, and [WINDOW_BACKGROUND_ATTRIBUTE] when the file
- * names it. Each attribute is written the way the file's own styles write it, so an app attribute
- * keeps whatever package prefix the decoder gave it. The style has no parent: it only goes over a
- * theme that already has the rest. Refuses a file that already has the style, or whose styles never
- * set a required attribute.
+ * Adds [DARK_BACKGROUND_STYLE] to Tumblr's default styles: each of [DARK_BACKGROUND_ATTRIBUTES] and
+ * [DARK_FLAT_SURFACES] set to [color], [HIGHLIGHTED_ATTRIBUTE] and each of [DARK_RAISED_SURFACES] a
+ * step lighter, and [WINDOW_BACKGROUND_ATTRIBUTE] when the file names it. A design system surface
+ * no style in the file sets is left out. Each attribute is written the way the file's own styles
+ * write it, so an app attribute keeps whatever package prefix the decoder gave it. The style has no
+ * parent: it only goes over a theme that already has the rest. Refuses a file that already has the
+ * style, or whose styles never set a required attribute.
  */
 internal fun Document.addDarkBackgroundStyle(color: Int) {
     val resources = documentElement
@@ -175,7 +212,10 @@ internal fun Document.addDarkBackgroundStyle(color: Int) {
         }
         values[name] = color
     }
-    nameOf(HIGHLIGHTED_ATTRIBUTE)?.let { values[it] = raisedColor(color, HIGHLIGHT_STEP) }
+    val raised = raisedColor(color, HIGHLIGHT_STEP)
+    nameOf(HIGHLIGHTED_ATTRIBUTE)?.let { values[it] = raised }
+    for (surface in DARK_FLAT_SURFACES) nameOf(surface)?.let { values[it] = color }
+    for (surface in DARK_RAISED_SURFACES) nameOf(surface)?.let { values[it] = raised }
     if (WINDOW_BACKGROUND_ATTRIBUTE in written) values[WINDOW_BACKGROUND_ATTRIBUTE] = color
 
     resources.appendChild(createElement("style").apply {
@@ -205,6 +245,10 @@ private fun darkBackgroundStylePatch(background: () -> Int) = resourcePatch {
  * `DarkBackground` checks the theme is Dark Mode's (its screen color is Tumblr's own dark one) and
  * leaves every other palette alone. The color is the Background color option's, written into the
  * style when patching.
+ *
+ * Tumblr's design system keeps its colors in code, one set per palette, so the Dark palette's set
+ * also hands its two surface grays to `DarkBackground` as it's built (see [resolveDesignColors]).
+ * A build that keeps them some other way gets a warning and the rest of the patch.
  */
 @Suppress("unused")
 val darkBackgroundPatch = bytecodePatch(
@@ -239,8 +283,9 @@ val darkBackgroundPatch = bytecodePatch(
     execute {
         requireStatusMethod("darkBackground")
         requireStatusMethod("themeBackground")
-        // Both found and checked before either edit, so a refusal leaves the APK as it was.
+        // Everything found and checked before any edit, so a refusal leaves the APK as it was.
         val hooks = resolveThemeHooks()
+        val designColors = resolveDesignColors()
         hooks.activity.addInstructions(
             hooks.activityIndex,
             "invoke-static/range { v${hooks.activityRegister} .. v${hooks.activityRegister} }, $ACTIVITY_THEME_HOOK",
@@ -249,6 +294,17 @@ val darkBackgroundPatch = bytecodePatch(
             hooks.composeIndex,
             "invoke-static/range { v${hooks.composeRegister} .. v${hooks.composeRegister} }, $COMPOSE_THEME_HOOK",
         )
+        designColors?.let { colors ->
+            val initializer = mutableOf(colors.initializer)
+            // Last first, so an earlier read's index still holds. A long takes its register and the next.
+            for (read in colors.reads.sortedByDescending { it.index }) {
+                initializer.addInstructions(
+                    read.index,
+                    "invoke-static/range { v${read.register} .. v${read.register + 1} }, ${read.hook}\n" +
+                        "move-result-wide v${read.register}",
+                )
+            }
+        }
         enableCapability("themeBackground")
         enableStatus("darkBackground")
     }
@@ -350,3 +406,127 @@ private fun Instruction.isThemeWrapperTheme(): Boolean =
     opcode == Opcode.INVOKE_VIRTUAL && methodRef()?.let { call ->
         call.definingClass == THEME_WRAPPER && call.name == "getTheme" && call.parameterTypes.isEmpty()
     } == true
+
+/** One read of a surface gray: [hook] goes in at [index], on the long kept in [register] and the one after it. */
+internal class DesignColorRead(val index: Int, val register: Int, val hook: String)
+
+/** The static initializer that builds the Dark palette's design colors, and each read of a surface gray in it. */
+internal class DesignColorHooks(val initializer: Method, val reads: List<DesignColorRead>)
+
+/**
+ * Finds where the Dark palette's design colors read their two surface grays, or answers null with a
+ * warning when this build doesn't keep them the way 46.5.0.109 does. Null changes nothing: screens
+ * drawn with the design system then keep Tumblr's grays, and the rest of the patch still applies.
+ *
+ * Tumblr's design system (`DsTheme`, found by [DESIGN_THEME_NOTE]) doesn't read a theme. Each palette
+ * has a holder class whose static initializer builds its colors once from a shared list of fixed
+ * colors, and the theme function picks a holder by palette. For the System palette it asks whether
+ * the configuration is in night mode and takes the Dark palette's holder when it is, which is how
+ * that holder is told from the others (`xw5` in 46.5.0.109, against `mpk` True Blue, `u8b`
+ * Low-Contrast Classic, `lx8` Goth Rave and `ebf` Pride).
+ *
+ * The holder's initializer is straight-line: it calls a getter on the color list (`lw6`) and keeps
+ * the long, over and over. A getter is one of ours when its field is the one the list's own
+ * initializer fills from [DARK_PAGE_GRAY] or [DARK_PANEL_GRAY]. In 46.5.0.109 that's `lw6.y()` at
+ * 37, 123, 284 and 288 (`Chrome.chrome`, the page behind a design system screen,
+ * `Content.mobileContainer` and `Global`'s two menus) and `lw6.x()` at 39, 49, 113 and 292
+ * (`Chrome.panel`, `Chrome.mobile`, `Content.panel` and `Global.modal`), the same eight surfaces
+ * [DARK_FLAT_SURFACES] and [DARK_RAISED_SURFACES] name in the palette's style. One differs on
+ * purpose: a layout's `st_content_panel` is a post card and takes the color, while Compose's
+ * `Content.panel` is what the settings screens draw their bar and rows with
+ * (`settingshub.impl.hub.c.b` and its siblings read `b05.g()`), so it takes the step up that keeps a
+ * row apart from its page. Each hook goes right after the `move-result-wide` and writes its answer
+ * back into the same pair of registers. Found by reading Tumblr 46.5.0.109 (2026-10-13).
+ */
+internal fun BytecodePatchContext.resolveDesignColors(): DesignColorHooks? {
+    fun without(why: String): DesignColorHooks? {
+        patchLog.warning("$PATCH: $why, so screens drawn with Tumblr's design system keep their own grays")
+        return null
+    }
+    val themes = classDefByStrings(DESIGN_THEME_NOTE, StringComparisonType.STARTS_WITH)
+        .filter { !it.type.startsWith(EXTENSION_ROOT) }
+        .distinctBy { it.type }
+        .flatMap { owner -> owner.methods.filter { method -> method.strings().any { it.startsWith(DESIGN_THEME_NOTE) } } }
+    val theme = themes.singleOrNull()
+        ?: return without("${themes.size} functions carry the design system theme's note instead of one")
+    val holder = theme.nightColors()
+        ?: return without("the design system's theme doesn't pick the System palette's colors by night mode in one place")
+    val initializer = classDefByOrNull(holder.definingClass)?.methods?.singleOrNull { it.name == "<clinit>" }
+        ?: return without("${holder.definingClass}, which holds the Dark palette's design colors, has no static initializer")
+    val body = initializer.instructionList()
+    if (initializer.implementation?.tryBlocks?.isNotEmpty() != false || body.any { it is OffsetInstruction }) {
+        return without("${holder.definingClass} no longer builds the Dark palette's design colors in one straight run")
+    }
+
+    val grays = mutableMapOf<String, Long?>()
+    val reads = body.indices.mapNotNull { at ->
+        val getter = body[at].colorGetter() ?: return@mapNotNull null
+        val kept = body.getOrNull(at + 1)?.takeIf { it.opcode == Opcode.MOVE_RESULT_WIDE } ?: return@mapNotNull null
+        val hook = when (grays.getOrPut(getter.toString()) { fixedColor(getter) }) {
+            DARK_PAGE_GRAY -> DESIGN_PAGE_HOOK
+            DARK_PANEL_GRAY -> DESIGN_PANEL_HOOK
+            else -> return@mapNotNull null
+        }
+        DesignColorRead(at + 2, (kept as OneRegisterInstruction).registerA, hook)
+    }
+    if (reads.none { it.hook == DESIGN_PAGE_HOOK } || reads.none { it.hook == DESIGN_PANEL_HOOK }) {
+        return without("${holder.definingClass} doesn't read both of the Dark palette's surface grays from the design system's color list")
+    }
+    // Only once there's somewhere to call them from: a call to a method the extension lacks would crash Tumblr.
+    requireExtensionHook(PATCH, DESIGN_PAGE_HOOK)
+    requireExtensionHook(PATCH, DESIGN_PANEL_HOOK)
+    return DesignColorHooks(initializer, reads)
+}
+
+/**
+ * The holder the design system's theme takes its colors from in night mode: the one static call
+ * with no arguments that follows a night mode question and its `if-eqz`, answering a type the theme
+ * function also takes as a parameter (its own colors argument). Null unless there's exactly one.
+ */
+private fun Method.nightColors(): MethodReference? {
+    val body = instructionList()
+    val taken = parameterTypes.map(CharSequence::toString).filter { it.startsWith("L") }
+    return body.indices.mapNotNull { at ->
+        val asked = body[at].takeIf { it.opcode == Opcode.INVOKE_STATIC }?.methodRef() ?: return@mapNotNull null
+        if (!asked.hasShape(listOf(CONFIGURATION), "Z")) return@mapNotNull null
+        val answer = body.getOrNull(at + 1)?.takeIf { it.opcode == Opcode.MOVE_RESULT } as? OneRegisterInstruction
+        val test = body.getOrNull(at + 2)?.takeIf { it.opcode == Opcode.IF_EQZ } as? OneRegisterInstruction
+        if (answer == null || test == null || answer.registerA != test.registerA) return@mapNotNull null
+        val night = body.getOrNull(at + 3)?.takeIf { it.opcode == Opcode.INVOKE_STATIC }?.methodRef()
+        val kept = body.getOrNull(at + 4)?.opcode == Opcode.MOVE_RESULT_OBJECT
+        night?.takeIf { kept && it.parameterTypes.isEmpty() && it.returnType in taken }
+    }.singleOrNull()
+}
+
+/** The no-argument getter of a long this instruction calls on an object, or null for anything else. */
+private fun Instruction.colorGetter(): MethodReference? {
+    val alone = when (opcode) {
+        Opcode.INVOKE_VIRTUAL -> (this as FiveRegisterInstruction).registerCount == 1
+        Opcode.INVOKE_VIRTUAL_RANGE -> (this as RegisterRangeInstruction).registerCount == 1
+        else -> false
+    }
+    return methodRef()?.takeIf { alone && it.parameterTypes.isEmpty() && it.returnType == "J" }
+}
+
+/**
+ * The fixed color [getter] hands out, as its class wrote it: the getter only returns a static long
+ * field of its class, and the class's initializer fills that field once from a `const-wide` passed
+ * through a static `(J)J` call (the color's constructor). Null for a getter of any other shape.
+ */
+private fun BytecodePatchContext.fixedColor(getter: MethodReference): Long? {
+    val owner = classDefByOrNull(getter.definingClass) ?: return null
+    val read = owner.methods.singleOrNull { it.sameAs(getter) }?.instructionList() ?: return null
+    if (read.size != 2 || read[0].opcode != Opcode.SGET_WIDE || read[1].opcode != Opcode.RETURN_WIDE) return null
+    val field = read[0].fieldRef()?.takeIf { it.definingClass == owner.type } ?: return null
+    val filled = owner.methods.singleOrNull { it.name == "<clinit>" }?.instructionList() ?: return null
+    val stored = filled.indices.singleOrNull { at ->
+        filled[at].opcode == Opcode.SPUT_WIDE &&
+            filled[at].fieldRef()?.let { it.definingClass == owner.type && it.name == field.name } == true
+    } ?: return null
+    val written = filled.getOrNull(stored - 3)?.takeIf { it.opcode in WIDE_CONSTANTS } as? WideLiteralInstruction
+    val made = filled.getOrNull(stored - 2)?.takeIf { it.opcode == Opcode.INVOKE_STATIC }?.methodRef()
+    val kept = filled.getOrNull(stored - 1)?.opcode == Opcode.MOVE_RESULT_WIDE
+    return written?.wideLiteral?.takeIf { kept && made?.hasShape(listOf("J"), "J") == true }
+}
+
+private val WIDE_CONSTANTS = setOf(Opcode.CONST_WIDE, Opcode.CONST_WIDE_16, Opcode.CONST_WIDE_32, Opcode.CONST_WIDE_HIGH16)

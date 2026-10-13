@@ -278,7 +278,7 @@ public class DexDiff {
             Map.entry("timelineCarousel", 3), Map.entry("postBridge", 3), Map.entry("paidPostBridge", 6), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
             Map.entry("followButton", 3), Map.entry("footerButton", 3), Map.entry("postTags", 5),
             Map.entry("noteCounts", 5), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
-            Map.entry("darkBackground", 3), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
+            Map.entry("darkBackground", 5), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
             Map.entry("matureContent", 12), Map.entry("rootPostMutes", 10), Map.entry("mutualMarkers", 13));
 
     /**
@@ -5113,7 +5113,10 @@ public class DexDiff {
             return false;
         }
 
-        /** Right after Tumblr sets an activity's theme, and right after its Compose colors take their theme wrapper's theme. */
+        /**
+         * Right after Tumblr sets an activity's theme, right after its Compose colors take their theme
+         * wrapper's theme, and where the Dark palette's design colors read their two surface grays.
+         */
         void darkBackground(Contract c) {
             List<Method> setters = new ArrayList<>(), composers = new ArrayList<>();
             List<Integer> sets = new ArrayList<>();
@@ -5151,11 +5154,124 @@ public class DexDiff {
                 if (answer == null || answer.getOpcode() != Opcode.MOVE_RESULT_OBJECT) fail("the Compose colors' theme isn't asked for once and kept in a register");
                 else themed = hookAt(composer, actual(composer), asked.get(0) + 2, c.strings.get(1), List.of(firstRegister(answer)), -1, List.of(firstRegister(answer)));
             }
+            designColors(c.strings.get(3), c.strings.get(4));
             capability(c.callee, found && themed);
         }
 
         static boolean themeOfWrapper(Instruction i) {
             return i.getOpcode() == Opcode.INVOKE_VIRTUAL && isCall(i, "Landroid/view/ContextThemeWrapper;", "getTheme", "()Landroid/content/res/Resources$Theme;");
+        }
+
+        static final String DESIGN_THEME_NOTE = "com.tumblr.compose.ds.DsTheme (";
+        static final long DARK_PAGE_GRAY = 0xFF0D0D0DL, DARK_PANEL_GRAY = 0xFF1A1A1AL;
+
+        /**
+         * The Dark palette's design colors handing each of their two surface grays to its hook right
+         * after reading it, the answer moved back over the gray: [pageHook] for the gray behind a
+         * screen, [panelHook] for the lighter one. The places are found in the clean target the way
+         * the patch finds them, never from the hooks. The patch leaves a build that keeps its design
+         * colors some other way as it was, so there both hooks go uncalled, and a call to either
+         * anywhere else is refused as misrouted.
+         */
+        void designColors(String pageHook, String panelHook) {
+            List<Method> themes = new ArrayList<>();
+            for (Method m : tumblrMethods()) if (clean.texts.get(m.toString()).stream().anyMatch(t -> t.startsWith(DESIGN_THEME_NOTE))) themes.add(m);
+            MethodReference holder = themes.size() == 1 ? nightColors(themes.get(0)) : null;
+            Method old = holder == null ? null : clean.methods.get(holder.getDefiningClass() + "-><clinit>()V");
+            if (old == null || old.getImplementation() == null || clean.duplicates.contains(old.getDefiningClass())
+                    || old.getImplementation().getTryBlocks().iterator().hasNext()) return;
+            List<Instruction> was = instructions(old);
+            if (was.stream().anyMatch(i -> i instanceof OffsetInstruction)) return;
+            Map<String, Long> grays = new HashMap<>();
+            List<Integer> places = new ArrayList<>(), registers = new ArrayList<>();
+            List<String> hooks = new ArrayList<>();
+            for (int at = 0; at + 1 < was.size(); at++) {
+                MethodReference getter = colorGetter(was.get(at));
+                if (getter == null || was.get(at + 1).getOpcode() != Opcode.MOVE_RESULT_WIDE) continue;
+                Long gray = grays.computeIfAbsent(getter.toString(), key -> fixedColor(getter));
+                String hook = gray == null ? null : gray == DARK_PAGE_GRAY ? pageHook : gray == DARK_PANEL_GRAY ? panelHook : null;
+                if (hook == null) continue;
+                places.add(at + 2);
+                registers.add(firstRegister(was.get(at + 1)));
+                hooks.add(hook);
+            }
+            if (!hooks.contains(pageHook) || !hooks.contains(panelHook)) return;
+            Method m = actual(old);
+            if (m == null) return;
+            List<Instruction> body = instructions(m);
+            for (String hook : List.of(pageHook, panelHook)) {
+                List<Integer> wanted = new ArrayList<>();
+                for (int k = 0; k < hooks.size(); k++) if (hooks.get(k).equals(hook)) wanted.add(k);
+                List<Integer> sites = calls(m, hook, wanted.size());
+                if (sites.size() != wanted.size()) continue;
+                for (int k = 0; k < sites.size(); k++) {
+                    int at = sites.get(k), register = registers.get(wanted.get(k));
+                    // A long takes its register and the next, and its answer goes back into the same two.
+                    if (!arguments(body.get(at)).equals(List.of(register, register + 1)) || !movesTo(get(body, at + 1), register, Opcode.MOVE_RESULT_WIDE)) {
+                        fail(hook + " doesn't take a design gray and put its answer back where the gray was in " + m);
+                        continue;
+                    }
+                    remove(m, at, at + 2);
+                    anchor(m, at, places.get(wanted.get(k)), hook);
+                    vouch(m, at, List.of(register, register + 1));
+                }
+            }
+        }
+
+        /**
+         * The holder the design system's theme takes its colors from in night mode: the one static call
+         * without arguments that follows a night mode question and its `if-eqz`, answering a type the
+         * theme function also takes as a parameter. Null unless there's exactly one.
+         */
+        static MethodReference nightColors(Method theme) {
+            List<Instruction> body = instructions(theme);
+            Set<String> taken = new HashSet<>();
+            for (CharSequence type : theme.getParameterTypes()) if (type.toString().startsWith("L")) taken.add(type.toString());
+            List<MethodReference> found = new ArrayList<>();
+            for (int at = 0; at + 4 < body.size(); at++) {
+                MethodReference asked = body.get(at).getOpcode() == Opcode.INVOKE_STATIC ? called(body.get(at)) : null;
+                if (asked == null || !descriptor(asked).equals("(Landroid/content/res/Configuration;)Z")) continue;
+                Instruction answer = body.get(at + 1), test = body.get(at + 2);
+                MethodReference night = body.get(at + 3).getOpcode() == Opcode.INVOKE_STATIC ? called(body.get(at + 3)) : null;
+                if (answer.getOpcode() == Opcode.MOVE_RESULT && test.getOpcode() == Opcode.IF_EQZ && firstRegister(answer) == firstRegister(test)
+                        && night != null && night.getParameterTypes().isEmpty() && taken.contains(night.getReturnType())
+                        && body.get(at + 4).getOpcode() == Opcode.MOVE_RESULT_OBJECT) found.add(night);
+            }
+            return found.size() == 1 ? found.get(0) : null;
+        }
+
+        /** The getter of a long, without arguments, that [i] calls on an object, or null for anything else. */
+        static MethodReference colorGetter(Instruction i) {
+            if (i.getOpcode() != Opcode.INVOKE_VIRTUAL && i.getOpcode() != Opcode.INVOKE_VIRTUAL_RANGE) return null;
+            MethodReference getter = called(i);
+            return getter != null && arguments(i).size() == 1 && getter.getParameterTypes().isEmpty() && getter.getReturnType().equals("J") ? getter : null;
+        }
+
+        /**
+         * The fixed color [getter] hands out, as its class wrote it: the getter only returns a static
+         * long of its class, which the class's initializer fills once from a `const-wide` passed
+         * through a static `(J)J` call. Null for a getter of any other shape.
+         */
+        Long fixedColor(MethodReference getter) {
+            String owner = getter.getDefiningClass();
+            Method reader = clean.methods.get(getter.toString()), start = clean.methods.get(owner + "-><clinit>()V");
+            if (reader == null || start == null || reader.getImplementation() == null || start.getImplementation() == null
+                    || clean.duplicates.contains(owner)) return null;
+            List<Instruction> read = instructions(reader), filled = instructions(start);
+            FieldReference kept = read.size() == 2 && read.get(0).getOpcode() == Opcode.SGET_WIDE && read.get(1).getOpcode() == Opcode.RETURN_WIDE
+                    ? field(read.get(0)) : null;
+            if (kept == null || !kept.getDefiningClass().equals(owner)) return null;
+            List<Integer> stored = new ArrayList<>();
+            for (int at = 0; at < filled.size(); at++) {
+                FieldReference f = field(filled.get(at));
+                if (filled.get(at).getOpcode() == Opcode.SPUT_WIDE && f != null && f.getDefiningClass().equals(owner) && f.getName().equals(kept.getName())) stored.add(at);
+            }
+            if (stored.size() != 1 || stored.get(0) < 3) return null;
+            int at = stored.get(0);
+            MethodReference made = filled.get(at - 2).getOpcode() == Opcode.INVOKE_STATIC ? called(filled.get(at - 2)) : null;
+            if (!(filled.get(at - 3) instanceof WideLiteralInstruction written) || !written.getOpcode().name.startsWith("const-wide")
+                    || made == null || !descriptor(made).equals("(J)J") || filled.get(at - 1).getOpcode() != Opcode.MOVE_RESULT_WIDE) return null;
+            return written.getWideLiteral();
         }
 
         /**

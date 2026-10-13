@@ -74,6 +74,16 @@ The "t" at the top of the dashboard is `com.tumblr.ui.widget.TLogoView`, a `Fram
 - **Listeners:** `TLogoView.setOnClickListener` wraps the listener in `h4j`, which runs the logo's own `d()` first when its flag `a` is set, and the constructor sets one too, so the view always reports a click listener. Nothing sets a long press or touch listener on it, so the settings patch's long press leaves the tap alone.
 - `l6(TLogoView)` only recolors and animates the logo for `HUNGRY_HUNGRY_DASHBOARD`.
 
+## Themes and colors
+
+Tumblr colors a screen in three ways, and a palette's background has to change in all of them. Read on 2026-10-13.
+
+- **Activity themes:** `fh0$a.J(pe0, int)` calls `setTheme` with the palette's style for that activity, but only when the palette's map names the activity (`yw5` for Dark, read through `xg0.b`). Screens the map leaves out never get a palette theme, and the Compose settings (`settingshub.impl.hub.SettingsHubActivity`, `settingshub.impl.preferences.SettingsPreferencesActivity`) are among them. Find it as the one instance `(activity, int)` method that calls `setTheme(int)` on its first parameter and then reads its own companion.
+- **Older Compose theme:** `TumblrTheme` is `z2k.e(in4, mtk, oyk, kk8, ro4, int, int)`. Its colors come from `ztk.<init>(Context, int)`, which wraps the context in the style `jn4.a(in4, boolean)` picks (`BaseTumblrTheme`, `.Dark`, `.GothRave`, `.LCD`, `.Pride`). The palette parameter defaults to True Blue and several callers leave it there whatever the person picked (the dashboard's `TitleViewHolder$setTitleContent$1$1`, the Blaze screens), so a True Blue theme turns up in a Dark session.
+- **Design system:** `DsTheme` is `yy6.e(in4, bx6, kk8, ro4, int, int)`, found by its Compose note `com.tumblr.compose.ds.DsTheme (`. Its colors (`bx6`) aren't read from a theme. Each palette has a holder whose static initializer builds them once from the color list `lw6`: `xw5` Dark, `mpk` True Blue, `u8b` Low-Contrast Classic, `lx8` Goth Rave, `ebf` Pride. System asks `m3j.a(Configuration)` and takes `xw5` at night, which is how to tell the Dark holder from the rest.
+- **The Dark holder's grays:** in `xw5.<clinit>` the gray behind a screen is `lw6.y()` (#0d0d0d, `ds_colorGray95`) at 37, 123, 284 and 288, filling `Chrome.chrome`, `Content.mobileContainer`, `Global.sideMenu` and `Global.topMenu`. The next gray up is `lw6.x()` (#1a1a1a, `ds_colorGray90`) at 39, 49, 113 and 292, filling `Chrome.panel`, `Chrome.mobile`, `Content.panel` and `Global.modal`. The group classes keep those names in `toString` (`nk3` Chrome, `b05` Content, `ev8` Global). The settings screens draw their bar and rows with `Content.panel` (`b05.g()`).
+- **Layouts:** the same eight surfaces are theme attributes for Views. `BaseTumblrTheme.Dark` sets `st_chrome`, `st_content_mobile_container`, `st_side_menu` and `st_top_menu` to Gray95, and `st_chrome_panel`, `st_chrome_mobile`, `st_content_panel` and `st_modal` to Gray90. The redesigned post card reads `?attr/st_content_panel` through its header, footer and shadow drawables.
+
 ## Other anchors
 
 - `com.tumblr.UserInfo` keeps its name and has about 40 static `()Z` preference getters. `G()Z` reads `pref_is_premium_user`.

@@ -121,8 +121,9 @@ mutation|unreadDots|unreadDots|Lapp/hushtumblr/extension/tumblr/ui/BottomBar;->u
 # The tab list and bar hooks. Hide the Communities tab hides its button through the bar hook too,
 # and keeps its feature switch capability for the post editor's tips.
 mutation|exploreTab,notificationsTab,tabOrder,communitiesTabButton|bottomBarTabs|Lapp/hushtumblr/extension/tumblr/ui/BottomBarTabs;->arrangeTabs(Ljava/util/List;)V|Lapp/hushtumblr/extension/tumblr/ui/BottomBarTabs;->arrangeBar(Landroid/view/ViewGroup;)V|Lcom/tumblr/R$id;->dashboard_badge
-# The activity and Compose theme hooks, and the card surface attribute only the Compose colors read.
-mutation|themeBackground|darkBackground|Lapp/hushtumblr/extension/tumblr/ui/DarkBackground;->onActivityTheme(Landroid/app/Activity;)V|Lapp/hushtumblr/extension/tumblr/ui/DarkBackground;->onComposeTheme(Landroid/content/res/Resources$Theme;)V|Lcom/tumblr/themes/R$attr;->themeMainContentBackgroundColor
+# The activity and Compose theme hooks, the card surface attribute only the Compose colors read,
+# and the two hooks the Dark palette's design colors hand their page and panel grays to.
+mutation|themeBackground|darkBackground|Lapp/hushtumblr/extension/tumblr/ui/DarkBackground;->onActivityTheme(Landroid/app/Activity;)V|Lapp/hushtumblr/extension/tumblr/ui/DarkBackground;->onComposeTheme(Landroid/content/res/Resources$Theme;)V|Lcom/tumblr/themes/R$attr;->themeMainContentBackgroundColor|Lapp/hushtumblr/extension/tumblr/ui/DarkBackground;->designPage(J)J|Lapp/hushtumblr/extension/tumblr/ui/DarkBackground;->designPanel(J)J
 # The diamond's question, the TumblrMart button hook, the two search bar room hooks and the
 # preference only the diamond's class names.
 mutation|premiumDiamond,tumblrMartButtons|storeButtons|Lapp/hushtumblr/extension/tumblr/ui/StoreButtons;->hideDiamond(Landroid/view/View;Landroid/view/View;)Z|Lapp/hushtumblr/extension/tumblr/ui/StoreButtons;->hideTumblrMart(Landroid/view/View;)V|Lapp/hushtumblr/extension/tumblr/ui/StoreButtons;->tumblrMartRoom(I)I|Lapp/hushtumblr/extension/tumblr/ui/StoreButtons;->diamondRoom(I)I|arg_has_clicked_on_premium_diamond

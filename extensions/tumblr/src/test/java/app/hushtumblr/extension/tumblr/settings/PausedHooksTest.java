@@ -241,8 +241,10 @@ public class PausedHooksTest {
         TextSettings.HIDDEN_WORDS.save(TimelineItems.PROBE_WORD);
         probes.put(Settings.HIDE_POSTS_WITH_WORDS, Collections.singletonList(() -> withSwitch(
                 Settings.WORDS_CURRENT_TEXT, TimelineItems::aPageLosesItsPostWithAHiddenWord)));
-        // A theme on the Dark palette gets the patch's background style.
-        probes.put(Settings.DARK_BACKGROUND, Collections.singletonList(DarkBackgroundForTests::paintsATheme));
+        // A theme on the Dark palette gets the patch's background style, and the design system's
+        // page gray comes back as the style's color.
+        probes.put(Settings.DARK_BACKGROUND, Arrays.asList(
+                DarkBackgroundForTests::paintsATheme, DarkBackgroundForTests::paintsTheDesignColors));
         // The Explore tab's button goes when the bar is built.
         probes.put(Settings.HIDE_EXPLORE_TAB, Collections.singletonList(BottomBarTabsForTests::hidesTheExploreTab));
         // The Notifications tab's button goes when the bar is built.

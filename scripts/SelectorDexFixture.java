@@ -19,6 +19,8 @@ import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstructio
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction21t;
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction22c;
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction35c;
+import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction3rc;
+import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction51l;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableFieldReference;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableMethodReference;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableStringReference;
@@ -56,6 +58,9 @@ public final class SelectorDexFixture {
     private static final String REACTIONS = "Lcom/tumblr/ui/widget/postcontrol/CommunitiesReactionControl;";
     private static final String BAR = FIXTURE + "BottomController;", TABS = FIXTURE + "Tab;";
     private static final String ACTIVITY = FIXTURE + "ThemeActivity;", PALETTE = FIXTURE + "Palette;", COLORS = FIXTURE + "Colors;";
+    private static final String DS_THEME = FIXTURE + "DsTheme;", DS_COLORS = FIXTURE + "DsColors;", COLOR_LIST = FIXTURE + "ColorList;";
+    private static final String DARK_COLORS = FIXTURE + "DarkColors;", BLUE_COLORS = FIXTURE + "BlueColors;", NIGHT = FIXTURE + "Night;";
+    private static final String CONFIGURATION = "Landroid/content/res/Configuration;";
     private static final String STORE_FLAGS = FIXTURE + "StoreFlags;";
     private static final List<String> CASES = new ArrayList<>();
 
@@ -79,6 +84,13 @@ public final class SelectorDexFixture {
 
     private static Instruction returned(int register, boolean object) {
         return new ImmutableInstruction11x(object ? Opcode.RETURN_OBJECT : Opcode.RETURN, register);
+    }
+
+    private static Instruction movedWide(int register) { return new ImmutableInstruction11x(Opcode.MOVE_RESULT_WIDE, register); }
+    private static Instruction returnedWide(int register) { return new ImmutableInstruction11x(Opcode.RETURN_WIDE, register); }
+    private static Instruction wide(int register, long value) { return new ImmutableInstruction51l(Opcode.CONST_WIDE, register, value); }
+    private static Instruction range(Opcode opcode, ImmutableMethodReference reference, int first, int count) {
+        return new ImmutableInstruction3rc(opcode, first, count, reference);
     }
 
     private static Instruction end() { return new ImmutableInstruction10x(Opcode.RETURN_VOID); }
@@ -107,6 +119,10 @@ public final class SelectorDexFixture {
 
     private static Field member(String owner, String name, String type) {
         return new ImmutableField(owner, name, type, AccessFlags.PUBLIC.getValue(), null, Set.of(), Set.of());
+    }
+
+    private static Field staticMember(String owner, String name, String type) {
+        return new ImmutableField(owner, name, type, AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue(), null, Set.of(), Set.of());
     }
 
     private static void put(Map<String, ClassDef> classes, String owner, List<Method> methods, Field... fields) {
@@ -283,7 +299,80 @@ public final class SelectorDexFixture {
                 field(Opcode.SGET, 2, "Lcom/tumblr/themes/R$attr;", "themeMainContentBackgroundColor", "I"), end());
         if (patched) colors.add(5, staticCall(hooks, "onComposeTheme", "V", new String[]{THEME}, fault.equals("theme-wrong-compose") ? 0 : 1));
         put(classes, COLORS, List.of(method(COLORS, "<init>", "V", false, 6, colors, CONTEXT, "I")));
-        if (patched) put(classes, hooks, List.of(hook(hooks, "onActivityTheme", "V", -1, "Landroid/app/Activity;"), hook(hooks, "onComposeTheme", "V", -1, THEME)));
+        designColors(classes, hooks, patched, fault);
+        if (patched) put(classes, hooks, List.of(hook(hooks, "onActivityTheme", "V", -1, "Landroid/app/Activity;"), hook(hooks, "onComposeTheme", "V", -1, THEME),
+                wideHook(hooks, "designPage"), wideHook(hooks, "designPanel")));
+    }
+
+    /** A hook that takes a long and hands one back, asking whether the settings are ready as every hook does. */
+    private static Method wideHook(String owner, String name) {
+        return method(owner, name, "J", true, 2,
+                body(staticCall("Lapp/hushtumblr/extension/shared/Utils;", "settingsReady", "Z", new String[0]), returnedWide(0)), "J");
+    }
+
+    /**
+     * The design system as the patch reads it: a theme function that takes the Dark palette's colors
+     * in night mode and another palette's otherwise, a color list whose getters each hand out one
+     * fixed color, and a holder per palette whose initializer reads the list and keeps what it built.
+     * Both holders read the page gray once, the panel gray twice and a border in between. Patched,
+     * only the Dark one hands its page and panel grays to the hooks, each answer going back where
+     * the gray was.
+     */
+    private static void designColors(Map<String, ClassDef> classes, String hooks, boolean patched, String fault) {
+        String pack = FIXTURE + "ColorPack;";
+        String[] longs = {"J", "J", "J", "J"};
+        put(classes, DS_COLORS, List.of(method(DS_COLORS, "<init>", "V", false, 9,
+                body(invoke(Opcode.INVOKE_DIRECT, ref(OBJECT, "<init>", "V"), 0), end()), longs)));
+        put(classes, NIGHT, List.of(method(NIGHT, "isNight", "Z", true, 2, body(constant(0, 1), returned(0, false)), CONFIGURATION)));
+        put(classes, pack, List.of(method(pack, "pack", "J", true, 2, body(returnedWide(0)), "J")));
+        String[] colors = {"page", "panel", "border"};
+        long[] values = {0xFF0D0D0DL, 0xFF1A1A1AL, 0xFF333333L};
+        List<Instruction> fill = new ArrayList<>();
+        List<Method> list = new ArrayList<>();
+        for (int n = 0; n < colors.length; n++) {
+            fill.addAll(body(wide(0, values[n]), staticCall(pack, "pack", "J", new String[]{"J"}, 0, 1), movedWide(0),
+                    field(Opcode.SPUT_WIDE, 0, COLOR_LIST, colors[n], "J")));
+            list.add(method(COLOR_LIST, colors[n], "J", false, 3, body(field(Opcode.SGET_WIDE, 0, COLOR_LIST, colors[n], "J"), returnedWide(0))));
+        }
+        fill.add(end());
+        list.add(method(COLOR_LIST, "<clinit>", "V", true, 2, fill));
+        put(classes, COLOR_LIST, list, staticMember(COLOR_LIST, "page", "J"), staticMember(COLOR_LIST, "panel", "J"),
+                staticMember(COLOR_LIST, "border", "J"), staticMember(COLOR_LIST, "LIST", COLOR_LIST));
+
+        // The colors go into v1 to v8 as four longs, in the order the constructor takes them.
+        String[] reads = {"page", "panel", "border", "panel"};
+        for (String holder : List.of(DARK_COLORS, BLUE_COLORS)) {
+            boolean dark = holder.equals(DARK_COLORS);
+            List<Instruction> build = body(typed(Opcode.NEW_INSTANCE, 0, DS_COLORS), field(Opcode.SGET_OBJECT, 9, COLOR_LIST, "LIST", COLOR_LIST));
+            List<Instruction> late = new ArrayList<>();
+            for (int n = 0; n < reads.length; n++) {
+                int kept = 1 + 2 * n;
+                build.addAll(body(invoke(Opcode.INVOKE_VIRTUAL, ref(COLOR_LIST, reads[n], "J"), 9), movedWide(kept)));
+                build.addAll(late);
+                late.clear();
+                if (!patched || reads[n].equals("border")) continue;
+                if (!dark && !(fault.equals("theme-design-other-palette") && n == 0)) continue;
+                if (dark && fault.equals("theme-design-missing-read") && n == 3) continue;
+                String name = reads[n].equals("page") ? "designPage" : "designPanel";
+                int taken = dark && fault.equals("theme-design-wrong-register") && n == 3 ? 3 : kept;
+                List<Instruction> handed = body(range(Opcode.INVOKE_STATIC_RANGE, ref(hooks, name, "J", "J"), taken, 2), movedWide(kept));
+                if (dark && fault.equals("theme-design-late") && n == 0) late.addAll(handed);
+                else build.addAll(handed);
+            }
+            build.addAll(body(range(Opcode.INVOKE_DIRECT_RANGE, ref(DS_COLORS, "<init>", "V", longs), 0, 9),
+                    field(Opcode.SPUT_OBJECT, 0, holder, "COLORS", DS_COLORS), end()));
+            put(classes, holder, List.of(method(holder, "<clinit>", "V", true, 10, build),
+                    method(holder, "get", DS_COLORS, true, 1, body(field(Opcode.SGET_OBJECT, 0, holder, "COLORS", DS_COLORS), returned(0, true)))),
+                    staticMember(holder, "COLORS", DS_COLORS));
+        }
+
+        // if-eqz skips its own two units, the Dark palette's call, its answer and the return.
+        List<Instruction> theme = body(literal(0, "com.tumblr.compose.ds.DsTheme (DsTheme.kt:35)"),
+                staticCall(NIGHT, "isNight", "Z", new String[]{CONFIGURATION}, 2), moved(0, false),
+                new ImmutableInstruction21t(Opcode.IF_EQZ, 0, 7),
+                staticCall(DARK_COLORS, "get", DS_COLORS, new String[0]), moved(1, true), end(),
+                staticCall(BLUE_COLORS, "get", DS_COLORS, new String[0]), moved(1, true), end());
+        put(classes, DS_THEME, List.of(method(DS_THEME, "theme", "V", true, 4, theme, CONFIGURATION, DS_COLORS)));
     }
 
     private static void storeButtons(Map<String, ClassDef> classes, boolean patched, String fault) {
@@ -374,6 +463,10 @@ public final class SelectorDexFixture {
         fixture(root, "theme-good", "", "darkBackground");
         fixture(root, "theme-wrong-activity", "onActivityTheme(Landroid/app/Activity;)V doesn't take what its rule hands it", "darkBackground");
         fixture(root, "theme-wrong-compose", "onComposeTheme(Landroid/content/res/Resources$Theme;)V doesn't take what its rule hands it", "darkBackground");
+        fixture(root, "theme-design-wrong-register", "designPanel(J)J doesn't take a design gray and put its answer back where the gray was", "darkBackground");
+        fixture(root, "theme-design-missing-read", "designPanel(J)J has 1 calls", "darkBackground");
+        fixture(root, "theme-design-late", "designPage(J)J is not where its rule puts it", "darkBackground");
+        fixture(root, "theme-design-other-palette", "misrouted call Lapp/hushtumblr/extension/tumblr/ui/DarkBackground;->designPage(J)J", "darkBackground");
         fixture(root, "store-good", "", "hideTumblrMart");
         fixture(root, "store-swapped-diamond", "hideDiamond(Landroid/view/View;Landroid/view/View;)Z isn't asked first thing", "hideTumblrMart");
         fixture(root, "store-missing-second-button", "hideTumblrMart(Landroid/view/View;)V has 1 calls", "hideTumblrMart");
