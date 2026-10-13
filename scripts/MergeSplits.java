@@ -6,7 +6,9 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.security.MessageDigest;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * Merges the APKs of a split bundle (.apkm, .apks or .xapk) into one APK with the desktop CLI's own
@@ -28,7 +30,8 @@ import java.util.TreeMap;
  * <p>Each APK's SHA-256 comes after the two paths, as {@code name:sha256}, hashed where the scripts
  * checked its signature (Lock-SplitFiles, Assert-SplitsAuthentic). The directory has to hold
  * exactly those files with exactly those bytes, or nothing is merged: the merge is made of what
- * was checked.
+ * was checked. The merger lists the directory again for itself, so it has to hold the same file
+ * names once the merge is done too, or the merge is deleted.
  *
  * <p>The arguments are the CLI's own (PatchCommand, 1.17.0): {@code merge$default} with every
  * default but the last flag, which it passes as false, the same value the default gives it.
@@ -94,6 +97,19 @@ public final class MergeSplits {
             }
         }
         new ApkMerger().merge(splits, merged, true, null, true, null, false);
+        // The merger lists the directory again itself, so an APK that arrived after the check above
+        // went into the merge unchecked. The directory has to hold the same files once it's done.
+        File[] after = splits.listFiles();
+        Set<String> afterNames = new TreeSet<>();
+        if (after != null) {
+            for (File entry : after) afterNames.add(entry.getName());
+        }
+        if (after == null || !afterNames.equals(expected.keySet())) {
+            Files.deleteIfExists(merged.toPath());
+            System.err.println("[merge] " + splits.getPath() + " holds " + afterNames + " after the merge, not the APKs that were checked ("
+                + expected.keySet() + "), so the merge was thrown away.");
+            System.exit(2);
+        }
         // The merger answers nothing, so the file is the only evidence it worked.
         if (!merged.isFile() || merged.length() == 0) {
             System.err.println("[merge] the merge of " + splits.getName() + " wrote no APK at " + merged.getPath());
