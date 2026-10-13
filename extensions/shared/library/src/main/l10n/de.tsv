@@ -239,7 +239,7 @@ Hide the Communities tab	Communities-Tab ausblenden
 Takes the Communities tab out of the bottom bar and stops Communities tips in the post editor.	Entfernt den Communities-Tab aus der unteren Leiste und beendet die Communities-Tipps im Beitragseditor.
 # context: the Hide Blaze prompts switch on the Interface page. Blaze is Tumblr's paid post promotion.
 Hide Blaze prompts	Blaze-Hinweise ausblenden
-Hides the Blaze buttons, banners and the nudge to promote a post after you share it.	Blendet die Blaze-Schaltflächen, -Banner und den Hinweis aus, einen Beitrag nach dem Teilen zu bewerben.
+Hides the Blaze buttons, banners and the nudge to promote a post after you share it. The Blaze item in a post's menu stays.	Blendet die Blaze-Schaltflächen, -Banner und den Hinweis aus, einen Beitrag nach dem Teilen zu bewerben. Der Blaze-Eintrag im Menü eines Beitrags bleibt.
 # context: the Skip review prompts switch on the Interface page. It stops Tumblr's rate-this-app pop-up.
 # context: the Skip review prompts switch on the Interface page. It stops Tumblr's "What do you think of the Tumblr app?" pop-up.
 Skip review prompts	Bewertungsaufforderungen überspringen

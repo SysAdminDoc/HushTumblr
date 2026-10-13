@@ -552,7 +552,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                     SettingsIcons.BLOCK);
             patchToggle(ui, context, build, PatchFamily.HIDE_BLAZE_PROMPTS, Settings.HIDE_BLAZE_PROMPTS,
                     L10n.t("Hide Blaze prompts"), L10n.t("Hides the Blaze buttons, banners and the nudge to promote "
-                        + "a post after you share it."), SettingsIcons.BLOCK);
+                        + "a post after you share it. The Blaze item in a post's menu stays."),
+                    SettingsIcons.BLOCK);
             // Not flag-backed, but the TumblrMart button is only placed when its screen is made.
             patchToggle(ui, context, build, PatchFamily.HIDE_TUMBLRMART, Settings.HIDE_TUMBLRMART,
                     L10n.t("Hide the diamond and TumblrMart"), L10n.t("Hides the Premium diamond on your dashboard, "

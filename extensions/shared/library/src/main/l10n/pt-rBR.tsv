@@ -236,7 +236,7 @@ Hide the Communities tab	Ocultar a aba Comunidades
 Takes the Communities tab out of the bottom bar and stops Communities tips in the post editor.	Tira a aba Comunidades da barra inferior e para as dicas sobre comunidades no editor de posts.
 # context: the Hide Blaze prompts switch on the Interface page. Blaze is Tumblr's paid post promotion.
 Hide Blaze prompts	Ocultar avisos do Blaze
-Hides the Blaze buttons, banners and the nudge to promote a post after you share it.	Esconde os botões e banners do Blaze e o aviso para promover um post depois que você o compartilha.
+Hides the Blaze buttons, banners and the nudge to promote a post after you share it. The Blaze item in a post's menu stays.	Esconde os botões e banners do Blaze e o aviso para promover um post depois que você o compartilha. A opção Blaze no menu de um post continua lá.
 # context: the Skip review prompts switch on the Interface page. It stops Tumblr's rate-this-app pop-up.
 # context: the Skip review prompts switch on the Interface page. It stops Tumblr's "What do you think of the Tumblr app?" pop-up.
 Skip review prompts	Pular pedidos de avaliação
