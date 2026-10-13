@@ -4008,6 +4008,8 @@ try {
             $nameBytes = [System.Text.Encoding]::UTF8.GetBytes([string]$member.Name)
             $data = [System.Text.Encoding]::ASCII.GetBytes([string]$member.Text)
             $crc = Get-TestCrc32 $data
+            # The size both headers declare, which a crafted member can set below what it holds.
+            $declares = if ($null -ne $member.Declares) { [uint32]$member.Declares } else { [uint32]$data.Length }
             [uint16]$method = 0
             $stored = $data
             if ($member.Deflate) {
@@ -4022,11 +4024,11 @@ try {
             $offset = [uint32]$archive.Position
             $local.Write([uint32]0x04034b50); $local.Write([uint16]20); $local.Write([uint16]0); $local.Write($method)
             $local.Write([uint16]0); $local.Write([uint16]0x21); $local.Write([uint32]$crc)
-            $local.Write([uint32]$stored.Length); $local.Write([uint32]$data.Length)
+            $local.Write([uint32]$stored.Length); $local.Write($declares)
             $local.Write([uint16]$nameBytes.Length); $local.Write([uint16]0); $local.Write($nameBytes); $local.Write($stored)
             $index.Write([uint32]0x02014b50); $index.Write([uint16]20); $index.Write([uint16]20); $index.Write([uint16]0)
             $index.Write($method); $index.Write([uint16]0); $index.Write([uint16]0x21); $index.Write([uint32]$crc)
-            $index.Write([uint32]$stored.Length); $index.Write([uint32]$data.Length); $index.Write([uint16]$nameBytes.Length)
+            $index.Write([uint32]$stored.Length); $index.Write($declares); $index.Write([uint16]$nameBytes.Length)
             $index.Write([uint16]0); $index.Write([uint16]0); $index.Write([uint16]0); $index.Write([uint16]0)
             $index.Write([uint32]0); $index.Write([uint32]$offset); $index.Write($nameBytes)
         }
@@ -4104,6 +4106,58 @@ try {
     Assert-Throws { Expand-SplitBundle -Apk $noApk -Destination (Join-Path $noApkDir 'merged.apk') } `
         '*empty.apkm holds no APK. Nothing was unpacked.*' 'A bundle with no APK in it was unpacked.'
     Assert-True (-not (Test-Path -LiteralPath $noApkDir)) 'Refusing a bundle with no APK in it created its merge folder.'
+
+    # Sizes are capped before anything is written, so a crafted bundle can't fill the disk: one APK
+    # declaring more than -MemberLimit, or APKs declaring more than -TotalLimit together, are refused
+    # with nothing unpacked, and a bundle right at both limits unpacks. The limits are small here; the
+    # defaults are 1 GiB an APK and 2 GiB a bundle. Get-BaseApk holds the base to the same rule.
+    $sizeDir = Join-Path $guardRoot 'sizes'
+    New-Item -ItemType Directory -Path $sizeDir -Force | Out-Null
+    $sizeBundle = Join-Path $sizeDir 'bundle.apkm'
+    New-TestRawZip -Path $sizeBundle -Members @(
+        @{ Name = 'base.apk'; Text = ('b' * 600) }, @{ Name = 'split_config.en.apk'; Text = ('e' * 600); Deflate = $true })
+    $sizeBefore = Get-TestTreeState $sizeDir
+    $sizeMerge = Join-Path $sizeDir 'merged.apk'
+    Assert-Throws { Expand-SplitBundle -Apk $sizeBundle -Destination $sizeMerge -MemberLimit 500 } `
+        "*Refusing bundle.apkm: its member 'base.apk' would unpack to 600 bytes, more than the 500 bytes one APK may take. Nothing was unpacked.*" `
+        'An APK past the size limit was unpacked.'
+    Assert-Throws { Expand-SplitBundle -Apk $sizeBundle -Destination $sizeMerge -TotalLimit 1000 } `
+        '*Refusing bundle.apkm: its APKs would unpack to 1200 bytes, more than the 1000 bytes a bundle may take. Nothing was unpacked.*' `
+        'A bundle past the size limit was unpacked.'
+    Assert-Throws { Get-BaseApk -Apk $sizeBundle -Destination (Join-Path $sizeDir 'base.apk') -Limit 500 } `
+        "*Refusing bundle.apkm: its base APK 'base.apk' would unpack to 600 bytes, more than the 500 bytes one APK may take*" `
+        'A base APK past the size limit was taken out.'
+    Assert-True ((Get-TestTreeState $sizeDir) -ceq $sizeBefore) 'Refusing a bundle past a size limit changed a file or left one behind.'
+    $withinLimits = Expand-SplitBundle -Apk $sizeBundle -Destination $sizeMerge -MemberLimit 600 -TotalLimit 1200
+    try {
+        Assert-True (@($withinLimits.Files).Count -eq 2 -and
+            (@($withinLimits.Files | ForEach-Object { (Get-Item -LiteralPath $_.Path).Length }) -join ',') -ceq '600,600') `
+            'A bundle right at its size limits did not unpack whole.'
+    } finally { Remove-SplitDirectory -Splits $withinLimits }
+
+    # A member declaring fewer bytes than it inflates to never unpacks past what it declares, the
+    # size the limits read. Windows PowerShell 5.1's .NET Framework inflater reads to the end, which
+    # Copy-BundleMember refuses; newer .NET stops at the declared size itself. Either way no file holds
+    # more than 100 bytes, and a refusal leaves no unpacked folder.
+    $lyingBundle = Join-Path $sizeDir 'lying.apkm'
+    New-TestRawZip -Path $lyingBundle -Members @(@{ Name = 'base.apk'; Text = ('b' * 4000); Deflate = $true; Declares = 100 })
+    foreach ($taker in @('Expand-SplitBundle', 'Get-BaseApk')) {
+        $taken = $null
+        $lyingRefusal = $null
+        $lyingOut = Join-Path $sizeDir "lying-$taker.apk"
+        try { $taken = & $taker -Apk $lyingBundle -Destination $lyingOut } catch { $lyingRefusal = $_.Exception.Message }
+        try {
+            $written = @(if ($taker -eq 'Expand-SplitBundle') { @($taken.Files | ForEach-Object { $_.Path }) } else { @($taken) }) |
+                Where-Object { $_ -and (Test-Path -LiteralPath $_) }
+            Assert-True ((-not $lyingRefusal -or ($lyingRefusal -like "*Refusing lying.apkm: its member 'base.apk'*Nothing was kept.*" -and
+                        -not (Test-Path -LiteralPath $lyingOut) -and @(Get-ChildItem -LiteralPath $sizeDir -Force -Filter '.splits-*').Count -eq 0)) -and
+                    @($written | Where-Object { (Get-Item -LiteralPath $_).Length -gt 100 }).Count -eq 0) `
+                "$taker unpacked a member declaring 100 bytes past what it declares: $lyingRefusal"
+        } finally {
+            if ($taker -eq 'Expand-SplitBundle') { Remove-SplitDirectory -Splits $taken }
+            Remove-Item -LiteralPath $lyingOut -Force -ErrorAction SilentlyContinue
+        }
+    }
 
     # Distributors' layouts unpack whole, the APKs alone and byte for byte, into a .splits- folder
     # beside the merge that is gone once the caller is done: an .apkm (base.apk, its splits,

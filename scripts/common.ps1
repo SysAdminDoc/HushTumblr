@@ -305,7 +305,9 @@ function Get-BaseApk {
         names it base.apk. An .xapk names it after the package and says so in its manifest.json,
         and its config.arm64_v8a split can be the larger file, so size alone can pick the wrong
         one. The largest APK that isn't a config or split_ file is the fallback when nothing names
-        the base, and the largest of any is the last resort.
+        the base, and the largest of any is the last resort. A base declaring more than -Limit
+        bytes is refused before anything is written, and it never unpacks past what it declares
+        (Copy-BundleMember).
 
         Both paths are resolved against PowerShell's location before .NET sees them, and the
         answer is a full path. .NET reads a relative path against the process's own directory,
@@ -314,7 +316,8 @@ function Get-BaseApk {
     #>
     param(
         [Parameter(Mandatory = $true)][string]$Apk,
-        [Parameter(Mandatory = $true)][string]$Destination
+        [Parameter(Mandatory = $true)][string]$Destination,
+        [long]$Limit = 1GB
     )
 
     $Apk = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Apk)
@@ -347,12 +350,62 @@ function Get-BaseApk {
             $entry = @($apks | Where-Object { $_.Name -notmatch '^(?i)(config\.|split_)' }) + $apks | Select-Object -First 1
         }
         if (-not $entry) { throw "$(Split-Path -Leaf $Apk) holds no APK." }
+        $label = Split-Path -Leaf $Apk
+        if ($entry.Length -gt $Limit) {
+            throw ("Refusing ${label}: its base APK '$($entry.FullName)' would unpack to $($entry.Length) bytes, more than " +
+                "the $Limit bytes one APK may take. Nothing was unpacked.")
+        }
         New-Item -ItemType Directory -Force -Path (Split-Path -Parent $Destination) | Out-Null
-        [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $Destination, $true)
+        $sink = [System.IO.File]::Open($Destination, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write,
+            [System.IO.FileShare]::None)
+        $copied = $false
+        try {
+            Copy-BundleMember -Entry $entry -Sink $sink -Label $label
+            $copied = $true
+        } finally {
+            $sink.Dispose()
+            if (-not $copied) { Remove-Item -LiteralPath $Destination -Force -ErrorAction SilentlyContinue }
+        }
     } finally {
         $zip.Dispose()
     }
     return $Destination
+}
+
+function Copy-BundleMember {
+    <#
+    .SYNOPSIS
+        One member of a bundle written to -Sink, refusing a byte more than the member declares.
+    .DESCRIPTION
+        The size limits read each member's declared size before anything is written, and the
+        archive is what declares it, so nothing past it is written: .NET Framework's inflater
+        (Windows PowerShell 5.1) reads a deflated member to its end whatever it declares, where
+        newer .NET stops at the declared size. A member that fails to inflate is refused the same
+        way. The caller deletes what was written.
+    #>
+    param(
+        [Parameter(Mandatory = $true)]$Entry,
+        [Parameter(Mandatory = $true)][System.IO.Stream]$Sink,
+        [Parameter(Mandatory = $true)][string]$Label
+    )
+
+    $source = $Entry.Open()
+    try {
+        $buffer = New-Object byte[] 1048576
+        $written = 0L
+        while ($true) {
+            try { $read = $source.Read($buffer, 0, $buffer.Length) }
+            catch { throw "Refusing ${Label}: its member '$($Entry.FullName)' doesn't unpack cleanly ($($_.Exception.Message)). Nothing was kept." }
+            if ($read -le 0) { break }
+            $written += $read
+            if ($written -gt $Entry.Length) {
+                throw "Refusing ${Label}: its member '$($Entry.FullName)' unpacks to more than the $($Entry.Length) bytes it declares. Nothing was kept."
+            }
+            $Sink.Write($buffer, 0, $read)
+        }
+    } finally {
+        $source.Dispose()
+    }
 }
 
 function Get-SplitMemberProblem {
@@ -405,7 +458,9 @@ function Expand-SplitBundle {
         resolved to a path that has to sit directly in that directory. An APK in a folder of the
         archive (an .apks keeps them in splits/) is unpacked by its file name, as the merger
         named each split by its file name. The extension is written as .apk, which is what the
-        merger reads.
+        merger reads. An APK declaring more than -MemberLimit bytes, or APKs declaring more than
+        -TotalLimit together, are refused before anything is written, so a crafted bundle can't
+        fill the disk, and no member unpacks past what it declares (Copy-BundleMember).
 
         The archive stays open, and so unwritable, from the first name read to the last byte
         unpacked. The result goes to Lock-SplitFiles, then Invoke-SplitMerge, and to
@@ -416,7 +471,9 @@ function Expand-SplitBundle {
     #>
     param(
         [Parameter(Mandatory = $true)][string]$Apk,
-        [Parameter(Mandatory = $true)][string]$Destination
+        [Parameter(Mandatory = $true)][string]$Destination,
+        [long]$MemberLimit = 1GB,
+        [long]$TotalLimit = 2GB
     )
 
     $Apk = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Apk)
@@ -443,6 +500,8 @@ function Expand-SplitBundle {
                 if ($leaf -match '\.apk$') {
                     if ($leaf.Length -gt 128 -or $leaf -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*\.apk$') {
                         $problem = 'is an APK whose file name holds more than letters, digits, dots, dashes and underscores'
+                    } elseif ($entry.Length -gt $MemberLimit) {
+                        $problem = "would unpack to $($entry.Length) bytes, more than the $MemberLimit bytes one APK may take"
                     } else {
                         $target = $leaf.Substring(0, $leaf.Length - 4) + '.apk'
                         $key = $target.ToUpperInvariant()
@@ -457,6 +516,11 @@ function Expand-SplitBundle {
             if ($problem) { throw "Refusing ${label}: its member '$name' $problem. Nothing was unpacked." }
         }
         if ($plan.Count -eq 0) { throw "$label holds no APK. Nothing was unpacked." }
+        $declared = 0L
+        foreach ($item in $plan) { $declared += $item.Entry.Length }
+        if ($declared -gt $TotalLimit) {
+            throw "Refusing ${label}: its APKs would unpack to $declared bytes, more than the $TotalLimit bytes a bundle may take. Nothing was unpacked."
+        }
 
         $parent = Split-Path -Parent $Destination
         New-Item -ItemType Directory -Force -Path $parent | Out-Null
@@ -470,13 +534,10 @@ function Expand-SplitBundle {
                     [System.IO.Path]::GetFileName($path) -cne $item.Name) {
                 throw "Refusing ${label}: its member '$($item.Member)' would unpack to $path, outside $directory."
             }
-            $source = $item.Entry.Open()
-            try {
-                # CreateNew: a file already at that path, however it got there, is refused.
-                $sink = [System.IO.File]::Open($path, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write,
-                    [System.IO.FileShare]::None)
-                try { $source.CopyTo($sink) } finally { $sink.Dispose() }
-            } finally { $source.Dispose() }
+            # CreateNew: a file already at that path, however it got there, is refused.
+            $sink = [System.IO.File]::Open($path, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write,
+                [System.IO.FileShare]::None)
+            try { Copy-BundleMember -Entry $item.Entry -Sink $sink -Label $label } finally { $sink.Dispose() }
             $files.Add([pscustomobject]@{ Name = $item.Name; Path = $path; Member = $item.Member; Sha256 = $null; Handle = $null })
         }
     } catch {
