@@ -20,8 +20,9 @@
     the way APKPure lays out a split Tumblr build (the base named for the package, config splits,
     manifest.json and icon.png) and an .apkm. A resource only the split carries is in each merge, a
     table that lost it fails against the merge while base.apk would only have called it added, a
-    plain APK (a universal build like the fixture) comes back as it is, and a bundle the merger can't read is
-    refused.
+    plain APK (a universal build like the fixture) comes back as it is, and a bundle with no APK is
+    refused before the merger starts. MergeSplits.java itself refuses a bundle handed to it
+    straight and a directory holding anything but regular .apk files.
 #>
 [CmdletBinding()]
 param(
@@ -463,9 +464,45 @@ try {
     } catch {
         $refused = $_.Exception.Message
     }
-    Assert-True ($refused -like '*Could not merge empty.apkm into one APK (exit 1)*No `*.apk files found*' -and
+    Assert-True ($refused -like '*empty.apkm holds no APK. Nothing was unpacked.*' -and
         -not (Test-Path -LiteralPath (Join-Path $bundleDir 'merged/empty-merged.apk'))) `
-        "A bundle holding no APK was not refused by the merge: $refused"
+        "A bundle holding no APK was not refused before the merge: $refused"
+    Assert-True (@(Get-ChildItem -LiteralPath (Join-Path $bundleDir 'merged') -Force -Filter '.splits-*').Count -eq 0) `
+        'A merge left the folder it unpacked a bundle into behind.'
+
+    # MergeSplits.java reads a directory of APKs the scripts unpacked and checked, and nothing else.
+    # Handed a bundle straight, the merger would unpack it where its member names point, so that is
+    # refused, and so is a directory holding anything but regular .apk files, or none, all before
+    # the merger runs.
+    function Invoke-MergeSplits([string]$Splits, [string]$Merged) {
+        $ErrorActionPreference = 'Continue'
+        $global:LASTEXITCODE = -1
+        $said = @(& $Java '-Xmx1g' '-cp' $DesktopJar (Join-Path $PSScriptRoot 'MergeSplits.java') $Splits $Merged 2>&1 |
+            ForEach-Object { "$_" })
+        [pscustomobject]@{ ExitCode = $LASTEXITCODE; Text = $said -join "`n" }
+    }
+    $direct = Invoke-MergeSplits $apkm (Join-Path $bundleDir 'merged/direct.apk')
+    Assert-True ($direct.ExitCode -eq 2 -and $direct.Text -like '*is not a directory of split APKs*' -and
+        -not (Test-Path -LiteralPath (Join-Path $bundleDir 'merged/direct.apk'))) `
+        "MergeSplits.java merged a bundle handed to it straight.`n$($direct.Text)"
+    $mixedSplits = Join-Path $bundleDir 'mixed-splits'
+    New-Item -ItemType Directory -Force -Path (Join-Path $mixedSplits 'nested') | Out-Null
+    Copy-Item -LiteralPath $baseApk -Destination (Join-Path $mixedSplits 'base.apk')
+    $nested = Invoke-MergeSplits $mixedSplits (Join-Path $bundleDir 'merged/mixed.apk')
+    Assert-True ($nested.ExitCode -eq 2 -and $nested.Text -like '*holds nested, which is not a split APK*' -and
+        -not (Test-Path -LiteralPath (Join-Path $bundleDir 'merged/mixed.apk'))) `
+        "MergeSplits.java merged a directory holding a folder.`n$($nested.Text)"
+    Remove-Item -LiteralPath (Join-Path $mixedSplits 'nested') -Force
+    [System.IO.File]::WriteAllText((Join-Path $mixedSplits 'info.json'), '{}')
+    $other = Invoke-MergeSplits $mixedSplits (Join-Path $bundleDir 'merged/mixed.apk')
+    Assert-True ($other.ExitCode -eq 2 -and $other.Text -like '*holds info.json, which is not a split APK*' -and
+        -not (Test-Path -LiteralPath (Join-Path $bundleDir 'merged/mixed.apk'))) `
+        "MergeSplits.java merged a directory holding another file.`n$($other.Text)"
+    $noSplits = Join-Path $bundleDir 'no-splits'
+    New-Item -ItemType Directory -Force -Path $noSplits | Out-Null
+    $none = Invoke-MergeSplits $noSplits (Join-Path $bundleDir 'merged/none.apk')
+    Assert-True ($none.ExitCode -eq 2 -and $none.Text -like '*holds no split APK*') `
+        "MergeSplits.java went ahead with no split APK.`n$($none.Text)"
 } finally {
     $env:BUILD_QUEUE_SCRIPT = $savedQueueScript
     if ($caseRoot.StartsWith($requiredPrefix, [System.StringComparison]::OrdinalIgnoreCase) -and `

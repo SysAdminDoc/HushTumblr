@@ -355,6 +355,199 @@ function Get-BaseApk {
     return $Destination
 }
 
+function Get-SplitMemberProblem {
+    <#
+    .SYNOPSIS
+        What is wrong with one member name of a split bundle, or $null when nothing is.
+    .DESCRIPTION
+        Every member of an .apkm, .apks or .xapk is held to this before anything is unpacked
+        (Expand-SplitBundle). A member name is the archive's own text and can say anything: climb
+        out with .., start at a root, a drive or a UNC share, use a backslash, which Windows reads
+        as a separator and the archive doesn't, or end a segment in a dot or a space, which Windows
+        drops, so two names the archive keeps apart land on one file. Each is refused rather than
+        cleaned up, because no distributor's bundle needs one. Names in the archive are separated
+        by / alone.
+    #>
+    param([AllowEmptyString()][string]$Name)
+
+    if ([string]::IsNullOrEmpty($Name)) { return 'has no name' }
+    if ($Name -match '[\x00-\x1f\x7f]') { return 'holds a control character' }
+    if ($Name.Contains('\')) { return 'uses a backslash, which Windows reads as a path separator' }
+    if ($Name.Contains(':')) { return 'holds a colon, which names a drive or a stream on Windows' }
+    if ($Name.StartsWith('/')) { return 'is rooted' }
+    if ($Name.IndexOfAny([char[]]'*?"<>|') -ge 0) { return 'holds a character Windows does not allow in a file name' }
+    # Windows opens these as devices whatever extension follows.
+    $devices = @('CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$') + @(0..9 | ForEach-Object { "COM$_"; "LPT$_" })
+    $path = if ($Name.EndsWith('/')) { $Name.Substring(0, $Name.Length - 1) } else { $Name }
+    foreach ($segment in $path.Split('/')) {
+        if ($segment.Length -eq 0) { return 'has an empty path segment' }
+        if ($segment -eq '.' -or $segment -eq '..') { return 'climbs with a . or .. segment' }
+        if ($segment.EndsWith('.') -or $segment.EndsWith(' ')) {
+            return 'ends a segment with a dot or a space, which Windows drops'
+        }
+        if ($devices -contains $segment.Split('.')[0]) { return 'names a Windows device' }
+    }
+    return $null
+}
+
+function Expand-SplitBundle {
+    <#
+    .SYNOPSIS
+        A split bundle's APKs, unpacked into a directory of their own beside -Destination, once
+        every member name has passed.
+    .DESCRIPTION
+        The CLI's merger unpacked a bundle itself, into tmp_<hash> beside it, writing each .apk
+        member where its name pointed and truncating whatever was there, so a member named
+        ../<anything>.apk wrote outside the folder. Nothing is written here until every member
+        has passed Get-SplitMemberProblem, no two members are one path once case is ignored, as
+        Windows ignores it, and no two APKs share a file name. Then the APKs alone go into a new
+        .splits-<guid> directory beside -Destination, each created fresh at its file name and
+        resolved to a path that has to sit directly in that directory. An APK in a folder of the
+        archive (an .apks keeps them in splits/) is unpacked by its file name, as the merger
+        named each split by its file name. The extension is written as .apk, which is what the
+        merger reads.
+
+        The archive stays open, and so unwritable, from the first name read to the last byte
+        unpacked. Hand the result to Invoke-SplitMerge, and to Remove-SplitDirectory when done.
+        Production scripts go through Get-MergedApk, which checks the APKs' signatures in between.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Apk,
+        [Parameter(Mandatory = $true)][string]$Destination
+    )
+
+    $Apk = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Apk)
+    $Destination = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Destination)
+    $label = Split-Path -Leaf $Apk
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $zip = [System.IO.Compression.ZipFile]::OpenRead($Apk)
+    $directory = $null
+    $files = New-Object System.Collections.Generic.List[object]
+    try {
+        $paths = @{}
+        $leaves = @{}
+        $plan = New-Object System.Collections.Generic.List[object]
+        foreach ($entry in @($zip.Entries)) {
+            $name = $entry.FullName
+            $problem = Get-SplitMemberProblem -Name $name
+            if (-not $problem) {
+                $key = $name.TrimEnd('/').ToUpperInvariant()
+                if ($paths.ContainsKey($key)) { $problem = "is the same path as '$($paths[$key])' once case is ignored" }
+                else { $paths[$key] = $name }
+            }
+            if (-not $problem -and -not $name.EndsWith('/')) {
+                $leaf = $name.Substring($name.LastIndexOf('/') + 1)
+                if ($leaf -match '\.apk$') {
+                    if ($leaf.Length -gt 128 -or $leaf -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*\.apk$') {
+                        $problem = 'is an APK whose file name holds more than letters, digits, dots, dashes and underscores'
+                    } else {
+                        $target = $leaf.Substring(0, $leaf.Length - 4) + '.apk'
+                        $key = $target.ToUpperInvariant()
+                        if ($leaves.ContainsKey($key)) { $problem = "unpacks to $target, as '$($leaves[$key])' does" }
+                        else {
+                            $leaves[$key] = $name
+                            $plan.Add([pscustomobject]@{ Entry = $entry; Member = $name; Name = $target })
+                        }
+                    }
+                }
+            }
+            if ($problem) { throw "Refusing ${label}: its member '$name' $problem. Nothing was unpacked." }
+        }
+        if ($plan.Count -eq 0) { throw "$label holds no APK. Nothing was unpacked." }
+
+        $parent = Split-Path -Parent $Destination
+        New-Item -ItemType Directory -Force -Path $parent | Out-Null
+        $candidate = Join-Path $parent ('.splits-' + [guid]::NewGuid().ToString('N'))
+        # Without -Force, New-Item refuses a directory that is already there, so this one is ours.
+        New-Item -ItemType Directory -Path $candidate -ErrorAction Stop | Out-Null
+        $directory = [System.IO.Path]::GetFullPath($candidate)
+        foreach ($item in $plan) {
+            $path = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($directory, $item.Name))
+            if (-not [System.IO.Path]::GetDirectoryName($path).Equals($directory, [System.StringComparison]::OrdinalIgnoreCase) -or
+                    [System.IO.Path]::GetFileName($path) -cne $item.Name) {
+                throw "Refusing ${label}: its member '$($item.Member)' would unpack to $path, outside $directory."
+            }
+            $source = $item.Entry.Open()
+            try {
+                # CreateNew: a file already at that path, however it got there, is refused.
+                $sink = [System.IO.File]::Open($path, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write,
+                    [System.IO.FileShare]::None)
+                try { $source.CopyTo($sink) } finally { $sink.Dispose() }
+            } finally { $source.Dispose() }
+            $files.Add([pscustomobject]@{ Name = $item.Name; Path = $path; Member = $item.Member; Sha256 = $null; Handle = $null })
+        }
+    } catch {
+        if ($directory) { Remove-Item -LiteralPath $directory -Recurse -Force -ErrorAction SilentlyContinue }
+        throw
+    } finally {
+        $zip.Dispose()
+    }
+    return [pscustomobject]@{ Bundle = $Apk; Directory = $directory; Files = $files.ToArray() }
+}
+
+function Remove-SplitDirectory {
+    <#
+    .SYNOPSIS
+        Delete the directory Expand-SplitBundle unpacked into, warning rather than failing.
+    #>
+    param($Splits)
+
+    if ($null -eq $Splits -or -not $Splits.Directory) { return }
+    try {
+        if (Test-Path -LiteralPath $Splits.Directory) { Remove-Item -LiteralPath $Splits.Directory -Recurse -Force -ErrorAction Stop }
+    } catch {
+        Write-Warning "Could not remove the unpacked splits at $($Splits.Directory): $($_.Exception.Message)"
+    }
+}
+
+function Invoke-SplitMerge {
+    <#
+    .SYNOPSIS
+        The APKs Expand-SplitBundle unpacked, merged into -Destination by the CLI's own merger
+        (MergeSplits.java), or a throw.
+    .DESCRIPTION
+        The merger is handed the directory, never the archive, so it reads the files that were
+        checked and unpacks nothing itself. There is nothing to fall back to, so a merge that
+        fails or writes no APK throws.
+    #>
+    param(
+        [Parameter(Mandatory = $true)]$Splits,
+        [Parameter(Mandatory = $true)][string]$Destination,
+        [Parameter(Mandatory = $true)][string]$Java,
+        [Parameter(Mandatory = $true)][string]$DesktopJar
+    )
+
+    $label = Split-Path -Leaf $Splits.Bundle
+    $Destination = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Destination)
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $Destination) | Out-Null
+    if (Test-Path -LiteralPath $Destination) { Remove-Item -LiteralPath $Destination -Force }
+    # Continue for the call alone: Windows PowerShell 5.1 turns a JDK warning on stderr into a
+    # terminating error under Stop. The exit code and the file are what decide. The merge waits
+    # for a slot in the machine's build queue first, as the patch run after it does.
+    $preference = $ErrorActionPreference
+    $queued = Enter-HushTumblrQueue -Job 'merge'
+    try {
+        $ErrorActionPreference = 'Continue'
+        $global:LASTEXITCODE = -1
+        $output = @(& $Java '-Xmx6g' '-cp' $DesktopJar (Join-Path $PSScriptRoot 'MergeSplits.java') `
+            $Splits.Directory $Destination 2>&1 | ForEach-Object { "$_" })
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $preference
+        Exit-HushTumblrQueue $queued
+    }
+    # What the merger said, without the stack frames under an exception.
+    $said = @($output | Where-Object { $_ -notmatch '^\s+at ' } | Select-Object -Last 3) -join ' '
+    if ($exitCode -ne 0) {
+        throw "Could not merge $label into one APK (exit $exitCode): $said"
+    }
+    if (-not (Test-Path -LiteralPath $Destination -PathType Leaf) -or (Get-Item -LiteralPath $Destination).Length -eq 0) {
+        throw ("The merge of $label wrote no APK at $Destination, and base.apk is not what " +
+            'the CLI patches, so there is nothing to hold the patched APK to.')
+    }
+    return $Destination
+}
+
 function Get-MergedApk {
     <#
     .SYNOPSIS
@@ -368,9 +561,11 @@ function Get-MergedApk {
         patched table held 7,588 resources base.apk doesn't, and none of them was compared. So the
         scripts merge first,
         with the CLI's own merger and the arguments it passes (MergeSplits.java), and hand the CLI
-        the merged APK, which it patches as it is. There is nothing else to fall back to, so a
-        merge that fails or writes no APK throws. The extensions are the CLI's own list
-        (BundleFormats); anything else goes to the CLI as it is.
+        the merged APK, which it patches as it is. The bundle is unpacked here, into a directory
+        of the run's own, once every member name has been checked (Expand-SplitBundle), and the
+        merger reads that directory. There is nothing else to fall back to, so a merge that fails
+        or writes no APK throws. The extensions are the CLI's own list (BundleFormats); anything
+        else goes to the CLI as it is.
     #>
     param(
         [Parameter(Mandatory = $true)][string]$Apk,
@@ -384,33 +579,12 @@ function Get-MergedApk {
     if ([System.IO.Path]::GetExtension($Apk).TrimStart('.').ToLowerInvariant() -notin @('apkm', 'apks', 'xapk')) {
         return $Apk
     }
-    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $Destination) | Out-Null
-    if (Test-Path -LiteralPath $Destination) { Remove-Item -LiteralPath $Destination -Force }
-    # Continue for the call alone: Windows PowerShell 5.1 turns a JDK warning on stderr into a
-    # terminating error under Stop. The exit code and the file are what decide. The merge waits
-    # for a slot in the machine's build queue first, as the patch run after it does.
-    $preference = $ErrorActionPreference
-    $queued = Enter-HushTumblrQueue -Job 'merge'
+    $splits = Expand-SplitBundle -Apk $Apk -Destination $Destination
     try {
-        $ErrorActionPreference = 'Continue'
-        $global:LASTEXITCODE = -1
-        $output = @(& $Java '-Xmx6g' '-cp' $DesktopJar (Join-Path $PSScriptRoot 'MergeSplits.java') $Apk $Destination 2>&1 |
-            ForEach-Object { "$_" })
-        $exitCode = $LASTEXITCODE
+        return Invoke-SplitMerge -Splits $splits -Destination $Destination -Java $Java -DesktopJar $DesktopJar
     } finally {
-        $ErrorActionPreference = $preference
-        Exit-HushTumblrQueue $queued
+        Remove-SplitDirectory -Splits $splits
     }
-    # What the merger said, without the stack frames under an exception.
-    $said = @($output | Where-Object { $_ -notmatch '^\s+at ' } | Select-Object -Last 3) -join ' '
-    if ($exitCode -ne 0) {
-        throw "Could not merge $(Split-Path -Leaf $Apk) into one APK (exit $exitCode): $said"
-    }
-    if (-not (Test-Path -LiteralPath $Destination -PathType Leaf) -or (Get-Item -LiteralPath $Destination).Length -eq 0) {
-        throw ("The merge of $(Split-Path -Leaf $Apk) wrote no APK at $Destination, and base.apk is not what " +
-            'the CLI patches, so there is nothing to hold the patched APK to.')
-    }
-    return $Destination
 }
 
 function Assert-UrlReachable {

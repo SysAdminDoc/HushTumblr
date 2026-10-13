@@ -3981,6 +3981,166 @@ try {
     Assert-Throws { Get-BaseApk -Apk $noApk -Destination (Join-Path $commonRoot 'out/none.apk') } `
         '*holds no APK*' 'A bundle with no APK in it handed back something to read.'
 
+    # Unpacking a bundle for the merge (Expand-SplitBundle, behind Get-MergedApk). The CLI's merger
+    # unpacked a bundle into a folder beside it and wrote each .apk member where its name pointed,
+    # truncating whatever was there, so a member named ../sentinel.apk overwrote the APK beside the
+    # bundle. Every name is checked now before anything is written, and the APKs go into a folder
+    # the run owns. Each case is a bundle in a folder of its own, beside an APK a name that climbs
+    # one level would land on, with another one level up. A refusal leaves both as they were: no
+    # merge, no unpacked folder, no file changed. The archives are written byte by byte, stored and
+    # deflated, because an archive library writes only the names it thinks are sensible.
+    function Get-TestCrc32([byte[]]$Bytes) {
+        $crc = [long]4294967295
+        foreach ($byte in $Bytes) {
+            $crc = $crc -bxor [long]$byte
+            for ($bit = 0; $bit -lt 8; $bit++) {
+                if (($crc -band 1) -eq 1) { $crc = ($crc -shr 1) -bxor [long]3988292384 } else { $crc = $crc -shr 1 }
+            }
+        }
+        return [uint32]($crc -bxor [long]4294967295)
+    }
+    function New-TestRawZip([string]$Path, [object[]]$Members) {
+        $archive = New-Object System.IO.MemoryStream
+        $central = New-Object System.IO.MemoryStream
+        $local = New-Object System.IO.BinaryWriter($archive)
+        $index = New-Object System.IO.BinaryWriter($central)
+        foreach ($member in $Members) {
+            $nameBytes = [System.Text.Encoding]::UTF8.GetBytes([string]$member.Name)
+            $data = [System.Text.Encoding]::ASCII.GetBytes([string]$member.Text)
+            $crc = Get-TestCrc32 $data
+            [uint16]$method = 0
+            $stored = $data
+            if ($member.Deflate) {
+                $method = 8
+                $packed = New-Object System.IO.MemoryStream
+                $deflate = New-Object System.IO.Compression.DeflateStream($packed, [System.IO.Compression.CompressionMode]::Compress, $true)
+                $deflate.Write($data, 0, $data.Length)
+                $deflate.Dispose()
+                $stored = $packed.ToArray()
+            }
+            $local.Flush()
+            $offset = [uint32]$archive.Position
+            $local.Write([uint32]0x04034b50); $local.Write([uint16]20); $local.Write([uint16]0); $local.Write($method)
+            $local.Write([uint16]0); $local.Write([uint16]0x21); $local.Write([uint32]$crc)
+            $local.Write([uint32]$stored.Length); $local.Write([uint32]$data.Length)
+            $local.Write([uint16]$nameBytes.Length); $local.Write([uint16]0); $local.Write($nameBytes); $local.Write($stored)
+            $index.Write([uint32]0x02014b50); $index.Write([uint16]20); $index.Write([uint16]20); $index.Write([uint16]0)
+            $index.Write($method); $index.Write([uint16]0); $index.Write([uint16]0x21); $index.Write([uint32]$crc)
+            $index.Write([uint32]$stored.Length); $index.Write([uint32]$data.Length); $index.Write([uint16]$nameBytes.Length)
+            $index.Write([uint16]0); $index.Write([uint16]0); $index.Write([uint16]0); $index.Write([uint16]0)
+            $index.Write([uint32]0); $index.Write([uint32]$offset); $index.Write($nameBytes)
+        }
+        $local.Flush()
+        $index.Flush()
+        $directory = $central.ToArray()
+        $start = [uint32]$archive.Position
+        $local.Write($directory)
+        $local.Write([uint32]0x06054b50); $local.Write([uint16]0); $local.Write([uint16]0)
+        $local.Write([uint16]$Members.Count); $local.Write([uint16]$Members.Count)
+        $local.Write([uint32]$directory.Length); $local.Write($start); $local.Write([uint16]0)
+        $local.Flush()
+        [System.IO.File]::WriteAllBytes($Path, $archive.ToArray())
+    }
+    function Get-TestTreeState([string]$Path) {
+        return (@(Get-ChildItem -LiteralPath $Path -Recurse -Force | Sort-Object FullName | ForEach-Object {
+            if ($_.PSIsContainer) { "dir $($_.FullName)" }
+            else { "file $($_.FullName) $((Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash)" }
+        }) -join "`n")
+    }
+    $guardRoot = Join-Path $commonRoot 'split-guard'
+    New-Item -ItemType Directory -Path $guardRoot -Force | Out-Null
+    $outerSentinel = Join-Path $guardRoot 'outer.apk'
+    [System.IO.File]::WriteAllText($outerSentinel, 'outer sentinel')
+    $guardBase = @{ Name = 'base.apk' }
+    $guardCases = @(
+        @{ Case = 'climbs out, stored'; Members = @($guardBase, @{ Name = '../sentinel.apk' }); Says = 'climbs with a . or .. segment' }
+        @{ Case = 'climbs out, deflated'; Members = @($guardBase, @{ Name = '../sentinel.apk'; Deflate = $true }); Says = 'climbs with a . or .. segment' }
+        @{ Case = 'climbs out before the base'; Members = @(@{ Name = '../sentinel.apk'; Deflate = $true }, $guardBase); Says = 'climbs with a . or .. segment' }
+        @{ Case = 'climbs two levels'; Members = @($guardBase, @{ Name = 'splits/../../outer.apk' }); Says = 'climbs with a . or .. segment' }
+        @{ Case = 'climbs out of a folder'; Members = @($guardBase, @{ Name = 'splits/../sentinel.apk'; Deflate = $true }); Says = 'climbs with a . or .. segment' }
+        @{ Case = 'starts with a dot segment'; Members = @($guardBase, @{ Name = './split_config.en.apk' }); Says = 'climbs with a . or .. segment' }
+        @{ Case = 'is rooted'; Members = @($guardBase, @{ Name = '/sentinel.apk' }); Says = 'is rooted' }
+        @{ Case = 'is a UNC path with slashes'; Members = @($guardBase, @{ Name = '//server/share/sentinel.apk' }); Says = 'is rooted' }
+        @{ Case = 'is rooted with a backslash'; Members = @($guardBase, @{ Name = '\sentinel.apk' }); Says = 'uses a backslash*' }
+        @{ Case = 'is a UNC path'; Members = @($guardBase, @{ Name = '\\server\share\sentinel.apk'; Deflate = $true }); Says = 'uses a backslash*' }
+        @{ Case = 'names a drive root'; Members = @($guardBase, @{ Name = 'C:\sentinel.apk' }); Says = 'uses a backslash*' }
+        @{ Case = 'names a drive root with a slash'; Members = @($guardBase, @{ Name = 'C:/sentinel.apk' }); Says = 'holds a colon*' }
+        @{ Case = 'is relative to a drive'; Members = @($guardBase, @{ Name = 'C:sentinel.apk' }); Says = 'holds a colon*' }
+        @{ Case = 'names a stream'; Members = @($guardBase, @{ Name = 'split_config.en.apk:hidden' }); Says = 'holds a colon*' }
+        @{ Case = 'uses a backslash as a separator'; Members = @($guardBase, @{ Name = 'splits\split_config.en.apk' }); Says = 'uses a backslash*' }
+        @{ Case = 'mixes separators'; Members = @($guardBase, @{ Name = 'splits/..\sentinel.apk'; Deflate = $true }); Says = 'uses a backslash*' }
+        @{ Case = 'has an empty segment'; Members = @($guardBase, @{ Name = 'splits//split_config.en.apk' }); Says = 'has an empty path segment' }
+        @{ Case = 'ends in a dot'; Members = @($guardBase, @{ Name = 'split_config.en.apk.' }); Says = 'ends a segment with a dot or a space*' }
+        @{ Case = 'has a folder ending in a space'; Members = @($guardBase, @{ Name = 'splits /split_config.en.apk' }); Says = 'ends a segment with a dot or a space*' }
+        @{ Case = 'names a device'; Members = @($guardBase, @{ Name = 'nul.apk' }); Says = 'names a Windows device' }
+        @{ Case = 'holds a shell character'; Members = @($guardBase, @{ Name = 'split&calc.apk' }); Says = 'is an APK whose file name holds more than*' }
+        @{ Case = 'repeats a name'; Members = @($guardBase, @{ Name = 'base.apk'; Deflate = $true }); Says = "is the same path as 'base.apk' once case is ignored" }
+        @{ Case = 'repeats a name in other case'; Members = @($guardBase, @{ Name = 'BASE.apk' }); Says = "is the same path as 'base.apk' once case is ignored" }
+        @{ Case = 'repeats a file name in a folder'; Members = @($guardBase, @{ Name = 'splits/base.apk' }); Says = "unpacks to base.apk, as 'base.apk' does" }
+        @{ Case = 'repeats a file name with the extension in capitals'; Members = @($guardBase, @{ Name = 'splits/Base.APK' }); Says = "unpacks to Base.apk, as 'base.apk' does" }
+    )
+    foreach ($case in $guardCases) {
+        $caseDir = Join-Path $guardRoot ($case.Case -replace '[^A-Za-z0-9]+', '-')
+        New-Item -ItemType Directory -Path $caseDir -Force | Out-Null
+        $caseBundle = Join-Path $caseDir 'bundle.apkm'
+        [System.IO.File]::WriteAllText((Join-Path $caseDir 'sentinel.apk'), 'sentinel')
+        New-TestRawZip -Path $caseBundle -Members @($case.Members | ForEach-Object {
+            @{ Name = $_.Name; Text = "the bytes of $($_.Name)"; Deflate = [bool]$_.Deflate } })
+        $caseBefore = Get-TestTreeState $caseDir
+        $outerBefore = (Get-FileHash -LiteralPath $outerSentinel -Algorithm SHA256).Hash
+        $caseMerge = Join-Path $caseDir 'merged.apk'
+        $refusal = "*Refusing bundle.apkm: its member*$($case.Says)*Nothing was unpacked*"
+        Assert-Throws { Expand-SplitBundle -Apk $caseBundle -Destination $caseMerge } $refusal `
+            "A bundle with a member that $($case.Case) was unpacked."
+        # The shared merge path refuses it the same way, before any JDK is looked for.
+        Assert-Throws { Get-MergedApk -Apk $caseBundle -Destination $caseMerge -Java (Join-Path $caseDir 'no-java.exe') `
+                -DesktopJar (Join-Path $caseDir 'no.jar') } $refusal "The merge took a bundle with a member that $($case.Case)."
+        Assert-True ((Get-TestTreeState $caseDir) -ceq $caseBefore -and
+            (Get-FileHash -LiteralPath $outerSentinel -Algorithm SHA256).Hash -ceq $outerBefore) `
+            "Refusing a bundle with a member that $($case.Case) changed a file or left one behind."
+    }
+    $noApkDir = Join-Path $guardRoot 'no-apk'
+    Assert-Throws { Expand-SplitBundle -Apk $noApk -Destination (Join-Path $noApkDir 'merged.apk') } `
+        '*empty.apkm holds no APK. Nothing was unpacked.*' 'A bundle with no APK in it was unpacked.'
+    Assert-True (-not (Test-Path -LiteralPath $noApkDir)) 'Refusing a bundle with no APK in it created its merge folder.'
+
+    # Distributors' layouts unpack whole, the APKs alone and byte for byte, into a .splits- folder
+    # beside the merge that is gone once the caller is done: an .apkm (base.apk, its splits,
+    # info.json and an icon, one split's extension in capitals, which is written as .apk, the name
+    # the merger reads), an .xapk (the base named for the package, config splits, manifest.json, an
+    # icon and an OBB in a folder) and an .apks, whose APKs sit in splits/ and unpack by file name.
+    foreach ($layout in @(
+            @{ Name = 'tumblr.apkm'; Entries = [ordered]@{ 'info.json' = '{"versioncode":"1"}'; 'icon.png' = 'icon'
+                    'base.apk' = 'base'; 'split_config.arm64_v8a.apk' = 'arm64'; 'split_config.xxhdpi.APK' = 'xxhdpi' }
+                Unpacked = [ordered]@{ 'base.apk' = 'base'; 'split_config.arm64_v8a.apk' = 'arm64'; 'split_config.xxhdpi.apk' = 'xxhdpi' } }
+            @{ Name = 'tumblr.xapk'; Entries = [ordered]@{ 'com.tumblr.apk' = 'base'; 'config.arm64_v8a.apk' = 'arm64'
+                    'config.en.apk' = 'en'; 'icon.png' = 'icon'; 'manifest.json' = '{"package_name":"com.tumblr"}'
+                    'Android/obb/com.tumblr/main.1.com.tumblr.obb' = 'obb' }
+                Unpacked = [ordered]@{ 'com.tumblr.apk' = 'base'; 'config.arm64_v8a.apk' = 'arm64'; 'config.en.apk' = 'en' } }
+            @{ Name = 'tumblr.apks'; Entries = [ordered]@{ 'toc.pb' = 'toc'; 'splits/' = ''; 'splits/base-master.apk' = 'base'
+                    'splits/base-xxhdpi.apk' = 'xxhdpi' }
+                Unpacked = [ordered]@{ 'base-master.apk' = 'base'; 'base-xxhdpi.apk' = 'xxhdpi' } })) {
+        $layoutDir = Join-Path $guardRoot ('layout-' + $layout.Name)
+        New-Item -ItemType Directory -Path $layoutDir -Force | Out-Null
+        $layoutBundle = Join-Path $layoutDir $layout.Name
+        New-TestBundleArchive -Path $layoutBundle -Entries $layout.Entries
+        $splits = Expand-SplitBundle -Apk $layoutBundle -Destination (Join-Path $layoutDir 'merged.apk')
+        try {
+            $found = @(Get-ChildItem -LiteralPath $splits.Directory -Force | Sort-Object Name | ForEach-Object {
+                "$($_.Name)=$([System.IO.File]::ReadAllText($_.FullName))" }) -join ';'
+            $expected = @($layout.Unpacked.Keys | Sort-Object | ForEach-Object { "$_=$($layout.Unpacked[$_])" }) -join ';'
+            $listed = @($splits.Files | ForEach-Object { $_.Name } | Sort-Object) -join ';'
+            Assert-True ($found -ceq $expected -and $listed -ceq (@($layout.Unpacked.Keys | Sort-Object) -join ';') -and
+                (Test-SamePath (Split-Path -Parent $splits.Directory) $layoutDir) -and
+                (Split-Path -Leaf $splits.Directory) -like '.splits-*') `
+                "$($layout.Name) did not unpack its APKs alone, byte for byte, into a folder of its own beside the merge: $found"
+        } finally {
+            Remove-SplitDirectory -Splits $splits
+        }
+        Assert-True (@(Get-ChildItem -LiteralPath $layoutDir -Force -Filter '.splits-*').Count -eq 0 -and
+            -not (Test-Path -LiteralPath (Join-Path $layoutDir 'merged.apk'))) "$($layout.Name) left its unpacked folder behind."
+    }
+
     # The fetch the release facts make of the indexed bundle and the add-source page. A real
     # request first: nothing listens on port 1, so it is refused before it leaves this machine.
     # Then the two answers a stand-in gives, a 404 the way both shells raise it and a 200.
@@ -4684,16 +4844,20 @@ try {
         'copy /y "!HERE!patched.apk" "!OUT!" >nul || exit /b 4',
         'copy /y "!SRC!.patched.txt" "!OUT!.xmltree" >nul || exit /b 5',
         'exit /b 0',
-        'rem MergeSplits.java <bundle> <merged.apk>. A case can make it fail, or leave no APK behind.',
+        'rem MergeSplits.java <split directory> <merged.apk>. The base APK the scripts unpacked into that',
+        'rem directory names the fixture it came from. A case can make it fail, or leave no APK behind.',
         ':merge',
-        '>>"!HERE!merge.log" echo merge %~5',
+        'set "BUNDLE="',
+        'for %%F in ("%~5\*.apk") do for /f "tokens=1,* delims==" %%A in (''findstr /b /l /c:"N: stand-in-bundle=" "%%~F"'') do set "BUNDLE=%%B"',
+        '>>"!HERE!merge.log" echo merge !BUNDLE!',
         'if exist "!HERE!merge-fails.txt" (',
         '    echo [merge] could not read the bundle 1>&2',
         '    exit /b 9',
         ')',
         'if exist "!HERE!merge-writes-nothing.txt" exit /b 0',
-        'copy /y "%~5.merged.txt" "%~6" >nul || exit /b 7',
-        '>"%~6.source" echo %~5',
+        'if not defined BUNDLE exit /b 6',
+        'copy /y "!BUNDLE!.merged.txt" "%~6" >nul || exit /b 7',
+        '>"%~6.source" echo !BUNDLE!',
         'exit /b 0',
         'rem ResourceTableCheck.java <stock> <patched> <report>: keeps what it was handed as the stock side.',
         ':resources',
@@ -4783,8 +4947,10 @@ try {
         $stockMinSdk = if ($build -eq $newerBuild) { 36 } else { 21 }
         $versionCode = if ($build -eq $newerBuild) { 512008382 } else { [long]@($releaseTarget.PackageVersionCodes[$build])[0] }
         $apkm = Join-Path $fixtures "tumblr-$build-$versionCode.xapk"
+        # The base names the fixture it was packed into, which the JDK stand-in reads back as it
+        # merges: the merger is handed the directory the APKs were unpacked into, not the bundle.
         New-TestBundleArchive -Path $apkm -Entries ([ordered]@{
-            'com.tumblr.apk' = Get-FixtureManifest -Build $build -Code "$versionCode" -MinSdk $stockMinSdk
+            'com.tumblr.apk' = "N: stand-in-bundle=$apkm`n" + (Get-FixtureManifest -Build $build -Code "$versionCode" -MinSdk $stockMinSdk)
             'icon.png' = 'icon'
             'config.arm64_v8a.apk' = ('native code ' * 64)
             'manifest.json' = ("{`"package_name`":`"com.tumblr`",`"version_code`":`"$versionCode`",`"split_apks`":[" +
