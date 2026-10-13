@@ -32,7 +32,6 @@ Every switch but Debug logging acts as if it were off, and what was set when you
 Export diagnostic report	Tanılama raporunu dışa aktar
 Export settings	Ayarları dışa aktar
 Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.	Tumblr bir sonraki açılışında Hata ayıklama günlüğü dışındaki tüm HushTumblr anahtarlarını kapatır. Yamalarken seçtiklerin kalır ve tercihlerin kayıtlı kalır.
-Links, updates, backup and more	Bağlantılar, güncellemeler, yedekleme ve daha fazlası
 Save your settings to a file, including word lists and tab order. These choices apply to all accounts in this Tumblr app. Pause, Debug logging and release checks aren't included.	Sözcük listeleri ve sekme sırası dahil ayarlarını bir dosyaya kaydet. Bu seçimler Tumblr uygulamasındaki tüm hesaplar için geçerlidir. Duraklatma, Hata ayıklama günlüğü ve sürüm denetimi dahil edilmez.
 Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.	Ayarlar dışa aktarıldı. Dosyayı tutan uygulama HushTumblr'ın onu geri okumasına izin vermedi, bu yüzden kontrol edilmedi.
 The app holding that file is taking too long, so HushTumblr stopped waiting. Nothing was changed.	O dosyayı tutan uygulama çok uzun sürüyor, bu yüzden HushTumblr beklemeyi bıraktı. Hiçbir şey değiştirilmedi.
@@ -400,7 +399,6 @@ Controls managed by Tumblr	Tumblr tarafından yönetilen ayarlar
 Release checks and update help	Sürüm denetimi ve güncelleme yardımı
 Pause, save and troubleshoot	Duraklat, kaydet ve sorunları gider
 Version, help and project details	Sürüm, yardım ve proje ayrıntıları
-More ways to make Tumblr yours	Tumblr için daha fazla kişiselleştirme
 Report a problem	Sorun bildir
 Opens a GitHub report with your versions and settings filled in. Add what happened.	Sürümlerin ve ayarların doldurulmuş bir GitHub raporu açar. Ne olduğunu ekle.
 Quick setups	Hızlı kurulumlar

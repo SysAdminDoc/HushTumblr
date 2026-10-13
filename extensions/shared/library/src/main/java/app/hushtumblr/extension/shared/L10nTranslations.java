@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(766);
+        Map<String, String> table = new HashMap<>(762);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -412,8 +412,6 @@ public final class L10nTranslations {
                 "Lizenzen");
         table.put("Links",
                 "Links");
-        table.put("Links, updates, backup and more",
-                "Links, Updates, Sicherung und mehr");
         table.put("Looks for: %1$s",
                 "Sucht nach: %1$s");
         table.put("Make Tumblr feel like yours.",
@@ -428,19 +426,17 @@ public final class L10nTranslations {
                 "Tags des aktuellen Beitrags pr\u00fcfen");
         table.put("Match current post text",
                 "Aktuellen Beitragstext pr\u00fcfen");
+        table.put("Match post summaries",
+                "Beitragszusammenfassungen pr\u00fcfen");
     }
 
     private static void fillDe3(Map<String, String> table) {
-        table.put("Match post summaries",
-                "Beitragszusammenfassungen pr\u00fcfen");
         table.put("Match reblog trail text",
                 "Text der Reblog-Kette pr\u00fcfen");
         table.put("Match whole words or phrases in the fields you chose. Case doesn't matter.",
                 "Sucht nach ganzen W\u00f6rtern oder Wortgruppen in den gew\u00e4hlten Feldern. Gro\u00df- und Kleinschreibung spielt keine Rolle.");
         table.put("More settings",
                 "Weitere Einstellungen");
-        table.put("More ways to make Tumblr yours",
-                "Mehr M\u00f6glichkeiten f\u00fcr dein Tumblr");
         table.put("Mute posts locally",
                 "Posts lokal stummschalten");
         table.put("Mute this post locally",
@@ -551,13 +547,13 @@ public final class L10nTranslations {
                 "Starte Tumblr neu, um diese \u00c4nderung zu \u00fcbernehmen");
         table.put("Restore the settings from before the last import. Editing a setting or restarting Tumblr ends Undo.",
                 "Stellt die Einstellungen vor dem letzten Import wieder her. Das \u00c4ndern einer Einstellung oder ein Neustart von Tumblr beendet diese M\u00f6glichkeit.");
-    }
-
-    private static void fillDe4(Map<String, String> table) {
         table.put("Resume",
                 "Fortsetzen");
         table.put("Retry",
                 "Erneut versuchen");
+    }
+
+    private static void fillDe4(Map<String, String> table) {
         table.put("Reveal allowed mature content",
                 "Erlaubte Inhalte f\u00fcr Erwachsene anzeigen");
         table.put("Save",
@@ -674,13 +670,13 @@ public final class L10nTranslations {
                 "Entfernt die Communitys, denen du laut Tumblr beitreten sollst, samt ihren \u00dcberschriften aus deinem Dashboard und anderen Feeds.");
         table.put("Takes the like button out of the footer under posts, and the reactions off community posts.",
                 "Nimmt den Like-Button aus der Leiste unter Beitr\u00e4gen und die Reaktionen von Community-Beitr\u00e4gen.");
-    }
-
-    private static void fillDe5(Map<String, String> table) {
         table.put("Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.",
                 "Nimmt die Zahlen f\u00fcr Likes, Reblogs und Kommentare aus der Leiste unter Beitr\u00e4gen. Die Buttons bleiben.");
         table.put("Takes the reblog button out of the footer under posts.",
                 "Nimmt den Reblog-Button aus der Leiste unter Beitr\u00e4gen.");
+    }
+
+    private static void fillDe5(Map<String, String> table) {
         table.put("Takes the share button out of the footer under posts.",
                 "Nimmt den Teilen-Button aus der Leiste unter Beitr\u00e4gen.");
         table.put("Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.",
@@ -797,13 +793,13 @@ public final class L10nTranslations {
                 "Post wieder anzeigen");
         table.put("Unmute post %1$s",
                 "Post %1$s wieder anzeigen");
-    }
-
-    private static void fillDe6(Map<String, String> table) {
         table.put("Unmute posts or clear this account's private list",
                 "Posts wieder anzeigen oder die private Liste dieses Kontos leeren");
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
                 "Bis zum Fortsetzen verh\u00e4lt sich jeder Schalter au\u00dfer der Debug-Protokollierung, als w\u00e4re er aus. Was beim Patchen festgelegt wurde, bleibt aktiv.");
+    }
+
+    private static void fillDe6(Map<String, String> table) {
         table.put("Update instructions",
                 "Anleitung zum Aktualisieren");
         table.put("Updates",
@@ -849,7 +845,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(766);
+        Map<String, String> table = new HashMap<>(762);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -1211,8 +1207,6 @@ public final class L10nTranslations {
                 "Licencias");
         table.put("Links",
                 "Enlaces");
-        table.put("Links, updates, backup and more",
-                "Enlaces, actualizaciones, copia de seguridad y m\u00e1s");
         table.put("Looks for: %1$s",
                 "Busca: %1$s");
         table.put("Make Tumblr feel like yours.",
@@ -1227,19 +1221,17 @@ public final class L10nTranslations {
                 "Buscar en las etiquetas de la publicaci\u00f3n actual");
         table.put("Match current post text",
                 "Buscar en el texto de la publicaci\u00f3n actual");
+        table.put("Match post summaries",
+                "Buscar en los res\u00famenes de publicaciones");
     }
 
     private static void fillEs3(Map<String, String> table) {
-        table.put("Match post summaries",
-                "Buscar en los res\u00famenes de publicaciones");
         table.put("Match reblog trail text",
                 "Buscar en el texto de la cadena de reblogs");
         table.put("Match whole words or phrases in the fields you chose. Case doesn't matter.",
                 "Busca palabras o frases completas en los campos que elegiste. No distingue entre may\u00fasculas y min\u00fasculas.");
         table.put("More settings",
                 "M\u00e1s ajustes");
-        table.put("More ways to make Tumblr yours",
-                "M\u00e1s formas de hacer Tumblr a tu medida");
         table.put("Mute posts locally",
                 "Silenciar publicaciones localmente");
         table.put("Mute this post locally",
@@ -1350,13 +1342,13 @@ public final class L10nTranslations {
                 "Reinicia Tumblr para aplicar este cambio");
         table.put("Restore the settings from before the last import. Editing a setting or restarting Tumblr ends Undo.",
                 "Restaura los ajustes anteriores a la \u00faltima importaci\u00f3n. Cambiar un ajuste o reiniciar Tumblr termina la opci\u00f3n de deshacer.");
-    }
-
-    private static void fillEs4(Map<String, String> table) {
         table.put("Resume",
                 "Reanudar");
         table.put("Retry",
                 "Reintentar");
+    }
+
+    private static void fillEs4(Map<String, String> table) {
         table.put("Reveal allowed mature content",
                 "Revelar contenido adulto permitido");
         table.put("Save",
@@ -1473,13 +1465,13 @@ public final class L10nTranslations {
                 "Quita las comunidades a las que Tumblr te sugiere unirte, y sus encabezados, de tu panel y otros feeds.");
         table.put("Takes the like button out of the footer under posts, and the reactions off community posts.",
                 "Quita el bot\u00f3n Me gusta del pie de las publicaciones y las reacciones de las publicaciones de comunidades.");
-    }
-
-    private static void fillEs5(Map<String, String> table) {
         table.put("Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.",
                 "Quita los n\u00fameros de Me gusta, reblogueos y comentarios del pie de las publicaciones, y deja los botones.");
         table.put("Takes the reblog button out of the footer under posts.",
                 "Quita el bot\u00f3n de reblogueo del pie de las publicaciones.");
+    }
+
+    private static void fillEs5(Map<String, String> table) {
         table.put("Takes the share button out of the footer under posts.",
                 "Quita el bot\u00f3n Compartir del pie de las publicaciones.");
         table.put("Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.",
@@ -1596,13 +1588,13 @@ public final class L10nTranslations {
                 "Dejar de silenciar la publicaci\u00f3n");
         table.put("Unmute post %1$s",
                 "Dejar de silenciar la publicaci\u00f3n %1$s");
-    }
-
-    private static void fillEs6(Map<String, String> table) {
         table.put("Unmute posts or clear this account's private list",
                 "Dejar de silenciar publicaciones o vaciar la lista privada de esta cuenta");
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
                 "Hasta que reanudes, todos los interruptores, salvo el Registro de depuraci\u00f3n, funcionan como si estuvieran desactivados. Lo que se aplic\u00f3 al parchear se mantiene.");
+    }
+
+    private static void fillEs6(Map<String, String> table) {
         table.put("Update instructions",
                 "Instrucciones de actualizaci\u00f3n");
         table.put("Updates",
@@ -1648,7 +1640,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(766);
+        Map<String, String> table = new HashMap<>(762);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -2010,8 +2002,6 @@ public final class L10nTranslations {
                 "Lisensi");
         table.put("Links",
                 "Tautan");
-        table.put("Links, updates, backup and more",
-                "Tautan, pembaruan, cadangan, dan lainnya");
         table.put("Looks for: %1$s",
                 "Mencari: %1$s");
         table.put("Make Tumblr feel like yours.",
@@ -2026,19 +2016,17 @@ public final class L10nTranslations {
                 "Cocokkan tag postingan saat ini");
         table.put("Match current post text",
                 "Cocokkan teks postingan saat ini");
+        table.put("Match post summaries",
+                "Cocokkan ringkasan postingan");
     }
 
     private static void fillIn3(Map<String, String> table) {
-        table.put("Match post summaries",
-                "Cocokkan ringkasan postingan");
         table.put("Match reblog trail text",
                 "Cocokkan teks rantai reblog");
         table.put("Match whole words or phrases in the fields you chose. Case doesn't matter.",
                 "Cocokkan kata atau frasa utuh pada bidang yang Anda pilih. Huruf besar dan kecil tidak dibedakan.");
         table.put("More settings",
                 "Pengaturan lainnya");
-        table.put("More ways to make Tumblr yours",
-                "Lebih banyak cara menyesuaikan Tumblr");
         table.put("Mute posts locally",
                 "Bisukan postingan secara lokal");
         table.put("Mute this post locally",
@@ -2149,13 +2137,13 @@ public final class L10nTranslations {
                 "Mulai ulang Tumblr untuk menerapkan perubahan ini");
         table.put("Restore the settings from before the last import. Editing a setting or restarting Tumblr ends Undo.",
                 "Pulihkan pengaturan sebelum impor terakhir. Mengubah pengaturan atau memulai ulang Tumblr mengakhiri Urungkan.");
-    }
-
-    private static void fillIn4(Map<String, String> table) {
         table.put("Resume",
                 "Lanjutkan");
         table.put("Retry",
                 "Coba lagi");
+    }
+
+    private static void fillIn4(Map<String, String> table) {
         table.put("Reveal allowed mature content",
                 "Tampilkan konten dewasa yang diizinkan");
         table.put("Save",
@@ -2272,13 +2260,13 @@ public final class L10nTranslations {
                 "Menghapus komunitas yang disarankan Tumblr untuk kamu ikuti, beserta judulnya, dari dasbor dan feed lainnya.");
         table.put("Takes the like button out of the footer under posts, and the reactions off community posts.",
                 "Menghapus tombol suka dari bagian bawah postingan, dan reaksi dari postingan komunitas.");
-    }
-
-    private static void fillIn5(Map<String, String> table) {
         table.put("Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.",
                 "Menghapus jumlah suka, reblog, dan komentar dari bagian bawah postingan, tapi tombolnya tetap ada.");
         table.put("Takes the reblog button out of the footer under posts.",
                 "Menghapus tombol reblog dari bagian bawah postingan.");
+    }
+
+    private static void fillIn5(Map<String, String> table) {
         table.put("Takes the share button out of the footer under posts.",
                 "Menghapus tombol bagikan dari bagian bawah postingan.");
         table.put("Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.",
@@ -2395,13 +2383,13 @@ public final class L10nTranslations {
                 "Tampilkan kembali postingan");
         table.put("Unmute post %1$s",
                 "Tampilkan kembali postingan %1$s");
-    }
-
-    private static void fillIn6(Map<String, String> table) {
         table.put("Unmute posts or clear this account's private list",
                 "Tampilkan kembali postingan atau kosongkan daftar pribadi akun ini");
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
                 "Sampai Anda melanjutkan, semua sakelar kecuali Pencatatan debug dianggap nonaktif. Yang diatur saat Anda menambal tetap aktif.");
+    }
+
+    private static void fillIn6(Map<String, String> table) {
         table.put("Update instructions",
                 "Petunjuk pembaruan");
         table.put("Updates",
@@ -2447,7 +2435,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(766);
+        Map<String, String> table = new HashMap<>(762);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -2809,8 +2797,6 @@ public final class L10nTranslations {
                 "Licen\u00e7as");
         table.put("Links",
                 "Links");
-        table.put("Links, updates, backup and more",
-                "Links, atualiza\u00e7\u00f5es, backup e mais");
         table.put("Looks for: %1$s",
                 "Procura: %1$s");
         table.put("Make Tumblr feel like yours.",
@@ -2825,19 +2811,17 @@ public final class L10nTranslations {
                 "Buscar nas tags do post atual");
         table.put("Match current post text",
                 "Buscar no texto do post atual");
+        table.put("Match post summaries",
+                "Buscar nos resumos dos posts");
     }
 
     private static void fillPt_rBR3(Map<String, String> table) {
-        table.put("Match post summaries",
-                "Buscar nos resumos dos posts");
         table.put("Match reblog trail text",
                 "Buscar no texto da cadeia de reblogs");
         table.put("Match whole words or phrases in the fields you chose. Case doesn't matter.",
                 "Busca palavras ou frases inteiras nos campos que voc\u00ea escolheu. N\u00e3o diferencia mai\u00fasculas de min\u00fasculas.");
         table.put("More settings",
                 "Mais configura\u00e7\u00f5es");
-        table.put("More ways to make Tumblr yours",
-                "Mais formas de deixar o Tumblr com a sua cara");
         table.put("Mute posts locally",
                 "Silenciar posts localmente");
         table.put("Mute this post locally",
@@ -2948,13 +2932,13 @@ public final class L10nTranslations {
                 "Reinicie o Tumblr para aplicar esta altera\u00e7\u00e3o");
         table.put("Restore the settings from before the last import. Editing a setting or restarting Tumblr ends Undo.",
                 "Restaure as configura\u00e7\u00f5es anteriores \u00e0 \u00faltima importa\u00e7\u00e3o. Alterar uma configura\u00e7\u00e3o ou reiniciar o Tumblr encerra a op\u00e7\u00e3o de desfazer.");
-    }
-
-    private static void fillPt_rBR4(Map<String, String> table) {
         table.put("Resume",
                 "Retomar");
         table.put("Retry",
                 "Tentar novamente");
+    }
+
+    private static void fillPt_rBR4(Map<String, String> table) {
         table.put("Reveal allowed mature content",
                 "Revelar conte\u00fado adulto permitido");
         table.put("Save",
@@ -3071,13 +3055,13 @@ public final class L10nTranslations {
                 "Tira do seu painel e de outros feeds as comunidades em que o Tumblr sugere que voc\u00ea entre, junto com os t\u00edtulos delas.");
         table.put("Takes the like button out of the footer under posts, and the reactions off community posts.",
                 "Tira o bot\u00e3o de curtir do rodap\u00e9 dos posts e as rea\u00e7\u00f5es dos posts de comunidades.");
-    }
-
-    private static void fillPt_rBR5(Map<String, String> table) {
         table.put("Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.",
                 "Tira os n\u00fameros de curtidas, reblogues e coment\u00e1rios do rodap\u00e9 dos posts e mant\u00e9m os bot\u00f5es.");
         table.put("Takes the reblog button out of the footer under posts.",
                 "Tira o bot\u00e3o de reblogue do rodap\u00e9 dos posts.");
+    }
+
+    private static void fillPt_rBR5(Map<String, String> table) {
         table.put("Takes the share button out of the footer under posts.",
                 "Tira o bot\u00e3o de compartilhar do rodap\u00e9 dos posts.");
         table.put("Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.",
@@ -3194,13 +3178,13 @@ public final class L10nTranslations {
                 "Reexibir post");
         table.put("Unmute post %1$s",
                 "Reexibir o post %1$s");
-    }
-
-    private static void fillPt_rBR6(Map<String, String> table) {
         table.put("Unmute posts or clear this account's private list",
                 "Volte a mostrar posts ou limpe a lista privada desta conta");
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
                 "At\u00e9 voc\u00ea retomar, todas as op\u00e7\u00f5es, menos o Registro de depura\u00e7\u00e3o, funcionam como se estivessem desligadas. O que foi definido ao aplicar os patches continua ativo.");
+    }
+
+    private static void fillPt_rBR6(Map<String, String> table) {
         table.put("Update instructions",
                 "Instru\u00e7\u00f5es de atualiza\u00e7\u00e3o");
         table.put("Updates",
@@ -3246,7 +3230,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(766);
+        Map<String, String> table = new HashMap<>(762);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -3608,8 +3592,6 @@ public final class L10nTranslations {
                 "Lisanslar");
         table.put("Links",
                 "Ba\u011flant\u0131lar");
-        table.put("Links, updates, backup and more",
-                "Ba\u011flant\u0131lar, g\u00fcncellemeler, yedekleme ve daha fazlas\u0131");
         table.put("Looks for: %1$s",
                 "Aranan: %1$s");
         table.put("Make Tumblr feel like yours.",
@@ -3624,19 +3606,17 @@ public final class L10nTranslations {
                 "Ge\u00e7erli g\u00f6nderi etiketlerinde e\u015fle\u015ftir");
         table.put("Match current post text",
                 "Ge\u00e7erli g\u00f6nderi metninde e\u015fle\u015ftir");
+        table.put("Match post summaries",
+                "G\u00f6nderi \u00f6zetlerinde e\u015fle\u015ftir");
     }
 
     private static void fillTr3(Map<String, String> table) {
-        table.put("Match post summaries",
-                "G\u00f6nderi \u00f6zetlerinde e\u015fle\u015ftir");
         table.put("Match reblog trail text",
                 "Yeniden bloglama zinciri metninde e\u015fle\u015ftir");
         table.put("Match whole words or phrases in the fields you chose. Case doesn't matter.",
                 "Se\u00e7ti\u011fin alanlarda tam kelimeleri veya ifadeleri e\u015fle\u015ftirir. B\u00fcy\u00fck k\u00fc\u00e7\u00fck harf ayr\u0131m\u0131 yap\u0131lmaz.");
         table.put("More settings",
                 "Di\u011fer ayarlar");
-        table.put("More ways to make Tumblr yours",
-                "Tumblr i\u00e7in daha fazla ki\u015fiselle\u015ftirme");
         table.put("Mute posts locally",
                 "G\u00f6nderileri bu cihazda sustur");
         table.put("Mute this post locally",
@@ -3747,13 +3727,13 @@ public final class L10nTranslations {
                 "Bu de\u011fi\u015fikli\u011fi uygulamak i\u00e7in Tumblr'\u0131 yeniden ba\u015flat");
         table.put("Restore the settings from before the last import. Editing a setting or restarting Tumblr ends Undo.",
                 "Son i\u00e7e aktarmadan \u00f6nceki ayarlar\u0131 geri y\u00fckle. Bir ayar\u0131 de\u011fi\u015ftirmek veya Tumblr'\u0131 yeniden ba\u015flatmak geri almay\u0131 sona erdirir.");
-    }
-
-    private static void fillTr4(Map<String, String> table) {
         table.put("Resume",
                 "Devam et");
         table.put("Retry",
                 "Yeniden dene");
+    }
+
+    private static void fillTr4(Map<String, String> table) {
         table.put("Reveal allowed mature content",
                 "\u0130zin verilen yeti\u015fkin i\u00e7eri\u011fini g\u00f6ster");
         table.put("Save",
@@ -3870,13 +3850,13 @@ public final class L10nTranslations {
                 "Tumblr'\u0131n kat\u0131lman\u0131 \u00f6nerdi\u011fi topluluklar\u0131 ve ba\u015fl\u0131klar\u0131n\u0131 panondan ve di\u011fer ak\u0131\u015flardan kald\u0131r\u0131r.");
         table.put("Takes the like button out of the footer under posts, and the reactions off community posts.",
                 "G\u00f6nderilerin alt\u0131ndaki be\u011fen d\u00fc\u011fmesini ve topluluk g\u00f6nderilerindeki tepkileri kald\u0131r\u0131r.");
-    }
-
-    private static void fillTr5(Map<String, String> table) {
         table.put("Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.",
                 "G\u00f6nderilerin alt\u0131ndaki be\u011feni, RB ve yorum say\u0131lar\u0131n\u0131 kald\u0131r\u0131r, d\u00fc\u011fmeler kal\u0131r.");
         table.put("Takes the reblog button out of the footer under posts.",
                 "G\u00f6nderilerin alt\u0131ndaki RB d\u00fc\u011fmesini kald\u0131r\u0131r.");
+    }
+
+    private static void fillTr5(Map<String, String> table) {
         table.put("Takes the share button out of the footer under posts.",
                 "G\u00f6nderilerin alt\u0131ndaki payla\u015f d\u00fc\u011fmesini kald\u0131r\u0131r.");
         table.put("Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.",
@@ -3993,13 +3973,13 @@ public final class L10nTranslations {
                 "G\u00f6nderiyi yeniden g\u00f6ster");
         table.put("Unmute post %1$s",
                 "%1$s g\u00f6nderisini yeniden g\u00f6ster");
-    }
-
-    private static void fillTr6(Map<String, String> table) {
         table.put("Unmute posts or clear this account's private list",
                 "G\u00f6nderilerin susturmas\u0131n\u0131 kald\u0131r\u0131n veya bu hesab\u0131n \u00f6zel listesini temizleyin");
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
                 "Devam ettirene kadar Hata ay\u0131klama g\u00fcnl\u00fc\u011f\u00fc d\u0131\u015f\u0131ndaki her anahtar kapal\u0131ym\u0131\u015f gibi davran\u0131r. Yamalad\u0131\u011f\u0131nda ayarlananlar devrede kal\u0131r.");
+    }
+
+    private static void fillTr6(Map<String, String> table) {
         table.put("Update instructions",
                 "G\u00fcncelleme talimatlar\u0131");
         table.put("Updates",

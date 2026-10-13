@@ -32,7 +32,6 @@ Every switch but Debug logging acts as if it were off, and what was set when you
 Export diagnostic report	Ekspor laporan diagnostik
 Export settings	Ekspor pengaturan
 Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.	Mematikan semua sakelar HushTumblr kecuali Pencatatan debug saat Tumblr dibuka berikutnya. Yang Anda pilih saat menambal tetap berlaku, dan pilihan Anda tersimpan.
-Links, updates, backup and more	Tautan, pembaruan, cadangan, dan lainnya
 Save your settings to a file, including word lists and tab order. These choices apply to all accounts in this Tumblr app. Pause, Debug logging and release checks aren't included.	Simpan pengaturan Anda ke file, termasuk daftar kata dan urutan tab. Pilihan ini berlaku untuk semua akun di aplikasi Tumblr ini. Jeda, Pencatatan debug, dan pemeriksaan rilis tidak disertakan.
 Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.	Pengaturan diekspor. Aplikasi yang menyimpan file itu tidak mengizinkan HushTumblr membacanya kembali, jadi file itu tidak diperiksa.
 The app holding that file is taking too long, so HushTumblr stopped waiting. Nothing was changed.	Aplikasi yang menyimpan file itu terlalu lama, jadi HushTumblr berhenti menunggu. Tidak ada yang diubah.
@@ -400,7 +399,6 @@ Controls managed by Tumblr	Pengaturan yang dikelola Tumblr
 Release checks and update help	Pemeriksaan versi dan bantuan pembaruan
 Pause, save and troubleshoot	Jeda, simpan, dan atasi masalah
 Version, help and project details	Versi, bantuan, dan detail proyek
-More ways to make Tumblr yours	Lebih banyak cara menyesuaikan Tumblr
 Report a problem	Laporkan masalah
 Opens a GitHub report with your versions and settings filled in. Add what happened.	Membuka laporan GitHub dengan versi dan pengaturan Anda yang sudah terisi. Tambahkan apa yang terjadi.
 Quick setups	Penyiapan cepat

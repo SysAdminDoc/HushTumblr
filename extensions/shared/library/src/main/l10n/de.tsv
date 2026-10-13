@@ -32,7 +32,6 @@ Every switch but Debug logging acts as if it were off, and what was set when you
 Export diagnostic report	Diagnosebericht exportieren
 Export settings	Einstellungen exportieren
 Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.	Schaltet beim nächsten Start von Tumblr jeden HushTumblr-Schalter außer der Debug-Protokollierung aus. Was du beim Patchen gewählt hast, bleibt, und deine Auswahl bleibt gespeichert.
-Links, updates, backup and more	Links, Updates, Sicherung und mehr
 Save your settings to a file, including word lists and tab order. These choices apply to all accounts in this Tumblr app. Pause, Debug logging and release checks aren't included.	Speichert deine Einstellungen in einer Datei, einschließlich Wortlisten und Tab-Reihenfolge. Diese Auswahl gilt für alle Konten in dieser Tumblr-App. Pause, Debug-Protokollierung und die Suche nach neuen Versionen sind nicht enthalten.
 Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.	Einstellungen exportiert. Die App, in der die Datei liegt, ließ HushTumblr sie nicht zurücklesen, daher wurde sie nicht geprüft.
 The app holding that file is taking too long, so HushTumblr stopped waiting. Nothing was changed.	Die App, in der die Datei liegt, braucht zu lange, deshalb wartet HushTumblr nicht mehr. Es wurde nichts geändert.
@@ -400,7 +399,6 @@ Controls managed by Tumblr	Von Tumblr verwaltete Einstellungen
 Release checks and update help	Versionsprüfung und Update-Hilfe
 Pause, save and troubleshoot	Pausieren, sichern und Probleme beheben
 Version, help and project details	Version, Hilfe und Projektdetails
-More ways to make Tumblr yours	Mehr Möglichkeiten für dein Tumblr
 Report a problem	Problem melden
 Opens a GitHub report with your versions and settings filled in. Add what happened.	Öffnet eine GitHub-Meldung, in der deine Versionen und Einstellungen schon stehen. Ergänze, was passiert ist.
 Quick setups	Schnelleinstellungen

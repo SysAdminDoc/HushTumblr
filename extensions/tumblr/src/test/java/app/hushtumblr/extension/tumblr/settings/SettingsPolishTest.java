@@ -484,8 +484,6 @@ public class SettingsPolishTest {
             open();
             assertEquals(View.LAYOUT_DIRECTION_RTL, settings.getView().getLayoutDirection());
             reviewPage("overview");
-            page.navigation.navigate("more");
-            reviewPage("more-settings");
             for (Preference section : new ArrayList<>(page.sections())) {
                 assertTrue(page.navigation.open(section));
                 reviewPage(section.getTitle().toString().toLowerCase(Locale.ROOT).replaceAll("[^a-z]+", "-"));

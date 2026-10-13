@@ -121,9 +121,9 @@ public class ReopenSettingsAfterRestartTest {
             restarted.add(context);
         });
         Context app = RuntimeEnvironment.getApplication();
-        ReopenSettingsAfterRestart.restartInto(app, "more");
+        ReopenSettingsAfterRestart.restartInto(app, "Links");
         assertEquals(java.util.Collections.singletonList(app), restarted);
-        assertEquals("more", ReopenSettingsAfterRestart.takeFresh(Setting.preferences.preferences, SystemClock.elapsedRealtime()));
+        assertEquals("Links", ReopenSettingsAfterRestart.takeFresh(Setting.preferences.preferences, SystemClock.elapsedRealtime()));
     }
 
     @Test

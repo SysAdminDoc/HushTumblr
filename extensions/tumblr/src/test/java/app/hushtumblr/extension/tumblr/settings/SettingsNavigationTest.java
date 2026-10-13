@@ -68,11 +68,12 @@ import org.robolectric.shadows.ShadowToast;
 @SuppressWarnings("deprecation")
 public class SettingsNavigationTest {
     /**
-     * The home page's rows with every patch in the build: Status, Quick setups, Browse settings, the
-     * Feed, Posts, Interface and Privacy categories, More settings, Report a problem and Support
-     * HushTumblr.
+     * The home page's rows with every patch in the build: Status, Quick setups, the Browse settings
+     * heading over Feed, Posts, Interface and Privacy, the More settings heading over Links,
+     * Notifications, Tumblr's own settings, Updates, Pause, backup and diagnostics and About, then
+     * Report a problem and Support HushTumblr. Every page is one tap from home.
      */
-    private static final int HOME_ROWS = 10;
+    private static final int HOME_ROWS = 16;
     @Rule public final SettingsContextRule settings = new SettingsContextRule();
     private ActivityController<Activity> controller;
     private SettingsDialog dialog;
@@ -128,7 +129,7 @@ public class SettingsNavigationTest {
         assertEquals("Support HushTumblr", String.valueOf(row.getTitle()));
         assertEquals("Buy me a coffee on Ko-fi", String.valueOf(row.getSummary()));
         assertEquals("Report a problem", String.valueOf(((Preference) list().getItemAtPosition(last - 1)).getTitle()));
-        assertEquals("More settings", String.valueOf(((Preference) list().getItemAtPosition(last - 2)).getTitle()));
+        assertEquals("About", String.valueOf(((Preference) list().getItemAtPosition(last - 2)).getTitle()));
         assertTrue(list().getAdapter().isEnabled(last));
 
         tap(HushTumblrPreferenceFragment.SUPPORT);
@@ -415,12 +416,11 @@ public class SettingsNavigationTest {
         PatchFamily.inBuildForTests = EnumSet.of(PatchFamily.FIX_PUSH_NOTIFICATIONS);
         recreate();
         assertFalse(hasHomeRow("Privacy"));
-        // Status, Quick setups, Browse settings, More settings, Report a problem and Support.
-        assertEquals(6, list().getCount());
+        assertHomeListsEveryPage();
         PatchFamily.inBuildForTests = EnumSet.noneOf(PatchFamily.class);
         recreate();
         assertFalse(hasHomeRow("Privacy"));
-        assertEquals(6, list().getCount());
+        assertHomeListsEveryPage();
     }
 
     /**
@@ -534,17 +534,21 @@ public class SettingsNavigationTest {
         assertEquals(categoryCount("Links"), list().getCount());
         assertEquals(View.GONE, ((View) findSearch(dialog.getView()).getParent()).getVisibility());
         assertTrue(page.navigation.back());
-        assertTrue("Back from a More settings page goes to More settings", contains("section_Links"));
+        assertTrue("Back from Links goes home, where Links has its own row",
+                contains("section_Links") && contains(HushTumblrPreferenceFragment.SUPPORT));
 
-        // A page this build doesn't have opens the first page.
-        dialog.dismissAllowingStateLoss();
-        ShadowLooper.idleMainLooper();
-        dialog = SettingsDialog.onPage("No such page");
-        dialog.show(controller.get().getFragmentManager(), "hushtumblr_settings");
-        controller.get().getFragmentManager().executePendingTransactions();
-        ShadowLooper.idleMainLooper();
-        page = page(dialog);
-        assertEquals(HOME_ROWS, list().getCount());
+        // A page this build doesn't have opens the first page, and so does "more", which a restart
+        // saved before More settings joined the home page.
+        for (String missing : new String[] {"No such page", "more"}) {
+            dialog.dismissAllowingStateLoss();
+            ShadowLooper.idleMainLooper();
+            dialog = SettingsDialog.onPage(missing);
+            dialog.show(controller.get().getFragmentManager(), "hushtumblr_settings");
+            controller.get().getFragmentManager().executePendingTransactions();
+            ShadowLooper.idleMainLooper();
+            page = page(dialog);
+            assertEquals(missing, HOME_ROWS, list().getCount());
+        }
     }
 
     /** Each Quick setups choice saves its switches on the worker, shows them on their rows and says how many changed. */
@@ -956,16 +960,12 @@ public class SettingsNavigationTest {
         page.navigation.back();
         layout(dialog.getView());
         assertEquals("Privacy", focusedTitle(a11y));
-        page.navigation.navigate("more");
-        layout(dialog.getView());
+        // About's row sits under the More settings heading, near the end of the home page.
         page.navigation.navigate("About");
         layout(dialog.getView());
         page.navigation.back();
         layout(dialog.getView());
         assertEquals("About", focusedTitle(a11y));
-        page.navigation.back();
-        layout(dialog.getView());
-        assertEquals("More settings", focusedTitle(a11y));
     }
 
     /** The first text of the last row that took accessibility focus. */
@@ -1012,10 +1012,7 @@ public class SettingsNavigationTest {
         assertEquals(HOME_ROWS, list().getCount());
         page.navigation.navigate("About");
         dialog.getDialog().onBackPressed();
-        // More settings: Links, Notifications, Tumblr's own settings, Updates, Pause, backup and diagnostics,
-        // and About.
-        assertEquals(6, list().getCount());
-        dialog.getDialog().onBackPressed();
+        // About opens from the home page, so Back goes straight there.
         assertEquals(HOME_ROWS, list().getCount());
         dialog.getDialog().onBackPressed();
         ShadowLooper.idleMainLooper();
@@ -1023,7 +1020,7 @@ public class SettingsNavigationTest {
     }
 
     // A window as short as the layouts below, 400 px, so the window's own layout leaves both the
-    // overview and More settings taller than the list and neither snaps back to the top.
+    // overview and Pause, backup and diagnostics taller than the list and neither snaps back to the top.
     @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
     @Config(qualifiers = "w390dp-h200dp-night-xhdpi")
     public void aNewPageStartsAtTheTopAfterThePreviousPageWasScrolled() {
@@ -1038,24 +1035,25 @@ public class SettingsNavigationTest {
             int homePosition = list().getFirstVisiblePosition();
             int homeOffset = list().getChildAt(0).getTop();
             assertTrue(homePosition > 0 || homeOffset < 0);
-            page.navigation.navigate("more");
-            layout(dialog.getView(), 400);
-            assertEquals(0, list().getFirstVisiblePosition());
-            assertEquals(list().getPaddingTop(), list().getChildAt(0).getTop());
-            list().scrollListBy(100);
-            int morePosition = list().getFirstVisiblePosition();
-            int moreOffset = list().getChildAt(0).getTop();
-            assertTrue(morePosition > 0 || moreOffset < 0);
             page.navigation.navigate("Pause, backup and diagnostics");
             // Preference updates can arrive after navigation but before the next layout.
             ((android.widget.BaseAdapter) page.getPreferenceScreen().getRootAdapter()).notifyDataSetChanged();
             layout(dialog.getView(), 400);
             assertEquals(0, list().getFirstVisiblePosition());
             assertEquals(list().getPaddingTop(), list().getChildAt(0).getTop());
+            list().scrollListBy(100);
+            int pausePosition = list().getFirstVisiblePosition();
+            int pauseOffset = list().getChildAt(0).getTop();
+            assertTrue(pausePosition > 0 || pauseOffset < 0);
             assertTrue(page.navigation.back());
             layout(dialog.getView(), 400);
-            assertEquals(morePosition, list().getFirstVisiblePosition());
-            assertEquals(moreOffset, list().getChildAt(0).getTop());
+            assertEquals(homePosition, list().getFirstVisiblePosition());
+            assertEquals(homeOffset, list().getChildAt(0).getTop());
+            // The next page starts at the top, whatever the last page's scroll was.
+            page.navigation.navigate("About");
+            layout(dialog.getView(), 400);
+            assertEquals(0, list().getFirstVisiblePosition());
+            assertEquals(list().getPaddingTop(), list().getChildAt(0).getTop());
             assertTrue(page.navigation.back());
             layout(dialog.getView(), 400);
             assertEquals(homePosition, list().getFirstVisiblePosition());
@@ -1122,9 +1120,6 @@ public class SettingsNavigationTest {
             page.navigation.open(section);
             capture(section.getTitle().toString().toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z]+", "-"));
         }
-        page.navigation.navigate("more");
-        capture("more-settings");
-        page.navigation.back();
         findSearch(dialog.getView()).setText("links");
         ShadowLooper.idleMainLooper(1, java.util.concurrent.TimeUnit.SECONDS);
         capture("search-results");
@@ -1323,6 +1318,30 @@ public class SettingsNavigationTest {
             if (item instanceof Preference && ("section_" + id).equals(((Preference) item).getKey())) return true;
         }
         return false;
+    }
+
+    /**
+     * Home lists every page this build has, one tap away: Status, Quick setups, a heading over each
+     * group that has a page, every page's row, Report a problem and Support. Browse settings heads
+     * Feed, Posts, Interface and Privacy, and goes when the build has none of them.
+     */
+    private void assertHomeListsEveryPage() {
+        int links = 0;
+        List<String> headings = new ArrayList<>();
+        for (int i = 0; i < list().getCount(); i++) {
+            Preference row = (Preference) list().getItemAtPosition(i);
+            if (row instanceof PreferenceCategory) headings.add(String.valueOf(row.getTitle()));
+            else if (row.hasKey() && row.getKey().startsWith("section_")) links++;
+        }
+        assertEquals("every page has a row on the home page", page.sections().size(), links);
+        int browsed = 0;
+        for (String id : new String[] {"Feed", "Posts", "Interface", "Privacy"}) if (hasHomeRow(id)) browsed++;
+        List<String> expected = new ArrayList<>();
+        if (browsed > 0) expected.add("Browse settings");
+        if (links > browsed) expected.add("More settings");
+        assertEquals("a heading over each group with a page, and no empty one", expected, headings);
+        // Status, Quick setups, Report a problem and Support, around the headings and page rows.
+        assertEquals(4 + headings.size() + links, list().getCount());
     }
 
     private boolean contains(String key) {

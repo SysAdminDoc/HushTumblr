@@ -19,7 +19,7 @@ patches themselves are written here, from Tumblr's own code. The notices below
 are reproduced from those projects. Morphe requires its text to be carried in
 derivative works and shown to the person using the software, so it is also
 reachable in the app itself: open Tumblr's Settings, tap HushTumblr, then
-More settings, About and Licenses.
+About (under More settings) and Licenses.
 
   HushTumblr                  https://github.com/SysAdminDoc/HushTumblr
   HushPinterest               https://github.com/SysAdminDoc/HushPinterest

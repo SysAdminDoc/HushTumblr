@@ -418,9 +418,9 @@ public class SettingsL10nTest {
             collect(page.getPreferenceScreen(), rows, shown);
             shown.add(String.valueOf(backOf(dialog).getContentDescription()));
 
-            // The rows only the navigation draws: Quick setups, Browse settings, the section links,
-            // More settings, Report a problem and Support, then the restart row with one change and
-            // two waiting.
+            // The rows only the navigation draws: Quick setups, the Browse settings and More settings
+            // headings, the section links, Report a problem and Support, then the restart row with
+            // one change and two waiting.
             addListed(dialog, shown);
             app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending
                     .add(Settings.HIDE_TUMBLR_TV.key);

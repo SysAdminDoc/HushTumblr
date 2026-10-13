@@ -61,7 +61,6 @@ import app.hushtumblr.extension.shared.settings.preference.SettingsSearch;
 @SuppressWarnings("deprecation")
 final class SettingsNavigation extends BaseAdapter {
     private static final String STATE = "hushtumblr_navigation";
-    private static final String MORE = "more";
     /** Marks the Pause, Resume or Undo button placed under a status row's text, so a rebind replaces it. */
     private static final String STATUS_ACTION = "hushtumblr_status_action";
     /** The restart row's key. Like the other rows only this view draws, it stores nothing. */
@@ -78,7 +77,12 @@ final class SettingsNavigation extends BaseAdapter {
     private final List<Preference> visible = new ArrayList<>();
     private final Map<String, String> searchAliases;
     private final Preference browse;
-    private final Preference more;
+    /**
+     * The home page's second heading, over Links, Updates, backup and the other pages that used
+     * to sit on a More settings page of their own. Every page is one tap from home: Hush settings
+     * go at most one level deep.
+     */
+    private final Preference moreHeading;
     /** The home page's last row, which opens HushTumblr's Ko-fi page in a browser. */
     private final Preference support;
     /** Just above Support: a new GitHub bug report with this install's versions filled in. */
@@ -111,8 +115,6 @@ final class SettingsNavigation extends BaseAdapter {
     private Preference refocus;
     private int homePosition;
     private int homeOffset;
-    private int morePosition;
-    private int moreOffset;
 
     private final DataSetObserver changes = new DataSetObserver() {
         @Override public void onChanged() { rebuild(); }
@@ -142,8 +144,8 @@ final class SettingsNavigation extends BaseAdapter {
         section("About", L10n.t("About"), L10n.t("Version, help and project details"), SettingsIcons.ABOUT, false);
         browse = new HushTumblrPreferenceFragment.Heading(context);
         browse.setTitle(L10n.t("Browse settings"));
-        more = link(context, L10n.t("More settings"), L10n.t("Links, updates, backup and more"), SettingsIcons.SETTINGS);
-        more.setOnPreferenceClickListener(ignored -> { navigate(MORE); return true; });
+        moreHeading = new HushTumblrPreferenceFragment.Heading(context);
+        moreHeading.setTitle(L10n.t("More settings"));
         support = link(context, L10n.t("Support HushTumblr"), L10n.t("Buy me a coffee on Ko-fi"), SettingsIcons.COFFEE);
         support.setKey(HushTumblrPreferenceFragment.SUPPORT);
         support.setOnPreferenceClickListener(row -> { HushTumblrPreferenceFragment.openSupport(row.getContext()); return true; });
@@ -184,14 +186,14 @@ final class SettingsNavigation extends BaseAdapter {
             query = state.getString("query", "");
             homePosition = state.getInt("homePosition");
             homeOffset = state.getInt("homeOffset");
-            morePosition = state.getInt("morePosition");
-            moreOffset = state.getInt("moreOffset");
-            if (!MORE.equals(route) && selected() == null) route = "";
+            // A route that names no page, such as "more" saved before More settings joined the
+            // home page, opens home.
+            if (selected() == null) route = "";
         } else {
             // Nothing saved: the page the screen was asked to open on, such as the one a restart
             // from the restart row left.
             route = host.startPage();
-            if (!MORE.equals(route) && selected() == null) route = "";
+            if (selected() == null) route = "";
         }
         source.registerDataSetObserver(changes);
         list.setAdapter(this);
@@ -213,8 +215,8 @@ final class SettingsNavigation extends BaseAdapter {
     private void section(String id, String title, String detail, String icon, boolean primary) {
         for (Preference candidate : page.sections()) {
             if (!title.contentEquals(candidate.getTitle())) continue;
-            // Gray on the home page and on More settings alike: a row that opens a page wears gray,
-            // and blue is left for the rows that do something where they are.
+            // Gray under both home page headings: a row that opens a page wears gray, and blue is
+            // left for the rows that do something where they are.
             Preference link = link(screen.getContext(), title, detail, icon);
             link.setKey("section_" + id);
             link.setOnPreferenceClickListener(ignored -> { navigate(id); return true; });
@@ -246,13 +248,11 @@ final class SettingsNavigation extends BaseAdapter {
     }
 
     private CharSequence title() {
-        if (MORE.equals(route)) return more.getTitle();
         Section section = selected();
         return section == null ? "HushTumblr" : section.category.getTitle();
     }
 
     private CharSequence description() {
-        if (MORE.equals(route)) return L10n.t("More ways to make Tumblr yours");
         Section section = selected();
         return section == null ? L10n.t("Make Tumblr feel like yours.") : section.link.getSummary();
     }
@@ -263,7 +263,7 @@ final class SettingsNavigation extends BaseAdapter {
         pageStatusHeight = 0;
         query = "";
         route = destination;
-        if (!MORE.equals(route) && selected() == null) route = "";
+        if (selected() == null) route = "";
         rebuild();
         host.showPage(title(), route.isEmpty(), query, description());
         showAt(0, 0);
@@ -301,14 +301,13 @@ final class SettingsNavigation extends BaseAdapter {
         }
         if (route.isEmpty()) return false;
         Section section = selected();
-        Preference left = section != null ? section.link : more;
         pageStatusHeight = 0;
-        route = section != null && !section.primary ? MORE : "";
+        // Every page opens from home, so Back goes home, to the place the list was left.
+        route = "";
         rebuild();
-        host.showPage(title(), route.isEmpty(), query, description());
-        showAt(MORE.equals(route) ? morePosition : homePosition,
-                MORE.equals(route) ? moreOffset : homeOffset);
-        refocus = left;
+        host.showPage(title(), true, query, description());
+        showAt(homePosition, homeOffset);
+        refocus = section != null ? section.link : null;
         return true;
     }
 
@@ -326,9 +325,6 @@ final class SettingsNavigation extends BaseAdapter {
         if (route.isEmpty() && query.isEmpty()) {
             homePosition = list.getFirstVisiblePosition();
             homeOffset = offset;
-        } else if (MORE.equals(route)) {
-            morePosition = list.getFirstVisiblePosition();
-            moreOffset = offset;
         }
     }
 
@@ -338,8 +334,6 @@ final class SettingsNavigation extends BaseAdapter {
         state.putString("query", query);
         state.putInt("homePosition", homePosition);
         state.putInt("homeOffset", homeOffset);
-        state.putInt("morePosition", morePosition);
-        state.putInt("moreOffset", moreOffset);
         state.putInt("position", list.getFirstVisiblePosition());
         View first = list.getChildAt(0);
         state.putInt("offset", first == null ? 0 : first.getTop());
@@ -407,14 +401,21 @@ final class SettingsNavigation extends BaseAdapter {
         } else if (selected != null) {
             for (int i = 0; i < selected.category.getPreferenceCount(); i++) visible.add(selected.category.getPreference(i));
             addPageStatus();
-        } else if (MORE.equals(route)) {
-            for (Section section : sections) if (!section.primary) visible.add(section.link);
         } else {
             visible.add(screen.getPreference(0));
             visible.add(quickSetups);
-            visible.add(browse);
+            // Each heading only over pages this build has: a build without Feed, Posts, Interface
+            // or Privacy shows no empty Browse settings heading.
+            boolean anyPrimary = false;
+            boolean anyMore = false;
+            for (Section section : sections) {
+                if (section.primary) anyPrimary = true;
+                else anyMore = true;
+            }
+            if (anyPrimary) visible.add(browse);
             for (Section section : sections) if (section.primary) visible.add(section.link);
-            visible.add(more);
+            if (anyMore) visible.add(moreHeading);
+            for (Section section : sections) if (!section.primary) visible.add(section.link);
             // Report a problem sits just above Support, which stays last.
             visible.add(report);
             visible.add(support);
@@ -528,9 +529,6 @@ final class SettingsNavigation extends BaseAdapter {
         }
         if (!(item instanceof PreferenceCategory)) {
             palette().paintSurface(row, item, true, true);
-            if (MORE.equals(route)) {
-                row.setMinimumHeight(dp(66));
-            }
         }
         if (item == screen.getPreference(0)) {
             TextView title = row.findViewById(android.R.id.title);

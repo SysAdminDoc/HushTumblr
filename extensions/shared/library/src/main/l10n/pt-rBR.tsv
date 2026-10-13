@@ -32,7 +32,6 @@ Every switch but Debug logging acts as if it were off, and what was set when you
 Export diagnostic report	Exportar relatório de diagnóstico
 Export settings	Exportar configurações
 Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.	Desliga todas as opções do HushTumblr, menos o Registro de depuração, na próxima vez que o Tumblr abrir. O que você escolheu ao aplicar os patches continua, e suas escolhas ficam salvas.
-Links, updates, backup and more	Links, atualizações, backup e mais
 Save your settings to a file, including word lists and tab order. These choices apply to all accounts in this Tumblr app. Pause, Debug logging and release checks aren't included.	Salve suas configurações em um arquivo, incluindo listas de palavras e ordem das abas. Essas escolhas valem para todas as contas neste app do Tumblr. Pausa, Registro de depuração e verificação de novas versões não são incluídos.
 Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.	Configurações exportadas. O app que guarda o arquivo não deixou o HushTumblr lê-lo de volta, então ele não foi conferido.
 The app holding that file is taking too long, so HushTumblr stopped waiting. Nothing was changed.	O app que guarda esse arquivo está demorando demais, então o HushTumblr parou de esperar. Nada foi alterado.
@@ -397,7 +396,6 @@ Controls managed by Tumblr	Configurações gerenciadas pelo Tumblr
 Release checks and update help	Verificação de versões e ajuda para atualizar
 Pause, save and troubleshoot	Pausar, salvar e resolver problemas
 Version, help and project details	Versão, ajuda e detalhes do projeto
-More ways to make Tumblr yours	Mais formas de deixar o Tumblr com a sua cara
 Report a problem	Relatar um problema
 Opens a GitHub report with your versions and settings filled in. Add what happened.	Abre um relato no GitHub com suas versões e configurações já preenchidas. Conte o que aconteceu.
 Quick setups	Configurações rápidas

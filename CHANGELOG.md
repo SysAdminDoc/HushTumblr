@@ -7,6 +7,7 @@
 * **Tumblr:** Report a problem sits just above the Ko-fi row. It opens a GitHub bug report with your versions, phone and switches filled in.
 * **Tumblr:** Settings search no longer matches the word "null" on rows that have no description.
 * **Tumblr:** A change that needs a restart puts a Restart row at the top of every settings page. Tap it and Tumblr reopens on the same page. Hide ads now asks for it too.
+* **Tumblr:** Every settings page opens straight from the HushTumblr home page. Links, Notifications, Updates, backup and About moved off their own More settings page and now sit under a More settings heading, so nothing is more than one tap deep.
 * **Tooling:** The patch scripts refuse a bundle whose file names try to reach outside the folder it's unpacked into. They also check every APK in it against Tumblr's signing certificate, package and version before anything is merged, patched, signed or installed. A bundle that would unpack past 1 GB for one APK, or 2 GB in all, is refused before anything is written.
 * **Tumblr:** Settings pages have larger headers and short descriptions. Each control has its own navy card, with clearer spacing and rectangular switch thumbs. Short windows use a compact header to keep the list within reach.
 * **Tumblr:** The status card puts Pause or Resume below its message. Both actions save on a worker and prevent repeated taps. Choice dialogs share the page styling, and tab-order rows show an upward arrow for their move action.
