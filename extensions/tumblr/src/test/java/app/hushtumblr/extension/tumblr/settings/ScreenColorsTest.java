@@ -25,6 +25,8 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.InsetDrawable;
 import android.graphics.drawable.RippleDrawable;
 import android.view.View;
 import android.widget.Button;
@@ -209,6 +211,15 @@ public class ScreenColorsTest {
                 }
                 View widget = row.findViewById(android.R.id.switch_widget);
                 if (widget instanceof Switch) {
+                    Switch toggle = (Switch) widget;
+                    float density = toggle.getResources().getDisplayMetrics().density;
+                    GradientDrawable thumb = (GradientDrawable) ((InsetDrawable) toggle.getThumbDrawable()).getDrawable();
+                    GradientDrawable track = (GradientDrawable) toggle.getTrackDrawable();
+                    assertEquals(GradientDrawable.RECTANGLE, thumb.getShape());
+                    assertEquals(Math.round(4 * density), thumb.getCornerRadius(), 0f);
+                    assertEquals(Math.round(8 * density), track.getCornerRadius(), 0f);
+                    assertTrue("switch touch target is too narrow", toggle.getWidth() >= Math.round(48 * density));
+                    assertTrue("switch touch target is too short", toggle.getHeight() >= Math.round(48 * density));
                     assertNotNull(((Switch) widget).getThumbTintList());
                     assertEquals(colors.onAccent, ((Switch) widget).getThumbTintList()
                             .getColorForState(new int[]{android.R.attr.state_enabled, android.R.attr.state_checked}, 0));
@@ -341,7 +352,7 @@ public class ScreenColorsTest {
         }
         assertEquals("the large-text row's text starts somewhere else", textStart[0], textStart[1]);
         assertEquals("the large-text switch reserves an icon gap", textStart[2], textStart[3]);
-        assertEquals("switch text doesn't use its icon's space", 32 * dp, textStart[2]);
+        assertEquals("switch text doesn't use its icon's space", 36 * dp, textStart[2]);
     }
 
     private static SettingsDialog show(Activity activity) {

@@ -238,11 +238,12 @@ public class ReportChoicesTest {
             InsetDrawable inset = (InsetDrawable) ((RippleDrawable) card.getBackground()).getDrawable(0);
             Rect insets = new Rect();
             inset.getPadding(insets);
-            assertEquals(new Rect(dp(16), dp(4), dp(16), dp(4)), insets);
+            int gap = dp(5);
+            assertEquals(new Rect(dp(16), gap, dp(16), gap), insets);
             assertTrue(inset.getDrawable().getCurrent() instanceof GradientDrawable);
-            assertTrue("less than 48 dp to tap", card.getHeight() - 2 * dp(4) >= dp(48));
+            assertTrue("less than 48 dp to tap", card.getHeight() - 2 * gap >= dp(48));
             // The text sits inside the card's surface, clear of its edge.
-            Rect surface = new Rect(dp(16), dp(4), card.getWidth() - dp(16), card.getHeight() - dp(4));
+            Rect surface = new Rect(dp(16), gap, card.getWidth() - dp(16), card.getHeight() - gap);
             for (TextView text : new TextView[]{((ChoiceCards.Card) card).name, ((ChoiceCards.Card) card).detail}) {
                 assertEquals("\"" + text.getText() + "\" was cut off", 0, cutOff(text));
                 if (text.getLineCount() > 1) wrapped++;

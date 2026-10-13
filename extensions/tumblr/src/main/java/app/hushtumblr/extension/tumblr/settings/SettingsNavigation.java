@@ -19,6 +19,10 @@ package app.hushtumblr.extension.tumblr.settings;
 import android.content.Context;
 import android.database.DataSetObserver;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.AbsoluteSizeSpan;
+import android.text.style.ForegroundColorSpan;
 import android.preference.Preference;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceScreen;
@@ -106,17 +110,17 @@ final class SettingsNavigation extends BaseAdapter {
         Context context = screen.getContext();
         searchAliases = localizedSearchAliases();
         // Stable English route IDs survive a locale change; the displayed names are localized.
-        section("Feed", L10n.t("Feed"), null, SettingsIcons.FEED, true);
-        section("Posts", L10n.t("Posts"), null, SettingsIcons.POSTS, true);
-        section("Interface", L10n.t("Interface"), null, SettingsIcons.INTERFACE, true);
-        section("Privacy", L10n.t("Privacy"), null, SettingsIcons.BLOCK, true);
-        section("Links", L10n.t("Links"), null, SettingsIcons.LINKS, false);
-        section("Notifications", L10n.t("Notifications"), null, SettingsIcons.BELL, false);
-        section("Tumblr's own settings", L10n.t("Tumblr's own settings"), null, SettingsIcons.SETTINGS, false);
-        section("Updates", L10n.t("Updates"), null, SettingsIcons.UPDATES, false);
+        section("Feed", L10n.t("Feed"), L10n.t("Ads, reblogs and word filters"), SettingsIcons.FEED, true);
+        section("Posts", L10n.t("Posts"), L10n.t("Details and post actions"), SettingsIcons.POSTS, true);
+        section("Interface", L10n.t("Interface"), L10n.t("Tabs, counts and appearance"), SettingsIcons.INTERFACE, true);
+        section("Privacy", L10n.t("Privacy"), L10n.t("Tracking and app permissions"), SettingsIcons.BLOCK, true);
+        section("Links", L10n.t("Links"), L10n.t("Choose where Tumblr links open"), SettingsIcons.LINKS, false);
+        section("Notifications", L10n.t("Notifications"), L10n.t("Activity filters and push alerts"), SettingsIcons.BELL, false);
+        section("Tumblr's own settings", L10n.t("Tumblr's own settings"), L10n.t("Controls managed by Tumblr"), SettingsIcons.SETTINGS, false);
+        section("Updates", L10n.t("Updates"), L10n.t("Release checks and update help"), SettingsIcons.UPDATES, false);
         section("Set when you patched", L10n.t("Set when you patched"), null, SettingsIcons.PATCHED, false);
-        section("Pause, backup and diagnostics", L10n.t("Pause, backup and diagnostics"), null, SettingsIcons.TOOLS, false);
-        section("About", L10n.t("About"), null, SettingsIcons.ABOUT, false);
+        section("Pause, backup and diagnostics", L10n.t("Pause, backup and diagnostics"), L10n.t("Pause, save and troubleshoot"), SettingsIcons.TOOLS, false);
+        section("About", L10n.t("About"), L10n.t("Version, help and project details"), SettingsIcons.ABOUT, false);
         browse = new HushTumblrPreferenceFragment.Heading(context);
         browse.setTitle(L10n.t("Browse settings"));
         more = link(context, L10n.t("More settings"), L10n.t("Links, updates, backup and more"), SettingsIcons.SETTINGS);
@@ -155,7 +159,7 @@ final class SettingsNavigation extends BaseAdapter {
             }
         });
         rebuild();
-        host.showPage(title(), route.isEmpty(), query);
+        host.showPage(title(), route.isEmpty(), query, description());
         if (state != null) showAt(state.getInt("position"), state.getInt("offset"));
     }
 
@@ -200,6 +204,12 @@ final class SettingsNavigation extends BaseAdapter {
         return section == null ? "HushTumblr" : section.category.getTitle();
     }
 
+    private CharSequence description() {
+        if (MORE.equals(route)) return L10n.t("More ways to make Tumblr yours");
+        Section section = selected();
+        return section == null ? L10n.t("Make Tumblr feel like yours.") : section.link.getSummary();
+    }
+
     void navigate(String destination) {
         refocus = null;
         rememberIndex();
@@ -208,7 +218,7 @@ final class SettingsNavigation extends BaseAdapter {
         route = destination;
         if (!MORE.equals(route) && selected() == null) route = "";
         rebuild();
-        host.showPage(title(), route.isEmpty(), query);
+        host.showPage(title(), route.isEmpty(), query, description());
         showAt(0, 0);
         list.sendAccessibilityEvent(android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
     }
@@ -239,7 +249,7 @@ final class SettingsNavigation extends BaseAdapter {
     boolean back() {
         if (!query.isEmpty()) {
             search("");
-            host.showPage(title(), true, "");
+            host.showPage(title(), true, "", description());
             return true;
         }
         if (route.isEmpty()) return false;
@@ -248,7 +258,7 @@ final class SettingsNavigation extends BaseAdapter {
         pageStatusHeight = 0;
         route = section != null && !section.primary ? MORE : "";
         rebuild();
-        host.showPage(title(), route.isEmpty(), query);
+        host.showPage(title(), route.isEmpty(), query, description());
         showAt(MORE.equals(route) ? morePosition : homePosition,
                 MORE.equals(route) ? moreOffset : homeOffset);
         refocus = left;
@@ -416,24 +426,36 @@ final class SettingsNavigation extends BaseAdapter {
             row.post(() -> row.performAccessibilityAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null));
         }
         if (!(item instanceof PreferenceCategory)) {
-            Object group = group(item);
-            boolean first = position == 0 || group(getItem(position - 1)) != group;
-            boolean last = position + 1 == getCount() || group(getItem(position + 1)) != group;
-            if ("Pause, backup and diagnostics".equals(route) && item != pageStatus) first = last = true;
-            palette().paintSurface(row, item, first, last);
+            palette().paintSurface(row, item, true, true);
             if (MORE.equals(route)) {
                 row.setMinimumHeight(dp(66));
             }
         }
         if (item == screen.getPreference(0)) {
             TextView title = row.findViewById(android.R.id.title);
-            if (title != null) title.setTextSize(18);
-            android.widget.ImageView icon = row.findViewById(android.R.id.icon);
-            if (icon != null) {
-                icon.setBackground(null);
-                icon.setPadding(dp(5), dp(5), dp(5), dp(5));
+            if (title != null) {
+                String label = L10n.t("Status").toUpperCase(Locale.getDefault());
+                SpannableString heading = new SpannableString(label + "\n" + item.getTitle());
+                heading.setSpan(new AbsoluteSizeSpan(12, true), 0, label.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                heading.setSpan(new ForegroundColorSpan(palette().heading), 0, label.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                title.setText(heading);
+                title.setTextSize(20);
             }
-            row.setMinimumHeight(dp(84));
+            android.widget.ImageView icon = row.findViewById(android.R.id.icon);
+            if (icon != null && icon.getParent() instanceof ViewGroup) {
+                ViewGroup.LayoutParams iconSize = icon.getLayoutParams();
+                iconSize.width = iconSize.height = dp(56);
+                icon.setLayoutParams(iconSize);
+                icon.setPadding(dp(12), dp(12), dp(12), dp(12));
+                ViewGroup frame = (ViewGroup) icon.getParent();
+                ViewGroup.LayoutParams frameSize = frame.getLayoutParams();
+                frameSize.width = dp(72);
+                if (frameSize instanceof LinearLayout.LayoutParams) {
+                    ((LinearLayout.LayoutParams) frameSize).gravity = android.view.Gravity.TOP;
+                }
+                frame.setLayoutParams(frameSize);
+            }
+            row.setMinimumHeight(dp(148));
         }
         if (item == screen.getPreference(0)) bindStatus(row);
         if (item == pageStatus) {
@@ -467,31 +489,34 @@ final class SettingsNavigation extends BaseAdapter {
         Button action = new Button(screen.getContext());
         action.setText(paused != nextPaused ? L10n.t("Undo") : nextPaused ? L10n.t("Resume") : L10n.t("Pause"));
         action.setAllCaps(false);
-        action.setTextSize(14);
-        palette().primaryAction(action);
+        palette().secondaryAction(action);
         action.setMinWidth(dp(48));
         action.setMinHeight(dp(48));
         action.setMinimumWidth(dp(48));
         action.setMinimumHeight(dp(48));
+        Preference pause = page.findPreference(BaseSettings.PAUSED.key);
+        Preference status = pageStatusAction ? pageStatus : screen.getPreference(0);
+        action.setEnabled(status.isEnabled() && pause != null && pause.isEnabled()
+                && !HushTumblrPreferenceFragment.hasPendingEdits());
         action.setOnClickListener(ignored -> {
+            if (!action.isEnabled() || HushTumblrPreferenceFragment.hasPendingEdits()) return;
             if (pageStatusAction) pageStatusHeight = Math.max(pageStatusHeight, row.getHeight());
             if (nextPaused) {
                 page.resumeFromOverview();
             } else {
-                Preference pause = page.findPreference(BaseSettings.PAUSED.key);
-                if (pause instanceof SwitchPreference) ((SwitchPreference) pause).setChecked(!nextPaused);
+                // Toggle owns the durable worker save. Setting its visual check alone never saves.
+                if (pause instanceof SwitchPreference) pause.callChangeListener(!nextPaused);
             }
             rebuild();
         });
-        // From one and a half times the text size, a button beside the text leaves the name too
-        // little room and it breaks inside the word, so the button goes under the text there.
+        // Keep the action below the copy at every text size, leaving the full column for status.
         TextView summary = row.findViewById(android.R.id.summary);
-        if (screen.getContext().getResources().getConfiguration().fontScale >= 1.5f
-                && summary != null && summary.getParent() instanceof android.widget.RelativeLayout) {
+        if (summary != null && summary.getParent() instanceof android.widget.RelativeLayout) {
             android.widget.RelativeLayout.LayoutParams place = new android.widget.RelativeLayout.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             place.addRule(android.widget.RelativeLayout.BELOW, android.R.id.summary);
             place.addRule(android.widget.RelativeLayout.ALIGN_PARENT_START);
+            place.topMargin = dp(8);
             ViewGroup column = (ViewGroup) summary.getParent();
             View earlier = column.findViewWithTag(STATUS_ACTION);
             if (earlier != null) column.removeView(earlier);
@@ -510,12 +535,6 @@ final class SettingsNavigation extends BaseAdapter {
     }
 
     private int dp(int value) { return Math.round(value * screen.getContext().getResources().getDisplayMetrics().density); }
-
-    private Object group(Preference item) {
-        if (item == more || item == support || item == browse || item == screen.getPreference(0)) return item;
-        if (item.getParent() != null) return item.getParent();
-        return sections;
-    }
 
     private static ScreenColors palette() { return ScreenColors.DEFAULT; }
 

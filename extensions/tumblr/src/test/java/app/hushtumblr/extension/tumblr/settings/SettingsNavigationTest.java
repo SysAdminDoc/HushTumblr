@@ -174,6 +174,30 @@ public class SettingsNavigationTest {
         assertTrue(Settings.HIDE_ADVERTISING_ID.savedValue());
     }
 
+    @Test public void overviewPauseUsesTheSwitchWorkerAndPreventsRepeatedSaves() {
+        List<Runnable> writes = new ArrayList<>();
+        HushTumblrPreferenceFragment.editWorkerForTests = writes::add;
+        try {
+            layout(dialog.getView());
+            statusAction().performClick();
+            assertFalse(BaseSettings.PAUSED.savedValue());
+            assertEquals(1, writes.size());
+            layout(dialog.getView());
+            assertFalse(statusAction().isEnabled());
+            statusAction().performClick();
+            assertEquals(1, writes.size());
+            writes.remove(0).run();
+            ShadowLooper.idleMainLooper();
+            layout(dialog.getView());
+            assertTrue(BaseSettings.PAUSED.savedValue());
+            assertEquals("Undo", statusAction().getText().toString());
+            assertTrue(statusAction().isEnabled());
+        } finally {
+            for (Runnable write : writes) write.run();
+            HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
+        }
+    }
+
     /** A Resume the store can't keep leaves the pause on screen, in storage and in the switch, and says so. */
     @Test public void aResumeTheStoreCanNotKeepLeavesThePauseAndSaysSo() {
         BaseSettings.PAUSED.save(true);
@@ -500,9 +524,9 @@ public class SettingsNavigationTest {
     }
 
     private android.widget.Button pageAction() {
-        android.view.ViewGroup frame = list().getChildAt(0).findViewById(android.R.id.widget_frame);
-        assertEquals(1, frame.getChildCount());
-        return (android.widget.Button) frame.getChildAt(0);
+        android.widget.Button action = firstButton(list().getChildAt(0));
+        assertNotNull("no status action", action);
+        return action;
     }
 
     private int categoryCount(String title) {
@@ -524,7 +548,7 @@ public class SettingsNavigationTest {
 
     /**
      * At twice the text size the button beside the status text left the name too little room and
-     * "HushTumblr" broke inside the word. From one and a half times, the button goes under the text.
+     * "HushTumblr" broke inside the word. The action now sits below the text at every size.
      */
     @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
     public void atLargeTextTheStatusActionSitsUnderItsText() {
@@ -564,9 +588,9 @@ public class SettingsNavigationTest {
     }
 
     private android.widget.Button statusAction() {
-        android.view.ViewGroup frame = list().getChildAt(0).findViewById(android.R.id.widget_frame);
-        assertEquals(1, frame.getChildCount());
-        return (android.widget.Button) frame.getChildAt(0);
+        android.widget.Button action = firstButton(list().getChildAt(0));
+        assertNotNull("no overview status action", action);
+        return action;
     }
 
     @Test public void searchUsesRealControlsAndClearReturnsHome() {

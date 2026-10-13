@@ -18,6 +18,7 @@ package app.hushtumblr.extension.tumblr.settings;
 
 import android.content.res.ColorStateList;
 import android.database.DataSetObserver;
+import android.graphics.Typeface;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -47,26 +48,29 @@ final class DialogChoices extends BaseAdapter {
 
     @Override public View getView(int position, View recycled, ViewGroup parent) {
         View row = source.getView(position, recycled, parent);
+        row.setEnabled(source.isEnabled(position));
         if (row instanceof android.widget.TextView && !(row instanceof CheckedTextView)) {
             android.widget.TextView text = (android.widget.TextView) row;
             float density = row.getResources().getDisplayMetrics().density;
             text.setTextColor(ScreenColors.dimmedWhenDisabled(colors.title));
-            text.setTextSize(16);
+            text.setTextSize(17);
+            text.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
             text.setSingleLine(false);
             text.setMaxLines(Integer.MAX_VALUE);
-            text.setMinimumHeight(Math.round(56 * density));
-            text.setPaddingRelative(Math.round(24 * density), Math.round(12 * density),
-                    Math.round(24 * density), Math.round(12 * density));
-            text.setBackground(colors.interactive(text, colors.card, 0));
+            text.setMinimumHeight(Math.round(48 * density) + 2 * Math.round(5 * density));
+            text.setBackground(colors.insetInteractive(text, colors.card, 12, 16, 5));
+            text.setPaddingRelative(Math.round(32 * density), Math.round(17 * density),
+                    Math.round(32 * density), Math.round(17 * density));
         }
         if (row instanceof CheckedTextView) {
             CheckedTextView choice = (CheckedTextView) row;
             float density = row.getResources().getDisplayMetrics().density;
             choice.setTextColor(ScreenColors.dimmedWhenDisabled(colors.title));
-            choice.setTextSize(16);
+            choice.setTextSize(17);
+            choice.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
             choice.setSingleLine(false);
             choice.setMaxLines(Integer.MAX_VALUE);
-            choice.setMinHeight(Math.round(48 * density));
+            choice.setMinHeight(Math.round(48 * density) + 2 * Math.round(5 * density));
             ColorStateList indicator = new ColorStateList(new int[][]{
                     {-android.R.attr.state_enabled, android.R.attr.state_checked}, {-android.R.attr.state_enabled},
                     {android.R.attr.state_checked}, {}},
@@ -77,10 +81,10 @@ final class DialogChoices extends BaseAdapter {
                 if (drawable != null) drawable.mutate().setTintList(indicator);
             }
             choice.setBackground(colors.choiceSurface(choice));
-            // Rounding both sides up at densities such as 450dpi exceeds the measured 48dp row.
-            int verticalPadding = (int) (8 * density);
-            choice.setPaddingRelative(Math.round(20 * density), verticalPadding,
-                    Math.round(20 * density), verticalPadding);
+            // Leave 48dp inside the surface, plus the two 5dp gaps, at every density.
+            int verticalPadding = (int) (8 * density) + Math.round(5 * density);
+            choice.setPaddingRelative(Math.round(32 * density), verticalPadding,
+                    Math.round(32 * density), verticalPadding);
         }
         return row;
     }

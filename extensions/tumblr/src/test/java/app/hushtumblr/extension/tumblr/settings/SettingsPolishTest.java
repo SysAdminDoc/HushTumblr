@@ -222,7 +222,11 @@ public class SettingsPolishTest {
         settings.getView().requestFocus();
         settle();
         assertFalse("search could not release focus", search().hasFocus());
-        assertFalse("search focus has no visible boundary", Arrays.equals(focused, pixels(searchBox.getBackground())));
+        int[] resting = pixels(searchBox.getBackground());
+        assertFalse("search focus has no visible boundary", Arrays.equals(focused, resting));
+        assertTrue("search's resting boundary lost its control contrast",
+                Arrays.stream(resting).anyMatch(color -> color == ScreenColors.DEFAULT.switchOff));
+        assertTrue(ScreenColorsTest.contrast(ScreenColors.DEFAULT.switchOff, ScreenColors.DEFAULT.card) >= 3);
         assertActionStates(clear());
         assertActionStates(SettingsL10nTest.backOf(settings));
         clear().setEnabled(false);

@@ -82,7 +82,7 @@ final class ChoiceCards extends BaseAdapter {
     static final class Card extends LinearLayout {
         /** How far the card sits in from the list's sides, and from the next card. */
         static final int SIDE_INSET_DP = 16;
-        static final int GAP_INSET_DP = 4;
+        static final int GAP_INSET_DP = 5;
 
         final TextView name;
         final TextView detail;
@@ -105,7 +105,7 @@ final class ChoiceCards extends BaseAdapter {
             addView(text, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1));
 
             name = new TextView(context);
-            name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+            name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17);
             name.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
             name.setTextColor(colors.title);
             ScreenColors.Chevron chevron = new ScreenColors.Chevron(colors.summary, dp(context, 2));

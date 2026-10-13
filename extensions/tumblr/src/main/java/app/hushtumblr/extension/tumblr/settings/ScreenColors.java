@@ -128,7 +128,7 @@ public final class ScreenColors {
         TextView title = row.findViewById(android.R.id.title);
         if (title != null) {
             title.setTextColor(dimmedWhenDisabled(this.title));
-            title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+            title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17);
             title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
             if (title.getParent() instanceof View) {
                 View text = (View) title.getParent();
@@ -149,16 +149,18 @@ public final class ScreenColors {
                     {-android.R.attr.state_enabled}, {android.R.attr.state_checked}, {}};
             Switch toggle = (Switch) widget;
             GradientDrawable thumb = new GradientDrawable();
-            thumb.setShape(GradientDrawable.OVAL);
-            thumb.setSize(dp(row, 20), dp(row, 20));
+            thumb.setCornerRadius(dp(row, 4));
+            thumb.setSize(dp(row, 16), dp(row, 16));
             thumb.setColor(Color.WHITE);
             GradientDrawable track = new GradientDrawable();
-            track.setCornerRadius(dp(row, 12));
+            track.setCornerRadius(dp(row, 8));
             track.setSize(dp(row, 44), dp(row, 24));
             track.setColor(Color.WHITE);
-            toggle.setThumbDrawable(new InsetDrawable(thumb, dp(row, 2)));
+            toggle.setThumbDrawable(new InsetDrawable(thumb, dp(row, 4)));
             toggle.setTrackDrawable(track);
             toggle.setSwitchMinWidth(dp(row, 44));
+            toggle.setMinWidth(dp(row, 48));
+            toggle.setMinHeight(dp(row, 48));
             toggle.setThumbTintList(new ColorStateList(states, new int[]{half(onAccent), half(offThumb()), onAccent, offThumb()}));
             toggle.setTrackTintList(new ColorStateList(states, new int[]{half(accent), half(switchOff), accent, switchOff}));
         }
@@ -207,15 +209,15 @@ public final class ScreenColors {
                 last ? radius : 0, last ? radius : 0};
         Drawable surface = preference.isSelectable() ? states(row, card, corners, outline, accent)
                 : shape(row, card, corners, outline, 1);
-        Drawable inset = new InsetDrawable(surface, dp(row, 16), first ? dp(row, 6) : -dp(row, 1),
-                dp(row, 16), last ? dp(row, 6) : 0);
+        Drawable inset = new InsetDrawable(surface, dp(row, 20), first ? dp(row, 5) : -dp(row, 1),
+                dp(row, 20), last ? dp(row, 5) : 0);
         row.setBackground(preference.isSelectable()
                 ? new RippleDrawable(ColorStateList.valueOf(half(accent)), inset, null) : inset);
         // Explicit padding after the inset background prevents its padding from moving the text.
         int vertical = 12;
-        row.setPaddingRelative(dp(row, 32), dp(row, vertical + (first ? 6 : 0)),
-                dp(row, 32), dp(row, vertical + (last ? 6 : 0)));
-        row.setMinimumHeight(dp(row, 66));
+        row.setPaddingRelative(dp(row, 36), dp(row, vertical + (first ? 5 : 0)),
+                dp(row, 36), dp(row, vertical + (last ? 5 : 0)));
+        row.setMinimumHeight(dp(row, 74));
     }
 
     /** An outlined surface shared by navigation icons and the back button. */
@@ -243,9 +245,10 @@ public final class ScreenColors {
     RippleDrawable choiceSurface(View view) {
         StateListDrawable checked = new StateListDrawable();
         checked.addState(new int[]{android.R.attr.state_checked},
-                states(view, 0xFF213449, corners(view, 0), outline, accent));
-        checked.addState(new int[]{}, states(view, card, corners(view, 0), outline, accent));
-        return new RippleDrawable(ColorStateList.valueOf(half(accent)), checked, null);
+                states(view, iconSurface, corners(view, 12), accent, accent));
+        checked.addState(new int[]{}, states(view, card, corners(view, 12), outline, accent));
+        return new RippleDrawable(ColorStateList.valueOf(half(accent)),
+                new InsetDrawable(checked, dp(view, 16), dp(view, 5), dp(view, 16), dp(view, 5)), null);
     }
 
     private Drawable states(View view, int fill, float[] corners, int border, int focus) {
@@ -294,6 +297,7 @@ public final class ScreenColors {
         button.setBackgroundTintList(null);
         button.setBackground(background);
         button.setTextColor(dimmedWhenDisabled(primary ? onAccent : secondaryActionText()));
+        button.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
         button.setTypeface(Typeface.create("sans-serif-medium", 0));
         button.setAllCaps(false);
         button.setSingleLine(false);
@@ -474,9 +478,9 @@ public final class ScreenColors {
         Drawable surface = states(row, primary ? accent : card, corners(row, 8),
                 primary ? accent : outline, primary ? onAccent : accent);
         row.setBackground(new RippleDrawable(ColorStateList.valueOf(half(primary ? onAccent : accent)),
-                new InsetDrawable(surface, dp(row, 16), dp(row, 4), dp(row, 16), dp(row, 4)), null));
-        row.setMinimumHeight(dp(row, 56));
-        row.setPadding(dp(row, 32), dp(row, 8), dp(row, 32), dp(row, 8));
+                new InsetDrawable(surface, dp(row, 20), dp(row, 5), dp(row, 20), dp(row, 5)), null));
+        row.setMinimumHeight(dp(row, 48) + 2 * dp(row, 5));
+        row.setPadding(dp(row, 36), dp(row, 9), dp(row, 36), dp(row, 9));
     }
 
     static void recoveryMessage(View row) {

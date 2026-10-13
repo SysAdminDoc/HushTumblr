@@ -162,14 +162,29 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         return submitEdit(task, true);
     }
 
+    static boolean submitEdit(Runnable task, Runnable completion) {
+        return submitEdit(task, true, completion);
+    }
+
     private static boolean submitEdit(Runnable task, boolean refreshOnRejection) {
+        return submitEdit(task, refreshOnRejection, null);
+    }
+
+    private static boolean submitEdit(Runnable task, boolean refreshOnRejection, @Nullable Runnable completion) {
         pendingEdits.incrementAndGet();
         SettingsBackupPreference.refreshCurrentPage();
         java.util.concurrent.atomic.AtomicBoolean completed = new java.util.concurrent.atomic.AtomicBoolean();
         Runnable finish = () -> {
             if (!completed.compareAndSet(false, true)) return;
             pendingEdits.decrementAndGet();
-            SettingsBackupPreference.refreshCurrentPage();
+            if (completion == null) {
+                SettingsBackupPreference.refreshCurrentPage();
+            } else {
+                Utils.runOnMainThreadNowOrLater(() -> {
+                    SettingsBackupPreference.refreshCurrentPage();
+                    completion.run();
+                });
+            }
         };
         Runnable guarded = () -> {
             try {
@@ -833,29 +848,54 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
 
     void resumeFromOverview() {
         Context context = getContext();
-        if (context == null || statusCard == null) return;
-        HushTumblrPause.Reason still = HushTumblrPause.turnBackOn(context);
-        // The switch shows what was kept. Setting it to off here would write off through the
-        // preference itself when the store had just refused to.
-        Preference pause = findPreference(BaseSettings.PAUSED.key);
-        if (pause instanceof SwitchPreference) ((SwitchPreference) pause).setChecked(BaseSettings.PAUSED.savedValue());
-        if (still == HushTumblrPause.Reason.MARKER_FILE) {
-            String file = L10n.isolate(HushTumblrPause.MARKER_FILE_NAME);
-            String folder = L10n.isolate(markerFolder(context.getPackageName()));
-            // The switches stay as they were until the file goes, so say when they still pause.
-            String left = BaseSettings.PAUSED.savedValue() || BaseSettings.SAFE_MODE.savedValue()
-                    ? L10n.f("The file %1$s couldn't be removed. Delete it from %2$s, then tap Resume again.", file, folder)
-                    : L10n.f("The file %1$s couldn't be removed. Delete it from %2$s to turn HushTumblr back on.",
-                    file, folder);
-            statusCard.setSummary(left);
-            // Resume can be tapped on a category page too, where the card isn't in view.
-            Utils.showToastLong(left);
-            return;
+        Preference card = statusCard;
+        if (context == null || card == null || hasPendingEdits() || !ownsStatusCard(card)) return;
+        card.setEnabled(false);
+        card.setSummary(L10n.t("Saving changes"));
+        java.util.concurrent.atomic.AtomicReference<HushTumblrPause.Reason> outcome =
+                new java.util.concurrent.atomic.AtomicReference<>(HushTumblrPause.Reason.SWITCH);
+        if (!submitEdit(() -> {
+            try {
+                outcome.set(HushTumblrPause.turnBackOn(context));
+            } catch (RuntimeException failure) {
+                Logger.printInfo(() -> "HushTumblr resume failed", failure);
+            }
+        }, () -> {
+            // The worker has refreshed a replacement page before this owned result runs.
+            if (!ownsStatusCard(card)) return;
+            card.setEnabled(true);
+            // Show the value actually kept, including a failed write or rollback.
+            Preference pause = findPreference(BaseSettings.PAUSED.key);
+            if (pause instanceof SwitchPreference) {
+                ((SwitchPreference) pause).setChecked(BaseSettings.PAUSED.savedValue());
+            }
+            if (outcome.get() == HushTumblrPause.Reason.MARKER_FILE) {
+                String file = L10n.isolate(HushTumblrPause.MARKER_FILE_NAME);
+                String folder = L10n.isolate(markerFolder(context.getPackageName()));
+                String left = BaseSettings.PAUSED.savedValue() || BaseSettings.SAFE_MODE.savedValue()
+                        ? L10n.f("The file %1$s couldn't be removed. Delete it from %2$s, then tap Resume again.", file, folder)
+                        : L10n.f("The file %1$s couldn't be removed. Delete it from %2$s to turn HushTumblr back on.",
+                        file, folder);
+                card.setSummary(left);
+                Utils.showToastLong(left);
+                return;
+            }
+            if (outcome.get() != HushTumblrPause.Reason.NONE) {
+                Utils.showToastLong(L10n.t("Couldn't turn HushTumblr back on. Try again."));
+            }
+            showStatus(card, context);
+        })) {
+            card.setEnabled(true);
+            showStatus(card, context);
+            Utils.showToastLong(L10n.t("Couldn't start that. Try again in a moment."));
         }
-        if (still != HushTumblrPause.Reason.NONE) {
-            Utils.showToastLong(L10n.t("Couldn't turn HushTumblr back on. Try again."));
-        }
-        showStatus(statusCard, context);
+    }
+
+    private boolean ownsStatusCard(Preference card) {
+        if (!isAdded() || getView() == null || statusCard != card) return false;
+        if (!(getParentFragment() instanceof SettingsDialog)) return true;
+        Dialog dialog = ((SettingsDialog) getParentFragment()).getDialog();
+        return dialog != null && dialog.isShowing();
     }
 
     /**
@@ -973,8 +1013,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         editor.addView(explanation);
         TextView label = new TextView(context);
         label.setText(L10n.t("One word or phrase a line"));
-        label.setTextSize(14);
-        label.setTextColor(ScreenColors.DEFAULT.title);
+        label.setTextSize(13);
+        label.setTextColor(ScreenColors.DEFAULT.heading);
         label.setLabelFor(android.R.id.edit);
         label.setPaddingRelative(0, 0, 0, Math.round(6 * context.getResources().getDisplayMetrics().density));
         editor.addView(label);
@@ -1118,7 +1158,26 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
     private void showTabOrder(Context context, Preference row) {
         List<String> order = new ArrayList<>(BottomBarTabs.choices(TextSettings.TAB_ORDER.savedValue()));
         String[] focusedTab = {order.get(0)};
-        ArrayAdapter<String> labels = new ArrayAdapter<>(context, android.R.layout.simple_list_item_1, tabLabels(order));
+        ArrayAdapter<String> labels = new ArrayAdapter<String>(context,
+                android.R.layout.simple_list_item_1, tabLabels(order)) {
+            @Override public View getView(int position, View recycled, ViewGroup parent) {
+                TextView label = (TextView) super.getView(position, recycled, parent);
+                float density = label.getResources().getDisplayMetrics().density;
+                android.graphics.drawable.Drawable glyph = SettingsIcons.icon(context, SettingsIcons.BACK,
+                        position == 0 ? ScreenColors.DEFAULT.summary : ScreenColors.DEFAULT.accent);
+                // Up has the same direction in every language, unlike the source Back arrow.
+                glyph.setAutoMirrored(false);
+                android.graphics.drawable.RotateDrawable up = new android.graphics.drawable.RotateDrawable();
+                up.setDrawable(glyph);
+                up.setFromDegrees(90);
+                up.setToDegrees(90);
+                int size = Math.round(24 * density);
+                up.setBounds(0, 0, size, size);
+                label.setCompoundDrawablesRelative(null, null, up, null);
+                label.setCompoundDrawablePadding(Math.round(16 * density));
+                return label;
+            }
+        };
         AlertDialog dialog = show(new AlertDialog.Builder(context)
                 .setTitle(L10n.t("Tap a tab to move it up"))
                 .setAdapter(labels, null)

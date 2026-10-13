@@ -28,6 +28,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.text.TextUtils;
 import android.text.InputType;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -42,11 +43,14 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
+
+import java.util.Locale;
 
 import app.hushtumblr.extension.shared.L10n;
 import app.hushtumblr.extension.shared.Logger;
@@ -70,12 +74,25 @@ public final class SettingsDialog extends DialogFragment {
     static final String MOUNT_BACK = "hushtumblr_mount_back";
     private static final String MOUNT_FAILED_STATE = "hushtumblr_mount_failed";
     private static final String REPLACE_CHILD_STATE = "hushtumblr_replace_failed_child";
+    private static final String PAGE_TITLE_STATE = "hushtumblr_page_title";
+    private static final String PAGE_SUBTITLE_STATE = "hushtumblr_page_subtitle";
+    private static final String PAGE_HOME_STATE = "hushtumblr_page_home";
+    private static final String PAGE_QUERY_STATE = "hushtumblr_page_query";
+    private static final String PAGE_RESULTS_STATE = "hushtumblr_page_results";
 
     /** Thrown once before mounting, so a test reaches recovery even when no child exists. */
     static volatile RuntimeException failNextMount;
 
     private TextView pageTitle;
+    private TextView eyebrow;
+    private TextView pageSubtitle;
     private LinearLayout titleBar;
+    private LinearLayout headingBlock;
+    private ImageButton backButton;
+    private boolean compactHeader;
+    private int forcedCompactWidth = -1;
+    private int forcedCompactHeight;
+    private float forcedCompactFontScale;
     private LinearLayout searchBox;
     private EditText search;
     private TextView results;
@@ -92,6 +109,7 @@ public final class SettingsDialog extends DialogFragment {
     private boolean replaceFailedChild;
     private boolean retryScheduled;
     private CharSequence mountedTitle = "HushTumblr";
+    private CharSequence mountedSubtitle;
     private boolean mountedHome;
     private String mountedQuery = "";
     private int mountedResults = -1;
@@ -108,6 +126,11 @@ public final class SettingsDialog extends DialogFragment {
         if (savedInstanceState != null) {
             mountFailed = savedInstanceState.getBoolean(MOUNT_FAILED_STATE);
             replaceFailedChild = savedInstanceState.getBoolean(REPLACE_CHILD_STATE);
+            mountedTitle = savedInstanceState.getCharSequence(PAGE_TITLE_STATE, "HushTumblr");
+            mountedSubtitle = savedInstanceState.getCharSequence(PAGE_SUBTITLE_STATE);
+            mountedHome = savedInstanceState.getBoolean(PAGE_HOME_STATE);
+            mountedQuery = savedInstanceState.getString(PAGE_QUERY_STATE, "");
+            mountedResults = savedInstanceState.getInt(PAGE_RESULTS_STATE, -1);
         }
     }
 
@@ -160,28 +183,44 @@ public final class SettingsDialog extends DialogFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle savedInstanceState) {
         ScreenColors palette = ScreenColors.DEFAULT;
         Context context = inflater.getContext();
-        LinearLayout root = new LinearLayout(context);
+        LinearLayout root = new LinearLayout(context) {
+            @Override protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+                int width = MeasureSpec.getSize(widthMeasureSpec) - getPaddingLeft() - getPaddingRight();
+                int height = MeasureSpec.getSize(heightMeasureSpec) - getPaddingTop() - getPaddingBottom();
+                float fontScale = getResources().getConfiguration().fontScale;
+                if (MeasureSpec.getMode(heightMeasureSpec) != MeasureSpec.UNSPECIFIED) {
+                    updateHeaderForViewport(width, height, fontScale);
+                }
+                super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+                if (!compactHeader && titleBar != null && container != null
+                        && container.getMeasuredHeight() - container.getPaddingTop()
+                        - container.getPaddingBottom() < dp(48)) {
+                    forcedCompactWidth = width;
+                    forcedCompactHeight = height;
+                    forcedCompactFontScale = fontScale;
+                    compactHeader = true;
+                    applyHeaderLayout();
+                    super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+                }
+            }
+        };
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(ScreenColors.DEFAULT.background);
 
         LinearLayout bar = new LinearLayout(context);
         titleBar = bar;
-        bar.setOrientation(LinearLayout.HORIZONTAL);
-        bar.setGravity(Gravity.CENTER_VERTICAL);
-        int pad = dp(16);
-        // Start and end, not left and right: in a right-to-left language the bar is mirrored.
-        bar.setPaddingRelative(dp(12), dp(36), pad, dp(16));
+        bar.setOrientation(LinearLayout.VERTICAL);
+        bar.setGravity(Gravity.START);
 
-        android.widget.ImageButton back = new android.widget.ImageButton(context);
+        ImageButton back = new ImageButton(context);
+        backButton = back;
         android.graphics.drawable.Drawable arrow = SettingsIcons.icon(context, SettingsIcons.BACK, palette.title);
         arrow.setBounds(0, 0, dp(24), dp(24));
         arrow.setLayoutDirection(rightToLeft() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
         back.setImageDrawable(arrow);
         back.setImageTintList(ScreenColors.dimmedWhenDisabled(palette.title));
         back.setPadding(dp(12), dp(12), dp(12), dp(12));
-        android.graphics.drawable.RippleDrawable backSurface = palette.interactive(back, palette.card, 8);
-        backSurface.setLayerInsetRelative(0, dp(4), dp(4), dp(4), dp(4));
-        back.setBackground(backSurface);
+        back.setBackground(palette.interactive(back, palette.card, 10));
         back.setMinimumWidth(dp(48));
         back.setMinimumHeight(dp(48));
         back.setContentDescription(L10n.t(getContext(), "Back"));
@@ -202,15 +241,32 @@ public final class SettingsDialog extends DialogFragment {
         });
         bar.addView(back, new LinearLayout.LayoutParams(dp(48), dp(48)));
 
+        headingBlock = new LinearLayout(context);
+        headingBlock.setOrientation(LinearLayout.VERTICAL);
+        eyebrow = new TextView(context);
+        eyebrow.setText(L10n.t("HushTumblr").toUpperCase(Locale.ROOT));
+        eyebrow.setTextColor(palette.heading);
+        eyebrow.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        eyebrow.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        eyebrow.setLetterSpacing(0.12f);
+        eyebrow.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        headingBlock.addView(eyebrow);
+
         TextView title = new TextView(context);
         pageTitle = title;
         title.setText("HushTumblr");
         title.setTextColor(palette.title);
-        title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 28);
-        title.setPaddingRelative(dp(16), 0, 0, 0);
+        title.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
         HushTumblrPreferenceFragment.markHeading(title);
-        bar.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        headingBlock.addView(title);
+        pageSubtitle = new TextView(context);
+        pageSubtitle.setTextColor(palette.summary);
+        pageSubtitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+        pageSubtitle.setLineSpacing(dp(2), 1);
+        headingBlock.addView(pageSubtitle);
+        bar.addView(headingBlock, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        applyHeaderLayout();
         root.addView(bar);
 
         buildSearch(root);
@@ -265,7 +321,7 @@ public final class SettingsDialog extends DialogFragment {
         search.setOnFocusChangeListener((view, focused) ->
                 surface.setStroke(dp(focused ? 2 : 1), focused ? palette.accent : palette.switchOff));
         search.setPaddingRelative(dp(12), dp(12), 0, dp(12));
-        search.setMinimumHeight(dp(52));
+        search.setMinimumHeight(dp(56));
         searchBox.addView(search, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         android.widget.ImageButton clear = new android.widget.ImageButton(context);
         clear.setImageDrawable(SettingsIcons.icon(context, SettingsIcons.CLOSE, palette.summary));
@@ -296,7 +352,7 @@ public final class SettingsDialog extends DialogFragment {
         });
         LinearLayout.LayoutParams layout = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
-        layout.setMargins(dp(16), 0, dp(16), dp(12));
+        layout.setMargins(dp(20), 0, dp(20), dp(14));
         root.addView(searchBox, layout);
         // Typed letters alone tell a screen reader nothing about the list below, so the count is
         // spoken from a polite live region, once the typing has settled.
@@ -318,13 +374,24 @@ public final class SettingsDialog extends DialogFragment {
     }
 
     void showPage(CharSequence title, boolean home, String query) {
+        showPage(title, home, query, home ? L10n.t("Make Tumblr feel like yours.") : null);
+    }
+
+    void showPage(CharSequence title, boolean home, String query, @Nullable CharSequence subtitle) {
+        CharSequence displayTitle = home ? L10n.t("Your settings") : title;
+        if (!TextUtils.equals(mountedTitle, title) || !TextUtils.equals(mountedSubtitle, subtitle)
+                || mountedHome != home || (pageTitle != null && !TextUtils.equals(pageTitle.getText(), displayTitle))) {
+            forcedCompactWidth = -1;
+        }
         mountedTitle = title;
+        mountedSubtitle = subtitle;
         mountedHome = home;
         mountedQuery = query;
         if (mountFailed) return;
-        pageTitle.setText(title);
-        pageTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, title.length() > 26 ? 24 : 28);
-        titleBar.setPaddingRelative(dp(12), dp(36), dp(16), dp(home ? 16 : 6));
+        pageTitle.setText(displayTitle);
+        pageSubtitle.setText(subtitle);
+        applyHeaderLayout();
+        if (getDialog() != null && getDialog().getWindow() != null) getDialog().getWindow().setTitle(title);
         searchBox.setVisibility(home ? View.VISIBLE : View.GONE);
         settingSearch = true;
         if (!search.getText().toString().equals(query)) search.setText(query);
@@ -335,8 +402,47 @@ public final class SettingsDialog extends DialogFragment {
         }
     }
 
+    private void updateHeaderForViewport(int width, int height, float fontScale) {
+        if (titleBar == null || pageTitle == null || height <= 0) return;
+        // A keyboard, landscape or large text can leave little room below a tall masthead.
+        // Keep the route heading and Back together while the native list keeps its space.
+        boolean forced = forcedCompactWidth == width && forcedCompactHeight == height
+                && Float.compare(forcedCompactFontScale, fontScale) == 0;
+        boolean compact = forced || height <= dp(480) || (fontScale >= 1.5f && height <= dp(640));
+        if (compactHeader == compact) return;
+        compactHeader = compact;
+        applyHeaderLayout();
+    }
+
+    private void applyHeaderLayout() {
+        titleBar.setOrientation(compactHeader ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
+        titleBar.setGravity(compactHeader ? Gravity.CENTER_VERTICAL : Gravity.START);
+        titleBar.setPaddingRelative(dp(20), dp(compactHeader ? 12 : 20), dp(20),
+                dp(compactHeader ? 12 : 22));
+        LinearLayout.LayoutParams back = new LinearLayout.LayoutParams(dp(48), dp(48));
+        back.setMarginEnd(dp(compactHeader ? 12 : 0));
+        back.bottomMargin = dp(compactHeader ? 0 : 22);
+        backButton.setLayoutParams(back);
+        headingBlock.setLayoutParams(compactHeader
+                ? new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1)
+                : new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        eyebrow.setVisibility(compactHeader ? View.GONE : View.VISIBLE);
+        pageTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP,
+                pageTitle.getText().length() > 26 ? (compactHeader ? 20 : 26) : (compactHeader ? 24 : 32));
+        LinearLayout.LayoutParams title = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        title.topMargin = dp(compactHeader ? 0 : 6);
+        pageTitle.setLayoutParams(title);
+        LinearLayout.LayoutParams subtitle = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        subtitle.topMargin = dp(6);
+        pageSubtitle.setLayoutParams(subtitle);
+        pageSubtitle.setVisibility(compactHeader || pageSubtitle.length() == 0 ? View.GONE : View.VISIBLE);
+    }
+
     /** How many settings the search shows, or -1 when there is no search. */
     void showResults(int count) {
+        if ((mountedResults < 0) != (count < 0)) forcedCompactWidth = -1;
         mountedResults = count;
         results.removeCallbacks(showFound);
         if (mountFailed || count < 0) {
@@ -390,7 +496,7 @@ public final class SettingsDialog extends DialogFragment {
             }
             mountFailed = false;
             clearMountRecovery();
-            showPage(mountedTitle, mountedHome, mountedQuery);
+            showPage(mountedTitle, mountedHome, mountedQuery, mountedSubtitle);
             showResults(mountedResults);
             if (retry) {
                 View list = getView().findViewById(android.R.id.list);
@@ -413,7 +519,10 @@ public final class SettingsDialog extends DialogFragment {
         if (container == null) return;
         Context context = container.getContext();
         if (recovery != null) container.removeView(recovery);
+        forcedCompactWidth = -1;
         pageTitle.setText("HushTumblr");
+        pageSubtitle.setText(L10n.t(getContext(), "Try again, or go back to Tumblr."));
+        applyHeaderLayout();
         searchBox.setVisibility(View.GONE);
         search.clearFocus();
         hideKeyboard();
@@ -440,7 +549,7 @@ public final class SettingsDialog extends DialogFragment {
         message.addView(summary);
         content.addView(message);
         ScreenColors.recoveryMessage(message);
-        message.setPadding(dp(32), dp(32), dp(32), dp(24));
+        message.setPadding(dp(20), dp(24), dp(20), dp(24));
         Button retry = recoveryButton(MOUNT_RETRY, L10n.t(getContext(), "Retry"), true);
         retry.setOnClickListener(ignored -> {
             if (!mountFailed || retryScheduled || getView() == null) return;
@@ -514,6 +623,11 @@ public final class SettingsDialog extends DialogFragment {
         super.onSaveInstanceState(outState);
         outState.putBoolean(MOUNT_FAILED_STATE, mountFailed);
         outState.putBoolean(REPLACE_CHILD_STATE, replaceFailedChild);
+        outState.putCharSequence(PAGE_TITLE_STATE, mountedTitle);
+        outState.putCharSequence(PAGE_SUBTITLE_STATE, mountedSubtitle);
+        outState.putBoolean(PAGE_HOME_STATE, mountedHome);
+        outState.putString(PAGE_QUERY_STATE, mountedQuery);
+        outState.putInt(PAGE_RESULTS_STATE, mountedResults);
     }
 
     @Override public void onDestroyView() {
@@ -522,6 +636,7 @@ public final class SettingsDialog extends DialogFragment {
         retryScheduled = false;
         recovery = null;
         container = null;
+        forcedCompactWidth = -1;
         super.onDestroyView();
     }
 

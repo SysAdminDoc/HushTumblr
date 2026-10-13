@@ -213,6 +213,16 @@ public final class SetupGuidancePreference extends DialogPreference {
         }
 
         void heading(CharSequence text) {
+            if (content.getChildCount() != 0) {
+                View divider = new View(getContext());
+                divider.setBackgroundColor(ScreenColors.DEFAULT.outline);
+                LinearLayout.LayoutParams size = new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, dp(1));
+                size.topMargin = dp(12);
+                size.bottomMargin = dp(4);
+                content.addView(divider, size);
+                divider.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            }
             TextView heading = paragraph(text);
             heading.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
             heading.setTextColor(ScreenColors.DEFAULT.heading);
