@@ -638,7 +638,8 @@ try {
 
     # A universal APK, which merging leaves unsigned, passes as the merge of the same-named bundle
     # beside it, and is copied for the CLI with a record naming that bundle. One whose dex isn't
-    # the bundle's base dex is refused.
+    # the bundle's base dex is refused, and so is one carrying a native library the bundle doesn't:
+    # both comparisons once walked each digest map as a single object and matched whatever they got.
     $universal = Join-Path $signed 'universal.apk'
     Copy-Item -LiteralPath $signedMerged -Destination $universal
     Copy-Item -LiteralPath $signedApkm -Destination (Join-Path $signed 'universal.apkm')
@@ -657,6 +658,13 @@ try {
     }
     Move-Item -LiteralPath $otherDex -Destination (Join-Path $signed 'other-dex.apk')
     Copy-Item -LiteralPath $signedApkm -Destination (Join-Path $signed 'other-dex.apkm')
+    $otherLibs = Copy-ApkWith -From $universal -Name 'other-libs' -Change {
+        param($archive)
+        $out = $archive.CreateEntry('lib/arm64-v8a/libstandin.so').Open()
+        try { $bytes = [System.Text.Encoding]::ASCII.GetBytes('stand-in library'); $out.Write($bytes, 0, $bytes.Length) } finally { $out.Dispose() }
+    }
+    Move-Item -LiteralPath $otherLibs -Destination (Join-Path $signed 'other-libs.apk')
+    Copy-Item -LiteralPath $signedApkm -Destination (Join-Path $signed 'other-libs.apkm')
 
     # Every refusal comes before the JDK would start (it isn't there) and leaves no merge, no record
     # and no unpacked folder.
@@ -668,7 +676,9 @@ try {
         @{ Apk = (New-TestApkm -Name 'tampered-split.apkm' -Apks @($baseA, $splitTampered))
             Says = '*Refusing tampered-split.apkm: split_config.xxhdpi.apk does not verify (*Nothing was merged or patched.*' }
         @{ Apk = (Join-Path $signed 'other-dex.apk')
-            Says = "*Refusing other-dex.apk: it does not verify, and its dex files aren't those of the base APK of other-dex.apkm*" })
+            Says = "*Refusing other-dex.apk: it does not verify, and its dex files aren't those of the base APK of other-dex.apkm*" }
+        @{ Apk = (Join-Path $signed 'other-libs.apk')
+            Says = "*Refusing other-libs.apk: it does not verify, and its native libraries aren't those of other-libs.apkm*" })
     foreach ($case in $refusals) {
         $destination = Join-Path $bundleDir ("merged/refused-" + [System.IO.Path]::GetFileNameWithoutExtension($case.Apk) + '.apk')
         $refused = $null

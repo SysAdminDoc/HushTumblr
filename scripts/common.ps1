@@ -965,15 +965,17 @@ function Get-MergedApk {
                 $signedCode = Get-ApkEntryDigests -File $facts.Base.File -Pattern '^classes\d*\.dex$'
                 if ($signedCode.Count -eq 0) { & $refuse "it does not verify, and the base APK of $bundleLabel holds no dex to hold it to" }
                 $libraries = New-Object 'System.Collections.Generic.SortedDictionary[string,string]' ([System.StringComparer]::Ordinal)
-                # Not $apk, which is -Apk: PowerShell names are case-insensitive.
+                # Not $apk, which is -Apk: PowerShell names are case-insensitive. A dictionary goes
+                # through GetEnumerator(): foreach over the dictionary itself runs once, with the
+                # dictionary, so every key read as empty and every comparison below matched.
                 foreach ($signedApk in @($facts.Apks)) {
                     $carried = Get-ApkEntryDigests -File $signedApk.File -Pattern '^lib/'
-                    foreach ($pair in $carried) {
+                    foreach ($pair in $carried.GetEnumerator()) {
                         if ($libraries.ContainsKey($pair.Key)) { & $refuse "$bundleLabel carries $($pair.Key) in two of its APKs" }
                         $libraries.Add($pair.Key, $pair.Value)
                     }
                 }
-                $text = { param($Map) @(foreach ($pair in $Map) { "$($pair.Key)=$($pair.Value)" }) -join "`n" }
+                $text = { param($Map) @(foreach ($pair in $Map.GetEnumerator()) { "$($pair.Key)=$($pair.Value)" }) -join "`n" }
                 if ((& $text (Get-ApkEntryDigests -File $plain -Pattern '^classes\d*\.dex$')) -cne (& $text $signedCode)) {
                     & $refuse "it does not verify, and its dex files aren't those of the base APK of $bundleLabel, so it isn't that signed build's merge"
                 }
