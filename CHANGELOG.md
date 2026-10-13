@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+* **Tumblr:** A page where every post was hidden no longer leaves a feed on "No results". The feed goes on to the next page, and shows the empty screen only after five empty pages in a row or when there's nothing more to load.
+* **Tumblr:** Hide suggested blogs and Hide suggested communities no longer empty a search's Blogs and Communities tabs. The cards still go from the dashboard and other feeds.
+* **Tumblr:** Visible image descriptions now use the same text color as the post, so they're readable in Tumblr's default True Blue palette. They used to come out light gray on the white card.
 * **Tumblr:** The Tumblr's own settings page now lists where Tumblr keeps six of its own controls, such as autoplay, the dashboard order and filtered tags. Each row shows the path to the control in the language Tumblr is using.
 * **Tumblr:** Dark background color now reaches Tumblr's newer settings screens and the redesigned post card, which used to stay gray. Bars, rows and dialogs sit one step lighter than the page.
 * **Tumblr:** Hide the Communities tab now takes the Communities button off the bottom bar on every start. It used to come back after a restart with nothing behind it.
