@@ -306,8 +306,8 @@ function Get-BaseApk {
         and its config.arm64_v8a split can be the larger file, so size alone can pick the wrong
         one. The largest APK that isn't a config or split_ file is the fallback when nothing names
         the base, and the largest of any is the last resort. A base declaring more than -Limit
-        bytes is refused before anything is written, and it never unpacks past what it declares
-        (Copy-BundleMember).
+        bytes, or a manifest.json declaring more than 1 MiB, is refused before anything is read
+        or written, and neither unpacks past what it declares (Copy-BundleMember).
 
         Both paths are resolved against PowerShell's location before .NET sees them, and the
         answer is a full path. .NET reads a relative path against the process's own directory,
@@ -325,13 +325,23 @@ function Get-BaseApk {
     if ([System.IO.Path]::GetExtension($Apk).ToLowerInvariant() -eq '.apk') { return $Apk }
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $zip = [System.IO.Compression.ZipFile]::OpenRead($Apk)
+    $label = Split-Path -Leaf $Apk
     try {
         $entry = $zip.Entries | Where-Object { $_.FullName -eq 'base.apk' } | Select-Object -First 1
         $manifestEntry = $zip.Entries | Where-Object { $_.FullName -eq 'manifest.json' } | Select-Object -First 1
         if (-not $entry -and $manifestEntry) {
             # An .xapk's own record of its files: split_apks names the base by id, and the base is
-            # <package_name>.apk when that list is missing.
-            $reader = New-Object System.IO.StreamReader($manifestEntry.Open())
+            # <package_name>.apk when that list is missing. It's a few kilobytes, so one declaring
+            # more than a megabyte is refused unread, and it never inflates past what it declares:
+            # read straight to the end, a crafted one could fill memory on Windows PowerShell 5.1.
+            if ($manifestEntry.Length -gt 1MB) {
+                throw ("Refusing ${label}: its manifest.json would unpack to $($manifestEntry.Length) bytes, more than " +
+                    "the $(1MB) bytes it may take. Nothing was unpacked.")
+            }
+            $buffer = New-Object System.IO.MemoryStream
+            Copy-BundleMember -Entry $manifestEntry -Sink $buffer -Label $label
+            $buffer.Position = 0
+            $reader = New-Object System.IO.StreamReader($buffer)
             try { $manifestText = $reader.ReadToEnd() } finally { $reader.Dispose() }
             $manifest = $null
             try { $manifest = $manifestText | ConvertFrom-Json } catch { $manifest = $null }
@@ -349,8 +359,7 @@ function Get-BaseApk {
             $apks = @($zip.Entries | Where-Object { $_.FullName -like '*.apk' } | Sort-Object Length -Descending)
             $entry = @($apks | Where-Object { $_.Name -notmatch '^(?i)(config\.|split_)' }) + $apks | Select-Object -First 1
         }
-        if (-not $entry) { throw "$(Split-Path -Leaf $Apk) holds no APK." }
-        $label = Split-Path -Leaf $Apk
+        if (-not $entry) { throw "$label holds no APK." }
         if ($entry.Length -gt $Limit) {
             throw ("Refusing ${label}: its base APK '$($entry.FullName)' would unpack to $($entry.Length) bytes, more than " +
                 "the $Limit bytes one APK may take. Nothing was unpacked.")

@@ -4159,6 +4159,19 @@ try {
         }
     }
 
+    # An .xapk's manifest.json, which Get-BaseApk reads into memory to find the base, is capped at
+    # 1 MiB by what it declares, so a crafted one can't fill memory the way a crafted APK could fill
+    # the disk.
+    $bigManifest = Join-Path $sizeDir 'big-manifest.xapk'
+    New-TestRawZip -Path $bigManifest -Members @(
+        @{ Name = 'manifest.json'; Text = '{"package_name":"com.tumblr"}'; Deflate = $true; Declares = 2097152 },
+        @{ Name = 'com.tumblr.apk'; Text = 'base' })
+    $bigManifestOut = Join-Path $sizeDir 'big-manifest-base.apk'
+    Assert-Throws { Get-BaseApk -Apk $bigManifest -Destination $bigManifestOut } `
+        '*Refusing big-manifest.xapk: its manifest.json would unpack to 2097152 bytes, more than the 1048576 bytes it may take. Nothing was unpacked.*' `
+        'A manifest.json past its size limit was read.'
+    Assert-True (-not (Test-Path -LiteralPath $bigManifestOut)) 'Refusing an oversized manifest.json left a base APK behind.'
+
     # Distributors' layouts unpack whole, the APKs alone and byte for byte, into a .splits- folder
     # beside the merge that is gone once the caller is done: an .apkm (base.apk, its splits,
     # info.json and an icon, one split's extension in capitals, which is written as .apk, the name
