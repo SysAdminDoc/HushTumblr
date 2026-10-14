@@ -15,6 +15,11 @@
     wrote (xml/splits0): that loss passes and is reported, and any other lost xml resource still
     fails.
 
+    With an allowlist each change has to be a line of [rebuild] or of a selected patch, and each
+    line allows one change. An added resource is held to every value it holds (a style's parent and
+    items, with #{option} for the color a patch option sets), an added file to its bytes, and the
+    same resources added in a second package fail the lines made for one.
+
     A real split bundle too, built by aapt2 and merged by the CLI's own merger through
     MergeSplits.java, in both shapes such a bundle can come in: an XAPK laid out the way APKPure
     lays out a split Tumblr build (the base named for the package, config splits, manifest.json and
@@ -224,6 +229,35 @@ import java.io.File;
 public final class PinnedMerge {
     public static void main(String[] args) throws Exception {
         new ApkMerger().merge(new File(args[0]), new File(args[1]), true, null, true, null, false);
+    }
+}
+'@
+
+# An APK's resource table with its package 0x7f there a second time as 0x7e, written to a file: the
+# same resources in two packages, which aapt2 can't link.
+$twoPackagesText = @'
+import com.reandroid.arsc.chunk.PackageBlock;
+import com.reandroid.arsc.chunk.TableBlock;
+
+import java.io.BufferedInputStream;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.zip.ZipFile;
+
+public final class TwoPackages {
+    public static void main(String[] args) throws Exception {
+        TableBlock table;
+        try (ZipFile zip = new ZipFile(args[0]); InputStream in = new BufferedInputStream(zip.getInputStream(zip.getEntry("resources.arsc")))) {
+            table = TableBlock.load(in);
+        }
+        PackageBlock base = table.pickOne(0x7f);
+        // ARSCLib merges only packages of one id, so the copy takes its own id afterwards.
+        PackageBlock copy = table.newPackage(0x7f, base.getName());
+        copy.merge(base);
+        copy.setId(0x7e);
+        table.refreshFull();
+        Files.write(Path.of(args[1]), table.getBytes());
     }
 }
 '@
@@ -588,19 +622,93 @@ try {
     Assert-True ($real.ExitCode -eq 0 -and $real.Output -match [regex]::Escape('resource delta: 0 changes held to resource-delta-allowlist.txt, sections rebuild, HushTumblr settings')) `
         "The checked-in allowlist could not be read, or its sections were not picked by the selection.`n$($real.Output)"
 
+    # An added resource is held to every value it holds, and a file only the patched table names to
+    # its bytes: another value, or a file with other bytes, fails the lines made for the first.
+    $textSha = { param([string]$Text) ([System.BitConverter]::ToString([System.Security.Cryptography.SHA256]::Create().ComputeHash(
+                [System.Text.Encoding]::UTF8.GetBytes($Text))) -replace '-', '').ToLowerInvariant() }
     $addedFiles = [ordered]@{}
     foreach ($entry in $stockFiles.GetEnumerator()) { $addedFiles[$entry.Key] = $entry.Value }
     $addedFiles['res/values/strings.xml'] = '<resources><string name="hush_row">Hush</string></resources>'
     $addedFiles['res/raw/hush_extra.txt'] = 'extra'
     $addedApk = New-ResourceApk -Name 'delta-added' -Files $addedFiles -StableIds $ids
-    $addedLines = @('added raw/hush_extra', 'added string/hush_row', 'file raw/hush_extra [default] res/raw/hush_extra.txt')
-    $addedAllowed = Invoke-Check -Patched $addedApk -Name 'delta-added' -Allowlist (New-TestAllowlist 'added' (@('[rebuild]', '[Hush row]') + $addedLines)) -Selection @('Hush row')
-    Assert-True ($addedAllowed.ExitCode -eq 0 -and $addedAllowed.Output -match [regex]::Escape('raw/hush_extra [default] res/raw/hush_extra.txt')) `
-        "Added resources and the file one names, allowed without the ids the rebuild picked, failed or went unreported.`n$($addedAllowed.Output)"
-    $fileRefused = Invoke-Check -Patched $addedApk -Name 'delta-file' -Allowlist (New-TestAllowlist 'no-file' (@('[rebuild]', '[Hush row]') + $addedLines[0..1])) -Selection @('Hush row')
-    Assert-True ($fileRefused.ExitCode -eq 1 -and
-        $fileRefused.Output -match [regex]::Escape('FAIL resource delta file raw/hush_extra [default] res/raw/hush_extra.txt: allowed neither')) `
+    $fileLine = "file raw/hush_extra [default] res/raw/hush_extra.txt $(& $textSha 'extra')"
+    $addedLines = @('added raw/hush_extra', 'added raw/hush_extra [default] file res/raw/hush_extra.txt', 'added string/hush_row',
+        'added string/hush_row [default] "Hush"', $fileLine)
+    $addedAllowlist = New-TestAllowlist 'added' (@('[rebuild]', '[Hush row]') + $addedLines)
+    $addedAllowed = Invoke-Check -Patched $addedApk -Name 'delta-added' -Allowlist $addedAllowlist -Selection @('Hush row')
+    Assert-True ($addedAllowed.ExitCode -eq 0 -and $addedAllowed.Output -match [regex]::Escape($fileLine.Substring('file '.Length)) -and
+        $addedAllowed.Output -match [regex]::Escape('resource delta: 5 changes held to added-allowlist.txt')) `
+        "Added resources, what they hold and the file one names, allowed without the ids the rebuild picked, failed or went unreported.`n$($addedAllowed.Output)"
+    $fileRefused = Invoke-Check -Patched $addedApk -Name 'delta-file' -Allowlist (New-TestAllowlist 'no-file' (@('[rebuild]', '[Hush row]') + $addedLines[0..3])) -Selection @('Hush row')
+    Assert-True ($fileRefused.ExitCode -eq 1 -and $fileRefused.Output -match [regex]::Escape("FAIL resource delta $($fileLine): allowed neither")) `
         "A file only the patched table names passed an allowlist that doesn't name it.`n$($fileRefused.Output)"
+    foreach ($other in @(
+            @{ Name = 'delta-added-value'; Key = 'res/values/strings.xml'; Text = '<resources><string name="hush_row">Hush!</string></resources>'
+                Says = 'resource delta added string/hush_row [default] "Hush!": allowed neither' },
+            @{ Name = 'delta-added-bytes'; Key = 'res/raw/hush_extra.txt'; Text = 'other'
+                Says = "resource delta file raw/hush_extra [default] res/raw/hush_extra.txt $(& $textSha 'other'): allowed neither" })) {
+        $files = [ordered]@{}
+        foreach ($entry in $addedFiles.GetEnumerator()) { $files[$entry.Key] = $entry.Value }
+        $files[$other.Key] = $other.Text
+        $said = Invoke-Check -Patched (New-ResourceApk -Name $other.Name -Files $files -StableIds $ids) -Name $other.Name -Allowlist $addedAllowlist -Selection @('Hush row')
+        Assert-True ($said.ExitCode -eq 1 -and $said.Output -match [regex]::Escape("FAIL $($other.Says)")) `
+            "$($other.Name) passed the allowlist made for the resources as first added.`n$($said.Output)"
+    }
+    # Each line allows one change: the same resources added again in a second package (ARSCLib's
+    # copy of package 0x7f as 0x7e) don't pass on the lines made for one.
+    $twoPackagesSource = Join-Path $caseRoot 'TwoPackages.java'
+    [System.IO.File]::WriteAllText($twoPackagesSource, $twoPackagesText, [System.Text.UTF8Encoding]::new($false))
+    $twoTable = Join-Path $caseRoot 'two-packages.arsc'
+    Invoke-Checked -Program $Java -Arguments @('-Xmx1g', '-cp', $DesktopJar, $twoPackagesSource, $addedApk, $twoTable) -Description 'TwoPackages.java'
+    $twoApk = Copy-ApkWith -From $addedApk -Name 'delta-two-packages' -Change {
+        param($archive)
+        $archive.GetEntry('resources.arsc').Delete()
+        $out = $archive.CreateEntry('resources.arsc', [System.IO.Compression.CompressionLevel]::NoCompression).Open()
+        try { $bytes = [System.IO.File]::ReadAllBytes($twoTable); $out.Write($bytes, 0, $bytes.Length) } finally { $out.Dispose() }
+    }
+    $twice = Invoke-Check -Patched $twoApk -Name 'delta-two-packages' -Allowlist $addedAllowlist -Selection @('Hush row')
+    Assert-True ($twice.ExitCode -eq 1 -and $twice.Output -match
+        [regex]::Escape('FAIL resource delta added string/hush_row: a line of added-allowlist.txt allows one change, and more than one of this run fits it')) `
+        "A resource added in two packages passed on one line of the allowlist.`n$($twice.Output)"
+
+    # A style a patch adds: its parent and each item are lines, and #{option} stands for the color
+    # a patch option sets, whichever it is. Another parent, an item more, or something other than a
+    # color where the option's goes, fails.
+    $styleText = '<resources><style name="HushDark"{0}><item name="android:colorBackground">{1}</item>' +
+        '<item name="android:windowBackground">@color/surface</item>{2}</style></resources>'
+    $styleLines = @('added style/HushDark', "added style/HushDark [default] parent @$($idOf['style/BaseTheme'])",
+        'added style/HushDark [default] item 0x01010031 #{option}', "added style/HushDark [default] item 0x01010054 @$($idOf['color/surface'])")
+    $styleAllowlist = New-TestAllowlist 'style' (@('[rebuild]', '[Dark background color]') + $styleLines)
+    foreach ($styled in @(
+            @{ Name = 'delta-style'; Parent = ' parent="BaseTheme"'; Color = '#ff121212'; More = '' },
+            @{ Name = 'delta-style-black'; Parent = ' parent="BaseTheme"'; Color = '#ff000000'; More = '' },
+            @{ Name = 'delta-style-orphan'; Parent = ''; Color = '#ff121212'; More = ''; Says = 'added style/HushDark [default] parent @null' },
+            @{ Name = 'delta-style-more'; Parent = ' parent="BaseTheme"'; Color = '#ff121212'
+                More = '<item name="android:textColorPrimary">@color/accent</item>'; Says = "added style/HushDark [default] item 0x01010036 @$($idOf['color/accent'])" },
+            @{ Name = 'delta-style-reference'; Parent = ' parent="BaseTheme"'; Color = '@color/surface'; More = ''
+                Says = "added style/HushDark [default] item 0x01010031 @$($idOf['color/surface'])" })) {
+        $files = [ordered]@{}
+        foreach ($entry in $stockFiles.GetEnumerator()) { $files[$entry.Key] = $entry.Value }
+        $files['res/values/hush_styles.xml'] = $styleText -f $styled.Parent, $styled.Color, $styled.More
+        $said = Invoke-Check -Patched (New-ResourceApk -Name $styled.Name -Files $files -StableIds $ids) -Name $styled.Name `
+            -Allowlist $styleAllowlist -Selection @('Dark background color')
+        Assert-True ($(if ($styled.Says) { $said.ExitCode -eq 1 -and $said.Output -match [regex]::Escape("FAIL resource delta $($styled.Says): allowed neither") }
+                else { $said.ExitCode -eq 0 -and $said.Output -match [regex]::Escape('resource delta: 4 changes held to style-allowlist.txt') })) `
+            "$($styled.Name) was judged wrong against the lines made for the style.`n$($said.Output)"
+    }
+    # A stock style given a configuration it didn't have: the bag it gets is reported parent and
+    # item by item, as the values of an added resource are.
+    $nightStyleFiles = [ordered]@{}
+    foreach ($entry in $stockFiles.GetEnumerator()) { $nightStyleFiles[$entry.Key] = $entry.Value }
+    $nightStyleFiles['res/values-night/styles.xml'] = '<resources><style name="SearchTheme" parent="BaseTheme">' +
+        '<item name="android:windowBackground">@color/accent</item></style></resources>'
+    $nightStyle = Invoke-Check -Patched (New-ResourceApk -Name 'night-style' -Files $nightStyleFiles -StableIds $ids) -Name 'night-style'
+    $nightReport = if (Test-Path -LiteralPath $nightStyle.Report) { [System.IO.File]::ReadAllText($nightStyle.Report) } else { '' }
+    # aapt2 files values-night under night-v8, the first platform that had it.
+    Assert-True ($nightStyle.ExitCode -eq 0 -and
+        $nightReport.Contains("$($idOf['style/SearchTheme']) style/SearchTheme [night-v8] added bag parent @$($idOf['style/BaseTheme'])") -and
+        $nightReport.Contains("$($idOf['style/SearchTheme']) style/SearchTheme [night-v8] added bag item 0x01010054 @$($idOf['color/accent'])")) `
+        "A bag added in a configuration of its own was not reported parent and item by item.`n$($nightStyle.Output)"
     $movedHeld = Invoke-Check -Stock $rawStock -Patched (Join-Path $caseRoot 'moved-same.apk') -Name 'delta-moved' `
         -Allowlist (New-TestAllowlist 'moved' @('[rebuild]')) -Selection @('Hush row')
     Assert-True ($movedHeld.ExitCode -eq 1 -and $movedHeld.Output -match [regex]::Escape("FAIL resource delta moved $($movedLine): allowed neither")) `

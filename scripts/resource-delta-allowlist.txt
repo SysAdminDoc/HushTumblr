@@ -1,12 +1,15 @@
 # What a run of HushTumblr's patches may change in Tumblr's resource table and the files it names,
 # read by ResourceTableCheck.java. Each line is a kind and an item, the way the resource report lists
-# it. An added resource and a file only the patched table names leave out the id, since the rebuild
-# picks that. Anything a run changes that isn't here fails the run.
+# it, and allows exactly one change. An added resource and a file only the patched table names leave
+# out the id, since the rebuild picks that. An added resource also needs a line for each value it
+# holds, per config: a bag its parent and each item. A file only the patched table names carries the
+# SHA-256 of its bytes. #{option} stands for a color a patch option sets, so the Dark background
+# color lines pass for any color picked. Anything a run changes that isn't here fails the run.
 #
 # [rebuild] is what decoding and rebuilding the table does on its own, whichever resource patch
 # asked for it. Every other section is a patch, and applies only when the run selects that patch or
 # a patch that depends on it. Retargeting Tumblr means reading a fresh report and redoing the
-# [rebuild] lines.
+# [rebuild] lines, and the attr ids in the Dark background color items.
 
 [rebuild]
 rewritten 0x7f150581 style/TimelineView [default] item 0x0101007f hex 0x02000000 -> dec 0x02000000
@@ -18,6 +21,23 @@ renamed 0x7f0b0b63 id/seekbar is id/id_0x7f0b0b63
 
 [Dark background color]
 added style/HushTumblrDarkBackground
+added style/HushTumblrDarkBackground [default] parent @null
+added style/HushTumblrDarkBackground [default] item 0x01010031 #{option}
+added style/HushTumblrDarkBackground [default] item 0x7f04058b attr/st_chrome #{option}
+added style/HushTumblrDarkBackground [default] item 0x7f040593 attr/st_chrome_mobile #{option}
+added style/HushTumblrDarkBackground [default] item 0x7f040595 attr/st_chrome_panel #{option}
+added style/HushTumblrDarkBackground [default] item 0x7f0405c0 attr/st_content_mobile_container #{option}
+added style/HushTumblrDarkBackground [default] item 0x7f0405c2 attr/st_content_panel #{option}
+added style/HushTumblrDarkBackground [default] item 0x7f0405f0 attr/st_modal #{option}
+added style/HushTumblrDarkBackground [default] item 0x7f0405f5 attr/st_side_menu #{option}
+added style/HushTumblrDarkBackground [default] item 0x7f0405ff attr/st_top_menu #{option}
+added style/HushTumblrDarkBackground [default] item 0x7f0406bf attr/themeHighlightedContentBackgroundColor #{option}
+added style/HushTumblrDarkBackground [default] item 0x7f0406c3 attr/themeMainContentBackgroundColor #{option}
+added style/HushTumblrDarkBackground [default] item 0x7f0406c9 attr/themeNavigationBarColor #{option}
+added style/HushTumblrDarkBackground [default] item 0x7f0406cd attr/themePrimaryColor #{option}
+added style/HushTumblrDarkBackground [default] item 0x7f0406ce attr/themePrimaryColorDark #{option}
+added style/HushTumblrDarkBackground [default] item 0x7f0406d1 attr/themeSecondaryMainContentBackgroundColor #{option}
 
 [HushTumblr settings]
 added string/hushtumblr_settings_row
+added string/hushtumblr_settings_row [default] "HushTumblr"

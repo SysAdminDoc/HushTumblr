@@ -52,11 +52,14 @@ import java.util.zip.ZipFile;
  *
  * <p>What the patches changed is reported: each rewritten value with its old and new value (the
  * AMOLED dark theme's palette and sheet colors), each entry the rebuild renamed (it still resolves
- * by id, but a lookup by its old name finds nothing), each added one and each file only the
- * patched table names. Given an allowlist, each of those has to be one it allows: under
- * {@code [rebuild]}, which any rebuild of the table does, or under a patch the run selected
- * ({@code HUSHTUMBLR_PATCH_SELECTION}, one name a line). Anything else fails, so a table or file
- * swapped into the CLI's copy of its input can't pass as something a patch did.
+ * by id, but a lookup by its old name finds nothing), each added one with every value it holds (a
+ * bag's parent and items), and each file only the patched table names, with the SHA-256 of its
+ * bytes. A resource a patch added is named by its label, never by the id the rebuild picked for it.
+ * Given an allowlist, each of those has to be one it allows: under {@code [rebuild]}, which any
+ * rebuild of the table does, or under a patch the run selected ({@code HUSHTUMBLR_PATCH_SELECTION},
+ * one name a line). Each line allows one change, and a color a patch option sets is written
+ * {@code #{option}}. Anything else fails, so a table or file swapped into the CLI's copy of its
+ * input can't pass as something a patch did.
  *
  * <p>Usage: {@code java -cp <morphe desktop jar> ResourceTableCheck.java <stock.apk> <patched.apk>
  * [report.txt [allowlist.txt]]}. The report file gets every line; the console gets the counts and
@@ -74,6 +77,8 @@ public final class ResourceTableCheck {
     /** What an allowlist line can name, each the way the report lists it. */
     private static final Set<String> KINDS = Set.of("rewritten", "renamed", "dropped", "added", "moved", "file");
     private static final String SELECTION = "HUSHTUMBLR_PATCH_SELECTION";
+    /** In an allowlist line, any color a value can be (#aarrggbb): the one a patch option sets. */
+    private static final String OPTION_COLOR = "#{option}";
 
     private final Map<Integer, String> stockNames = new HashMap<>();
     /**
@@ -93,6 +98,11 @@ public final class ResourceTableCheck {
      */
     private final List<String> droppedWithSplits = new ArrayList<>();
     private final List<String> added = new ArrayList<>();
+    /**
+     * What each added resource holds, a line a value: "type/name [config] value", and for a bag its
+     * parent and each item. Without ids, which the rebuild picks for what a patch adds.
+     */
+    private final List<String> addedValues = new ArrayList<>();
     private final List<String> moved = new ArrayList<>();
     /** Files a patched value names that the stock table doesn't give it: ones a patch added. */
     private final List<String> addedFiles = new ArrayList<>();
@@ -217,6 +227,9 @@ public final class ResourceTableCheck {
                 if (seen.contains(resource.getResourceId())) continue;
                 added.add(hex(resource.getResourceId()) + " " + label(resource));
                 for (Entry entry : values(resource)) {
+                    String where = label(resource) + " [" + config(entry.getResConfig()) + "]";
+                    if (entry.isComplex()) addedValues.addAll(bagLines(where + " ", (ResTableMapEntry) entry.getTableEntry()));
+                    else addedValues.add(where + " " + value(entry.getResValue(), resource.getType()));
                     checkReferences(resource, entry, null, patched, patchedPackages.keySet());
                 }
             }
@@ -315,7 +328,12 @@ public final class ResourceTableCheck {
         return sections;
     }
 
-    /** Every change this run reports has to be one [rebuild] or a selected patch's section allows. */
+    /**
+     * Every change this run reports has to be one [rebuild] or a selected patch's section allows,
+     * and each line allows one change: a resource with the same label in two packages, or a line
+     * whose placeholder two values fit, is two changes. {@value #OPTION_COLOR} in a line stands for
+     * any color, the one a patch option sets.
+     */
     private void holdToAllowlist(String name, Map<String, Set<String>> allowlist, Set<String> selected) {
         allowlistName = name;
         Set<String> allowed = new LinkedHashSet<>();
@@ -324,16 +342,28 @@ public final class ResourceTableCheck {
             sectionsUsed.add(section.getKey());
             allowed.addAll(section.getValue());
         }
-        Set<String> seen = new HashSet<>();
+        Map<String, Pattern> placeholders = new LinkedHashMap<>();
+        for (String line : allowed) {
+            if (!line.contains(OPTION_COLOR)) continue;
+            List<String> parts = new ArrayList<>();
+            for (String part : line.split(Pattern.quote(OPTION_COLOR), -1)) parts.add(Pattern.quote(part));
+            placeholders.put(line, Pattern.compile(String.join("#[0-9a-f]{8}", parts)));
+        }
+        Map<String, Integer> used = new LinkedHashMap<>();
         for (String change : delta()) {
             deltaChecked++;
-            if (allowed.contains(change)) {
-                seen.add(change);
-            } else {
+            String line = allowed.contains(change) ? change : null;
+            for (Iterator<Map.Entry<String, Pattern>> it = placeholders.entrySet().iterator(); line == null && it.hasNext(); ) {
+                Map.Entry<String, Pattern> placeholder = it.next();
+                if (placeholder.getValue().matcher(change).matches()) line = placeholder.getKey();
+            }
+            if (line == null) {
                 failures.add("resource delta " + change + ": allowed neither by [rebuild] nor by a selected patch in " + name);
+            } else if (used.merge(line, 1, Integer::sum) == 2) {
+                failures.add("resource delta " + line + ": a line of " + name + " allows one change, and more than one of this run fits it");
             }
         }
-        for (String line : allowed) if (!seen.contains(line)) unseen.add(line);
+        for (String line : allowed) if (!used.containsKey(line)) unseen.add(line);
     }
 
     /** What this run changed, each as an allowlist line names it. */
@@ -343,6 +373,7 @@ public final class ResourceTableCheck {
         for (String item : renamed) changes.add("renamed " + item);
         for (String item : droppedWithSplits) changes.add("dropped " + item);
         for (String item : added) changes.add("added " + item.substring(item.indexOf(' ') + 1));
+        for (String item : addedValues) changes.add("added " + item);
         for (String item : moved) changes.add("moved " + item);
         for (String item : addedFiles) changes.add("file " + item);
         return changes;
@@ -411,10 +442,26 @@ public final class ResourceTableCheck {
         }
         for (Entry other : values(match)) {
             if (matched.contains(other.getResConfig())) continue;
-            rewritten.add(hex(match.getResourceId()) + " " + label(match) + " [" + config(other.getResConfig())
-                    + "] added " + (other.isComplex() ? "bag" : value(other.getResValue(), match.getType())));
+            String where = hex(match.getResourceId()) + " " + label(match) + " [" + config(other.getResConfig()) + "] added ";
+            if (other.isComplex()) rewritten.addAll(bagLines(where + "bag ", (ResTableMapEntry) other.getTableEntry()));
+            else rewritten.add(where + value(other.getResValue(), match.getType()));
             checkReferences(match, other, null, patched, packages);
         }
+    }
+
+    /**
+     * A bag as lines that each start with [prefix]: its parent, then each item by attribute, in the
+     * bag's order. An attribute set again is numbered from its second time on.
+     */
+    private List<String> bagLines(String prefix, ResTableMapEntry bag) {
+        List<String> lines = new ArrayList<>();
+        lines.add(prefix + "parent " + reference(bag.getParentId()));
+        Map<Integer, Integer> times = new HashMap<>();
+        for (ResValueMap item : bag) {
+            int time = times.merge(item.getNameId(), 1, Integer::sum);
+            lines.add(prefix + "item" + (time == 1 ? "" : "#" + time) + " " + name(item.getNameId()) + " " + value(item, null));
+        }
+        return lines;
     }
 
     private void compareBag(String where, Entry entry, Entry other, TableBlock patched, Set<Integer> packages) {
@@ -492,9 +539,11 @@ public final class ResourceTableCheck {
                     }
                     if (stockPath == null || stockFile == null) {
                         // A file only the patched table names: one a patch added. Named without
-                        // the id, which the rebuild picks for a resource a patch adds.
+                        // the id, which the rebuild picks for a resource a patch adds, and with
+                        // the SHA-256 of its bytes, so a line allows that file and no other.
                         namedByPatches.add(path);
-                        addedFiles.add(label(resource) + " [" + config(entry.getResConfig()) + "] " + path);
+                        addedFiles.add(label(resource) + " [" + config(entry.getResConfig()) + "] " + path + " "
+                                + java.util.HexFormat.of().formatHex(digest(patchedZip, file)));
                         continue;
                     }
                     if (!stockPath.equals(path)) {
@@ -568,8 +617,11 @@ public final class ResourceTableCheck {
         return list;
     }
 
-    /** A value as text that does not depend on where the rebuild put it in a string pool. */
-    private static String value(ValueItem value, String resourceType) {
+    /**
+     * A value as text that does not depend on where the rebuild put it in a string pool, or on the
+     * id the rebuild picked for a resource a patch added.
+     */
+    private String value(ValueItem value, String resourceType) {
         if (value == null) return "(none)";
         ValueType type = value.getValueType();
         int data = value.getData();
@@ -585,7 +637,7 @@ public final class ResourceTableCheck {
                 return reference(data);
             case ATTRIBUTE:
             case DYNAMIC_ATTRIBUTE:
-                return String.format(Locale.ROOT, "?0x%08x", data);
+                return "?" + id(data);
             case COLOR_ARGB8:
             case COLOR_RGB8:
             case COLOR_ARGB4:
@@ -596,7 +648,7 @@ public final class ResourceTableCheck {
         }
     }
 
-    private static String filePath(ValueItem value, String resourceType) {
+    private String filePath(ValueItem value, String resourceType) {
         String text = value(value, resourceType);
         return isFile(text) ? text.substring("file ".length()) : null;
     }
@@ -605,13 +657,19 @@ public final class ResourceTableCheck {
         return value.startsWith("file ");
     }
 
-    private static String reference(int id) {
-        return id == 0 ? "@null" : String.format(Locale.ROOT, "@0x%08x", id);
+    private String reference(int id) {
+        return id == 0 ? "@null" : "@" + id(id);
+    }
+
+    /** An id by number, or by its label in braces for a resource only the patched table has, whose number the rebuild picked. */
+    private String id(int id) {
+        ResourceEntry added = stockById.containsKey(id) ? null : patchedById.get(id);
+        return added == null ? hex(id) : "{" + label(added) + "}";
     }
 
     private String name(int id) {
         String known = stockNames.get(id);
-        return known == null ? hex(id) : hex(id) + " " + known;
+        return known == null ? id(id) : hex(id) + " " + known;
     }
 
     private static String label(ResourceEntry resource) {
@@ -637,6 +695,7 @@ public final class ResourceTableCheck {
         section(lines, "renamed by the rebuild (still resolved by id; a lookup by the old name finds nothing)", renamed);
         section(lines, "dropped with the split metadata when the bundle was merged", droppedWithSplits);
         section(lines, "added resources", added);
+        section(lines, "what the added resources hold, a value a line (a bag's parent and items)", addedValues);
         lines.add(String.format(Locale.ROOT, "[resources] files named by the patched table: %d, moved %d, absent from the stock archive too %d",
                 files, moved.size(), absentInStock.size()));
         for (String line : moved) lines.add("  moved " + line);
