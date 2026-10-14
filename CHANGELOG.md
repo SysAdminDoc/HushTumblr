@@ -7,6 +7,7 @@
 * **Tooling:** Patch runs now hold the merged APK from the moment the merger writes it, so another program on the PC can't swap it before the patcher and the checks read it. The package and version a run was let through on are read again off that held file before anything is patched.
 * **Tooling:** `patch-for-device.ps1 -Option 'Patch name:key=value'` gives a patch an option value for a test build, such as a custom Dark background color. A run with an option always patches in full instead of reusing a kept run.
 * **Tooling:** A kept patch run is now looked up by what the held merge was made from, not by the fixture's path, and the kept patched APK is held to the digest it was kept with while it's reused. A fixture changed between runs no longer finds the run kept for its old bytes, and a kept APK changed after it was kept isn't reused. Reusing a kept run in `verify-all-patches.ps1` now costs a merge.
+* **Tooling:** The patch report check no longer stops with an error on a report that lists no patching steps. It fails that report with the missing-step reason instead.
 
 ## 0.0.7 (2026-10-14)
 

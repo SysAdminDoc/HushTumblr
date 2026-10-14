@@ -159,11 +159,16 @@ function Test-PatchingReport {
     # and it is what catches the case these scripts exist for, a result file written from a
     # finally block after a failed compile, because the step that failed reports success false.
     $success = $Report.PSObject.Properties['success']
-    $steps = @($Report.patchingSteps)
-    $stepsOk = $steps.Count -gt 0 -and @($steps | Where-Object {
-        $property = $_.PSObject.Properties['success']
-        $null -eq $property -or -not (Test-TrueBoolean $property.Value)
-    }).Count -eq 0
+    # @($null) holds one item, so a report with no steps has none rather than one null step, and
+    # a null step in a list is one that didn't report success. A list, since an if statement's
+    # output unrolls a one-step array, and Windows PowerShell gives a lone object no Count.
+    $steps = New-Object System.Collections.Generic.List[object]
+    if ($null -ne $Report.patchingSteps) { foreach ($step in @($Report.patchingSteps)) { $steps.Add($step) } }
+    $stepsOk = $steps.Count -gt 0
+    foreach ($step in $steps) {
+        $property = if ($null -eq $step) { $null } else { $step.PSObject.Properties['success'] }
+        if ($null -eq $property -or -not (Test-TrueBoolean $property.Value)) { $stepsOk = $false }
+    }
     $failed = @($Report.failedPatches)
     $applied = Get-ReportPatchNames $Report.appliedPatches
     $namesOk = Test-ReportedPatchNames -Expected $ExpectedNames -Actual $applied `

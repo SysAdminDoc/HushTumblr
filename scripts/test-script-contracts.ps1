@@ -227,6 +227,17 @@ try {
         -ExpectedPackageName $target.PackageName -ExpectedPackageVersion $target.PackageVersion
     Assert-True $reportValidation.Valid `
         "A complete result with a declared dependency was rejected: $($reportValidation.Reason)"
+    # A result with no steps, or a null one, is turned down by its reason. It used to throw,
+    # since @($null) holds one item, which ended a run that should have patched over a kept one.
+    foreach ($steps in @('absent', 'null')) {
+        $stepless = $dependencyReport.PSObject.Copy()
+        if ($steps -eq 'absent') { $stepless.PSObject.Properties.Remove('patchingSteps') } else { $stepless.patchingSteps = @($null) }
+        $steplessValidation = Test-PatchingReport -Report $stepless -ExpectedNames $allNames `
+            -AllowedDependencyNames $allDependencies -OutputPath $reportApk `
+            -ExpectedPackageName $target.PackageName -ExpectedPackageVersion $target.PackageVersion
+        Assert-True (-not $steplessValidation.Valid -and $steplessValidation.Reason -ceq 'a patching step failed or is missing') `
+            "A result whose patching steps are $steps was not turned down for them alone: $($steplessValidation.Reason)"
+    }
 
     # The old replacement expectations contradicted account preservation. Exercise refusal
     # before device mutation, signer checks and ownership instead of expecting uninstalls.
