@@ -17,7 +17,7 @@ body:
     attributes:
       label: HushTumblr and Tumblr versions
       description: Open Tumblr's Settings and tap HushTumblr, or long-press the Tumblr icon and tap HushTumblr. Then tap About, near the bottom under More settings, and copy the Version line.
-      placeholder: HushTumblr 0.0.1 on Tumblr 46.5.0.109
+      placeholder: HushTumblr 0.0.7 on Tumblr 46.5.0.109
     validations:
       required: true
   - type: input

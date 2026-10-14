@@ -18,7 +18,7 @@
 
 [Morphe](https://morphe.software) patches for Tumblr on Android. Patch the Tumblr bundle in Morphe Manager and you get a quieter Tumblr with its own HushTumblr settings page. It can drop ads and paid Blaze posts, hide suggestions, filter posts by type or by your own words, and trim the bottom bar.
 
-The latest release is [v0.0.1](https://github.com/SysAdminDoc/HushTumblr/releases/tag/v0.0.1), with 36 patches. Add this repo to Morphe Manager as a patch source and it'll offer each new release when it comes out. Changes are listed in the [changelog](CHANGELOG.md).
+The latest release is [v0.0.7](https://github.com/SysAdminDoc/HushTumblr/releases/tag/v0.0.7), with 42 patches. Add this repo to Morphe Manager as a patch source and it'll offer each new release when it comes out. Changes are listed in the [changelog](CHANGELOG.md).
 
 **[Add HushTumblr to Morphe Manager](https://morphe.software/add-source?github=SysAdminDoc%2FHushTumblr)**
 
