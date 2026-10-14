@@ -257,8 +257,9 @@ $result = Resolve-WithinRoot -Path (Join-Path $workRoot "verify-all-result-$runI
     $validation = Test-PatchingReport -Report $report -ExpectedNames $names `
         -AllowedDependencyNames $dependencyNames -OutputPath $out `
         -ExpectedPackageName $expectedTarget.PackageName -ExpectedPackageVersion $expectedVersion
-    $reportApplied = if ($null -ne $report) { @($report.appliedPatches).Count } else { 0 }
-    $reportFailed = if ($null -ne $report) { @($report.failedPatches).Count } else { 0 }
+    # As the report check counted them, so a field the report leaves out isn't counted as one entry.
+    $reportApplied = if ($null -ne $report) { $validation.Applied } else { 0 }
+    $reportFailed = if ($null -ne $report) { $validation.Failed } else { 0 }
     $target = if ($null -ne $report) { "$($report.packageName) $($report.packageVersion)" } else { 'unknown target' }
     Write-Host "[verify] ${target}: applied $reportApplied, failed $reportFailed, CLI exit $cliExitCode"
     if ($null -ne $report) {

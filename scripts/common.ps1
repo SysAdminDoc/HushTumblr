@@ -507,7 +507,10 @@ function Expand-SplitBundle {
             if (-not $problem -and -not $name.EndsWith('/')) {
                 $leaf = $name.Substring($name.LastIndexOf('/') + 1)
                 if ($leaf -match '\.apk$') {
-                    if ($leaf.Length -gt 128 -or $leaf -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*\.apk$') {
+                    # Case-sensitive, and to the end of the text: matched without case, [A-Za-z] takes
+                    # the Kelvin sign and a dotted capital I as letters, and $ allows a line break.
+                    # Get-InputIdentity holds the names to the same rule.
+                    if ($leaf.Length -gt 128 -or $leaf -cnotmatch '^[A-Za-z0-9][A-Za-z0-9._-]*\.[Aa][Pp][Kk]\z') {
                         $problem = 'is an APK whose file name holds more than letters, digits, dots, dashes and underscores'
                     } elseif ($entry.Length -gt $MemberLimit) {
                         $problem = "would unpack to $($entry.Length) bytes, more than the $MemberLimit bytes one APK may take"
@@ -1304,7 +1307,7 @@ function Get-InputIdentity {
         foreach ($apk in $listed) {
             $name = [string]$apk.Name
             # The names Expand-SplitBundle unpacks to, so a line can't run into the next.
-            if ($name -cnotmatch '^[A-Za-z0-9][A-Za-z0-9._-]*\.apk$') { throw "Not the name of an unpacked APK: $name" }
+            if ($name -cnotmatch '^[A-Za-z0-9][A-Za-z0-9._-]*\.apk\z') { throw "Not the name of an unpacked APK: $name" }
             if ($byName.ContainsKey($name)) { throw "The input names $name twice." }
             $byName[$name] = [string]$apk.Sha256
         }
@@ -2150,10 +2153,6 @@ function Find-AppliedRecord {
         Write-Warning "The applied record $Key in $Store doesn't hold together ($problem), so it isn't used."
         return $null
     }
-    # PowerShell 7 reads an ISO time in JSON as a date, Windows PowerShell as the text.
-    $recordedAt = if ($record.recordedAt -is [datetime]) {
-        $record.recordedAt.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
-    } else { [string]$record.recordedAt }
     try {
         $heldPath = Get-HeldPath -Stream $held
         $heldResultPath = Get-HeldPath -Stream $heldResult
@@ -2223,6 +2222,10 @@ function Save-AppliedRecord {
     $staging = Resolve-WithinRoot -Path (Join-Path $storeRoot ('.partial-' + [guid]::NewGuid().ToString('N'))) -Root $storeRoot
     New-Item -ItemType Directory -Path $staging | Out-Null
     try {
+        # PowerShell 7 reads an ISO time in JSON as a date, Windows PowerShell as the text.
+        $recordedAt = if ($record.recordedAt -is [datetime]) {
+            $record.recordedAt.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+        } else { [string]$record.recordedAt }
         Copy-Item -LiteralPath $PatchedApk -Destination (Join-Path $staging 'patched.apk')
         Copy-Item -LiteralPath $Result -Destination (Join-Path $staging 'result.json')
         $kept = @()

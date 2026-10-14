@@ -238,6 +238,23 @@ try {
         Assert-True (-not $steplessValidation.Valid -and $steplessValidation.Reason -ceq 'a patching step failed or is missing') `
             "A result whose patching steps are $steps was not turned down for them alone: $($steplessValidation.Reason)"
     }
+    # failedPatches left out or null is no failed patch, as kotlinx leaves out a field equal to its
+    # default; it used to count as one through @($null). A null entry in the list is still one.
+    foreach ($failures in @('absent', 'null', 'null entry')) {
+        $failless = $dependencyReport.PSObject.Copy()
+        switch ($failures) {
+            'absent' { $failless.PSObject.Properties.Remove('failedPatches') }
+            'null' { $failless.failedPatches = $null }
+            'null entry' { $failless.failedPatches = @($null) }
+        }
+        $faillessValidation = Test-PatchingReport -Report $failless -ExpectedNames $allNames `
+            -AllowedDependencyNames $allDependencies -OutputPath $reportApk `
+            -ExpectedPackageName $target.PackageName -ExpectedPackageVersion $target.PackageVersion
+        $faillessOk = if ($failures -eq 'null entry') {
+            -not $faillessValidation.Valid -and $faillessValidation.Reason -ceq '1 failed patches' -and $faillessValidation.Failed -eq 1
+        } else { $faillessValidation.Valid -and $faillessValidation.Failed -eq 0 }
+        Assert-True $faillessOk "A result whose failed patches are $failures was judged wrongly: $($faillessValidation.Reason)"
+    }
 
     # The old replacement expectations contradicted account preservation. Exercise refusal
     # before device mutation, signer checks and ownership instead of expecting uninstalls.
@@ -4089,6 +4106,9 @@ try {
         @{ Case = 'has a folder ending in a space'; Members = @($guardBase, @{ Name = 'splits /split_config.en.apk' }); Says = 'ends a segment with a dot or a space*' }
         @{ Case = 'names a device'; Members = @($guardBase, @{ Name = 'nul.apk' }); Says = 'names a Windows device' }
         @{ Case = 'holds a shell character'; Members = @($guardBase, @{ Name = 'split&calc.apk' }); Says = 'is an APK whose file name holds more than*' }
+        # The Kelvin sign is a k once case is ignored, which let it past the name check that
+        # Get-InputIdentity, matching case, then refused after the merge.
+        @{ Case = 'holds a letter only a match without case takes'; Members = @($guardBase, @{ Name = "split_$([char]0x212A).apk" }); Says = 'is an APK whose file name holds more than*' }
         @{ Case = 'repeats a name'; Members = @($guardBase, @{ Name = 'base.apk'; Deflate = $true }); Says = "is the same path as 'base.apk' once case is ignored" }
         @{ Case = 'repeats a name in other case'; Members = @($guardBase, @{ Name = 'BASE.apk' }); Says = "is the same path as 'base.apk' once case is ignored" }
         @{ Case = 'repeats a file name in a folder'; Members = @($guardBase, @{ Name = 'splits/base.apk' }); Says = "unpacks to base.apk, as 'base.apk' does" }
@@ -4499,7 +4519,8 @@ try {
         $handed = @($said | Where-Object { $null -ne $_ -and $_ -isnot [System.Management.Automation.WarningRecord] })
         Assert-True ($handed.Count -eq 0 -and $warned.Count -eq 1 -and "$($warned[0])" -like $digestCase.Says) `
             "A record with digests '$($digestCase.Patched)' and '$($digestCase.Result)' was handed back, or not said: $($said -join '; ')"
-        # Passed over, it holds nothing: the patched APK held before the report failed is let go.
+        # Passed over, it holds nothing: the patched APK held before the report failed is let go,
+        # and so is a report that didn't hash to its digest.
         & $openToWrite $keptApk
     }
     & $writeRecord $keptDigest $resultDigest
@@ -4538,6 +4559,7 @@ Write-Host '[scripts] applied record key contracts passed'
 # manifest facts out of a bundle goes through Get-BaseApk, and no caller looks for a merge the CLI
 # left behind: there is none to find.
 foreach ($name in @('build-release-receipt.ps1', 'verify-all-patches.ps1', 'verify-injected-registers.ps1')) {
+        & $openToWrite $keptResult
     Assert-True ((Get-Content -LiteralPath (Join-Path $PSScriptRoot $name) -Raw) -match 'Get-BaseApk -Apk') `
         "$name reads a bundle without taking its base APK out first."
 }
@@ -4761,6 +4783,24 @@ foreach ($name in @('patch-for-device.ps1', 'build-release-receipt.ps1', 'verify
     Assert-True ($pageChecks.Count -gt 0 -and $pageChecks[-1].Extent.StartOffset -gt (Get-FirstCommandOffset $scriptAst $isCliPatch) -and
         $pageChecks[-1].Extent.Text -match '-Apk \$out -Stock \$patchInput -Aapt2 \$Aapt2$') `
         "$name does not hold the APK it patched to the 16 KB page check, against the stock APK the CLI was handed."
+# A kept run's report is checked through the path its held handle is at, never a copy of it:
+# patch-for-device.ps1 copied it into its output folder and checked the copy, which nothing held.
+foreach ($reader in @(@{ Name = 'patch-for-device.ps1'; Reads = '$reportPath' }, @{ Name = 'build-release-receipt.ps1'; Reads = '$resultPath' },
+        @{ Name = 'verify-all-patches.ps1'; Reads = '$recorded.Result' })) {
+    $readerAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot $reader.Name), [ref]$null, [ref]$null)
+    $reads = @(Get-NamedCommands $readerAst 'Get-Content' | ForEach-Object {
+            $elements = @($_.CommandElements)
+            for ($i = 0; $i -lt $elements.Count - 1; $i++) {
+                if ($elements[$i] -is [System.Management.Automation.Language.CommandParameterAst] -and $elements[$i].ParameterName -eq 'LiteralPath') {
+                    $elements[$i + 1].Extent.Text
+                }
+            } })
+    $fromKept = @($readerAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
+                $node.Left.Extent.Text -ceq $reader.Reads -and $node.Right.Extent.Text -ceq '$recorded.Result' }, $true))
+    Assert-True ($reads -ccontains $reader.Reads -and ($reader.Reads -ceq '$recorded.Result' -or $fromKept.Count -eq 1) -and
+        ($reader.Name -ne 'patch-for-device.ps1' -or $reads -cnotcontains '$result')) `
+        "$($reader.Name) doesn't check a kept run's report through the path Find-AppliedRecord holds: $($reads -join ', ')"
+}
     if ($name -eq 'patch-for-device.ps1') {
         $signAt = Get-FirstCommandOffset $scriptAst $isKeptSign
         Assert-True ($pageChecks.Count -eq 2 -and $pageChecks[0].Extent.StartOffset -lt $signAt -and

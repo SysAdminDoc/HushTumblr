@@ -268,8 +268,12 @@ if ($recorded) {
     if ($signExitCode -ne 0 -or -not (Test-Path -LiteralPath $out -PathType Leaf)) {
         throw "apksigner could not sign the kept APK (exit $signExitCode): $($signOutput -join ' ')"
     }
+    # The copy is the run's output, for whoever reads it afterwards. The check below reads the kept
+    # report through the path its held handle is at, since nothing holds the copy.
     Copy-Item -LiteralPath $recorded.Result -Destination $result
+    $reportPath = $recorded.Result
 } else {
+$reportPath = $result
 $enable = @()
 foreach ($name in $names) {
     $enable += '-e'; $enable += $name
@@ -320,7 +324,7 @@ try {
 # The same report check the throwaway verification applies: every requested patch, every
 # step, the target, and a real APK. The build that goes onto a phone deserves no less.
 $report = $null
-if (Test-Path -LiteralPath $result -PathType Leaf) { $report = Get-Content -LiteralPath $result -Raw | ConvertFrom-Json }
+if (Test-Path -LiteralPath $reportPath -PathType Leaf) { $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json }
 $validation = Test-PatchingReport -Report $report -ExpectedNames $names `
     -AllowedDependencyNames $dependencyNames -OutputPath $out `
     -ExpectedPackageName $target.PackageName -ExpectedPackageVersion $stock.versionName

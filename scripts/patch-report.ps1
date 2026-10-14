@@ -169,7 +169,10 @@ function Test-PatchingReport {
         $property = if ($null -eq $step) { $null } else { $step.PSObject.Properties['success'] }
         if ($null -eq $property -or -not (Test-TrueBoolean $property.Value)) { $stepsOk = $false }
     }
-    $failed = @($Report.failedPatches)
+    # Left out or null, the field is no failed patch (kotlinx leaves out a field that equals its
+    # default), not the one null item @($null) would count. A null entry in the list still counts.
+    $failed = New-Object System.Collections.Generic.List[object]
+    if ($null -ne $Report.failedPatches) { foreach ($failure in @($Report.failedPatches)) { $failed.Add($failure) } }
     $applied = Get-ReportPatchNames $Report.appliedPatches
     $namesOk = Test-ReportedPatchNames -Expected $ExpectedNames -Actual $applied `
         -AllowedDependencies $AllowedDependencyNames
