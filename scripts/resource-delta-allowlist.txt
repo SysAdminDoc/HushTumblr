@@ -3,17 +3,20 @@
 # it, and allows exactly one change. An added resource and a file only the patched table names leave
 # out the id, since the rebuild picks that. An added resource also needs a line for each value it
 # holds, per config: a bag its parent and each item. A file only the patched table names carries the
-# SHA-256 of its bytes. #{option} stands for a color a patch option sets, so the Dark background
-# color lines pass for any color picked. Anything a run changes that isn't here fails the run.
+# SHA-256 of its bytes. #{option} stands for the solid color a patch option sets, and #{option+13}
+# for that color with 13 added to each channel, as the Dark background color patch raises its
+# highlighted surfaces. Those lines pass for any color picked, as long as every one of a run comes
+# out of the same color. Anything a run changes that isn't here fails the run.
 #
 # [rebuild] is what decoding and rebuilding the table does on its own, whichever resource patch
 # asked for it. Every other section is a patch, and applies only when the run selects that patch or
 # a patch that depends on it. Retargeting Tumblr means reading a fresh report and redoing the
-# [rebuild] lines, and the attr ids in the Dark background color items.
+# [rebuild] lines, and the attr ids in the Dark background color items. Until then a run forced
+# onto another build fails at the resource step, on the lines its rebuild changes that aren't here.
 
 [rebuild]
 rewritten 0x7f150581 style/TimelineView [default] item 0x0101007f hex 0x02000000 -> dec 0x02000000
-rewritten 0x7f140c65 string/sign_up_tos_description [default] "By tapping <b>"Next"</b>:" -> "By tapping <b>Next</b>:"
+rewritten 0x7f140c65 string/sign_up_tos_description [default] "By tapping <b>\"Next\"</b>:" -> "By tapping <b>Next</b>:"
 renamed 0x7f0b0b2f id/scrollView is id/id_0x7f0b0b2f
 renamed 0x7f0b0b34 id/scrollview is id/id_0x7f0b0b34
 renamed 0x7f0b0b62 id/seekBar is id/id_0x7f0b0b62
@@ -24,14 +27,14 @@ added style/HushTumblrDarkBackground
 added style/HushTumblrDarkBackground [default] parent @null
 added style/HushTumblrDarkBackground [default] item 0x01010031 #{option}
 added style/HushTumblrDarkBackground [default] item 0x7f04058b attr/st_chrome #{option}
-added style/HushTumblrDarkBackground [default] item 0x7f040593 attr/st_chrome_mobile #{option}
-added style/HushTumblrDarkBackground [default] item 0x7f040595 attr/st_chrome_panel #{option}
+added style/HushTumblrDarkBackground [default] item 0x7f040593 attr/st_chrome_mobile #{option+13}
+added style/HushTumblrDarkBackground [default] item 0x7f040595 attr/st_chrome_panel #{option+13}
 added style/HushTumblrDarkBackground [default] item 0x7f0405c0 attr/st_content_mobile_container #{option}
 added style/HushTumblrDarkBackground [default] item 0x7f0405c2 attr/st_content_panel #{option}
-added style/HushTumblrDarkBackground [default] item 0x7f0405f0 attr/st_modal #{option}
+added style/HushTumblrDarkBackground [default] item 0x7f0405f0 attr/st_modal #{option+13}
 added style/HushTumblrDarkBackground [default] item 0x7f0405f5 attr/st_side_menu #{option}
 added style/HushTumblrDarkBackground [default] item 0x7f0405ff attr/st_top_menu #{option}
-added style/HushTumblrDarkBackground [default] item 0x7f0406bf attr/themeHighlightedContentBackgroundColor #{option}
+added style/HushTumblrDarkBackground [default] item 0x7f0406bf attr/themeHighlightedContentBackgroundColor #{option+13}
 added style/HushTumblrDarkBackground [default] item 0x7f0406c3 attr/themeMainContentBackgroundColor #{option}
 added style/HushTumblrDarkBackground [default] item 0x7f0406c9 attr/themeNavigationBarColor #{option}
 added style/HushTumblrDarkBackground [default] item 0x7f0406cd attr/themePrimaryColor #{option}

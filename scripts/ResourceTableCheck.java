@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -58,8 +59,8 @@ import java.util.zip.ZipFile;
  * Given an allowlist, each of those has to be one it allows: under {@code [rebuild]}, which any
  * rebuild of the table does, or under a patch the run selected ({@code HUSHTUMBLR_PATCH_SELECTION},
  * one name a line). Each line allows one change, and a color a patch option sets is written
- * {@code #{option}}. Anything else fails, so a table or file swapped into the CLI's copy of its
- * input can't pass as something a patch did.
+ * {@code #{option}}, or {@code #{option+13}} raised. Anything else fails, so a table or file
+ * swapped into the CLI's copy of its input can't pass as something a patch did.
  *
  * <p>Usage: {@code java -cp <morphe desktop jar> ResourceTableCheck.java <stock.apk> <patched.apk>
  * [report.txt [allowlist.txt]]}. The report file gets every line; the console gets the counts and
@@ -77,8 +78,12 @@ public final class ResourceTableCheck {
     /** What an allowlist line can name, each the way the report lists it. */
     private static final Set<String> KINDS = Set.of("rewritten", "renamed", "dropped", "added", "moved", "file");
     private static final String SELECTION = "HUSHTUMBLR_PATCH_SELECTION";
-    /** In an allowlist line, any color a value can be (#aarrggbb): the one a patch option sets. */
-    private static final String OPTION_COLOR = "#{option}";
+    /**
+     * In an allowlist line, the opaque color a patch option sets ({@code #{option}}), or that color
+     * with a step added to each channel as far as white ({@code #{option+13}}). Every such line in
+     * a run has to come out of one color.
+     */
+    private static final Pattern OPTION_COLOR = Pattern.compile("#\\{option(?:\\+([0-9]{1,3}))?\\}");
 
     private final Map<Integer, String> stockNames = new HashMap<>();
     /**
@@ -331,8 +336,9 @@ public final class ResourceTableCheck {
     /**
      * Every change this run reports has to be one [rebuild] or a selected patch's section allows,
      * and each line allows one change: a resource with the same label in two packages, or a line
-     * whose placeholder two values fit, is two changes. {@value #OPTION_COLOR} in a line stands for
-     * any color, the one a patch option sets.
+     * whose placeholder two values fit, is two changes. A placeholder stands for an opaque color,
+     * and the colors every placeholder of the run fits have to be one option color: that color for
+     * {@code #{option}}, raised by the step for {@code #{option+13}}.
      */
     private void holdToAllowlist(String name, Map<String, Set<String>> allowlist, Set<String> selected) {
         allowlistName = name;
@@ -343,19 +349,36 @@ public final class ResourceTableCheck {
             allowed.addAll(section.getValue());
         }
         Map<String, Pattern> placeholders = new LinkedHashMap<>();
+        Map<String, List<Integer>> steps = new HashMap<>();
         for (String line : allowed) {
-            if (!line.contains(OPTION_COLOR)) continue;
-            List<String> parts = new ArrayList<>();
-            for (String part : line.split(Pattern.quote(OPTION_COLOR), -1)) parts.add(Pattern.quote(part));
-            placeholders.put(line, Pattern.compile(String.join("#[0-9a-f]{8}", parts)));
+            Matcher placeholder = OPTION_COLOR.matcher(line);
+            StringBuilder pattern = new StringBuilder();
+            List<Integer> lineSteps = new ArrayList<>();
+            int from = 0;
+            while (placeholder.find()) {
+                pattern.append(Pattern.quote(line.substring(from, placeholder.start()))).append("(#ff[0-9a-f]{6})");
+                lineSteps.add(placeholder.group(1) == null ? 0 : Integer.parseInt(placeholder.group(1)));
+                from = placeholder.end();
+            }
+            if (lineSteps.isEmpty()) continue;
+            pattern.append(Pattern.quote(line.substring(from)));
+            placeholders.put(line, Pattern.compile(pattern.toString()));
+            steps.put(line, lineSteps);
         }
         Map<String, Integer> used = new LinkedHashMap<>();
+        // Each color a placeholder took, with the change it came from and the step its line names.
+        List<Object[]> colors = new ArrayList<>();
         for (String change : delta()) {
             deltaChecked++;
             String line = allowed.contains(change) ? change : null;
             for (Iterator<Map.Entry<String, Pattern>> it = placeholders.entrySet().iterator(); line == null && it.hasNext(); ) {
                 Map.Entry<String, Pattern> placeholder = it.next();
-                if (placeholder.getValue().matcher(change).matches()) line = placeholder.getKey();
+                Matcher fit = placeholder.getValue().matcher(change);
+                if (!fit.matches()) continue;
+                line = placeholder.getKey();
+                for (int group = 1; group <= fit.groupCount(); group++) {
+                    colors.add(new Object[] { change, steps.get(line).get(group - 1), (int) Long.parseLong(fit.group(group).substring(1), 16) });
+                }
             }
             if (line == null) {
                 failures.add("resource delta " + change + ": allowed neither by [rebuild] nor by a selected patch in " + name);
@@ -363,7 +386,27 @@ public final class ResourceTableCheck {
                 failures.add("resource delta " + line + ": a line of " + name + " allows one change, and more than one of this run fits it");
             }
         }
+        Integer option = null;
+        for (Object[] color : colors) if ((Integer) color[1] == 0 && option == null) option = (Integer) color[2];
+        for (Object[] color : colors) {
+            int step = (Integer) color[1];
+            int found = (Integer) color[2];
+            if (option == null) {
+                failures.add("resource delta " + color[0] + ": a color raised from the option's, and no line of this run gives the option's own color");
+            } else if (found != raised(option, step)) {
+                failures.add("resource delta " + color[0] + String.format(Locale.ROOT, ": #%08x isn't the option color #%08x", found, option)
+                        + (step == 0 ? "" : String.format(Locale.ROOT, " raised by %d, #%08x", step, raised(option, step)))
+                        + ", which every #{option} line of a run comes from");
+            }
+        }
         for (String line : allowed) if (!used.containsKey(line)) unseen.add(line);
+    }
+
+    /** An opaque color with [step] added to each channel, as far as white, as the patch raises it. */
+    private static int raised(int color, int step) {
+        int result = 0xff000000;
+        for (int shift = 0; shift <= 16; shift += 8) result |= Math.min(0xff, (color >>> shift & 0xff) + step) << shift;
+        return result;
     }
 
     /** What this run changed, each as an allowlist line names it. */
@@ -474,15 +517,16 @@ public final class ResourceTableCheck {
                     + reference(after.getParentId()) + ", which drops or swaps every item it inherits");
         }
         // Per attr, in order: a bag can set one attr more than once (TikTok 47.0.3's style/aed sets
-        // windowBackground twice), and a map keyed by attr keeps only the last.
+        // windowBackground twice), and a map keyed by attr keeps only the last. Each time from the
+        // second is numbered, as bagLines numbers it, so two of them changed alike are two lines.
         Map<Integer, List<ResValueMap>> beforeItems = items(before);
         Map<Integer, List<ResValueMap>> afterItems = items(after);
         for (Map.Entry<Integer, List<ResValueMap>> named : beforeItems.entrySet()) {
             int name = named.getKey();
             List<ResValueMap> was = named.getValue();
             List<ResValueMap> is = afterItems.getOrDefault(name, List.of());
-            String itemWhere = where + " item " + name(name);
             for (int index = 0; index < was.size(); index++) {
+                String itemWhere = itemWhere(where, name, index);
                 if (index >= is.size()) {
                     failures.add(itemWhere + ": the item is gone");
                     continue;
@@ -495,18 +539,25 @@ public final class ResourceTableCheck {
                 }
             }
             for (int index = was.size(); index < is.size(); index++) {
+                String itemWhere = itemWhere(where, name, index);
                 rewritten.add(itemWhere + " added " + value(is.get(index), null));
                 checkReference(itemWhere, is.get(index), patched, packages);
             }
         }
         for (Map.Entry<Integer, List<ResValueMap>> named : afterItems.entrySet()) {
             if (beforeItems.containsKey(named.getKey())) continue;
-            String itemWhere = where + " item " + name(named.getKey());
-            for (ResValueMap item : named.getValue()) {
-                rewritten.add(itemWhere + " added " + value(item, null));
-                checkReference(itemWhere, item, patched, packages);
+            List<ResValueMap> is = named.getValue();
+            for (int index = 0; index < is.size(); index++) {
+                String itemWhere = itemWhere(where, named.getKey(), index);
+                rewritten.add(itemWhere + " added " + value(is.get(index), null));
+                checkReference(itemWhere, is.get(index), patched, packages);
             }
         }
+    }
+
+    /** An item of a bag by its attr, numbered from the second time the bag sets that attr. */
+    private String itemWhere(String where, int name, int index) {
+        return where + " item" + (index == 0 ? "" : "#" + (index + 1)) + " " + name(name);
     }
 
     /** Every file a patched value names is in the patched archive, unless the stock one lacked it too. */
@@ -619,7 +670,11 @@ public final class ResourceTableCheck {
 
     /**
      * A value as text that does not depend on where the rebuild put it in a string pool, or on the
-     * id the rebuild picked for a resource a patch added.
+     * id the rebuild picked for a resource a patch added. Two values render alike only when they
+     * are alike: a string's backslashes and quotes are escaped along with its line breaks, so one
+     * can't read as another or as the end of a report line, each color type and each dynamic kind
+     * is named (an 8-digit color, the form a patch writes, stays bare for the #{option} lines), and
+     * an unreadable string carries its pool index.
      */
     private String value(ValueItem value, String resourceType) {
         if (value == null) return "(none)";
@@ -629,20 +684,23 @@ public final class ResourceTableCheck {
         switch (type) {
             case STRING:
                 String text = value.getValueAsString();
-                if (text == null) return "string (unreadable)";
+                if (text == null) return String.format(Locale.ROOT, "string (unreadable, pool index %d)", data);
                 if (resourceType != null && !"string".equals(resourceType) && text.startsWith("res/")) return "file " + text;
-                return "\"" + text.replace("\n", "\\n") + "\"";
+                return "\"" + text.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") + "\"";
             case REFERENCE:
-            case DYNAMIC_REFERENCE:
                 return reference(data);
+            case DYNAMIC_REFERENCE:
+                return "dynamic " + reference(data);
             case ATTRIBUTE:
-            case DYNAMIC_ATTRIBUTE:
                 return "?" + id(data);
+            case DYNAMIC_ATTRIBUTE:
+                return "dynamic ?" + id(data);
             case COLOR_ARGB8:
+                return String.format(Locale.ROOT, "#%08x", data);
             case COLOR_RGB8:
             case COLOR_ARGB4:
             case COLOR_RGB4:
-                return String.format(Locale.ROOT, "#%08x", data);
+                return type.name().toLowerCase(Locale.ROOT) + String.format(Locale.ROOT, " #%08x", data);
             default:
                 return type.name().toLowerCase(Locale.ROOT) + String.format(Locale.ROOT, " 0x%08x", data);
         }

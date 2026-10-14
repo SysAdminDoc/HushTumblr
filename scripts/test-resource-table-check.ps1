@@ -414,6 +414,80 @@ try {
     Assert-True ($black.Output -match [regex]::Escape("$($idOf['color/accent']) color/accent [default] #ffff3b5c -> #ff000000")) `
         "The rewritten color was not reported with its id and both values.`n$($black.Output)"
 
+    # Two values render alike only when they're alike. Each change below rendered the same on both
+    # sides once, so it went unreported: a color written in another form, a reference or attribute
+    # made dynamic, a backslash and n become a line break, and one unreadable string for another.
+    # A quote inside a string is escaped, so a report line can't be read as another change.
+    $colorForms = @(
+        @{ Name = 'color-rgb'; Accent = '#ff3b5c'; Night = '#000'
+            Says = @("$($idOf['color/accent']) color/accent [default] #ffff3b5c -> color_rgb8 #ffff3b5c",
+                "$($idOf['color/surface']) color/surface [night", '] #ff000000 -> color_rgb4 #ff000000') },
+        @{ Name = 'color-argb4'; Accent = '#ffff3b5c'; Night = '#f000'
+            Says = @('', "$($idOf['color/surface']) color/surface [night", '] #ff000000 -> color_argb4 #ff000000') }
+    )
+    foreach ($case in $colorForms) {
+        $formFiles = [ordered]@{
+            'res/values/colors.xml' = $colors -replace '#ffff3b5c', $case.Accent
+            'res/values/styles.xml' = $styles
+            'res/layout/feed_story.xml' = $layout
+            'res/values-night/colors.xml' = $nightColors -replace '#ff000000', $case.Night
+        }
+        $form = Invoke-Check -Patched (New-ResourceApk -Name $case.Name -Files $formFiles -StableIds $ids) -Name $case.Name
+        $nightLine = [regex]::Escape($case.Says[1]) + '[^\]]*' + [regex]::Escape($case.Says[2])
+        Assert-True ($form.ExitCode -eq 0 -and $form.Output -match $nightLine -and
+            (-not $case.Says[0] -or $form.Output -match [regex]::Escape($case.Says[0]))) `
+            "A color written in another form ($($case.Name)) wasn't reported as rewritten.`n$($form.Output)"
+    }
+    $surfaceReference = [byte[]](@(8, 0, 0, 1) + [BitConverter]::GetBytes([Convert]::ToUInt32($idOf['color/surface'], 16)))
+    $dynamicReference = [byte[]]$surfaceReference.Clone()
+    $dynamicReference[3] = 7
+    $dynamic = Invoke-Check -Patched (Edit-Table -Name 'dynamic-reference' -Find $surfaceReference -Replace $dynamicReference `
+        -What 'reference to color/surface') -Name 'dynamic-reference'
+    Assert-True ($dynamic.ExitCode -eq 0 -and $dynamic.Output -match ([regex]::Escape("$($idOf['style/SearchTheme']) style/SearchTheme [default] item ") +
+        '0x[0-9a-f]{8} ' + [regex]::Escape("@$($idOf['color/surface']) -> dynamic @$($idOf['color/surface'])"))) `
+        "A reference made dynamic wasn't reported as rewritten.`n$($dynamic.Output)"
+
+    $valueIds = Join-Path $caseRoot 'value-ids.txt'
+    $valueFiles = [ordered]@{
+        'res/values/strings.xml' = '<resources><string name="line">a\\nb</string><string name="quote">say \"hi\"</string></resources>'
+        'res/values/styles.xml' = '<resources><style name="SearchTheme"><item name="android:textColor">?android:attr/textColorPrimary</item></style></resources>'
+    }
+    $valueStock = New-ResourceApk -Name 'value-stock' -Files $valueFiles -EmitIds $valueIds
+    $valueIdOf = @{}
+    foreach ($line in Get-Content -LiteralPath $valueIds) {
+        if ($line -match '^[^:]+:(\S+) = (0x[0-9a-f]{8})$') { $valueIdOf[$Matches[1]] = $Matches[2] }
+    }
+    $escapedFiles = [ordered]@{
+        'res/values/strings.xml' = '<resources><string name="line">a\nb</string><string name="quote">say hi</string></resources>'
+        'res/values/styles.xml' = $valueFiles['res/values/styles.xml']
+    }
+    $escaped = Invoke-Check -Stock $valueStock -Patched (New-ResourceApk -Name 'value-escaped' -Files $escapedFiles -StableIds $valueIds) -Name 'value-escaped'
+    Assert-True ($escaped.ExitCode -eq 0 -and
+        $escaped.Output -match [regex]::Escape("$($valueIdOf['string/line']) string/line [default] `"a\\nb`" -> `"a\nb`"") -and
+        $escaped.Output -match [regex]::Escape("$($valueIdOf['string/quote']) string/quote [default] `"say \`"hi\`"`" -> `"say hi`"")) `
+        "A backslash and n become a line break, or a string that lost its quotes, wasn't reported escaped.`n$($escaped.Output)"
+    # textColorPrimary, 0x01010036, as an attribute value.
+    $attribute = [byte[]](8, 0, 0, 2, 0x36, 0, 1, 1)
+    $dynamicAttribute = [byte[]](8, 0, 0, 8, 0x36, 0, 1, 1)
+    $attributeCheck = Invoke-Check -Stock $valueStock -Name 'dynamic-attribute' -Patched (Edit-Table -Name 'dynamic-attribute' -From $valueStock `
+        -Find $attribute -Replace $dynamicAttribute -What 'attribute value')
+    Assert-True ($attributeCheck.ExitCode -eq 0 -and $attributeCheck.Output -match ([regex]::Escape("$($valueIdOf['style/SearchTheme']) style/SearchTheme [default] item ") +
+        '0x[0-9a-f]{8} ' + [regex]::Escape('?0x01010036 -> dynamic ?0x01010036'))) `
+        "An attribute made dynamic wasn't reported as rewritten.`n$($attributeCheck.Output)"
+
+    # One string value in the table, so its type byte is the table's only one, pointed past the pool
+    # on both sides at two different places.
+    $loneIds = Join-Path $caseRoot 'lone-ids.txt'
+    $loneStock = New-ResourceApk -Name 'lone-stock' -Files ([ordered]@{ 'res/values/strings.xml' = '<resources><string name="lone">Hush</string><style name="SearchTheme" /></resources>' }) `
+        -EmitIds $loneIds
+    $loneId = [regex]::Match((Get-Content -LiteralPath $loneIds -Raw), ':string/lone = (0x[0-9a-f]{8})').Groups[1].Value
+    $stringValue = [byte[]](8, 0, 0, 3)
+    $loneUnreadable = Edit-Table -Name 'lone-unreadable' -From $loneStock -Find $stringValue -Replace ([byte[]](8, 0, 0, 3, 0xff, 0x7f, 0, 0)) -What 'string value'
+    $loneOther = Edit-Table -Name 'lone-unreadable-other' -From $loneStock -Find $stringValue -Replace ([byte[]](8, 0, 0, 3, 0xfe, 0x7f, 0, 0)) -What 'string value'
+    $lone = Invoke-Check -Stock $loneUnreadable -Patched $loneOther -Name 'lone-unreadable'
+    Assert-True ($lone.Output -match [regex]::Escape("$loneId string/lone [default] string (unreadable, pool index 32767) -> string (unreadable, pool index 32766)")) `
+        "One unreadable string for another wasn't reported as rewritten.`n$($lone.Output)"
+
     $renamedIds = Join-Path $caseRoot 'renamed-ids.txt'
     [System.IO.File]::WriteAllText($renamedIds, ((Get-Content -LiteralPath $ids -Raw) -replace ':color/accent =', ':color/accent_renamed ='))
     $renamedFiles = [ordered]@{
@@ -696,6 +770,46 @@ try {
                 else { $said.ExitCode -eq 0 -and $said.Output -match [regex]::Escape('resource delta: 4 changes held to style-allowlist.txt') })) `
             "$($styled.Name) was judged wrong against the lines made for the style.`n$($said.Output)"
     }
+    # Every placeholder of a run comes out of one solid color: #{option} that color, #{option+13} it
+    # raised by 13 a channel as far as white. Colors that don't agree, or one that isn't solid, fail.
+    $pairText = '<resources><style name="HushPair"><item name="android:colorForeground">{0}</item>' +
+        '<item name="android:colorBackground">{1}</item><item name="android:textColorSecondary">{2}</item></style></resources>'
+    $pairAllowlist = New-TestAllowlist 'pair' @('[rebuild]', '[Dark background color]', 'added style/HushPair', 'added style/HushPair [default] parent @null',
+        'added style/HushPair [default] item 0x01010030 #{option+13}', 'added style/HushPair [default] item 0x01010031 #{option}',
+        'added style/HushPair [default] item 0x01010038 #{option}')
+    foreach ($paired in @(
+            @{ Name = 'pair-dark'; Colors = @('#ff1f1f1f', '#ff121212', '#ff121212') },
+            @{ Name = 'pair-white'; Colors = @('#ffffffff', '#fff8f8f8', '#fff8f8f8') },
+            @{ Name = 'pair-flat'; Colors = @('#ff121212', '#ff121212', '#ff121212')
+                Says = 'resource delta added style/HushPair [default] item 0x01010030 #ff121212: #ff121212 isn''t the option color #ff121212 raised by 13, #ff1f1f1f' },
+            @{ Name = 'pair-apart'; Colors = @('#ff1f1f1f', '#ff121212', '#ff000000')
+                Says = 'resource delta added style/HushPair [default] item 0x01010038 #ff000000: #ff000000 isn''t the option color #ff121212, which every' },
+            @{ Name = 'pair-clear'; Colors = @('#801f1f1f', '#80121212', '#80121212')
+                Says = 'resource delta added style/HushPair [default] item 0x01010031 #80121212: allowed neither' })) {
+        $files = [ordered]@{}
+        foreach ($entry in $stockFiles.GetEnumerator()) { $files[$entry.Key] = $entry.Value }
+        $files['res/values/hush_styles.xml'] = $pairText -f $paired.Colors
+        $said = Invoke-Check -Patched (New-ResourceApk -Name $paired.Name -Files $files -StableIds $ids) -Name $paired.Name `
+            -Allowlist $pairAllowlist -Selection @('Dark background color')
+        Assert-True ($(if ($paired.Says) { $said.ExitCode -eq 1 -and $said.Output -match [regex]::Escape("FAIL $($paired.Says)") }
+                else { $said.ExitCode -eq 0 -and $said.Output -match [regex]::Escape('resource delta: 5 changes held to pair-allowlist.txt') })) `
+            "$($paired.Name) was judged wrong against the option color lines.`n$($said.Output)"
+    }
+    # A bag that sets one attr twice, both rewritten alike, is two changes on two lines: the second
+    # is numbered. SearchTheme's two items (aapt2 writes a style's items sorted by attr) are made
+    # windowBackground twice in both tables, to the surface in one and the accent in the other.
+    $mapItem = { param([uint32]$Attr, [string]$Id) [byte[]]([BitConverter]::GetBytes($Attr) + [byte[]](8, 0, 0, 1) + [BitConverter]::GetBytes([Convert]::ToUInt32($Id, 16))) }
+    $searchItems = [byte[]]((& $mapItem 0x01010036 $idOf['color/accent']) + (& $mapItem 0x01010054 $idOf['color/surface']))
+    $twiceStock = Edit-Table -Name 'twice-stock' -Find $searchItems -What 'SearchTheme items' `
+        -Replace ([byte[]]((& $mapItem 0x01010054 $idOf['color/surface']) + (& $mapItem 0x01010054 $idOf['color/surface'])))
+    $twicePatched = Edit-Table -Name 'twice-patched' -Find $searchItems -What 'SearchTheme items' `
+        -Replace ([byte[]]((& $mapItem 0x01010054 $idOf['color/accent']) + (& $mapItem 0x01010054 $idOf['color/accent'])))
+    $twiceWhere = "rewritten $($idOf['style/SearchTheme']) style/SearchTheme [default] item"
+    $twiceChange = " 0x01010054 @$($idOf['color/surface']) -> @$($idOf['color/accent'])"
+    $twiceItems = Invoke-Check -Stock $twiceStock -Patched $twicePatched -Name 'twice-items' `
+        -Allowlist (New-TestAllowlist 'twice' @('[rebuild]', "$twiceWhere$twiceChange", "$twiceWhere#2$twiceChange")) -Selection @('Other patch')
+    Assert-True ($twiceItems.ExitCode -eq 0 -and $twiceItems.Output -match [regex]::Escape('resource delta: 2 changes held to twice-allowlist.txt')) `
+        "A bag setting one attr twice, rewritten alike, couldn't be held to a line for each.`n$($twiceItems.Output)"
     # A stock style given a configuration it didn't have: the bag it gets is reported parent and
     # item by item, as the values of an added resource are.
     $nightStyleFiles = [ordered]@{}
