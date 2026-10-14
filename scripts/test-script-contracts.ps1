@@ -3152,9 +3152,9 @@ try {
 
         # A release push (HUSHTUMBLR_RELEASE_GATE=1) also builds the bundle, last, and runs every
         # declared fixture through the pushed commit's verify-all-patches.ps1 with that bundle and
-        # the record store, which reuses a kept run only when its key (this bundle's hash among the
-        # inputs) matches and patches in full otherwise. The flag is read once and taken out of the
-        # environment. An everyday push builds no bundle and patches nothing.
+        # the record store, patching each in full (-NoReuse) and keeping the run that passes. The
+        # flag is read once and taken out of the environment. An everyday push builds no bundle
+        # and patches nothing.
         $releaseLog = Join-Path $hookRoot 'release-gate.log'
         $releaseFails = Join-Path $hookRoot 'release-gate-verify-fails.txt'
         $releaseStore = Join-Path $hookRoot 'release-gate-records'
@@ -3167,8 +3167,8 @@ try {
             "Add-Content -LiteralPath '$releaseLog' -Value ('build ' + (`$Tasks -join ','))",
             'exit 0')
         Set-Content -LiteralPath $releaseVerifier -Encoding UTF8 -Value @(
-            'param([string]$Apk, [string]$DesktopJar, [string]$WorkDir, [string]$Bundle, [string]$KeepIn)',
-            "Add-Content -LiteralPath '$releaseLog' -Value (`"verify apk=`$Apk bundle=`$Bundle keep=`$KeepIn`")",
+            'param([string]$Apk, [string]$DesktopJar, [string]$WorkDir, [string]$Bundle, [string]$KeepIn, [switch]$NoReuse)',
+            "Add-Content -LiteralPath '$releaseLog' -Value (`"verify apk=`$Apk bundle=`$Bundle keep=`$KeepIn full=`$NoReuse`")",
             "if (Test-Path -LiteralPath '$releaseFails') { exit 1 }",
             'exit 0')
         Set-Content -LiteralPath $releaseProperties -Encoding ASCII -Value 'version = 9.9.9'
@@ -3197,9 +3197,9 @@ try {
                 "A release push did not build the bundle last, in its final pass: $($builds -join ' | ')"
             Assert-True ($logged.IndexOf($builds[-1]) -lt $logged.IndexOf($verifies[0])) `
                 "A release push patched the fixtures before its build finished: $($logged -join ' | ')"
-            $expectedVerifies = @($declaredHere | ForEach-Object { "verify apk=$_ bundle=$releaseBundleHere keep=$releaseStore" })
+            $expectedVerifies = @($declaredHere | ForEach-Object { "verify apk=$_ bundle=$releaseBundleHere keep=$releaseStore full=True" })
             Assert-True ((@($verifies | Sort-Object) -join "`n") -ceq (@($expectedVerifies | Sort-Object) -join "`n")) `
-                "A release push did not run each declared fixture through verify-all-patches.ps1 with the bundle it built and the record store: $($verifies -join ' | ')"
+                "A release push did not patch each declared fixture in full through verify-all-patches.ps1 with the bundle it built, keeping it in the record store: $($verifies -join ' | ')"
 
             Set-Content -LiteralPath $releaseFails -Value 'fail' -Encoding ASCII
             $env:HUSHTUMBLR_RELEASE_GATE = '1'

@@ -172,13 +172,17 @@ function Invoke-ReleaseFixtureApply {
     $verifyAll = Join-Path $GateRoot 'scripts/verify-all-patches.ps1'
     $store = Get-AppliedRecordStore
     # A pushed commit from before records existed has no -KeepIn, and is patched without keeping.
-    $keeps = (Get-Command $verifyAll).Parameters.ContainsKey('KeepIn')
+    # A release is patched in full whatever is kept (-NoReuse), and each passing run is kept for
+    # patch-for-device.ps1: a kept run is a record and an APK anything of this user can write.
+    $verifyParameters = (Get-Command $verifyAll).Parameters
+    $keeps = $verifyParameters.ContainsKey('KeepIn')
     $work = Join-Path ([System.IO.Path]::GetTempPath()) ('hushtumblr-release-gate-' + [guid]::NewGuid().ToString('N'))
     try {
         foreach ($fixture in $Fixtures) {
             Write-Step "release push: patching $(Split-Path -Leaf $fixture) with the bundle built from $Commit"
             $arguments = @{ Apk = $fixture; DesktopJar = $desktopJar; WorkDir = $work; Bundle = $bundle }
             if ($keeps) { $arguments['KeepIn'] = $store }
+            if ($verifyParameters.ContainsKey('NoReuse')) { $arguments['NoReuse'] = $true }
             $global:LASTEXITCODE = 0
             Invoke-CommitScript -Script $verifyAll -Arguments $arguments
             if ($LASTEXITCODE -ne 0) {
