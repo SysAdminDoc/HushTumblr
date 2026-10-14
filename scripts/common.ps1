@@ -2439,9 +2439,12 @@ function Save-AppliedRecord {
     foreach ($required in @($PatchedApk, $Result)) {
         if (-not $required.CanRead -or $required.CanWrite) { throw "Nothing to keep: $($required.Name) isn't held open for reading alone." }
         # Held as Open-HeldFile holds it: while the handle shares reading alone, no writer opens.
+        # The probe opens the file where the handle is now, not the name it was opened by, which a
+        # handle that shares deleting lets the file leave for another one held properly.
+        $heldAt = Get-HeldPath -Stream $required
         $writer = $null
         try {
-            $writer = [System.IO.File]::Open($required.Name, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Write,
+            $writer = [System.IO.File]::Open($heldAt, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Write,
                 [System.IO.FileShare]::ReadWrite)
         } catch [System.IO.IOException] {
         } finally { if ($null -ne $writer) { $writer.Dispose() } }

@@ -1644,6 +1644,28 @@ try {
             $refused -clike 'Nothing to keep: *patched.bin is open in a way that lets another program write to it.' -and
             -not (Test-Path -LiteralPath (Join-Path $saveStore $saveIdentity.Key))) `
             "A patched APK read through a handle that let a second process write to it was kept: $refused $($swap.Said['loose'])"
+        # The same loose handle, sharing deletes too, with its file renamed away and another file at
+        # the name it was opened by, held as Open-HeldFile holds it. A probe of that name would find
+        # no writer gets in, and the handle's own file is still open to one.
+        $movedApk = Join-Path $saveDir 'moved.bin'
+        $loose = [System.IO.File]::Open($savedApk, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read,
+            [System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete)
+        $decoy = $null
+        $refused = $null
+        try {
+            [System.IO.File]::Move($savedApk, $movedApk)
+            [System.IO.File]::WriteAllText($savedApk, 'decoy')
+            $decoy = Open-HeldFile -Path $savedApk -What 'The decoy'
+            Save-AppliedRecord -Store $saveStore -Identity $saveIdentity -PatchedApk $loose -Result $heldSavedResult | Out-Null
+        } catch { $refused = $_.Exception.Message } finally {
+            $loose.Dispose()
+            if ($null -ne $decoy) { $decoy.Dispose() }
+            [System.IO.File]::Delete($savedApk)
+            [System.IO.File]::Move($movedApk, $savedApk)
+        }
+        Assert-True ($refused -clike 'Nothing to keep: *patched.bin is open in a way that lets another program write to it.' -and
+            -not (Test-Path -LiteralPath (Join-Path $saveStore $saveIdentity.Key))) `
+            "A patched APK read through a loose handle was kept once its file moved and a held one took its name: $refused"
         $heldSavedApk = Open-HeldFile -Path $savedApk -What 'The patched APK'
         try { Save-AppliedRecord -Store $saveStore -Identity $saveIdentity -PatchedApk $heldSavedApk -Result $heldSavedResult | Out-Null }
         finally { $heldSavedApk.Dispose() }
