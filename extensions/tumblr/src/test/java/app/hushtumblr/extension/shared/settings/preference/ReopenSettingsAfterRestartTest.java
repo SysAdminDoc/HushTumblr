@@ -126,6 +126,38 @@ public class ReopenSettingsAfterRestartTest {
         assertEquals("Links", ReopenSettingsAfterRestart.takeFresh(Setting.preferences.preferences, SystemClock.elapsedRealtime()));
     }
 
+    /**
+     * Both of the marker's commits are on the main thread on purpose: one right before the process
+     * ends, one at the start that finds it. With debug logging on each says once how long it took.
+     * A start with no marker commits nothing and says nothing.
+     */
+    @Test
+    public void theMarkersCommitsSayHowLongTheyTookOnlyWithDebugLoggingOn() {
+        LogBufferManager.clearLogBuffer();
+        LogBufferManager.clearLogBuffer();
+        ReopenSettingsAfterRestart.remember(store, "Feed", 100);
+        assertEquals("Feed", ReopenSettingsAfterRestart.takeFresh(store, 200));
+        String quiet = LogBufferManager.buildExportText();
+        assertFalse(quiet, quiet.contains("Settings restart marker"));
+
+        BaseSettings.DEBUG.save(true);
+        try {
+            assertNull(ReopenSettingsAfterRestart.takeFresh(store, 300));
+            String none = LogBufferManager.buildExportText();
+            assertFalse("a start with no marker logged a commit", none.contains("Settings restart marker"));
+
+            ReopenSettingsAfterRestart.remember(store, "Feed", 400);
+            assertEquals("Feed", ReopenSettingsAfterRestart.takeFresh(store, 500));
+            String timed = LogBufferManager.buildExportText();
+            assertEquals(timed, 1, timed.split("Settings restart marker written in \\d+ ms", -1).length - 1);
+            assertEquals(timed, 1, timed.split("Settings restart marker taken in \\d+ ms", -1).length - 1);
+        } finally {
+            BaseSettings.DEBUG.resetToDefault();
+            LogBufferManager.clearLogBuffer();
+            LogBufferManager.clearLogBuffer();
+        }
+    }
+
     @Test
     public void changesWaitingCountsSwitchesAndAPauseOnce() {
         Context app = RuntimeEnvironment.getApplication();

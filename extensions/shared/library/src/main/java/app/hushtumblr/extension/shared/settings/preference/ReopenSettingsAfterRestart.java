@@ -62,12 +62,20 @@ public final class ReopenSettingsAfterRestart {
         restarter = replacement == null ? APP_RESTART : replacement;
     }
 
-    /** Writes the marker for [page] at [now]. Committed, since the process ends right after. */
+    /**
+     * Writes the marker for [page] at [now]. Committed, since the process ends right after. The
+     * restart row's tap is on the main thread, so with debug logging on the commit says how long
+     * it took.
+     */
     public static boolean remember(SharedPreferences store, String page, long now) {
-        return store.edit()
+        long began = SystemClock.elapsedRealtime();
+        boolean written = store.edit()
                 .putString(PAGE_KEY, page == null ? "" : page)
                 .putLong(TIME_KEY, now)
                 .commit();
+        long took = SystemClock.elapsedRealtime() - began;
+        Logger.printDebug(() -> "Settings restart marker written in " + took + " ms");
+        return written;
     }
 
     /**
@@ -87,7 +95,11 @@ public final class ReopenSettingsAfterRestart {
             at = -1;
         }
         // Cleared before anything opens, so a screen that fails to open isn't retried on every start.
+        // This commit is on the main thread at a start, so it's timed like the one that wrote it.
+        long began = SystemClock.elapsedRealtime();
         store.edit().remove(PAGE_KEY).remove(TIME_KEY).commit();
+        long took = SystemClock.elapsedRealtime() - began;
+        Logger.printDebug(() -> "Settings restart marker taken in " + took + " ms");
         long age = now - at;
         if (page == null || at < 0 || age < 0 || age >= MAX_AGE_MILLIS) return null;
         return page;

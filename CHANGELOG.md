@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* **Tumblr:** With Debug logging on, the log now says how long the settings' restart marker took to save and to read back, and how long Clear diagnostic data and its undo kept the log locked.
 * **Tumblr:** With Tumblr set to a right-to-left language, the settings' page titles, section headings, search field and dialog labels now sit on the same side as the rows. They used to stay at the left.
 * **Tumblr:** The Support HushTumblr row at the bottom of the settings is now just its title. The line under it is gone, and a tap still opens the Ko-fi page.
 * **Tumblr:** The Hide Blaze prompts switch now says that the Blaze item in a post's menu stays. It hides the buttons, banners and after-post nudge, as before.

@@ -308,6 +308,43 @@ public class ClearLogBufferPreferenceTest {
         assertEquals("newer crash", LogBufferManager.readCrashReport(context));
     }
 
+    /**
+     * Clear and Undo read, delete and rewrite the crash files while holding the lock every logged
+     * line waits on. With debug logging on each says once how long it held it, so the cost can be
+     * read off a phone. With it off neither says anything.
+     */
+    @Test public void aClearAndItsUndoSayHowLongTheyHeldTheLockOnlyWithDebugLoggingOn() throws Exception {
+        LogBufferManager.appendEvent(DiagnosticCategory.OTHER, "BeforeClear", "INFO", "quiet event");
+        LogBufferManager.clearLogBuffer();
+        assertEquals(LogBufferManager.UndoResult.RESTORED, LogBufferManager.undoClear());
+        awaitWork();
+        String quiet = LogBufferManager.buildExportText();
+        assertTrue(quiet, quiet.contains("quiet event"));
+        assertFalse(quiet, quiet.contains("held its lock for"));
+
+        BaseSettings.DEBUG.save(true);
+        try {
+            LogBufferManager.clearLogBuffer();
+            awaitWork();
+            String cleared = LogBufferManager.buildExportText();
+            assertEquals(cleared, 1, count(cleared, "Diagnostic data clear held its lock for "));
+            assertEquals(LogBufferManager.UndoResult.RESTORED, LogBufferManager.undoClear());
+            awaitWork();
+            String restored = LogBufferManager.buildExportText();
+            assertTrue(restored, restored.contains("quiet event"));
+            assertEquals(restored, 1, count(restored, "Diagnostic data clear held its lock for "));
+            assertEquals(restored, 1, count(restored, "Diagnostic data undo (RESTORED) held its lock for "));
+        } finally {
+            BaseSettings.DEBUG.resetToDefault();
+        }
+    }
+
+    private static int count(String text, String part) {
+        int found = 0;
+        for (int at = text.indexOf(part); at >= 0; at = text.indexOf(part, at + part.length())) found++;
+        return found;
+    }
+
     private ClearLogBufferPreference row() {
         ClearLogBufferPreference preference = new ClearLogBufferPreference(context);
         preference.setClearAndUndoSummaries("Clear summary", "Cleared summary");
