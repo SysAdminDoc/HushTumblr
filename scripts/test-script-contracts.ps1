@@ -633,7 +633,8 @@ try {
     Assert-True $valid.Valid "A complete receipt was refused: $($valid.Reason)"
     # An unsigned universal APK's target names the bundle it was trusted on. A bundle's names none
     # (null), and a receipt from before the field leaves it out, as the first target does.
-    $vouched = Test-TestReceipt -Receipt (New-TestReceipt -Mutate { param($r) $r.targets[1].source.signedFormSha256 = ('E' * 64) })
+    $vouched = Test-TestReceipt -Receipt (New-TestReceipt -Mutate { param($r)
+            $r.targets[1].source.file = 'previous.apk'; $r.targets[1].source.signedFormSha256 = ('E' * 64) })
     Assert-True $vouched.Valid "A receipt naming the bundle that vouched for a universal APK was refused: $($vouched.Reason)"
 
     # Every fact the receipt exists to pin, put in front of the check one at a time. A gate that
@@ -653,8 +654,11 @@ try {
         'no extension payload at all'           = { param($r) $r.extension.dexPayloads = @() }
         'no target at all'                      = { param($r) $r.targets = @() }
         'an unhashed source APK'                = { param($r) $r.targets[0].source.sha256 = '' }
-        'a vouching bundle named by no hash'    = { param($r) $r.targets[1].source.signedFormSha256 = 'nope' }
-        'a vouching bundle hash in lower case'  = { param($r) $r.targets[1].source.signedFormSha256 = ('e' * 64) }
+        'a vouching bundle named by no hash'    = { param($r) $r.targets[1].source.file = 'previous.apk'; $r.targets[1].source.signedFormSha256 = 'nope' }
+        'a vouching bundle hash in lower case'  = { param($r) $r.targets[1].source.file = 'previous.apk'; $r.targets[1].source.signedFormSha256 = ('e' * 64) }
+        'a vouching bundle hash and a newline'  = { param($r) $r.targets[1].source.file = 'previous.apk'; $r.targets[1].source.signedFormSha256 = ('E' * 64) + "`n" }
+        'a vouching bundle named by a number'   = { param($r) $r.targets[1].source.file = 'previous.apk'; $r.targets[1].source.signedFormSha256 = 1234 }
+        'a bundle vouched for by another'       = { param($r) $r.targets[1].source.signedFormSha256 = ('E' * 64) }
         'a target with no binary SDK facts'      = { param($r) $r.targets[0].PSObject.Properties.Remove('sdk') }
         'a target with no stock minimum'        = { param($r) $r.targets[0].sdk.PSObject.Properties.Remove('stockMinSdk') }
         'a target with no patched minimum'      = { param($r) $r.targets[0].sdk.PSObject.Properties.Remove('patchedMinSdk') }
@@ -4959,8 +4963,14 @@ $vouchDigests = @(Get-NamedCommands $receiptAst 'Get-HeldSignedFormSha256' | For
 $vouchEntries = @($sourceEntries | Where-Object {
         $_ -match '(?m)^\s*signedFormSha256\s*=\s*if \(\$vouchedBy\) \{ \$vouchedBy\.ToUpperInvariant\(\) \} else \{ \$null \}\r?$' -and
         @([regex]::Matches($_, '(?m)^\s*signedFormSha256\s*=')).Count -eq 1 })
-Assert-True (($vouchDigests -join '; ') -ceq '$vouchedBy = Get-HeldSignedFormSha256 -Merged $patchInput' -and $vouchEntries.Count -eq 1) `
-    "build-release-receipt.ps1 doesn't name the bundle that vouched for a fixture by the held merge: $($vouchDigests -join '; ')"
+# And $vouchedBy is that and nothing else: set once and read twice, in that entry. A second
+# assignment would name the bundle by whatever it computed.
+$receiptTokens = $null
+[void][System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'build-release-receipt.ps1'), [ref]$receiptTokens, [ref]$null)
+$vouchTokens = @($receiptTokens | Where-Object { $_.Text -match 'vouchedBy' })
+Assert-True (($vouchDigests -join '; ') -ceq '$vouchedBy = Get-HeldSignedFormSha256 -Merged $patchInput' -and $vouchEntries.Count -eq 1 -and
+    $vouchTokens.Count -eq 3) `
+    "build-release-receipt.ps1 doesn't name the bundle that vouched for a fixture by the held merge: $($vouchDigests -join '; ') ($($vouchTokens.Count) uses of `$vouchedBy)"
 Assert-True ($sourceDigests.Count -eq 1 -and $sourceDigests[0] -ceq 'Get-HeldSourceSha256 -Merged $patchInput' -and
     ($receiptHashes -join '; ') -ceq 'Get-Sha256Hex -Path $Bundle' -and $sourceEntries.Count -eq 1 -and $heldSourceEntries.Count -eq 1) `
     ("build-release-receipt.ps1 doesn't name its fixtures by the held merge's input alone: $($sourceDigests + $receiptHashes -join '; ') " +
