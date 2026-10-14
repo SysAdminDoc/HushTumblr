@@ -1008,7 +1008,8 @@ function Get-KeystoreCertificate {
     <#
     .SYNOPSIS
         The SHA-256 digest of the certificate a keystore alias signs with, lower case, as apksigner
-        prints it for an APK that key signed. Read with the keytool beside the JDK's java.
+        prints it for an APK that key signed. Read with the keytool beside java, or else the one of
+        the runtime java starts.
     .DESCRIPTION
         The alias's own certificate is the first of its chain. A keystore keytool can't read as it
         is gets read as a BouncyCastle BKS store, the kind the desktop CLI makes, with the CLI's jar
@@ -1023,9 +1024,24 @@ function Get-KeystoreCertificate {
         [Parameter(Mandatory = $true)][string]$DesktopJar
     )
 
-    # keytool.exe beside java.exe, and beside a stand-in java.cmd a keytool.cmd.
-    $keytool = Join-Path (Split-Path -Parent $Java) ('keytool' + [System.IO.Path]::GetExtension($Java))
-    if (-not (Test-Path -LiteralPath $keytool -PathType Leaf)) { throw "No keytool beside $Java to read the $Alias certificate with." }
+    # keytool.exe beside java.exe, and beside a stand-in java.cmd a keytool.cmd. A launcher shim,
+    # such as Oracle's javapath, has none beside it, so then the runtime it starts says where it is.
+    $name = 'keytool' + [System.IO.Path]::GetExtension($Java)
+    $keytool = Join-Path (Split-Path -Parent $Java) $name
+    if (-not (Test-Path -LiteralPath $keytool -PathType Leaf)) {
+        $preference = $ErrorActionPreference
+        try {
+            $ErrorActionPreference = 'Continue'
+            $settings = @(& $Java '-XshowSettings:properties' '-version' 2>&1 | ForEach-Object { "$_" })
+        } finally {
+            $ErrorActionPreference = $preference
+        }
+        $javaHome = @($settings | ForEach-Object { [regex]::Match($_, '^\s*java\.home = (.+?)\s*$') } | Where-Object { $_.Success } | Select-Object -First 1)
+        if ($javaHome.Count -eq 1) { $keytool = Join-Path (Join-Path $javaHome[0].Groups[1].Value 'bin') $name }
+    }
+    if (-not (Test-Path -LiteralPath $keytool -PathType Leaf)) {
+        throw "No keytool beside $Java or in the bin folder of the runtime it starts, to read the $Alias certificate with."
+    }
     if (-not (Test-Path -LiteralPath $Keystore -PathType Leaf)) { throw "No keystore at $Keystore to read the $Alias certificate from." }
     $variable = 'HUSHTUMBLR_KEYTOOL_STOREPASS'
     $saved = [Environment]::GetEnvironmentVariable($variable, [EnvironmentVariableTarget]::Process)

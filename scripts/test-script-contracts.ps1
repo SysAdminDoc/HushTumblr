@@ -5089,7 +5089,8 @@ foreach ($name in @('patch-for-device.ps1', 'build-release-receipt.ps1', 'verify
 }
 # patch-for-device.ps1 holds the APK it hands on to the certificate of -KeyAlias in -Keystore: once,
 # by the path its handle is at, after the report check and before the copy to -OutputApk and the
-# install. Each cut copy has to fail the rule.
+# install. The certificate is read off the keystore by the path it's held at, before apksigner or
+# the CLI signs with it. Each cut copy has to fail the rule.
 $checksDeviceSigner = {
     param([string]$Text)
     $ast = [System.Management.Automation.Language.Parser]::ParseInput($Text, [ref]$null, [ref]$null)
@@ -5097,11 +5098,16 @@ $checksDeviceSigner = {
                     $node.GetCommandName() -eq $Name }, $true)) }
     $signerReads = & $named 'Get-ApkSigners'
     $certificateReads = & $named 'Get-KeystoreCertificate'
-    $held = @($ast.FindAll({ param($node) $node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
-                $node.Left.Extent.Text -ceq '$out' -and $node.Right.Extent.Text -ceq 'Get-HeldPath -Stream $outHandle' }, $true))
+    $assigned = { param([string]$Left, [string]$Right) @($ast.FindAll({ param($node) $node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
+                    $node.Left.Extent.Text -ceq $Left -and $node.Right.Extent.Text -ceq $Right }, $true)) }
+    $held = & $assigned '$out' 'Get-HeldPath -Stream $outHandle'
+    $keystoreHeld = & $assigned '$Keystore' 'Get-HeldPath -Stream $keystoreHeld'
+    $earlyRead = $Text.IndexOf('if (Test-Path -LiteralPath $Keystore -PathType Leaf) { . $readKeystore }')
+    $signs = @($Text.IndexOf('& $apksigner sign '), $Text.IndexOf("'--keystore', `$Keystore"))
     $reportCheck = Get-FirstCommandOffset $ast { param($node) $node.GetCommandName() -eq 'Test-PatchingReport' }
     $install = Get-FirstCommandOffset $ast { param($node) $node.GetCommandName() -eq 'Install-HushAndroidApk' }
     $copy = $Text.IndexOf('$outputReservation.Write(')
+    $keystoreHeld.Count -eq 1 -and $earlyRead -ge 0 -and @($signs | Where-Object { $_ -le $earlyRead }).Count -eq 0 -and
     $signerReads.Count -eq 1 -and $certificateReads.Count -eq 1 -and $held.Count -eq 1 -and $reportCheck -ge 0 -and $install -ge 0 -and $copy -ge 0 -and
         $signerReads[0].Extent.Text -cmatch '^Get-ApkSigners -Apk \$out -Apksigner ' -and
         $certificateReads[0].Extent.Text -cmatch '^Get-KeystoreCertificate -Keystore \$Keystore -Alias \$KeyAlias ' -and
@@ -5112,7 +5118,9 @@ $deviceText = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'patch-for-device.
 Assert-True (& $checksDeviceSigner $deviceText) `
     "patch-for-device.ps1 doesn't hold the APK it hands on to the keystore alias's certificate, by its held path, before the copy and the install."
 foreach ($cut in @(@{ From = 'Get-ApkSigners -Apk $out '; To = 'Get-ApkSigners -Apk $recorded.PatchedApk ' },
-        @{ From = '$keyCertificate = Get-KeystoreCertificate '; To = '$keyCertificate = Get-Item ' })) {
+        @{ From = '$keyCertificate = Get-KeystoreCertificate '; To = '$keyCertificate = Get-Item ' },
+        @{ From = 'if (Test-Path -LiteralPath $Keystore -PathType Leaf) { . $readKeystore }'; To = '' },
+        @{ From = '$Keystore = Get-HeldPath -Stream $keystoreHeld'; To = '$Keystore = $Keystore' })) {
     Assert-True ($deviceText.Contains($cut.From) -and -not (& $checksDeviceSigner $deviceText.Replace($cut.From, $cut.To))) `
         "The device signer rule passed a copy of patch-for-device.ps1 with '$($cut.From)' made '$($cut.To)'."
 }
@@ -5558,7 +5566,7 @@ try {
         'if /i "%~nx4"=="ResourceTableCheck.java" goto resources',
         'if /i "%~nx4"=="DexDiff.java" goto dexdiff',
         'if /i "%~nx4"=="HostReferences.java" goto references',
-        'set "OUT=" & set "RESULT=" & set "LAST=" & set "PREV=" & set "FORCED=0" & set "ENABLED="',
+        'set "OUT=" & set "RESULT=" & set "LAST=" & set "PREV=" & set "FORCED=0" & set "ENABLED=" & set "SIGNS=0"',
         'shift',
         'shift',
         'rem patch-for-device.ps1 hands the CLI one argument file, a quoted value a line with',
@@ -5585,6 +5593,7 @@ try {
         'if "!PREV!"=="-e" set "ENABLED=!V!"',
         'if "!PREV!"=="-O" >>"!HERE!options.log" echo !ENABLED!: !V!',
         'if "!V!"=="-f" set "FORCED=1"',
+        'if "!V!"=="--keystore" set "SIGNS=1"',
         'set "PREV=!V!"',
         'set "LAST=!V!"',
         'exit /b 0',
@@ -5608,6 +5617,9 @@ try {
         'copy /y "!SRC!.result.json" "!RESULT!" >nul || exit /b 3',
         'copy /y "!HERE!patched.apk" "!OUT!" >nul || exit /b 4',
         'copy /y "!SRC!.patched.txt" "!OUT!.xmltree" >nul || exit /b 5',
+        'rem Given a keystore it signs with that alias, which the stand-in apksigner reads off a .signer file.',
+        'del "!OUT!.signer" >nul 2>&1',
+        'if "!SIGNS!"=="1" >"!OUT!.signer" echo stand-in alias',
         'exit /b 0',
         'rem MergeSplits.java <split directory> <merged.apk>. The base APK the scripts unpacked into that',
         'rem directory names the fixture it came from. It prints the digest of what it wrote on standard',
@@ -5693,11 +5705,18 @@ try {
     # says how this one is signed: stand-in-unsigned and stand-in-tampered don't verify,
     # stand-in-foreign is signed by another certificate alone, stand-in-second-signer by another
     # one beside Tumblr's, and stand-in-stamp carries a Source Stamp beside Tumblr's, which is the
-    # store's certificate and doesn't count. Without a marker the answer is Tumblr's signer.
+    # store's certificate and doesn't count. stand-in-late-signer adds one that sorts after the
+    # alias's, and stand-in-unverified names the alias's signer but doesn't verify. Without a
+    # marker the answer is the alias's certificate for an APK with a .signer file beside it, which
+    # the stand-in signers leave, and Tumblr's otherwise.
     # It signs too: patch-for-device.ps1 signs a kept gate run with it. "sign ... --out <apk> <in>"
     # copies the input (or apksigner-swap.apk, when a case leaves one beside it) and the manifest
-    # beside the input, and notes the call in apksigner.log.
+    # beside the input, notes the call in apksigner.log and leaves the .signer file, unless a case
+    # leaves apksigner-unmarked.txt behind. A case that leaves apksigner-swaps-keystore.txt has it
+    # try to copy that over the keystore it was handed first, and log whether it could.
     $foreignSigner = '0123456789abcdef' * 4
+    $aliasSigner = '89abcdef01234567' * 4
+    $lateSigner = 'fedcba9876543210' * 4
     Set-Content -LiteralPath (Join-Path $tools 'apksigner.bat') -Encoding ASCII -Value @(
         '@echo off',
         'setlocal EnableExtensions EnableDelayedExpansion',
@@ -5713,49 +5732,86 @@ try {
         'findstr /l /c:"stand-in-unsigned" "!APK!" >nul 2>&1 && (echo DOES NOT VERIFY& echo ERROR: Missing META-INF/MANIFEST.MF& exit /b 1)',
         ('findstr /l /c:"stand-in-tampered" "!APK!" >nul 2>&1 && (echo DOES NOT VERIFY& echo ERROR: APK Signature Scheme v2 ' +
             'signer #1: APK integrity check failed. CHUNKED_SHA256 digest mismatch.& exit /b 1)'),
+        ("findstr /l /c:`"stand-in-unverified`" `"!APK!`" >nul 2>&1 && (echo Signer #1 certificate SHA-256 digest: $aliasSigner& " +
+            'echo DOES NOT VERIFY& echo ERROR: APK Signature Scheme v2 signer #1: malformed additional attribute& exit /b 1)'),
         "findstr /l /c:`"stand-in-foreign`" `"!APK!`" >nul 2>&1 && (echo Signer #1 certificate SHA-256 digest: $foreignSigner& exit /b 0)",
+        'if exist "!APK!.signer" goto alias',
         "echo Signer #1 certificate SHA-256 digest: $($releaseSigner[0])",
+        'goto more',
+        ':alias',
+        "echo Signer #1 certificate SHA-256 digest: $aliasSigner",
+        ':more',
         "findstr /l /c:`"stand-in-second-signer`" `"!APK!`" >nul 2>&1 && echo Signer #2 certificate SHA-256 digest: $foreignSigner",
+        "findstr /l /c:`"stand-in-late-signer`" `"!APK!`" >nul 2>&1 && echo Signer #2 certificate SHA-256 digest: $lateSigner",
         "findstr /l /c:`"stand-in-stamp`" `"!APK!`" >nul 2>&1 && echo Source Stamp Signer certificate SHA-256 digest: $foreignSigner",
         'exit /b 0',
         ':sign',
-        'set "OUT=" & set "LAST=" & set "PREV=" & set "ALIAS="',
+        'set "OUT=" & set "LAST=" & set "PREV=" & set "ALIAS=" & set "KS="',
         ':next',
         'shift',
         'if "%~1"=="" goto signed',
         'if "!PREV!"=="--out" set "OUT=%~1"',
         'if "!PREV!"=="--ks-key-alias" set "ALIAS=%~1"',
+        'if "!PREV!"=="--ks" set "KS=%~1"',
         'set "PREV=%~1"',
         'set "LAST=%~1"',
         'goto next',
         ':signed',
         '>>"!HERE!apksigner.log" echo sign alias=!ALIAS! in=!LAST! out=!OUT!',
+        'if not exist "!HERE!apksigner-swaps-keystore.txt" goto copied',
+        'copy /y "!HERE!apksigner-swaps-keystore.txt" "!KS!" >nul 2>&1 && (>>"!HERE!apksigner.log" echo keystore swapped) || (>>"!HERE!apksigner.log" echo keystore held)',
+        ':copied',
         'set "FROM=!LAST!"',
         'if exist "!HERE!apksigner-swap.apk" set "FROM=!HERE!apksigner-swap.apk"',
         'copy /y "!FROM!" "!OUT!" >nul || exit /b 3',
         'if exist "!LAST!.xmltree" copy /y "!LAST!.xmltree" "!OUT!.xmltree" >nul',
+        'del "!OUT!.signer" >nul 2>&1',
+        'if not exist "!HERE!apksigner-unmarked.txt" >"!OUT!.signer" echo stand-in alias',
         'exit /b 0')
     # A keytool beside the stand-in java, which patch-for-device.ps1 reads the signing alias's
-    # certificate with (Get-KeystoreCertificate). It prints Tumblr's signer the way keytool -list -v
-    # prints a fingerprint, so what the stand-in apksigner signs is that key's, and notes what it was
-    # handed, with the password it found in the environment, in keytool.log. A case that leaves
-    # keytool-fails.txt behind gets the error a wrong password brings.
+    # certificate with (Get-KeystoreCertificate). It prints the alias's own certificate, which isn't
+    # Tumblr's, the way keytool -list -v prints a fingerprint, and notes what it was handed, with the
+    # password it found in the environment, in keytool.log. A case that leaves keytool-fails.txt
+    # behind gets the error a wrong password brings, and one that leaves keytool-bks-only.txt has a
+    # keystore it reads only as BKS through the BouncyCastle provider.
     $keytoolLog = Join-Path $tools 'keytool.log'
     $keytoolFlag = Join-Path $tools 'keytool-fails.txt'
+    $keytoolBksFlag = Join-Path $tools 'keytool-bks-only.txt'
     Set-Content -LiteralPath (Join-Path $tools 'keytool.cmd') -Encoding ASCII -Value @(
         '@echo off',
         '>>"%~dp0keytool.log" echo %* pass=%HUSHTUMBLR_KEYTOOL_STOREPASS%',
         'if exist "%~dp0keytool-fails.txt" (echo keytool error: java.io.IOException: keystore password was incorrect& exit /b 1)',
+        'if not exist "%~dp0keytool-bks-only.txt" goto read',
+        'echo %* | findstr /l /c:"-storetype BKS -providerclass org.bouncycastle.jce.provider.BouncyCastleProvider -providerpath " >nul && goto read',
+        'echo keytool error: java.io.IOException: Invalid keystore format',
+        'exit /b 1',
+        ':read',
         'echo Alias name: sideload',
         'echo Certificate chain length: 1',
         'echo Certificate[1]:',
         'echo Owner: CN=Stand-in',
         'echo Certificate fingerprints:',
         "echo 	 SHA1: $(@('00') * 20 -join ':')",
-        "echo 	 SHA256: $([regex]::Replace($releaseSigner[0].ToUpperInvariant(), '(..)(?!$)', '$1:'))",
+        "echo 	 SHA256: $([regex]::Replace($aliasSigner.ToUpperInvariant(), '(..)(?!$)', '$1:'))",
         'exit /b 0')
     $standInKeystore = Join-Path $tools 'sideload.jks'
     Set-Content -LiteralPath $standInKeystore -Value 'stand-in keystore' -Encoding ASCII
+    # A java launcher with no keytool beside it, such as Oracle's javapath shim: the keytool read is
+    # the one in the bin folder of the runtime it names, and with none named there's no keytool.
+    $shimHome = Join-Path $tools 'shim-runtime'
+    New-Item -ItemType Directory -Force -Path (Join-Path $shimHome 'bin'), (Join-Path $tools 'shim'), (Join-Path $tools 'bare') | Out-Null
+    Copy-Item -LiteralPath (Join-Path $tools 'keytool.cmd') -Destination (Join-Path $shimHome 'bin\keytool.cmd')
+    Set-Content -LiteralPath (Join-Path $tools 'shim\java.cmd') -Encoding ASCII -Value @(
+        '@echo off',
+        "if /i `"%~1`"==`"-XshowSettings:properties`" (echo Property settings:& echo     java.home = $shimHome& echo     java.version = 21) 1>&2",
+        'exit /b 0')
+    Set-Content -LiteralPath (Join-Path $tools 'bare\java.cmd') -Encoding ASCII -Value @('@echo off', 'exit /b 0')
+    $shimCertificate = Get-KeystoreCertificate -Keystore $standInKeystore -Alias 'sideload' -Password 'shim-password' -Java (Join-Path $tools 'shim\java.cmd') -DesktopJar $stubJar
+    Assert-True ($shimCertificate -ceq $aliasSigner -and
+        (Get-Content -LiteralPath (Join-Path $shimHome 'bin\keytool.log') -Raw) -like '*-alias sideload -storepass:env HUSHTUMBLR_KEYTOOL_STOREPASS pass=shim-password*') `
+        "The alias's certificate wasn't read with the keytool of the runtime a java launcher shim starts: '$shimCertificate'"
+    Assert-Throws { Get-KeystoreCertificate -Keystore $standInKeystore -Alias 'sideload' -Password 'p' -Java (Join-Path $tools 'bare\java.cmd') -DesktopJar $stubJar } `
+        '*No keytool beside *bare\java.cmd or in the bin folder of the runtime it starts*' 'A java with no keytool beside it or in its runtime found one.'
     # And a zipalign beside them, which every patched APK is held to for devices with 16 KB pages
     # (Assert-PageAlignment). It notes what it was asked in zipalign.log and passes the APK, unless
     # a case leaves zipalign-fails.txt behind. The real one is run against real archives in
@@ -6473,13 +6529,16 @@ try {
                 "patch-for-device.ps1 took a signed APK with $($swapped.What)."
         }
         # Whatever its entries, the signed APK has to be the alias's key's alone: signed by another
-        # key, by another one beside it, or not at all, it's refused, while a Source Stamp beside the
-        # alias's signature doesn't count. The stand-in apksigner reads the marker in an entry name.
-        $notAlone = "*The signed APK isn't signed by the sideload key of sideload.jks ($($releaseSigner[0])) alone: apksigner says"
+        # key, by another one beside it (sorting before the alias's or after), not at all, or by the
+        # alias's key without verifying, it's refused, while a Source Stamp beside the alias's
+        # signature doesn't count. The stand-in apksigner reads the marker in an entry name.
+        $notAlone = "*The signed APK isn't signed by the sideload key of sideload.jks ($aliasSigner) alone: apksigner says"
         foreach ($signed in @(
                 @{ Marker = 'stand-in-foreign.RSA'; Says = "$notAlone Signer #1 certificate SHA-256 digest: $foreignSigner*" },
                 @{ Marker = 'stand-in-second-signer.RSA'; Says = "$notAlone*Signer #2 certificate SHA-256 digest: $foreignSigner*" },
+                @{ Marker = 'stand-in-late-signer.RSA'; Says = "$notAlone*Signer #2 certificate SHA-256 digest: $lateSigner*" },
                 @{ Marker = 'stand-in-unsigned.SF'; Says = "$notAlone DOES NOT VERIFY*" },
+                @{ Marker = 'stand-in-unverified.RSA'; Says = "$notAlone Signer #1 certificate SHA-256 digest: $aliasSigner DOES NOT VERIFY*" },
                 @{ Marker = 'stand-in-stamp.RSA'; Says = '' })) {
             $entries = [ordered]@{}
             foreach ($name in $keptEntries.Keys) { if ($name -cne 'stamp-cert-sha256') { $entries[$name] = $keptEntries[$name] } }
@@ -6501,6 +6560,43 @@ try {
             }
         }
     } finally { Remove-Item -LiteralPath $signSwap -Force -ErrorAction SilentlyContinue }
+    # An APK still signed as Tumblr's, which the stand-in apksigner hands back when it leaves no
+    # .signer file, isn't the alias's.
+    $unmarkedFlag = Join-Path $tools 'apksigner-unmarked.txt'
+    Set-Content -LiteralPath $unmarkedFlag -Value 'on' -Encoding ASCII
+    try {
+        Assert-Throws { & (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6> $null } `
+            "$notAlone Signer #1 certificate SHA-256 digest: $($releaseSigner[0])*" 'patch-for-device.ps1 took a kept APK still signed by Tumblr''s key.'
+    } finally { Remove-Item -LiteralPath $unmarkedFlag -Force -ErrorAction SilentlyContinue }
+    # The keystore is held from the certificate read, before anything signs, to the end of the run:
+    # signing can't write another one over it. A keystore keytool reads only as BKS is read through
+    # the desktop jar's BouncyCastle provider, with the password in the environment for both tries,
+    # and a variable set before the run is put back.
+    $keystoreSwap = Join-Path $tools 'apksigner-swaps-keystore.txt'
+    Set-Content -LiteralPath $keystoreSwap -Value 'another keystore' -Encoding ASCII
+    Set-Content -LiteralPath $keytoolBksFlag -Value 'on' -Encoding ASCII
+    Remove-Item -LiteralPath $apksignerLog, $keytoolLog -Force -ErrorAction SilentlyContinue
+    $storepassBefore = $env:HUSHTUMBLR_KEYTOOL_STOREPASS
+    try {
+        $env:HUSHTUMBLR_KEYTOOL_STOREPASS = 'set before the run'
+        $env:HUSHTUMBLR_SIDELOAD_KEYSTORE_PASSWORD = 'stand-in-password'
+        $said = @(& (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6>&1 | ForEach-Object { "$_" })
+        $storepassAfter = $env:HUSHTUMBLR_KEYTOOL_STOREPASS
+    } finally {
+        $env:HUSHTUMBLR_KEYTOOL_STOREPASS = $storepassBefore
+        $env:HUSHTUMBLR_SIDELOAD_KEYSTORE_PASSWORD = $passwordBefore
+        Remove-Item -LiteralPath $keystoreSwap, $keytoolBksFlag -Force -ErrorAction SilentlyContinue
+    }
+    $keytoolCalls = @(Get-Content -LiteralPath $keytoolLog -ErrorAction SilentlyContinue)
+    Assert-True ((Test-Path -LiteralPath ([string]$said[-1]) -PathType Leaf) -and
+        @(Get-Content -LiteralPath $apksignerLog) -ccontains 'keystore held' -and
+        (Get-Content -LiteralPath $standInKeystore -Raw).Trim() -ceq 'stand-in keystore') `
+        "Signing a kept APK could write over the keystore its certificate was read from: $(@(Get-Content -LiteralPath $apksignerLog -ErrorAction SilentlyContinue) -join ' | ')"
+    Assert-True ($keytoolCalls.Count -eq 2 -and $keytoolCalls[0] -cnotlike '*-storetype*' -and
+        $keytoolCalls[1] -clike ('-list -v -keystore *\sideload.jks* -alias sideload -storepass:env HUSHTUMBLR_KEYTOOL_STOREPASS -storetype BKS ' +
+            "-providerclass org.bouncycastle.jce.provider.BouncyCastleProvider -providerpath *$(Split-Path -Leaf $stubJar)* pass=stand-in-password") -and
+        $storepassAfter -ceq 'set before the run') `
+        "A keystore keytool reads only as BKS wasn't read through the provider, or the password variable wasn't put back: '$storepassAfter' $($keytoolCalls -join ' | ')"
     $keptDevice['NoReuse'] = $true
     Remove-Item -LiteralPath $javaLog, $apksignerLog, $resourceStock -Force -ErrorAction SilentlyContinue
     $said = @(& (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6>&1 | ForEach-Object { "$_" })
@@ -6530,6 +6626,8 @@ try {
             ('*keytool could not read the sideload certificate of sideload.jks: as it is, keytool error: java.io.IOException: keystore password ' +
                 'was incorrect; as BKS, keytool error:*') "patch-for-device.ps1 went on without the alias's certificate."
     } finally { Remove-Item -LiteralPath $keytoolFlag -Force -ErrorAction SilentlyContinue }
+    Assert-True ([Environment]::GetEnvironmentVariable('HUSHTUMBLR_KEYTOOL_STOREPASS', [EnvironmentVariableTarget]::Process) -ceq $storepassBefore) `
+        'A keytool that failed left the keystore password in HUSHTUMBLR_KEYTOOL_STOREPASS.'
     $noKeystore = @{} + $keptDevice
     $noKeystore['Keystore'] = Join-Path $tools 'no-such.jks'
     Assert-Throws { & (Join-Path $PSScriptRoot 'patch-for-device.ps1') @noKeystore 6> $null } '*No keystore at *no-such.jks to read the sideload certificate from.*' `

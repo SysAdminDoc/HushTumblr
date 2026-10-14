@@ -37,8 +37,10 @@
     as a warning naming it a target limitation, and is never rewritten.
 
     Whichever signed it, the APK has to verify with apksigner as signed by -KeyAlias's certificate
-    in -Keystore and no other, read with the keytool beside java (a BKS store through the desktop
-    CLI's BouncyCastle provider), before it's copied to -OutputApk or installed.
+    in -Keystore and no other, read with the keytool of the runtime java starts (a BKS store through
+    the desktop CLI's BouncyCastle provider), before it's copied to -OutputApk or installed. The
+    keystore is held from that read, before anything signs, to the end of the run, so nothing can
+    swap the key between signing and the check.
 
 .EXAMPLE
     scripts/patch-for-device.ps1 -Serial $env:HUSHTUMBLR_DEVICE_SERIAL
@@ -138,6 +140,7 @@ $outHandle = $null
 $resultHandle = $null
 $reservedHandle = $null
 $bundleHeld = $null
+$keystoreHeld = $null
 try {
 if ($OutputApk) {
     $reservedPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputApk)
@@ -171,6 +174,18 @@ if ([string]::IsNullOrEmpty($keystorePassword)) {
     $keystorePassword = 'sideload'
     Write-Host "[device] $passwordVariable is unset; using the documented local test-key fallback"
 }
+# The alias's certificate, off the keystore held from then to the end of the run, so the key that
+# signs the APK and the certificate the check below holds it to come from the same bytes. Read
+# here, before anything signs, or at the check when the CLI made the keystore on its first run.
+# Dot-sourced, so what it sets is the script's.
+$readKeystore = {
+    if (Test-Path -LiteralPath $Keystore -PathType Leaf) {
+        $keystoreHeld = Open-HeldFile -Path $Keystore -What 'The keystore'
+        $Keystore = Get-HeldPath -Stream $keystoreHeld
+    }
+    $keyCertificate = Get-KeystoreCertificate -Keystore $Keystore -Alias $KeyAlias -Password $keystorePassword -Java $Java -DesktopJar $DesktopJar
+}
+if (Test-Path -LiteralPath $Keystore -PathType Leaf) { . $readKeystore }
 $version = Get-BundleVersion -Root $root
 $bundle = Get-ReleaseBundlePath -Root $root -Version $version
 if (-not (Test-Path $bundle)) { throw "No bundle at $bundle. Build it first: :patches:generatePatchesList then :patches:buildAndroid, through the governor." }
@@ -376,7 +391,7 @@ if (-not $validation.Valid) { throw "Patching did not produce a complete APK: $(
 # The kept-run comparison above skips the signature files and the v2 and v3 blocks aren't entries,
 # and the CLI's output was written to a path nothing held, so another key's build, or an unsigned
 # one, would pass everything else here.
-$keyCertificate = Get-KeystoreCertificate -Keystore $Keystore -Alias $KeyAlias -Password $keystorePassword -Java $Java -DesktopJar $DesktopJar
+if ($null -eq $keystoreHeld) { . $readKeystore }
 $signedBy = Get-ApkSigners -Apk $out -Apksigner (Resolve-Apksigner -Aapt2 $Aapt2)
 if (-not $signedBy.Verified -or (@($signedBy.Signers) -join ', ') -cne $keyCertificate) {
     throw "The signed APK isn't signed by the $KeyAlias key of $(Split-Path -Leaf $Keystore) ($keyCertificate) alone: apksigner says $($signedBy.Said)"
@@ -471,7 +486,7 @@ try {
 } finally {
     if ($outputReservation) { $outputReservation.Dispose() }
     # Held until every reader is done, and a held file can't be deleted.
-    foreach ($held in @($outHandle, $resultHandle, $reservedHandle, $bundleHeld)) { if ($null -ne $held) { $held.Dispose() } }
+    foreach ($held in @($outHandle, $resultHandle, $reservedHandle, $bundleHeld, $keystoreHeld)) { if ($null -ne $held) { $held.Dispose() } }
     Close-AppliedRecord -Record $recorded
     Close-MergedApk -Merged $patchInput
     # These are this run's paths only. A missing or replaced owner marker fails closed.
