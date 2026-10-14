@@ -4890,7 +4890,7 @@ Assert-True ($sourceDigests.Count -eq 1 -and $sourceDigests[0] -ceq 'Get-HeldSou
 # It never reads a kept run: a kept run is a record and an APK any program of the same user can
 # write together, so it can't show which bundle made the APK, and the receipt is what a release is
 # trusted on. Every fixture is patched and checked here, with no condition around any of the three.
-$receiptReuse = @(foreach ($name in 'Get-AppliedRecordStore', 'Get-AppliedRecordKey', 'Find-AppliedRecord', 'Close-AppliedRecord', 'Save-AppliedRecord') {
+$receiptReuse = @(foreach ($name in 'Get-AppliedRecordStore', 'Get-AppliedRecordKey', 'Find-AppliedRecord', 'Get-AppliedRecords', 'Close-AppliedRecord', 'Save-AppliedRecord') {
         Get-NamedCommands $receiptAst $name | ForEach-Object { $_.Extent.Text } })
 $receiptReuse += @($receiptAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.VariableExpressionAst] -and
             @('recorded', 'AppliedDir') -contains $node.VariablePath.UserPath }, $true) | ForEach-Object { $_.Extent.Text })
@@ -4907,14 +4907,16 @@ Assert-True ($receiptReuse.Count -eq 0 -and $receiptRuns.Count -eq 3 -and $guard
     ("build-release-receipt.ps1 reads a kept run, or doesn't patch and check every fixture itself: " +
         "$($receiptReuse + $guardedRuns -join '; ') ($($receiptRuns.Count) of 3 runs found)")
 # The release stage hands the receipt only parameters it has, so a release doesn't stop at a
-# parameter the receipt dropped (-AppliedDir went with the kept-run reuse).
+# parameter the receipt dropped (-AppliedDir went with the kept-run reuse). Each is named in the
+# call, so none can hide in a splatted table.
 $receiptParameters = @($receiptAst.ParamBlock.Parameters | ForEach-Object { $_.Name.VariablePath.UserPath })
 $releaseAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'release/release.ps1'), [ref]$null, [ref]$null)
 $receiptCalls = @($releaseAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] -and
             $node.Extent.Text -match "^&\s*\(Join-Path \`$Root 'scripts/build-release-receipt\.ps1'\)" }, $true))
 $unknownToReceipt = @($receiptCalls | ForEach-Object { $_.CommandElements } |
-    Where-Object { $_ -is [System.Management.Automation.Language.CommandParameterAst] -and $receiptParameters -notcontains $_.ParameterName } |
-    ForEach-Object { $_.ParameterName })
+    Where-Object { ($_ -is [System.Management.Automation.Language.CommandParameterAst] -and $receiptParameters -notcontains $_.ParameterName) -or
+        ($_ -is [System.Management.Automation.Language.VariableExpressionAst] -and $_.Splatted) } |
+    ForEach-Object { $_.Extent.Text })
 Assert-True ($receiptCalls.Count -eq 1 -and $unknownToReceipt.Count -eq 0) `
     "release.ps1 doesn't call build-release-receipt.ps1 once with parameters it has: $($unknownToReceipt -join ', ')"
 # The verifier holds whatever merge it compares to the APKs that were checked, a merge it was
@@ -6177,7 +6179,11 @@ try {
     # HUSHTUMBLR_APPLY_RECORDS names, the receipt still patches each one, and the release check
     # takes what it writes. The stand-in aapt2 reads a manifest written beside an APK and a record
     # keeps the APK alone, so the manifest the CLI stand-in wrote goes beside each kept APK here for
-    # patch-for-device.ps1 below. A real aapt2 reads the APK itself.
+    # patch-for-device.ps1 below. A real aapt2 reads the APK itself. Nor can the receipt be handed
+    # a store: the parent of the commit that dropped reuse read kept runs only from -AppliedDir.
+    $storeParameters = @((Get-Command (Join-Path $PSScriptRoot 'build-release-receipt.ps1')).Parameters.Keys |
+        Where-Object { $_ -match 'Applied|Record|Kept|Keep|Reuse|Store' })
+    Assert-True ($storeParameters.Count -eq 0) "build-release-receipt.ps1 takes a store of kept runs: -$($storeParameters -join ', -')"
     $receiptStore = Join-Path $releaseRoot 'applied-records-receipt'
     foreach ($build in $builtBuilds) {
         $said = Invoke-VerifyAll -Apk $fixturePaths[$build] -KeepIn $receiptStore -Force:($build -eq $newerBuild)
