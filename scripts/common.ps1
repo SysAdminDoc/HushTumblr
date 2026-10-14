@@ -1192,7 +1192,7 @@ function Get-MergedApk {
         # What the merge was made from, by the digests taken through the handles that were checked.
         # A plain APK's facts can name the bundle that vouched for it, so it is named by its copy.
         $inputIdentity = if ($opened.Plain) { Get-InputIdentity -Plain $merge.Sha256 } else {
-            Get-InputIdentity -Apks @($facts.Apks | ForEach-Object { [string]$_.Sha256 }) }
+            Get-InputIdentity -Apks @($facts.Apks) }
         $recordFacts = [ordered]@{
             input        = $Apk
             package      = $PackageName
@@ -1273,33 +1273,42 @@ function Get-InputIdentity {
     <#
     .SYNOPSIS
         What a merge was made from, as one SHA-256 in lower-case hex: a plain APK by the digest of
-        its copy, a bundle by the digests of its APKs.
+        its copy, a bundle by the name and digest of each of its APKs.
     .DESCRIPTION
         A plain APK is what the CLI patches, byte for byte. A bundle's merge is named by the APKs it
-        was made from, in digest order, rather than by the merge's own digest, which nothing has
+        was made from, in name order, rather than by the merge's own digest, which nothing has
         shown the merger keeps from one run to the next; the merger itself is part of the desktop
-        CLI, which the kept-run key names on its own. Give exactly one of -Plain or -Apks.
+        CLI, which the kept-run key names on its own. The names count because the merger orders
+        and names its modules by them (MergeSplits.java), so the same APKs under other names can
+        merge to other bytes. -Apks takes the Facts.Apks entries Assert-SplitsAuthentic returns,
+        each with the Name it was unpacked to and its Sha256. Give exactly one of -Plain or -Apks.
     #>
     param(
         [string]$Plain,
-        [string[]]$Apks
+        [object[]]$Apks
     )
 
     # @($null) holds one item, so the list is counted once the empty ones are out.
-    $listed = @($Apks | Where-Object { $_ })
+    $listed = @($Apks | Where-Object { $null -ne $_ })
     if ([bool]$Plain -eq ($listed.Count -gt 0)) { throw 'Give an input identity -Plain or -Apks, not both or neither.' }
-    $digests = if ($Plain) { @($Plain) } else { $listed }
+    $digests = if ($Plain) { @($Plain) } else { @($listed | ForEach-Object { [string]$_.Sha256 }) }
     foreach ($digest in @($digests)) {
         if ($digest -cnotmatch '^[0-9a-f]{64}$') { throw "Not a SHA-256 in lower-case hex: $digest" }
     }
     $lines = New-Object System.Collections.Generic.List[string]
-    $lines.Add('hushtumblr input 1')
+    $lines.Add('hushtumblr input 2')
     if ($Plain) {
         $lines.Add("plain $Plain")
     } else {
-        $sorted = [string[]]@($digests)
-        [System.Array]::Sort($sorted, [System.StringComparer]::Ordinal)
-        foreach ($digest in $sorted) { $lines.Add("apk $digest") }
+        $byName = New-Object 'System.Collections.Generic.SortedDictionary[string,string]' ([System.StringComparer]::Ordinal)
+        foreach ($apk in $listed) {
+            $name = [string]$apk.Name
+            # The names Expand-SplitBundle unpacks to, so a line can't run into the next.
+            if ($name -cnotmatch '^[A-Za-z0-9][A-Za-z0-9._-]*\.apk$') { throw "Not the name of an unpacked APK: $name" }
+            if ($byName.ContainsKey($name)) { throw "The input names $name twice." }
+            $byName[$name] = [string]$apk.Sha256
+        }
+        foreach ($pair in $byName.GetEnumerator()) { $lines.Add("apk $($pair.Value) $($pair.Key)") }
     }
     $sha = [System.Security.Cryptography.SHA256]::Create()
     try {
@@ -2081,13 +2090,15 @@ function Find-AppliedRecord {
         The record kept under -Key, or $null when there is none or it doesn't hold together.
     .DESCRIPTION
         A record counts only when its record.json names this key, and its patched APK and result
-        report are there with the APK hashing to what was recorded. Anything less is said and
-        passed over, so the caller patches in full.
+        report are there, each hashing to what was recorded. Anything less is said and passed
+        over, so the caller patches in full.
 
-        The patched APK comes back held (Open-HeldFile): hashed through a handle nothing can write
-        past, and kept open so the signer, the manifest and alignment reads and the install get the
-        bytes that were hashed. PatchedApk is the path that handle is at. The caller lets go of it
-        with Close-AppliedRecord, in a finally. What the hold doesn't do is say who wrote the
+        The patched APK and the result report come back held (Open-HeldFile): hashed through a
+        handle nothing can write past, and kept open so the report check, the signer and the
+        manifest and alignment reads get the bytes that were hashed. PatchedApk and Result are the
+        paths those handles are at. The signed copy patch-for-device installs is apksigner's own
+        output, which this doesn't hold. The caller lets go of both with Close-AppliedRecord, in a
+        finally. What the hold doesn't do is say who wrote the
         record: the store is a folder of the user's own, and a process that can write a
         record.json and a patched.apk to match can as well write the verifier scripts the key
         hashes. The hold makes the check describe the bytes read; it isn't provenance.
@@ -2111,6 +2122,7 @@ function Find-AppliedRecord {
     $patched = Join-Path $directory 'patched.apk'
     $result = Join-Path $directory 'result.json'
     $held = $null
+    $heldResult = $null
     if (-not $problem) {
         if ([int]$record.schema -ne 1 -or [string]$record.key -cne $Key) {
             $problem = 'record.json names another key'
@@ -2119,12 +2131,18 @@ function Find-AppliedRecord {
         } elseif ([string]$record.patchedSha256 -cnotmatch '^[0-9a-f]{64}$') {
             # Open-HeldFile skips the comparison without a digest, so none is never a match.
             $problem = 'record.json names no patched APK digest'
+        } elseif ([string]$record.resultSha256 -cnotmatch '^[0-9a-f]{64}$') {
+            $problem = 'record.json names no result report digest'
         } else {
+            $holding = 'patched APK'
             try {
                 $held = Open-HeldFile -Path $patched -Sha256 ([string]$record.patchedSha256) -What 'The kept patched APK'
+                $holding = 'result report'
+                $heldResult = Open-HeldFile -Path $result -Sha256 ([string]$record.resultSha256) -What 'The kept result report'
             } catch {
-                $problem = if ($_.Exception.Message -like '*hashes to*') { 'its patched APK changed after it was kept' } else {
-                    "its patched APK can't be held: $($_.Exception.Message)" }
+                $problem = if ($_.Exception.Message -like '*hashes to*') { "its $holding changed after it was kept" } else {
+                    "its $holding can't be held: $($_.Exception.Message)" }
+                if ($held) { $held.Dispose(); $held = $null }
             }
         }
     }
@@ -2136,29 +2154,36 @@ function Find-AppliedRecord {
     $recordedAt = if ($record.recordedAt -is [datetime]) {
         $record.recordedAt.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
     } else { [string]$record.recordedAt }
-    try { $heldPath = Get-HeldPath -Stream $held } catch { $held.Dispose(); throw }
+    try {
+        $heldPath = Get-HeldPath -Stream $held
+        $heldResultPath = Get-HeldPath -Stream $heldResult
+    } catch { $held.Dispose(); $heldResult.Dispose(); throw }
     return [pscustomobject]@{
-        Directory  = $directory
-        Key        = $Key
-        PatchedApk = $heldPath
-        Handle     = $held
-        Result     = $result
-        RecordedAt = $recordedAt
-        Record     = $record
+        Directory    = $directory
+        Key          = $Key
+        PatchedApk   = $heldPath
+        Handle       = $held
+        Result       = $heldResultPath
+        ResultHandle = $heldResult
+        RecordedAt   = $recordedAt
+        Record       = $record
     }
 }
 
 function Close-AppliedRecord {
     <#
     .SYNOPSIS
-        Let go of the patched APK Find-AppliedRecord holds, so the store can replace or delete it.
-        No record, or one already let go, is left alone.
+        Let go of the patched APK and result report Find-AppliedRecord holds, so the store can
+        replace or delete them. No record, or one already let go, is left alone.
     #>
     param($Record)
 
-    if ($null -ne $Record -and $null -ne $Record.Handle) {
-        $Record.Handle.Dispose()
-        $Record.Handle = $null
+    if ($null -eq $Record) { return }
+    foreach ($name in @('Handle', 'ResultHandle')) {
+        if ($null -ne $Record.$name) {
+            $Record.$name.Dispose()
+            $Record.$name = $null
+        }
     }
 }
 
@@ -2223,6 +2248,7 @@ function Save-AppliedRecord {
             inputs        = $Identity.Inputs
             target        = $targetFacts
             patchedSha256 = (Get-FileHash -LiteralPath (Join-Path $staging 'patched.apk') -Algorithm SHA256).Hash.ToLowerInvariant()
+            resultSha256  = (Get-FileHash -LiteralPath (Join-Path $staging 'result.json') -Algorithm SHA256).Hash.ToLowerInvariant()
             reports       = $kept
         }
         [System.IO.File]::WriteAllText((Join-Path $staging 'record.json'), ($record | ConvertTo-Json -Depth 8),
