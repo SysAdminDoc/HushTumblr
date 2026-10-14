@@ -5676,8 +5676,9 @@ try {
         'if exist "%~dp0zipalign-fails.txt" (echo Verification FAILED& exit /b 1)',
         'echo Verification successful',
         'exit /b 0')
+    # With the Source Stamp's certificate digest a Play build carries, which apksigner drops.
     New-TestBundleArchive -Path (Join-Path $tools 'patched.apk') -Entries ([ordered]@{
-        'AndroidManifest.xml' = 'binary manifest'; 'classes.dex' = "dex`n035" })
+        'AndroidManifest.xml' = 'binary manifest'; 'classes.dex' = "dex`n035"; 'stamp-cert-sha256' = 'stamp' })
 
     $dependencyNamesHere = @(Get-PatchDependencyNames -PatchList $releaseCatalog -RequestedNames $releaseNames)
     $fixturePaths = @{}
@@ -6340,22 +6341,24 @@ try {
         @(Get-ChildItem -LiteralPath $keptDevice.OutDir -Directory).Count -eq $keptRunsBefore) `
         'patch-for-device.ps1 signed a kept APK that failed the 16 KB layout check, or left its run folder behind.'
     # apksigner writes the signed APK to a path nothing held, so it's held to the kept APK entry by
-    # entry: signing may add signature files and changes nothing else. A signed APK with an entry of
-    # its own, an entry that isn't the kept one's bytes or a name only a case fold makes a signature
-    # file is refused before anything reads it.
+    # entry: signing adds signature files, drops the Source Stamp's certificate digest as real
+    # apksigner does, and changes nothing else. A signed APK with an entry of its own, an entry
+    # that isn't the kept one's bytes, a stamp digest of other bytes or a name only a case fold
+    # makes a signature file is refused before anything reads it.
     $signSwap = Join-Path $tools 'apksigner-swap.apk'
-    $keptEntries = [ordered]@{ 'AndroidManifest.xml' = 'binary manifest'; 'classes.dex' = "dex`n035" }
+    $keptEntries = [ordered]@{ 'AndroidManifest.xml' = 'binary manifest'; 'classes.dex' = "dex`n035"; 'stamp-cert-sha256' = 'stamp' }
     try {
         $signedEntries = [ordered]@{}
-        foreach ($name in $keptEntries.Keys) { $signedEntries[$name] = $keptEntries[$name] }
+        foreach ($name in $keptEntries.Keys) { if ($name -cne 'stamp-cert-sha256') { $signedEntries[$name] = $keptEntries[$name] } }
         foreach ($name in 'META-INF/MANIFEST.MF', 'META-INF/SIDELOAD.SF', 'META-INF/SIDELOAD.RSA') { $signedEntries[$name] = "signature $name" }
         New-TestBundleArchive -Path $signSwap -Entries $signedEntries
         $said = @(& (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6>&1 | ForEach-Object { "$_" })
         Assert-True (Test-Path -LiteralPath ([string]$said[-1]) -PathType Leaf) `
-            "patch-for-device.ps1 refused a kept APK signed with nothing but signature files added: $($said -join ' | ')"
+            "patch-for-device.ps1 refused a kept APK signed with signature files added and the stamp digest dropped: $($said -join ' | ')"
         foreach ($swapped in @(
                 @{ What = 'an entry of its own'; Name = 'assets/extra.bin'; Value = 'extra' },
                 @{ What = 'other bytes'; Name = 'classes.dex'; Value = "dex`n036" },
+                @{ What = 'a stamp digest of other bytes'; Name = 'stamp-cert-sha256'; Value = 'other stamp' },
                 @{ What = 'a case-folded signature name'; Name = "META-INF/PAYLOAD.$([char]0x17F)F"; Value = 'payload' })) {
             $entries = [ordered]@{}
             foreach ($name in $keptEntries.Keys) { $entries[$name] = $keptEntries[$name] }

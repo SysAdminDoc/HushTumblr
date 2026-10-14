@@ -339,12 +339,16 @@ if (Test-Path -LiteralPath $out -PathType Leaf) {
 }
 if ($recorded -and $null -ne $outHandle) {
     # Signing adds signature files and changes nothing else, so the signed APK has to hold the kept
-    # one's entries, byte for byte, and nothing more: apksigner wrote it to a path nothing held.
+    # one's entries, byte for byte, and nothing more: apksigner wrote it to a path nothing held. It
+    # drops stamp-cert-sha256 too, the Play Source Stamp's certificate digest, since a stamp doesn't
+    # survive signing again, so that one may be gone and may not be other bytes.
     $keptEntries = Get-ApkEntryDigests -File ([pscustomobject]@{ Member = 'The kept APK'; Handle = $recorded.Handle }) -Pattern '.'
     $signedEntries = Get-ApkEntryDigests -File ([pscustomobject]@{ Member = 'The signed APK'; Handle = $outHandle }) -Pattern '.'
-    $isSignature = { param([string]$Name) $Name -cmatch '^META-INF/(MANIFEST\.MF|[A-Za-z0-9._-]+\.(SF|RSA|DSA|EC))\z' }
-    $unsigned = { param($Entries) @(foreach ($pair in $Entries.GetEnumerator()) { if (-not (& $isSignature $pair.Key)) { "$($pair.Key)=$($pair.Value)" } }) -join "`n" }
-    if ((& $unsigned $signedEntries) -cne (& $unsigned $keptEntries)) {
+    $stamp = 'stamp-cert-sha256'
+    $isSigners = { param([string]$Name) $Name -ceq $stamp -or $Name -cmatch '^META-INF/(MANIFEST\.MF|[A-Za-z0-9._-]+\.(SF|RSA|DSA|EC))\z' }
+    $unsigned = { param($Entries) @(foreach ($pair in $Entries.GetEnumerator()) { if (-not (& $isSigners $pair.Key)) { "$($pair.Key)=$($pair.Value)" } }) -join "`n" }
+    if ((& $unsigned $signedEntries) -cne (& $unsigned $keptEntries) -or
+        ($signedEntries.ContainsKey($stamp) -and (-not $keptEntries.ContainsKey($stamp) -or $signedEntries[$stamp] -cne $keptEntries[$stamp]))) {
         throw 'The signed APK holds other entries than the kept APK it was signed from, beyond the signature files.'
     }
 }
