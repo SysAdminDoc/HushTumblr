@@ -4568,6 +4568,23 @@ foreach ($order in @(
         Assert-True ($laterAt -gt $mergeAt) "In $($order.Name), $($later.What) before Get-MergedApk has checked the APKs, or never."
     }
 }
+# What each of the three decided on before the merge, the build and whether it is forced, was read
+# off a base APK nothing held. Each holds that to the merge once (Assert-SameBuild), after
+# Get-MergedApk has handed the merge back and before the build is acted on.
+foreach ($decided in @(
+        @{ Name = 'patch-for-device.ps1'; Before = @($isKeptLookup, $isKeptSign, $isCliPatch) },
+        @{ Name = 'build-release-receipt.ps1'; Before = @($isKeptLookup, $isCliPatch) },
+        @{ Name = 'verify-all-patches.ps1'; Before = @($isCliPatch) })) {
+    $scriptAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot $decided.Name), [ref]$null, [ref]$null)
+    $sameBuild = @($scriptAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] -and
+            $node.GetCommandName() -eq 'Assert-SameBuild' }, $true))
+    Assert-True ($sameBuild.Count -eq 1 -and $sameBuild[0].Extent.StartOffset -gt (Get-FirstCommandOffset $scriptAst $isMerge)) `
+        "$($decided.Name) does not hold the build it read first to the merge once, after Get-MergedApk."
+    foreach ($use in $decided.Before) {
+        Assert-True ((Get-FirstCommandOffset $scriptAst $use) -gt $sameBuild[0].Extent.StartOffset) `
+            "$($decided.Name) acts on the build it read first before it has held it to the merge (Assert-SameBuild)."
+    }
+}
 # The receipt builder checks its whole fixture list before it merges any fixture.
 $receiptAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'build-release-receipt.ps1'), [ref]$null, [ref]$null)
 $fixtureCheckAt = Get-FirstCommandOffset $receiptAst { param($node) $node.GetCommandName() -eq 'Assert-AuthenticInput' }
@@ -6029,6 +6046,35 @@ try {
             "With no -Apk, patch-for-device.ps1 did not take the newest declared build from the fixture folder."
     } finally {
         $env:HUSHTUMBLR_FIXTURE_DIR = $savedFixtureDir
+    }
+    # The build a run is let through on is read off the base APK before any APK has been checked:
+    # by path, of a copy another process of the same user could change while aapt2 read it, or of
+    # an input replaced before Get-MergedApk came to it. So each script reads the same facts again
+    # off the merge it holds, and stops before the CLI starts when they aren't the ones it decided
+    # on (Assert-SameBuild). A merge of another version code stands in for either here.
+    $sameBuildFixture = $fixturePaths[$releaseTarget.PackageVersion]
+    $sameBuildMerge = "$sameBuildFixture.merged.txt"
+    $sameBuildBytes = [System.IO.File]::ReadAllBytes($sameBuildMerge)
+    $sameBuildCode = [regex]::Match([System.IO.File]::ReadAllText($sameBuildMerge), 'versionCode\(0x0101021b\)=(\d+)').Groups[1].Value
+    $sameBuildReceipt = if (Test-Path -LiteralPath $releaseReceipt -PathType Leaf) { [System.IO.File]::ReadAllBytes($releaseReceipt) } else { $null }
+    $sameBuildSays = ("*$(Split-Path -Leaf $sameBuildFixture) read as com.tumblr $($releaseTarget.PackageVersion) ($sameBuildCode) before its APKs " +
+        "were checked, and the APK made from the checked ones is com.tumblr $($releaseTarget.PackageVersion) (7). What was read first is " +
+        'not what was checked, so nothing was patched.*')
+    try {
+        [System.IO.File]::WriteAllText($sameBuildMerge, ([System.IO.File]::ReadAllText($sameBuildMerge) -replace
+                '(versionCode\(0x0101021b\)=)\d+', '${1}7'), [System.Text.Encoding]::ASCII)
+        foreach ($run in @(
+                @{ Script = 'verify-all-patches.ps1'; Do = { Invoke-VerifyAll -Apk $sameBuildFixture } },
+                @{ Script = 'build-release-receipt.ps1'
+                    Do = { Invoke-ReceiptBuilder -Fixtures (@($sameBuildFixture) + @($allFixtures | Where-Object { $_ -ne $sameBuildFixture })) } },
+                @{ Script = 'patch-for-device.ps1'
+                    Do = { Invoke-DeviceBuild -Apk $sameBuildFixture -OutDir (Join-Path $releaseRoot 'same-build-device') } })) {
+            Assert-Throws $run.Do $sameBuildSays "$($run.Script) went ahead on a build that isn't the one it read first."
+            Assert-True (-not (Test-Path -LiteralPath $javaLog)) "$($run.Script) started the CLI on a build that isn't the one it read first."
+        }
+    } finally {
+        [System.IO.File]::WriteAllBytes($sameBuildMerge, $sameBuildBytes)
+        if ($null -ne $sameBuildReceipt) { [System.IO.File]::WriteAllBytes($releaseReceipt, $sameBuildReceipt) }
     }
     # A consumer may compile an APK while reporting a failed patch. Neither local runner may
     # deliver that retained output. Each failed run must clean only its own workspace.

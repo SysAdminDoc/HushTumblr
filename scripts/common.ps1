@@ -1261,6 +1261,37 @@ function Close-MergedApk {
     }
 }
 
+function Assert-SameBuild {
+    <#
+    .SYNOPSIS
+        Hold the build a script decided on, read off the base APK before anything was checked, to
+        the APK it then checked and holds, or throw.
+    .DESCRIPTION
+        Every script reads the package, the version name and the version code off the base APK
+        first: it is cheap, and it decides whether the run goes ahead at all and whether the CLI
+        is told to force. That read is by path, of a copy another process of the same user could
+        change for as long as aapt2 took over it, or of an input that was replaced before
+        Get-MergedApk came to check it. A hash of the copy afterwards says nothing about what was
+        there while it was read. So the same three facts are read again off the merge
+        Get-MergedApk returned, which nothing can write to, before the CLI is started, and they
+        have to be the ones the decision was made on. -Decided and -Held are what
+        Get-ApkManifestFacts returns for each.
+    #>
+    param(
+        [Parameter(Mandatory = $true)]$Decided,
+        [Parameter(Mandatory = $true)]$Held,
+        [Parameter(Mandatory = $true)][string]$Label
+    )
+
+    foreach ($fact in 'package', 'versionName', 'versionCode') {
+        if ([string]$Decided.$fact -cne [string]$Held.$fact) {
+            throw ("$Label read as $($Decided.package) $($Decided.versionName) ($($Decided.versionCode)) before its APKs were checked, and " +
+                "the APK made from the checked ones is $($Held.package) $($Held.versionName) ($($Held.versionCode)). " +
+                'What was read first is not what was checked, so nothing was patched.')
+        }
+    }
+}
+
 function Open-AuthenticInput {
     <#
     .SYNOPSIS

@@ -375,6 +375,13 @@ foreach ($apk in $Fixture) {
         $mergedApk = Resolve-WithinRoot -Path (Join-Path $runDir 'stock-merged.apk') -Root $workRoot
         $patchInput = Get-MergedApk -Apk $apk -Destination $mergedApk -Java $Java -DesktopJar $DesktopJar `
             -Aapt2 $Aapt2 -PackageName $expectedTarget.PackageName -Signers $declaredSigners
+        # The manifest the patches start from is this APK's, the merge for a split bundle, not the
+        # base APK's: the merge rewrites the manifest itself, and a delta against the base would
+        # record its changes as the patches' own. The build the fixture was taken for, declared or
+        # forced, was read off the base APK before anything was checked, and has to be this APK's
+        # (Assert-SameBuild).
+        $baseline = Get-ApkManifestFacts -Apk $patchInput -Aapt2 $Aapt2
+        Assert-SameBuild -Decided $stock -Held $baseline -Label $label
 
         # This bundle on this fixture, kept by a gate run that passed every check (verify-all-patches.ps1
         # -KeepIn), is read from the record. Anything that moved since gives another key and a patch run.
@@ -429,10 +436,6 @@ foreach ($apk in $Fixture) {
         if ($cliExitCode -ne 0) { throw "The desktop CLI exited with $cliExitCode on $label." }
 
         $patched = Get-ApkManifestFacts -Apk $out -Aapt2 $Aapt2
-        # The manifest the patches started from is the APK the CLI patched, the merge for a split
-        # bundle, not the base APK's: the merge rewrites the manifest itself, and a delta against
-        # the base would record its changes as the patches' own.
-        $baseline = Get-ApkManifestFacts -Apk $patchInput -Aapt2 $Aapt2
         $floor = Test-PatchedMinSdk -StockMinSdk $baseline.minSdk -PatchedMinSdk $patched.minSdk
         if (-not $floor.Valid) { throw "${label}: $($floor.Reason)" }
         $manifestCheck = Test-ManifestDelta -Stock $baseline -Patched $patched -SelectedPatchNames $manifestSelection `

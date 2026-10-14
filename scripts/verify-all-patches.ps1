@@ -209,6 +209,10 @@ $result = Resolve-WithinRoot -Path (Join-Path $workRoot "verify-all-result-$runI
     $patchInput = Get-MergedApk -Apk $Apk -Destination $mergedApk -Java $Java -DesktopJar $DesktopJar `
         -Aapt2 $Aapt2 -PackageName $expectedTarget.PackageName -Signers $declaredSigners
     if (Test-SplitBundlePath -Path $Apk) { Write-Host "[verify] merged $(Split-Path -Leaf $Apk) into one APK for the CLI" }
+    # The build this run was let through on, and forced or not, was read off the base APK before
+    # anything was checked. It has to be the build of the APK that is held now (Assert-SameBuild).
+    $stockManifest = Get-ApkManifestFacts -Apk $patchInput -Aapt2 $Aapt2
+    Assert-SameBuild -Decided $stock -Held $stockManifest -Label (Split-Path -Leaf $Apk)
     $enable = @()
     foreach ($name in $names) { $enable += '-e'; $enable += $name }
     $arguments = @('patch', '--exclusive', '--continue-on-error', '--unsigned', '-p', $Bundle,
@@ -261,9 +265,9 @@ $result = Resolve-WithinRoot -Path (Join-Path $workRoot "verify-all-result-$runI
     $unapprovedChanges = @()
     if ($cliExitCode -eq 0 -and $validation.Valid) {
         # What patching did to the manifest, read the way the release receipt reads it, against the
-        # APK the CLI patched, and held to the same allowlist, so a change nobody approved stops this
-        # run and not only the release. Expected transforms depend on the selected patch families.
-        $stockManifest = Get-ApkManifestFacts -Apk $patchInput -Aapt2 $Aapt2
+        # APK the CLI patched (read above, before it was), and held to the same allowlist, so a
+        # change nobody approved stops this run and not only the release. Expected transforms depend
+        # on the selected patch families.
         $patchedManifest = Get-ApkManifestFacts -Apk $out -Aapt2 $Aapt2
         $floor = Test-PatchedMinSdk -StockMinSdk $stockManifest.minSdk -PatchedMinSdk $patchedManifest.minSdk
         if (-not $floor.Valid) { throw "[verify] $($floor.Reason)" }

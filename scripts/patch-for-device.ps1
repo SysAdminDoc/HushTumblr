@@ -190,6 +190,9 @@ $declaredSigners = @(Get-DeclaredSigners -PatchList $catalog -PackageName $targe
 $patchInput = Get-MergedApk -Apk $Apk -Destination (Join-Path $OutDir 'stock-merged.apk') `
     -Java $Java -DesktopJar $DesktopJar -Aapt2 $Aapt2 -PackageName $target.PackageName -Signers $declaredSigners
 $stockManifest = Get-ApkManifestFacts -Apk $patchInput -Aapt2 $Aapt2
+# The build this run was let through on was read off the base APK before anything was checked. It
+# has to be the build of the APK that is held now (Assert-SameBuild).
+Assert-SameBuild -Decided $stock -Held $stockManifest -Label (Split-Path -Leaf $Apk)
 
 # A gate run that patched this exact bundle onto this APK with these patches and passed every check,
 # as verify-all-patches.ps1 -KeepIn keeps it. Nothing is hashed while the store holds no record.
