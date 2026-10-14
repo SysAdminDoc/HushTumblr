@@ -4931,6 +4931,40 @@ $dexSections = @(Get-Content -LiteralPath (Join-Path $PSScriptRoot 'dex-delta-al
 $strangeDexSections = @($dexSections | Where-Object { @($_ -split ' \| ' | Where-Object { $catalogNames -cnotcontains $_ }).Count -gt 0 })
 Assert-True ($dexSections.Count -gt 0 -and $strangeDexSections.Count -eq 0) `
     "dex-delta-allowlist.txt has sections naming a patch the catalog doesn't list: $($strangeDexSections -join ', ')"
+# Each script that patches hands the verifier the bundle it patched with by the path of a handle it
+# holds for the whole run, and the verifier hands DexDiff the path of its own hold, so a bundle
+# swapped after the patch can't stand in for the one the patcher read. Each is also tried with that
+# wiring taken out, so the check can't pass by passing everything.
+$holdsBundle = { param([string]$Text, [string]$Variable, [bool]$Hands)
+    $ast = [System.Management.Automation.Language.Parser]::ParseInput($Text, [ref]$null, [ref]$null)
+    $assignments = @($ast.FindAll({ param($node) $node -is [System.Management.Automation.Language.AssignmentStatementAst] }, $true))
+    $assigned = @($assignments | Where-Object { $_.Left.Extent.Text -eq $Variable })
+    $heldAt = @($assigned | Where-Object { $_.Right.Extent.Text -ceq 'Get-HeldPath -Stream $bundleHeld' })
+    $opens = @($assignments | Where-Object { $_.Left.Extent.Text -ceq '$bundleHeld' -and $_.Right.Extent.Text -clike 'Open-HeldFile *' })
+    $later = @(if ($heldAt.Count -eq 1) { $assigned | Where-Object { $_.Extent.StartOffset -gt $heldAt[0].Extent.StartOffset } })
+    $disposed = @($ast.FindAll({ param($node) $node -is [System.Management.Automation.Language.TryStatementAst] }, $true) |
+        Where-Object { $null -ne $_.Finally -and $_.Finally.Extent.Text -match '\$bundleHeld\b' }).Count -gt 0
+    $handed = $true
+    if ($Hands) {
+        $calls = @($ast.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] }, $true) |
+            Where-Object { $_.Extent.Text -match "^&\s*\(Join-Path \`$PSScriptRoot 'verify-injected-registers\.ps1'\)" })
+        $handed = $calls.Count -eq 1 -and @(for ($k = 0; $k + 1 -lt $calls[0].CommandElements.Count; $k++) {
+                $element = $calls[0].CommandElements[$k]
+                if ($element -is [System.Management.Automation.Language.CommandParameterAst] -and $element.ParameterName -eq 'Bundle' -and
+                    $calls[0].CommandElements[$k + 1].Extent.Text -eq $Variable) { $true } }).Count -eq 1
+    }
+    $heldAt.Count -eq 1 -and $opens.Count -eq 1 -and $later.Count -eq 0 -and $disposed -and $handed
+}
+foreach ($bundleRun in @(@{ Name = 'verify-all-patches.ps1'; Variable = '$Bundle'; Hands = $true; Cut = ' -Bundle $Bundle' }
+        @{ Name = 'patch-for-device.ps1'; Variable = '$bundle'; Hands = $true; Cut = ' -Bundle $bundle' }
+        @{ Name = 'build-release-receipt.ps1'; Variable = '$Bundle'; Hands = $true; Cut = ' -Bundle $Bundle' }
+        @{ Name = 'verify-injected-registers.ps1'; Variable = '$bundlePath'; Hands = $false; Cut = 'Get-HeldPath -Stream $bundleHeld'; Into = '$Bundle' })) {
+    $runText = [System.IO.File]::ReadAllText((Join-Path $PSScriptRoot $bundleRun.Name))
+    $cutText = $runText.Replace($bundleRun.Cut, [string]$bundleRun.Into)
+    Assert-True ((& $holdsBundle $runText $bundleRun.Variable $bundleRun.Hands) -and $cutText -cne $runText -and
+        -not (& $holdsBundle $cutText $bundleRun.Variable $bundleRun.Hands)) `
+        "$($bundleRun.Name) doesn't hand on the bundle by the path of a handle it holds for the whole run, or the check passes it without that."
+}
 # A kept run is copied from the handles the run held, never from a path.
 $verifyAllAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'verify-all-patches.ps1'), [ref]$null, [ref]$null)
 $keepCalls = @(Get-NamedCommands $verifyAllAst 'Save-AppliedRecord' | ForEach-Object { $_.Extent.Text })
