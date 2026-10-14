@@ -418,7 +418,13 @@ Version, help and project details	Sürüm, yardım ve proje ayrıntıları
 Report a problem	Sorun bildir
 Opens a GitHub report with your versions and settings filled in. Add what happened.	Sürümlerin ve ayarların doldurulmuş bir GitHub raporu açar. Ne olduğunu ekle.
 Quick setups	Hızlı kurulumlar
-Turn on a set of switches in one tap, or put every switch back the way it started.	Bir grup anahtarı tek dokunuşla aç veya tüm anahtarları başlangıçtaki hâline döndür.
+Turn on a set of switches in one tap, or put every switch back the way it started. Press and hold to hide this row.	Bir grup anahtarı tek dokunuşla aç veya tüm anahtarları başlangıçtaki hâline döndür. Bu satırı gizlemek için basılı tut.
+# context: row on Pause, backup and diagnostics that hides or shows the Quick setups row on the home page, and its two summaries
+Quick setups on the home page	Ana sayfada hızlı kurulumlar
+Shown. Tap to hide it.	Gösteriliyor. Gizlemek için dokun.
+Hidden. Tap to show it again.	Gizli. Yeniden göstermek için dokun.
+# context: toast after a long press hides Quick setups; the page named is Pause, backup and diagnostics
+Quick setups hidden. Bring it back from %1$s.	Hızlı kurulumlar gizlendi. %1$s sayfasından geri getirebilirsin.
 Quiet	Sessiz
 Hides ads, suggestions, prompts and unread counts.	Reklamları, önerileri, hatırlatmaları ve okunmamış sayılarını gizler.
 Stops Tumblr's tracking and screenshot watching, and hides your advertising ID.	Tumblr'ın izlemesini ve ekran görüntüsü takibini durdurur, reklam kimliğini gizler.

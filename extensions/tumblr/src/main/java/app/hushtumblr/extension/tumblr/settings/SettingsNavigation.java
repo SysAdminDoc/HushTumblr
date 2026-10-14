@@ -49,6 +49,7 @@ import app.hushtumblr.extension.shared.L10n;
 import app.hushtumblr.extension.shared.Utils;
 import app.hushtumblr.extension.shared.settings.BaseSettings;
 import app.hushtumblr.extension.shared.settings.HushTumblrPause;
+import app.hushtumblr.extension.shared.settings.BooleanSetting;
 import app.hushtumblr.extension.shared.settings.Setting;
 import app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment;
 import app.hushtumblr.extension.shared.settings.preference.ReopenSettingsAfterRestart;
@@ -66,6 +67,19 @@ final class SettingsNavigation extends BaseAdapter {
     /** The restart row's key. Like the other rows only this view draws, it stores nothing. */
     static final String RESTART = "action_restart_to_apply";
     static final String QUICK_SETUPS = "action_quick_setups";
+    /** The row on Pause, backup and diagnostics that hides or shows the Quick setups row again. Like the other rows only this view draws, it stores nothing. */
+    static final String RESTORE_QUICK_SETUPS = "action_restore_quick_setups";
+    /**
+     * Whether a long press has taken the Quick setups row off the home page. The screen's own
+     * choice: it stays out of settings files and a Quick setups preset, and a pause leaves it alone.
+     */
+    static final BooleanSetting HIDE_QUICK_SETUPS =
+            new BooleanSetting("hushtumblr_hide_quick_setups", Boolean.FALSE, false, false);
+
+    static {
+        Setting.keepWhenPaused(HIDE_QUICK_SETUPS);
+    }
+
     static final String REPORT = "action_report_problem";
     private final HushTumblrPreferenceFragment page;
     private final SettingsDialog host;
@@ -154,7 +168,7 @@ final class SettingsNavigation extends BaseAdapter {
         report.setKey(REPORT);
         report.setOnPreferenceClickListener(row -> { ReportProblemForm.open(row.getContext(), screen); return true; });
         quickSetups = link(context, L10n.t("Quick setups"),
-                L10n.t("Turn on a set of switches in one tap, or put every switch back the way it started."), SettingsIcons.TOOLS);
+                L10n.t("Turn on a set of switches in one tap, or put every switch back the way it started. Press and hold to hide this row."), SettingsIcons.TOOLS);
         quickSetups.setKey(QUICK_SETUPS);
         quickSetups.setOnPreferenceClickListener(ignored -> { page.showQuickSetups(); return true; });
         restart =new HushTumblrPreferenceFragment.Row(context);
@@ -197,6 +211,16 @@ final class SettingsNavigation extends BaseAdapter {
         }
         source.registerDataSetObserver(changes);
         list.setAdapter(this);
+        // A long press on Quick setups takes it off the home page, and Pause, backup and diagnostics brings it back.
+        list.setOnItemLongClickListener((parent, view, position, id) -> {
+            if (getItem(position) != quickSetups) return false;
+            HIDE_QUICK_SETUPS.save(true);
+            Preference restore = page.findPreference(RESTORE_QUICK_SETUPS);
+            if (restore != null) restore.setSummary(HushTumblrPreferenceFragment.restoreQuickSetupsSummary());
+            Utils.showToastLong(L10n.f("Quick setups hidden. Bring it back from %1$s.", L10n.t("Pause, backup and diagnostics")));
+            rebuild();
+            return true;
+        });
         list.setOnItemClickListener((parent, view, position, id) -> {
             Preference item = getItem(position);
             int original = originalPosition(item);
@@ -434,7 +458,7 @@ final class SettingsNavigation extends BaseAdapter {
             addPageStatus();
         } else {
             visible.add(screen.getPreference(0));
-            visible.add(quickSetups);
+            if (!HIDE_QUICK_SETUPS.get()) visible.add(quickSetups);
             // Each heading only over pages this build has: a build without Feed, Posts, Interface
             // or Privacy shows no empty Browse settings heading.
             boolean anyPrimary = false;

@@ -97,6 +97,7 @@ public class SettingsNavigationTest {
         Settings.HIDE_ADVERTISING_ID.resetToDefault();
         Settings.FIX_PUSH_NOTIFICATIONS.resetToDefault();
         Settings.HIDE_TUMBLR_TV.resetToDefault();
+        SettingsNavigation.HIDE_QUICK_SETUPS.resetToDefault();
         BaseSettings.PAUSED.resetToDefault();
         app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.remove(
                 Settings.HIDE_ADVERTISING_ID.key);
@@ -557,6 +558,70 @@ public class SettingsNavigationTest {
             ShadowLooper.idleMainLooper();
             page = page(dialog);
             assertEquals(missing, HOME_ROWS, list().getCount());
+        }
+    }
+
+    /** A long press on Quick setups takes it off the home page for good, says where it went, and leaves other rows alone. */
+    @Test public void aLongPressHidesQuickSetupsAndStoresTheFlag() {
+        Preference row = (Preference) list().getItemAtPosition(position(SettingsNavigation.QUICK_SETUPS));
+        assertTrue(String.valueOf(row.getSummary()).endsWith(" Press and hold to hide this row."));
+        assertFalse(SettingsNavigation.HIDE_QUICK_SETUPS.savedValue());
+        assertTrue("the flag has to answer while paused", SettingsNavigation.HIDE_QUICK_SETUPS.isKeptWhenPaused());
+        assertFalse("another row took the long press", longPress(SettingsNavigation.REPORT));
+        assertFalse(SettingsNavigation.HIDE_QUICK_SETUPS.savedValue());
+        assertEquals(HOME_ROWS, list().getCount());
+
+        assertTrue(longPress(SettingsNavigation.QUICK_SETUPS));
+        assertTrue(SettingsNavigation.HIDE_QUICK_SETUPS.savedValue());
+        assertFalse(contains(SettingsNavigation.QUICK_SETUPS));
+        assertEquals(HOME_ROWS - 1, list().getCount());
+        assertEquals("Quick setups hidden. Bring it back from Pause, backup and diagnostics.", ShadowToast.getTextOfLatestToast());
+    }
+
+    /** The row on Pause, backup and diagnostics shows the state, brings Quick setups back and hides it again. */
+    @Test public void theRestoreRowBringsQuickSetupsBack() {
+        page.navigation.navigate("Pause, backup and diagnostics");
+        Preference restore = page.findPreference(SettingsNavigation.RESTORE_QUICK_SETUPS);
+        assertEquals("Quick setups on the home page", String.valueOf(restore.getTitle()));
+        assertEquals("Shown. Tap to hide it.", String.valueOf(restore.getSummary()));
+        page.navigation.search("quick setups");
+        assertTrue("search lost the restore row", contains(SettingsNavigation.RESTORE_QUICK_SETUPS));
+        page.navigation.search("");
+        while (page.navigation.back()) { }
+
+        longPress(SettingsNavigation.QUICK_SETUPS);
+        page.navigation.navigate("Pause, backup and diagnostics");
+        assertEquals("Hidden. Tap to show it again.", String.valueOf(restore.getSummary()));
+        tap(SettingsNavigation.RESTORE_QUICK_SETUPS);
+        assertEquals("Shown. Tap to hide it.", String.valueOf(restore.getSummary()));
+        assertFalse(SettingsNavigation.HIDE_QUICK_SETUPS.savedValue());
+        while (page.navigation.back()) { }
+        assertTrue(contains(SettingsNavigation.QUICK_SETUPS));
+        assertEquals(HOME_ROWS, list().getCount());
+
+        page.navigation.navigate("Pause, backup and diagnostics");
+        tap(SettingsNavigation.RESTORE_QUICK_SETUPS);
+        assertEquals("Hidden. Tap to show it again.", String.valueOf(restore.getSummary()));
+        assertTrue(SettingsNavigation.HIDE_QUICK_SETUPS.savedValue());
+        while (page.navigation.back()) { }
+        assertFalse(contains(SettingsNavigation.QUICK_SETUPS));
+    }
+
+    /** The flag is the screen's own: no settings file carries it and no Quick setups choice moves it. */
+    @Test public void theHideFlagStaysOutOfSettingsFilesAndQuickSetups() throws Exception {
+        SettingsNavigation.HIDE_QUICK_SETUPS.save(true);
+        assertFalse(SettingsBackup.create().contains(SettingsNavigation.HIDE_QUICK_SETUPS.key));
+        try {
+            for (Map<BooleanSetting, Boolean> preset : Arrays.asList(
+                    QuickSetupKeys.quiet(), QuickSetupKeys.privacy(), QuickSetupKeys.defaults())) {
+                assertFalse(preset.containsKey(SettingsNavigation.HIDE_QUICK_SETUPS));
+                page.applyQuickSetup(preset);
+                ShadowLooper.idleMainLooper();
+                assertTrue(SettingsNavigation.HIDE_QUICK_SETUPS.savedValue());
+            }
+        } finally {
+            for (BooleanSetting setting : QuickSetupKeys.DEFAULTS) setting.resetToDefault();
+            app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.clear();
         }
     }
 
@@ -1428,6 +1493,15 @@ public class SettingsNavigationTest {
         Map<String, Object> values = new TreeMap<>();
         for (Setting<?> setting : Setting.allLoadedSettings()) values.put(setting.key, setting.savedValue());
         return values;
+    }
+
+    private boolean longPress(String key) {
+        int at = position(key);
+        assertTrue("No visible row " + key, at >= 0);
+        View row = list().getAdapter().getView(at, null, list());
+        boolean took = list().getOnItemLongClickListener().onItemLongClick(list(), row, at, list().getAdapter().getItemId(at));
+        ShadowLooper.idleMainLooper();
+        return took;
     }
 
     private void tap(String key) {

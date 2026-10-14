@@ -418,7 +418,13 @@ Version, help and project details	Versi, bantuan, dan detail proyek
 Report a problem	Laporkan masalah
 Opens a GitHub report with your versions and settings filled in. Add what happened.	Membuka laporan GitHub dengan versi dan pengaturan Anda yang sudah terisi. Tambahkan apa yang terjadi.
 Quick setups	Penyiapan cepat
-Turn on a set of switches in one tap, or put every switch back the way it started.	Nyalakan sekumpulan sakelar dengan sekali ketuk, atau kembalikan semua sakelar seperti semula.
+Turn on a set of switches in one tap, or put every switch back the way it started. Press and hold to hide this row.	Nyalakan sekumpulan sakelar dengan sekali ketuk, atau kembalikan semua sakelar seperti semula. Tekan dan tahan untuk menyembunyikan baris ini.
+# context: row on Pause, backup and diagnostics that hides or shows the Quick setups row on the home page, and its two summaries
+Quick setups on the home page	Penyiapan cepat di beranda
+Shown. Tap to hide it.	Ditampilkan. Ketuk untuk menyembunyikannya.
+Hidden. Tap to show it again.	Disembunyikan. Ketuk untuk menampilkannya lagi.
+# context: toast after a long press hides Quick setups; the page named is Pause, backup and diagnostics
+Quick setups hidden. Bring it back from %1$s.	Penyiapan cepat disembunyikan. Tampilkan lagi dari %1$s.
 Quiet	Tenang
 Hides ads, suggestions, prompts and unread counts.	Menyembunyikan iklan, saran, ajakan, dan penghitung belum dibaca.
 Stops Tumblr's tracking and screenshot watching, and hides your advertising ID.	Menghentikan pelacakan Tumblr dan pemantauan tangkapan layar, serta menyembunyikan ID iklan Anda.

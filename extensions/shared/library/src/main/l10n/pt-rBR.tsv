@@ -415,7 +415,13 @@ Version, help and project details	Versão, ajuda e detalhes do projeto
 Report a problem	Relatar um problema
 Opens a GitHub report with your versions and settings filled in. Add what happened.	Abre um relato no GitHub com suas versões e configurações já preenchidas. Conte o que aconteceu.
 Quick setups	Configurações rápidas
-Turn on a set of switches in one tap, or put every switch back the way it started.	Ative um conjunto de opções com um toque ou volte todas as opções ao estado inicial.
+Turn on a set of switches in one tap, or put every switch back the way it started. Press and hold to hide this row.	Ative um conjunto de opções com um toque ou volte todas as opções ao estado inicial. Toque e segure para ocultar esta linha.
+# context: row on Pause, backup and diagnostics that hides or shows the Quick setups row on the home page, and its two summaries
+Quick setups on the home page	Configurações rápidas na página inicial
+Shown. Tap to hide it.	Visível. Toque para ocultar.
+Hidden. Tap to show it again.	Oculta. Toque para mostrar de novo.
+# context: toast after a long press hides Quick setups; the page named is Pause, backup and diagnostics
+Quick setups hidden. Bring it back from %1$s.	Configurações rápidas ocultas. Traga de volta em %1$s.
 Quiet	Tranquilo
 Hides ads, suggestions, prompts and unread counts.	Oculta anúncios, sugestões, avisos e contadores de não lidos.
 Stops Tumblr's tracking and screenshot watching, and hides your advertising ID.	Interrompe o rastreamento do Tumblr e a vigilância de capturas de tela, e oculta seu ID de publicidade.

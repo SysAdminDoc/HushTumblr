@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+* **Tumblr:** Quick setups can be hidden from the settings home with a long press on its row, and its help line now says so. The **Quick setups on the home page** row on Pause, backup and diagnostics brings it back. The choice stays out of settings backups and Quick setups, and Pause leaves it alone.
+
 ## 0.0.7 (2026-10-14)
 
 * **Tumblr:** With Debug logging on, the log now says how long the settings' restart marker took to save and to read back, and how long Clear diagnostic data and its undo kept the log locked.
