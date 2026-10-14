@@ -5087,6 +5087,35 @@ foreach ($name in @('patch-for-device.ps1', 'build-release-receipt.ps1', 'verify
             'patch-for-device.ps1 does not hold a kept APK to the 16 KB page check before it signs it, and the signed APK after.'
     }
 }
+# patch-for-device.ps1 holds the APK it hands on to the certificate of -KeyAlias in -Keystore: once,
+# by the path its handle is at, after the report check and before the copy to -OutputApk and the
+# install. Each cut copy has to fail the rule.
+$checksDeviceSigner = {
+    param([string]$Text)
+    $ast = [System.Management.Automation.Language.Parser]::ParseInput($Text, [ref]$null, [ref]$null)
+    $named = { param([string]$Name) @($ast.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] -and
+                    $node.GetCommandName() -eq $Name }, $true)) }
+    $signerReads = & $named 'Get-ApkSigners'
+    $certificateReads = & $named 'Get-KeystoreCertificate'
+    $held = @($ast.FindAll({ param($node) $node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
+                $node.Left.Extent.Text -ceq '$out' -and $node.Right.Extent.Text -ceq 'Get-HeldPath -Stream $outHandle' }, $true))
+    $reportCheck = Get-FirstCommandOffset $ast { param($node) $node.GetCommandName() -eq 'Test-PatchingReport' }
+    $install = Get-FirstCommandOffset $ast { param($node) $node.GetCommandName() -eq 'Install-HushAndroidApk' }
+    $copy = $Text.IndexOf('$outputReservation.Write(')
+    $signerReads.Count -eq 1 -and $certificateReads.Count -eq 1 -and $held.Count -eq 1 -and $reportCheck -ge 0 -and $install -ge 0 -and $copy -ge 0 -and
+        $signerReads[0].Extent.Text -cmatch '^Get-ApkSigners -Apk \$out -Apksigner ' -and
+        $certificateReads[0].Extent.Text -cmatch '^Get-KeystoreCertificate -Keystore \$Keystore -Alias \$KeyAlias ' -and
+        $signerReads[0].Extent.StartOffset -gt $held[0].Extent.EndOffset -and $signerReads[0].Extent.StartOffset -gt $reportCheck -and
+        $signerReads[0].Extent.EndOffset -lt $copy -and $signerReads[0].Extent.EndOffset -lt $install
+}
+$deviceText = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'patch-for-device.ps1'))
+Assert-True (& $checksDeviceSigner $deviceText) `
+    "patch-for-device.ps1 doesn't hold the APK it hands on to the keystore alias's certificate, by its held path, before the copy and the install."
+foreach ($cut in @(@{ From = 'Get-ApkSigners -Apk $out '; To = 'Get-ApkSigners -Apk $recorded.PatchedApk ' },
+        @{ From = '$keyCertificate = Get-KeystoreCertificate '; To = '$keyCertificate = Get-Item ' })) {
+    Assert-True ($deviceText.Contains($cut.From) -and -not (& $checksDeviceSigner $deviceText.Replace($cut.From, $cut.To))) `
+        "The device signer rule passed a copy of patch-for-device.ps1 with '$($cut.From)' made '$($cut.To)'."
+}
 
 Write-Host '[scripts] split bundle contracts passed'
 
@@ -5706,6 +5735,27 @@ try {
         'copy /y "!FROM!" "!OUT!" >nul || exit /b 3',
         'if exist "!LAST!.xmltree" copy /y "!LAST!.xmltree" "!OUT!.xmltree" >nul',
         'exit /b 0')
+    # A keytool beside the stand-in java, which patch-for-device.ps1 reads the signing alias's
+    # certificate with (Get-KeystoreCertificate). It prints Tumblr's signer the way keytool -list -v
+    # prints a fingerprint, so what the stand-in apksigner signs is that key's, and notes what it was
+    # handed, with the password it found in the environment, in keytool.log. A case that leaves
+    # keytool-fails.txt behind gets the error a wrong password brings.
+    $keytoolLog = Join-Path $tools 'keytool.log'
+    $keytoolFlag = Join-Path $tools 'keytool-fails.txt'
+    Set-Content -LiteralPath (Join-Path $tools 'keytool.cmd') -Encoding ASCII -Value @(
+        '@echo off',
+        '>>"%~dp0keytool.log" echo %* pass=%HUSHTUMBLR_KEYTOOL_STOREPASS%',
+        'if exist "%~dp0keytool-fails.txt" (echo keytool error: java.io.IOException: keystore password was incorrect& exit /b 1)',
+        'echo Alias name: sideload',
+        'echo Certificate chain length: 1',
+        'echo Certificate[1]:',
+        'echo Owner: CN=Stand-in',
+        'echo Certificate fingerprints:',
+        "echo 	 SHA1: $(@('00') * 20 -join ':')",
+        "echo 	 SHA256: $([regex]::Replace($releaseSigner[0].ToUpperInvariant(), '(..)(?!$)', '$1:'))",
+        'exit /b 0')
+    $standInKeystore = Join-Path $tools 'sideload.jks'
+    Set-Content -LiteralPath $standInKeystore -Value 'stand-in keystore' -Encoding ASCII
     # And a zipalign beside them, which every patched APK is held to for devices with 16 KB pages
     # (Assert-PageAlignment). It notes what it was asked in zipalign.log and passes the APK, unless
     # a case leaves zipalign-fails.txt behind. The real one is run against real archives in
@@ -6356,15 +6406,27 @@ try {
     $apksignerLog = Join-Path $tools 'apksigner.log'
     $keptDevice = @{ Root = $releaseRepo; DesktopJar = $stubJar; Java = $stubJava; Aapt2 = $stubAapt2
         OutDir = (Join-Path $releaseRoot 'device-kept'); AndroidJar = $stubAndroidJar; ApiVersions = $stubApiVersions
-        Apk = $newestFixture; AppliedDir = $receiptStore }
-    Remove-Item -LiteralPath $javaLog, $apksignerLog, $zipalignLog, $resourceStock -Force -ErrorAction SilentlyContinue
-    $said = @(& (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6>&1 | ForEach-Object { "$_" })
+        Apk = $newestFixture; AppliedDir = $receiptStore; Keystore = $standInKeystore }
+    Remove-Item -LiteralPath $javaLog, $apksignerLog, $zipalignLog, $resourceStock, $keytoolLog -Force -ErrorAction SilentlyContinue
+    # The signing password, of its own here, goes to keytool in the environment and never on its
+    # command line, and the variable is gone again afterwards.
+    $passwordBefore = $env:HUSHTUMBLR_SIDELOAD_KEYSTORE_PASSWORD
+    try {
+        $env:HUSHTUMBLR_SIDELOAD_KEYSTORE_PASSWORD = 'stand-in-password'
+        $said = @(& (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6>&1 | ForEach-Object { "$_" })
+    } finally { $env:HUSHTUMBLR_SIDELOAD_KEYSTORE_PASSWORD = $passwordBefore }
     $handed = [string]$said[-1]
     Assert-True (-not (Test-Path -LiteralPath $javaLog) -and -not (Test-Path -LiteralPath $resourceStock) -and
         (Test-Path -LiteralPath $handed -PathType Leaf) -and
         ($said -join "`n") -like '*passed every check in the gate run kept as*' -and
         (Get-Content -LiteralPath $apksignerLog -Raw) -like '*sign alias=sideload in=*patched.apk out=*') `
         "patch-for-device.ps1 did not sign the kept run instead of patching: $($said -join ' | ')"
+    $keytoolCalls = @(Get-Content -LiteralPath $keytoolLog -ErrorAction SilentlyContinue)
+    Assert-True ($keytoolCalls.Count -eq 1 -and
+        $keytoolCalls[0] -clike '-list -v -keystore *\sideload.jks* -alias sideload -storepass:env HUSHTUMBLR_KEYTOOL_STOREPASS pass=stand-in-password' -and
+        $keytoolCalls[0].Substring(0, $keytoolCalls[0].LastIndexOf(' pass=')) -cnotlike '*stand-in-password*' -and
+        $null -eq [Environment]::GetEnvironmentVariable('HUSHTUMBLR_KEYTOOL_STOREPASS', [EnvironmentVariableTarget]::Process)) `
+        "patch-for-device.ps1 didn't read the alias's certificate with the password in the environment alone: $($keytoolCalls -join ' | ')"
     # zipalign can't put a signed APK right, so the kept APK is held to the 16 KB layout before it's
     # signed and the signed one after. A kept APK that fails is never signed, and nothing is left.
     Assert-True ((@(Get-Content -LiteralPath $zipalignLog) -join '|') -like '-c -P 16 -v 4 *patched.apk*|-c -P 16 -v 4 *-signed.apk*' -and
@@ -6410,6 +6472,34 @@ try {
                 '*The signed APK holds other entries than the kept APK it was signed from, beyond the signature files.*' `
                 "patch-for-device.ps1 took a signed APK with $($swapped.What)."
         }
+        # Whatever its entries, the signed APK has to be the alias's key's alone: signed by another
+        # key, by another one beside it, or not at all, it's refused, while a Source Stamp beside the
+        # alias's signature doesn't count. The stand-in apksigner reads the marker in an entry name.
+        $notAlone = "*The signed APK isn't signed by the sideload key of sideload.jks ($($releaseSigner[0])) alone: apksigner says"
+        foreach ($signed in @(
+                @{ Marker = 'stand-in-foreign.RSA'; Says = "$notAlone Signer #1 certificate SHA-256 digest: $foreignSigner*" },
+                @{ Marker = 'stand-in-second-signer.RSA'; Says = "$notAlone*Signer #2 certificate SHA-256 digest: $foreignSigner*" },
+                @{ Marker = 'stand-in-unsigned.SF'; Says = "$notAlone DOES NOT VERIFY*" },
+                @{ Marker = 'stand-in-stamp.RSA'; Says = '' })) {
+            $entries = [ordered]@{}
+            foreach ($name in $keptEntries.Keys) { if ($name -cne 'stamp-cert-sha256') { $entries[$name] = $keptEntries[$name] } }
+            $entries["META-INF/$($signed.Marker)"] = 'signature'
+            Remove-Item -LiteralPath $signSwap -Force
+            New-TestBundleArchive -Path $signSwap -Entries $entries
+            if ($signed.Says) {
+                Assert-Throws { & (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6> $null } $signed.Says `
+                    "patch-for-device.ps1 took a kept APK signed as $($signed.Marker) marks it."
+            } else {
+                $said = @(& (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6>&1 | ForEach-Object { "$_" })
+                Assert-True (Test-Path -LiteralPath ([string]$said[-1]) -PathType Leaf) `
+                    "patch-for-device.ps1 counted a Source Stamp as a second signer: $($said -join ' | ')"
+                # Signing the kept APK put the password in the environment for apksigner and left
+                # the variable as it was, unset included (not set to nothing).
+                $passwordAfter = [Environment]::GetEnvironmentVariable('HUSHTUMBLR_SIDELOAD_KEYSTORE_PASSWORD', [EnvironmentVariableTarget]::Process)
+                Assert-True (($null -eq $passwordBefore -and $null -eq $passwordAfter) -or ($null -ne $passwordBefore -and $passwordAfter -ceq $passwordBefore)) `
+                    "Signing a kept APK left HUSHTUMBLR_SIDELOAD_KEYSTORE_PASSWORD otherwise than it was: '$passwordAfter'"
+            }
+        }
     } finally { Remove-Item -LiteralPath $signSwap -Force -ErrorAction SilentlyContinue }
     $keptDevice['NoReuse'] = $true
     Remove-Item -LiteralPath $javaLog, $apksignerLog, $resourceStock -Force -ErrorAction SilentlyContinue
@@ -6423,6 +6513,27 @@ try {
         (Get-Content -LiteralPath $resourceStock -Raw) -ceq (Get-Content -LiteralPath "$newestFixture.merged.txt" -Raw) -and
         ($said -join "`n") -like '*`[device`] `[resources`] stand-in: every stock resource resolves*') `
         "patch-for-device.ps1 -NoReuse didn't check what it patched against the merge's resource table and archive: $($said -join ' | ')"
+    # What the CLI signed is held to the alias's certificate too: here it hands back a build another
+    # key signed. A certificate keytool can't read stops the run, as does a keystore that isn't there.
+    $cliOutput = Join-Path $tools 'patched.apk'
+    $cliBytes = [IO.File]::ReadAllBytes($cliOutput)
+    try {
+        Remove-Item -LiteralPath $cliOutput -Force
+        New-TestBundleArchive -Path $cliOutput -Entries ([ordered]@{ 'AndroidManifest.xml' = 'binary manifest'; 'classes.dex' = "dex`n035"
+            'stamp-cert-sha256' = 'stamp'; 'META-INF/stand-in-foreign.RSA' = 'signature' })
+        Assert-Throws { & (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6> $null } `
+            "$notAlone Signer #1 certificate SHA-256 digest: $foreignSigner*" 'patch-for-device.ps1 -NoReuse took a build the CLI handed back signed by another key.'
+    } finally { [IO.File]::WriteAllBytes($cliOutput, $cliBytes) }
+    Set-Content -LiteralPath $keytoolFlag -Value 'on' -Encoding ASCII
+    try {
+        Assert-Throws { & (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6> $null } `
+            ('*keytool could not read the sideload certificate of sideload.jks: as it is, keytool error: java.io.IOException: keystore password ' +
+                'was incorrect; as BKS, keytool error:*') "patch-for-device.ps1 went on without the alias's certificate."
+    } finally { Remove-Item -LiteralPath $keytoolFlag -Force -ErrorAction SilentlyContinue }
+    $noKeystore = @{} + $keptDevice
+    $noKeystore['Keystore'] = Join-Path $tools 'no-such.jks'
+    Assert-Throws { & (Join-Path $PSScriptRoot 'patch-for-device.ps1') @noKeystore 6> $null } '*No keystore at *no-such.jks to read the sideload certificate from.*' `
+        'patch-for-device.ps1 read a certificate out of a keystore that is not there.'
 
     # -Option hands a named patch an option value: the CLI's -O, right after that patch's -e. The
     # kept run above was patched with the options as the bundle ships them, so a run with one
@@ -6591,7 +6702,8 @@ try {
         Remove-Item -LiteralPath $javaLog, $mergeLog -Force -ErrorAction SilentlyContinue
         # An empty record store of its own, so no kept run, the machine's included, answers for the CLI.
         $arguments = @{ Root = $releaseRepo; DesktopJar = $DesktopJar; Java = $stubJava; Aapt2 = $stubAapt2; OutDir = $OutDir
-            AndroidJar = $stubAndroidJar; ApiVersions = $stubApiVersions; AppliedDir = (Join-Path $releaseRoot 'applied-records-none') }
+            AndroidJar = $stubAndroidJar; ApiVersions = $stubApiVersions; AppliedDir = (Join-Path $releaseRoot 'applied-records-none')
+            Keystore = $standInKeystore }
         if ($Apk) { $arguments['Apk'] = $Apk }
         if ($OutputApk) { $arguments['OutputApk'] = $OutputApk }
         $paths = @(& (Join-Path $PSScriptRoot 'patch-for-device.ps1') @arguments 6> $null)
@@ -6642,7 +6754,7 @@ try {
             "verify-all-patches.ps1 printed a failure for a report with no failed patch list: $said"
         $deviceSaid = @(& (Join-Path $PSScriptRoot 'patch-for-device.ps1') -Root $releaseRepo -DesktopJar $stubJar -Java $stubJava `
             -Aapt2 $stubAapt2 -OutDir (Join-Path $releaseRoot 'device-failless') -AndroidJar $stubAndroidJar `
-            -ApiVersions $stubApiVersions -AppliedDir (Join-Path $releaseRoot 'applied-records-none') -Apk $newestFixture 6>&1 |
+            -ApiVersions $stubApiVersions -AppliedDir (Join-Path $releaseRoot 'applied-records-none') -Apk $newestFixture -Keystore $standInKeystore 6>&1 |
             ForEach-Object { "$_" }) -join "`n"
         Assert-True ($deviceSaid -like '*`[device`] applied *, failed 0, target *') `
             "patch-for-device.ps1 counted a failure in a report with no failed patch list: $deviceSaid"

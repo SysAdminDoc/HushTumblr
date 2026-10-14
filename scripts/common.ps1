@@ -1004,6 +1004,67 @@ function Get-ApkSigners {
     }
 }
 
+function Get-KeystoreCertificate {
+    <#
+    .SYNOPSIS
+        The SHA-256 digest of the certificate a keystore alias signs with, lower case, as apksigner
+        prints it for an APK that key signed. Read with the keytool beside the JDK's java.
+    .DESCRIPTION
+        The alias's own certificate is the first of its chain. A keystore keytool can't read as it
+        is gets read as a BouncyCastle BKS store, the kind the desktop CLI makes, with the CLI's jar
+        as the provider. The password goes over in the environment, so it stays off the command line,
+        and so it can't be empty: Windows PowerShell removes a variable set to nothing.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Keystore,
+        [Parameter(Mandatory = $true)][string]$Alias,
+        [Parameter(Mandatory = $true)][string]$Password,
+        [Parameter(Mandatory = $true)][string]$Java,
+        [Parameter(Mandatory = $true)][string]$DesktopJar
+    )
+
+    # keytool.exe beside java.exe, and beside a stand-in java.cmd a keytool.cmd.
+    $keytool = Join-Path (Split-Path -Parent $Java) ('keytool' + [System.IO.Path]::GetExtension($Java))
+    if (-not (Test-Path -LiteralPath $keytool -PathType Leaf)) { throw "No keytool beside $Java to read the $Alias certificate with." }
+    if (-not (Test-Path -LiteralPath $Keystore -PathType Leaf)) { throw "No keystore at $Keystore to read the $Alias certificate from." }
+    $variable = 'HUSHTUMBLR_KEYTOOL_STOREPASS'
+    $saved = [Environment]::GetEnvironmentVariable($variable, [EnvironmentVariableTarget]::Process)
+    $said = @()
+    $preference = $ErrorActionPreference
+    try {
+        [Environment]::SetEnvironmentVariable($variable, $Password, [EnvironmentVariableTarget]::Process)
+        $ErrorActionPreference = 'Continue'
+        foreach ($storeType in '', 'BKS') {
+            $kind = @()
+            if ($storeType) {
+                $kind = @('-storetype', $storeType, '-providerclass', 'org.bouncycastle.jce.provider.BouncyCastleProvider', '-providerpath', $DesktopJar)
+            }
+            $global:LASTEXITCODE = -1
+            $lines = @(& $keytool -list -v -keystore $Keystore -alias $Alias -storepass:env $variable @kind 2>&1 | ForEach-Object { "$_" })
+            $as = if ($storeType) { "as $storeType" } else { 'as it is' }
+            if ($LASTEXITCODE -ne 0) {
+                # Its error line, without the stack trace a provider's failure brings along.
+                $said += "$as, $(@($lines | Where-Object { $_.Trim() } | Select-Object -First 1) -join '')"
+                continue
+            }
+            $chain = [array]::IndexOf(@($lines | ForEach-Object { $_.Trim() }), 'Certificate[1]:')
+            if ($chain -lt 0) { $chain = 0 }
+            foreach ($line in @($lines | Select-Object -Skip $chain)) {
+                $match = [regex]::Match($line, '^\s*SHA256:\s*((?:[0-9A-Fa-f]{2}:){31}[0-9A-Fa-f]{2})\s*$')
+                if ($match.Success) { return $match.Groups[1].Value.Replace(':', '').ToLowerInvariant() }
+            }
+            $said += "$as, no SHA-256 fingerprint for $Alias"
+        }
+    } finally {
+        $ErrorActionPreference = $preference
+        # [NullString]: PowerShell hands $null to a string parameter as '', which PowerShell 7 keeps
+        # as a variable set to nothing instead of the unset one it was.
+        [Environment]::SetEnvironmentVariable($variable, $(if ($null -eq $saved) { [NullString]::Value } else { $saved }),
+            [EnvironmentVariableTarget]::Process)
+    }
+    throw "keytool could not read the $Alias certificate of $(Split-Path -Leaf $Keystore): $($said -join '; ')"
+}
+
 function Get-SignerProblem {
     <#
     .SYNOPSIS

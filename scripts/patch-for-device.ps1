@@ -36,6 +36,10 @@
     that before it's signed as well. A library of Tumblr's that doesn't fit 16 KB pages is printed
     as a warning naming it a target limitation, and is never rewritten.
 
+    Whichever signed it, the APK has to verify with apksigner as signed by -KeyAlias's certificate
+    in -Keystore and no other, read with the keytool beside java (a BKS store through the desktop
+    CLI's BouncyCastle provider), before it's copied to -OutputApk or installed.
+
 .EXAMPLE
     scripts/patch-for-device.ps1 -Serial $env:HUSHTUMBLR_DEVICE_SERIAL
 #>
@@ -271,7 +275,9 @@ if ($recorded) {
         $signExitCode = $LASTEXITCODE
     } finally {
         $ErrorActionPreference = $preference
-        [Environment]::SetEnvironmentVariable($passwordVariable, $savedPassword, [EnvironmentVariableTarget]::Process)
+        # Unset again when it was: PowerShell hands $null over as '', which PowerShell 7 keeps.
+        [Environment]::SetEnvironmentVariable($passwordVariable, $(if ($null -eq $savedPassword) { [NullString]::Value } else { $savedPassword }),
+            [EnvironmentVariableTarget]::Process)
     }
     if ($signExitCode -ne 0 -or -not (Test-Path -LiteralPath $out -PathType Leaf)) {
         throw "apksigner could not sign the kept APK (exit $signExitCode): $($signOutput -join ' ')"
@@ -366,6 +372,15 @@ $validation = Test-PatchingReport -Report $report -ExpectedNames $names `
     -AllowedDependencyNames $dependencyNames -OutputPath $(if ($null -ne $outHandle) { $out } else { '' }) `
     -ExpectedPackageName $target.PackageName -ExpectedPackageVersion $stock.versionName
 if (-not $validation.Valid) { throw "Patching did not produce a complete APK: $($validation.Reason)" }
+# Whoever signed it, the APK that goes on a phone is signed by the keystore alias's key and no other.
+# The kept-run comparison above skips the signature files and the v2 and v3 blocks aren't entries,
+# and the CLI's output was written to a path nothing held, so another key's build, or an unsigned
+# one, would pass everything else here.
+$keyCertificate = Get-KeystoreCertificate -Keystore $Keystore -Alias $KeyAlias -Password $keystorePassword -Java $Java -DesktopJar $DesktopJar
+$signedBy = Get-ApkSigners -Apk $out -Apksigner (Resolve-Apksigner -Aapt2 $Aapt2)
+if (-not $signedBy.Verified -or (@($signedBy.Signers) -join ', ') -cne $keyCertificate) {
+    throw "The signed APK isn't signed by the $KeyAlias key of $(Split-Path -Leaf $Keystore) ($keyCertificate) alone: apksigner says $($signedBy.Said)"
+}
 $manifestSelection = @($names) + @($dependencyNames)
 $approvedChanges = @(Read-ManifestDeltaAllowlist -Path (Join-Path $PSScriptRoot 'manifest-delta-allowlist.txt') `
     -SelectedPatchNames $manifestSelection)
