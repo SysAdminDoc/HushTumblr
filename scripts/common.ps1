@@ -764,34 +764,87 @@ function Open-HeldFile {
     return $handle
 }
 
+function Get-NativeMethod {
+    <#
+    .SYNOPSIS
+        A kernel32 call .NET has no wrapper for: GetFinalPathNameByHandleW or ReOpenFile.
+    .DESCRIPTION
+        The declarations are emitted in memory rather than compiled with Add-Type, which in Windows
+        PowerShell 5.1 writes C# and a DLL to the temp folder and loads what it finds there. They
+        are kept for the process, since every script that loads this file again would otherwise
+        emit them again. ReOpenFile is declared through a DllImport attribute, the one way an
+        emitted method gets SetLastError, so Marshal.GetLastWin32Error has its error.
+    #>
+    param([Parameter(Mandatory = $true)][ValidateSet('GetFinalPathNameByHandleW', 'ReOpenFile')][string]$Name)
+
+    $native = Get-Variable -Name HushTumblrNative -Scope Global -ValueOnly -ErrorAction SilentlyContinue
+    if ($null -eq $native) {
+        $assembly = [System.Reflection.Emit.AssemblyBuilder]::DefineDynamicAssembly(
+            (New-Object System.Reflection.AssemblyName('HushTumblrNative')), [System.Reflection.Emit.AssemblyBuilderAccess]::Run)
+        $type = $assembly.DefineDynamicModule('HushTumblrNative').DefineType('HushTumblrNative',
+            [System.Reflection.TypeAttributes]'Public, Class, Abstract, Sealed')
+        $handle = [Microsoft.Win32.SafeHandles.SafeFileHandle]
+        $finalPath = $type.DefinePInvokeMethod('GetFinalPathNameByHandleW', 'kernel32.dll',
+            [System.Reflection.MethodAttributes]'Public, Static, PinvokeImpl',
+            [System.Reflection.CallingConventions]::Standard, [uint32], [type[]]@($handle, [System.Text.StringBuilder], [uint32], [uint32]),
+            [System.Runtime.InteropServices.CallingConvention]::Winapi, [System.Runtime.InteropServices.CharSet]::Unicode)
+        $reOpen = $type.DefineMethod('ReOpenFile', [System.Reflection.MethodAttributes]'Public, Static, PinvokeImpl, HideBySig', $handle,
+            [type[]]@($handle, [uint32], [uint32], [uint32]))
+        $dllImport = [System.Runtime.InteropServices.DllImportAttribute]
+        $reOpen.SetCustomAttribute((New-Object System.Reflection.Emit.CustomAttributeBuilder($dllImport.GetConstructor([type[]]@([string])),
+            [object[]]@('kernel32.dll'), [System.Reflection.FieldInfo[]]@($dllImport.GetField('SetLastError'), $dllImport.GetField('ExactSpelling')),
+            [object[]]@($true, $true))))
+        foreach ($method in @($finalPath, $reOpen)) {
+            $method.SetImplementationFlags($method.GetMethodImplementationFlags() -bor [System.Reflection.MethodImplAttributes]::PreserveSig)
+        }
+        $created = $type.CreateType()
+        $native = @{}
+        # Not $name, which is $Name: PowerShell variable names ignore case.
+        foreach ($declared in @('GetFinalPathNameByHandleW', 'ReOpenFile')) { $native[$declared] = $created.GetMethod($declared) }
+        $global:HushTumblrNative = $native
+    }
+    return $native[$Name]
+}
+
+function Get-ReOpenError {
+    <#
+    .SYNOPSIS
+        What Windows answers to opening the file an open handle reads again, as it is now, with
+        -Access (Read or Write) and sharing only -Share with whatever else has it open: 0 when it
+        opens, otherwise the Win32 error (32 is a sharing violation, 5 access denied).
+    .DESCRIPTION
+        ReOpenFile opens the handle's own file, wherever it has been renamed to, so the answer is
+        about that file and not about whatever holds its old name. The handle it opens is closed
+        straight away.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][System.IO.FileStream]$Stream,
+        [Parameter(Mandatory = $true)][ValidateSet('Read', 'Write')][string]$Access,
+        [Parameter(Mandatory = $true)][System.IO.FileShare]$Share
+    )
+
+    # GENERIC_READ is 0x80000000, written out since PowerShell reads that literal as a negative int.
+    $desired = if ($Access -eq 'Read') { [uint32]2147483648 } else { [uint32]0x40000000 }
+    $opened = (Get-NativeMethod -Name ReOpenFile).Invoke($null, [object[]]@($Stream.SafeFileHandle, $desired, [uint32]$Share, [uint32]0))
+    $code = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
+    try {
+        if (-not $opened.IsInvalid) { return 0 }
+        if ($code -eq 0) { return -1 }
+        return $code
+    } finally { $opened.Dispose() }
+}
+
 function Get-HeldPath {
     <#
     .SYNOPSIS
         The path Windows gives for an open file: where the handle is, with every link, junction
         and mapped drive on the way already followed.
     .DESCRIPTION
-        GetFinalPathNameByHandleW, which .NET has no call for. The declaration is emitted in memory
-        rather than compiled with Add-Type, which in Windows PowerShell 5.1 writes C# and a DLL to
-        the temp folder and loads what it finds there. It is kept for the process, since every
-        script that loads this file again would otherwise emit another.
+        GetFinalPathNameByHandleW, which .NET has no call for (Get-NativeMethod).
     #>
     param([Parameter(Mandatory = $true)][System.IO.FileStream]$Stream)
 
-    $native = Get-Variable -Name HushTumblrFinalPathName -Scope Global -ValueOnly -ErrorAction SilentlyContinue
-    if ($null -eq $native) {
-        $assembly = [System.Reflection.Emit.AssemblyBuilder]::DefineDynamicAssembly(
-            (New-Object System.Reflection.AssemblyName('HushTumblrNative')), [System.Reflection.Emit.AssemblyBuilderAccess]::Run)
-        $type = $assembly.DefineDynamicModule('HushTumblrNative').DefineType('HushTumblrNative',
-            [System.Reflection.TypeAttributes]'Public, Class, Abstract, Sealed')
-        $method = $type.DefinePInvokeMethod('GetFinalPathNameByHandleW', 'kernel32.dll',
-            [System.Reflection.MethodAttributes]'Public, Static, PinvokeImpl',
-            [System.Reflection.CallingConventions]::Standard, [uint32],
-            [type[]]@([Microsoft.Win32.SafeHandles.SafeFileHandle], [System.Text.StringBuilder], [uint32], [uint32]),
-            [System.Runtime.InteropServices.CallingConvention]::Winapi, [System.Runtime.InteropServices.CharSet]::Unicode)
-        $method.SetImplementationFlags($method.GetMethodImplementationFlags() -bor [System.Reflection.MethodImplAttributes]::PreserveSig)
-        $native = $type.CreateType().GetMethod('GetFinalPathNameByHandleW')
-        $global:HushTumblrFinalPathName = $native
-    }
+    $native = Get-NativeMethod -Name GetFinalPathNameByHandleW
     $capacity = 1024
     while ($true) {
         # ::new, not New-Object, whose answer is wrapped and won't pass for a StringBuilder in Invoke.
@@ -2438,17 +2491,23 @@ function Save-AppliedRecord {
     if ($key -cnotmatch '^[0-9a-f]{64}\z') { throw "Not an applied record key: $key" }
     foreach ($required in @($PatchedApk, $Result)) {
         if (-not $required.CanRead -or $required.CanWrite) { throw "Nothing to keep: $($required.Name) isn't held open for reading alone." }
-        # Held as Open-HeldFile holds it: while the handle shares reading alone, no writer opens.
-        # The probe opens the file where the handle is now, not the name it was opened by, which a
-        # handle that shares deleting lets the file leave for another one held properly.
-        $heldAt = Get-HeldPath -Stream $required
-        $writer = $null
-        try {
-            $writer = [System.IO.File]::Open($heldAt, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Write,
-                [System.IO.FileShare]::ReadWrite)
-        } catch [System.IO.IOException] {
-        } finally { if ($null -ne $writer) { $writer.Dispose() } }
-        if ($null -ne $writer) { throw "Nothing to keep: $($required.Name) is open in a way that lets another program write to it." }
+        # Held as Open-HeldFile holds it: while the handle shares reading alone, no writer opens,
+        # and none had it open when it did. Both are asked of the handle's own file, not of the
+        # name it was opened by, which a handle that shares deleting lets the file leave for
+        # another one held properly. Only a sharing violation answers the first: a read-only
+        # attribute or a deny entry also turns a writer away, and its owner can take either off.
+        # A writer that got in first and shares reading alone would keep the first probe out too,
+        # so the second asks whether any writer has it open.
+        $everyShare = [System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete
+        $writeError = Get-ReOpenError -Stream $required -Access Write -Share $everyShare
+        if ($writeError -eq 0) { throw "Nothing to keep: $($required.Name) is open in a way that lets another program write to it." }
+        if ($writeError -ne 32) {
+            throw ("Nothing to keep: whether $($required.Name) is open in a way that lets another program write to it can't be told, " +
+                "since opening it to write met Windows error $writeError rather than its sharing.")
+        }
+        if ((Get-ReOpenError -Stream $required -Access Read -Share Read) -ne 0) {
+            throw "Nothing to keep: $($required.Name) is open for writing somewhere else too, so its bytes could change while they're copied."
+        }
     }
     New-Item -ItemType Directory -Force -Path $Store | Out-Null
     $storeRoot = (Resolve-Path -LiteralPath $Store).Path

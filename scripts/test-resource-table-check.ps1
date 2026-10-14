@@ -1784,6 +1784,30 @@ try {
         Assert-True ($refused -clike 'Nothing to keep: *patched.bin is open in a way that lets another program write to it.' -and
             -not (Test-Path -LiteralPath (Join-Path $saveStore $saveIdentity.Key))) `
             "A patched APK read through a loose handle was kept once its file moved and a held one took its name: $refused"
+        # A loose handle opened after a writer that shares reading alone: that writer keeps a probe
+        # for writing out as well as a held handle would, and can still write.
+        $writer = [System.IO.File]::Open($savedApk, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Write, [System.IO.FileShare]::Read)
+        $refused = $null
+        try {
+            $loose = [System.IO.File]::Open($savedApk, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
+            try { Save-AppliedRecord -Store $saveStore -Identity $saveIdentity -PatchedApk $loose -Result $heldSavedResult | Out-Null }
+            catch { $refused = $_.Exception.Message } finally { $loose.Dispose() }
+        } finally { $writer.Dispose() }
+        Assert-True ($refused -clike "Nothing to keep: *patched.bin is open for writing somewhere else too, so its bytes could change while they're copied." -and
+            -not (Test-Path -LiteralPath (Join-Path $saveStore $saveIdentity.Key))) `
+            "A patched APK read through a loose handle was kept while a writer that shares reading alone had it open: $refused"
+        # A loose handle on a read-only file: the attribute turns a writer away as a held handle
+        # would, and whoever owns the file can take it off.
+        [System.IO.File]::SetAttributes($savedApk, [System.IO.FileAttributes]::ReadOnly)
+        $refused = $null
+        try {
+            $loose = [System.IO.File]::Open($savedApk, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
+            try { Save-AppliedRecord -Store $saveStore -Identity $saveIdentity -PatchedApk $loose -Result $heldSavedResult | Out-Null }
+            catch { $refused = $_.Exception.Message } finally { $loose.Dispose() }
+        } finally { [System.IO.File]::SetAttributes($savedApk, [System.IO.FileAttributes]::Normal) }
+        Assert-True ($refused -clike "Nothing to keep: whether *patched.bin is open in a way that lets another program write to it can't be told, since opening it to write met Windows error 5 rather than its sharing." -and
+            -not (Test-Path -LiteralPath (Join-Path $saveStore $saveIdentity.Key))) `
+            "A patched APK read through a loose handle was kept because its file was read-only: $refused"
         $heldSavedApk = Open-HeldFile -Path $savedApk -What 'The patched APK'
         try { Save-AppliedRecord -Store $saveStore -Identity $saveIdentity -PatchedApk $heldSavedApk -Result $heldSavedResult | Out-Null }
         finally { $heldSavedApk.Dispose() }
