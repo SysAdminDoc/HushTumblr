@@ -4799,16 +4799,51 @@ foreach ($reader in @(@{ Name = 'patch-for-device.ps1'; Reads = '$reportPath' },
         ($reader.Name -ne 'patch-for-device.ps1' -or $reads -cnotcontains '$result')) `
         "$($reader.Name) doesn't check a kept run's report through the path Find-AppliedRecord holds: $($reads -join ', ')"
 }
+# In patch-for-device.ps1 the report path is set twice: the held kept report where a kept run is
+# used, the CLI's own report in the else branch of the same if, and nowhere after.
+$deviceAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'patch-for-device.ps1'), [ref]$null, [ref]$null)
+$reportSets = @($deviceAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
+            $node.Left.Extent.Text -ceq '$reportPath' }, $true))
+$reportBranches = @($deviceAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.IfStatementAst] -and
+            $node.Clauses.Count -eq 1 -and $null -ne $node.ElseClause }, $true) | Where-Object {
+        $branch = $_
+        $kept = @($reportSets | Where-Object { $_.Right.Extent.Text -ceq '$recorded.Result' -and
+                $_.Extent.StartOffset -ge $branch.Clauses[0].Item2.Extent.StartOffset -and $_.Extent.EndOffset -le $branch.Clauses[0].Item2.Extent.EndOffset })
+        $own = @($reportSets | Where-Object { $_.Right.Extent.Text -ceq '$result' -and
+                $_.Extent.StartOffset -ge $branch.ElseClause.Extent.StartOffset -and $_.Extent.EndOffset -le $branch.ElseClause.Extent.EndOffset })
+        $kept.Count -eq 1 -and $own.Count -eq 1 })
+Assert-True ($reportSets.Count -eq 2 -and $reportBranches.Count -eq 1) `
+    "patch-for-device.ps1 sets the report path other than once in each branch of the kept-run if: $(@($reportSets | ForEach-Object { $_.Extent.Text }) -join '; ')"
 # The receipt builder checks its whole fixture list before it merges any fixture.
 $receiptAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'build-release-receipt.ps1'), [ref]$null, [ref]$null)
 $fixtureCheckAt = Get-FirstCommandOffset $receiptAst { param($node) $node.GetCommandName() -eq 'Assert-AuthenticInput' }
 Assert-True ($fixtureCheckAt -ge 0 -and $fixtureCheckAt -lt (Get-FirstCommandOffset $receiptAst $isMerge)) `
     'build-release-receipt.ps1 merges a fixture before it has checked every fixture (Assert-AuthenticInput), or never checks them.'
-# It names each fixture by the digest the held merge was made from, never by hashing its path.
+# It names each fixture by the digest the held merge was made from, never by hashing its path: the
+# hashes it takes itself are the bundle's, which the scan has to find, and the extension payloads'
+# inside it (Get-ExtensionPayloads, handed the bundle alone), and the target's source.sha256 is
+# what Get-HeldSourceSha256 gives.
 $sourceDigests = @(Get-NamedCommands $receiptAst 'Get-HeldSourceSha256' | ForEach-Object { $_.Extent.Text })
-$pathDigests = @(Get-NamedCommands $receiptAst 'Get-Sha256Hex' | ForEach-Object { $_.Extent.Text } | Where-Object { $_ -notmatch '\$Bundle\b' })
-Assert-True ($sourceDigests.Count -eq 1 -and $sourceDigests[0] -ceq 'Get-HeldSourceSha256 -Merged $patchInput' -and $pathDigests.Count -eq 0) `
-    "build-release-receipt.ps1 doesn't name its fixtures by the held merge's input alone: $($sourceDigests + $pathDigests -join '; ')"
+$receiptHashNodes = @(foreach ($name in 'Get-Sha256Hex', 'Get-FileHash', 'Get-StreamSha256') { Get-NamedCommands $receiptAst $name })
+$receiptHashNodes += @($receiptAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.InvokeMemberExpressionAst] -and
+            $node.Member.Extent.Text -match '^(ComputeHash|HashData|TransformBlock|TransformFinalBlock)$' }, $true))
+$payloadFunction = @($receiptAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+            $node.Name -ceq 'Get-ExtensionPayloads' }, $true))
+$payloadCalls = @(Get-NamedCommands $receiptAst 'Get-ExtensionPayloads' | ForEach-Object { $_.Extent.Text })
+$receiptHashes = @($receiptHashNodes | Where-Object { $payloadFunction.Count -ne 1 -or
+        $_.Extent.StartOffset -lt $payloadFunction[0].Extent.StartOffset -or $_.Extent.EndOffset -gt $payloadFunction[0].Extent.EndOffset } |
+    ForEach-Object { $_.Extent.Text })
+Assert-True ($payloadFunction.Count -eq 1 -and ($payloadCalls -join '; ') -ceq 'Get-ExtensionPayloads -BundlePath $Bundle') `
+    "build-release-receipt.ps1 hashes extension payloads of something other than the bundle: $($payloadCalls -join '; ')"
+$sourceEntries = @($receiptAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.HashtableAst] }, $true) |
+    ForEach-Object { $_.KeyValuePairs } | Where-Object { $_.Item1.Extent.Text -ceq 'source' } | ForEach-Object { $_.Item2.Extent.Text })
+$heldSourceEntries = @($sourceEntries | Where-Object {
+        $_ -match '(?m)^\s*sha256\s*=\s*\(Get-HeldSourceSha256 -Merged \$patchInput\)\.ToUpperInvariant\(\)\r?$' -and
+        @([regex]::Matches($_, '(?m)^\s*sha256\s*=')).Count -eq 1 })
+Assert-True ($sourceDigests.Count -eq 1 -and $sourceDigests[0] -ceq 'Get-HeldSourceSha256 -Merged $patchInput' -and
+    ($receiptHashes -join '; ') -ceq 'Get-Sha256Hex -Path $Bundle' -and $sourceEntries.Count -eq 1 -and $heldSourceEntries.Count -eq 1) `
+    ("build-release-receipt.ps1 doesn't name its fixtures by the held merge's input alone: $($sourceDigests + $receiptHashes -join '; ') " +
+        "($($sourceEntries.Count) source entries, $($heldSourceEntries.Count) named by Get-HeldSourceSha256)")
 # It never reads a kept run: a kept run is a record and an APK any program of the same user can
 # write together, so it can't show which bundle made the APK, and the receipt is what a release is
 # trusted on. Every fixture is patched and checked here, with no condition around any of the three.
@@ -4828,6 +4863,17 @@ $guardedRuns = @($receiptRuns | Where-Object {
 Assert-True ($receiptReuse.Count -eq 0 -and $receiptRuns.Count -eq 3 -and $guardedRuns.Count -eq 0) `
     ("build-release-receipt.ps1 reads a kept run, or doesn't patch and check every fixture itself: " +
         "$($receiptReuse + $guardedRuns -join '; ') ($($receiptRuns.Count) of 3 runs found)")
+# The release stage hands the receipt only parameters it has, so a release doesn't stop at a
+# parameter the receipt dropped (-AppliedDir went with the kept-run reuse).
+$receiptParameters = @($receiptAst.ParamBlock.Parameters | ForEach-Object { $_.Name.VariablePath.UserPath })
+$releaseAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'release/release.ps1'), [ref]$null, [ref]$null)
+$receiptCalls = @($releaseAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] -and
+            $node.Extent.Text -match "^&\s*\(Join-Path \`$Root 'scripts/build-release-receipt\.ps1'\)" }, $true))
+$unknownToReceipt = @($receiptCalls | ForEach-Object { $_.CommandElements } |
+    Where-Object { $_ -is [System.Management.Automation.Language.CommandParameterAst] -and $receiptParameters -notcontains $_.ParameterName } |
+    ForEach-Object { $_.ParameterName })
+Assert-True ($receiptCalls.Count -eq 1 -and $unknownToReceipt.Count -eq 0) `
+    "release.ps1 doesn't call build-release-receipt.ps1 once with parameters it has: $($unknownToReceipt -join ', ')"
 # The verifier holds whatever merge it compares to the APKs that were checked, a merge it was
 # handed included, so that check can't sit behind a condition.
 $verifierAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'verify-injected-registers.ps1'),
@@ -5621,8 +5667,9 @@ try {
     $plainRecord = Get-Content -LiteralPath "$authMerge.authentic.json" -Raw | ConvertFrom-Json
     Assert-True ($plainCopy -eq $authMerge -and [System.IO.File]::ReadAllText($authMerge) -ceq $authBase -and
         -not (Test-Path -LiteralPath $mergeLog) -and $plainRecord.baseSha256 -ceq (Get-TextSha256 $authBase) -and
-        $plainRecord.mergedSha256 -ceq $plainRecord.baseSha256 -and -not $plainRecord.signedForm) `
-        'A plain APK signed by Tumblr was not handed on as a checked copy with its record.'
+        $plainRecord.mergedSha256 -ceq $plainRecord.baseSha256 -and -not $plainRecord.signedForm -and
+        $plainRecord.sourceSha256 -ceq (Get-TextSha256 $authBase) -and (Get-HeldSourceSha256 -Merged $authMerge) -ceq $plainRecord.sourceSha256) `
+        'A plain APK signed by Tumblr was not handed on as a checked copy with its record, named by its own digest.'
     $keptCopy = Get-Sha256Hex -Path $authMerge
     $keptRecord = Get-Sha256Hex -Path "$authMerge.authentic.json"
     foreach ($plainCase in @(
@@ -6353,6 +6400,29 @@ try {
             "With no -Apk, patch-for-device.ps1 did not take the newest declared build from the fixture folder."
     } finally {
         $env:HUSHTUMBLR_FIXTURE_DIR = $savedFixtureDir
+    }
+    # A report that leaves out its failed patch list, as kotlinx leaves out a field equal to its
+    # default, prints no failure: @($null) holds one item, which verify-all-patches.ps1 printed as
+    # FAILED unknown patch and patch-for-device.ps1 counted as one failure, of a report the check
+    # had passed.
+    $newestReport = "$newestFixture.result.json"
+    $fullReport = [IO.File]::ReadAllText($newestReport)
+    try {
+        $failless = $fullReport | ConvertFrom-Json
+        $failless.PSObject.Properties.Remove('failedPatches')
+        Set-Content -LiteralPath $newestReport -Encoding ASCII -Value ($failless | ConvertTo-Json -Depth 6)
+        $said = Invoke-VerifyAll -Apk $newestFixture
+        Assert-True ($said -like '*: applied *, failed 0, CLI exit 0*' -and $said -cnotlike '*FAILED*' -and
+            $said -like '*success: every requested patch applied*') `
+            "verify-all-patches.ps1 printed a failure for a report with no failed patch list: $said"
+        $deviceSaid = @(& (Join-Path $PSScriptRoot 'patch-for-device.ps1') -Root $releaseRepo -DesktopJar $stubJar -Java $stubJava `
+            -Aapt2 $stubAapt2 -OutDir (Join-Path $releaseRoot 'device-failless') -AndroidJar $stubAndroidJar `
+            -ApiVersions $stubApiVersions -AppliedDir (Join-Path $releaseRoot 'applied-records-none') -Apk $newestFixture 6>&1 |
+            ForEach-Object { "$_" }) -join "`n"
+        Assert-True ($deviceSaid -like '*`[device`] applied *, failed 0, target *') `
+            "patch-for-device.ps1 counted a failure in a report with no failed patch list: $deviceSaid"
+    } finally {
+        [IO.File]::WriteAllText($newestReport, $fullReport)
     }
     # The build a run is let through on is read off the base APK before any APK has been checked:
     # by path, of a copy another process of the same user could change while aapt2 read it, or of

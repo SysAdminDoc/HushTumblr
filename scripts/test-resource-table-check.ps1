@@ -775,6 +775,8 @@ try {
     Assert-True ($record.package -ceq 'com.tumblr' -and [string]$record.versionCode -ceq '1460500109' -and
         (@($record.signers) -join ',') -ceq $pinned[0] -and $record.baseSha256 -ceq (Get-TestSha256 $baseA) -and
         $record.mergedSha256 -ceq (Get-TestSha256 $signedMerged) -and @($record.apks).Count -eq 2 -and
+        # The bundle's digest, taken through the handle it was unpacked from, names the input.
+        $record.sourceSha256 -ceq (Get-TestSha256 $signedApkm) -and (Get-HeldSourceSha256 -Merged $signedMerged) -ceq $record.sourceSha256 -and
         # AAPT2 adds the density qualifier's API 4 floor to the manifest split name.
         (@($record.apks | ForEach-Object { "$($_.member)=$($_.split)" } | Sort-Object) -join ';') -ceq 'base.apk=;split_config.xxhdpi.apk=config.xxhdpi_v4') `
         "The record of the signed merge is wrong: $($record | ConvertTo-Json -Depth 5 -Compress)"
@@ -804,6 +806,7 @@ try {
     $universalRecord = Get-Content -LiteralPath "$universalCopy.authentic.json" -Raw | ConvertFrom-Json
     Assert-True ((Get-TestSha256 $universalCopy) -ceq (Get-TestSha256 $universal) -and
         $universalRecord.signedForm -ceq (Join-Path $signed 'universal.apkm') -and $universalRecord.baseSha256 -ceq (Get-TestSha256 $baseA) -and
+        $universalRecord.sourceSha256 -ceq (Get-TestSha256 $universal) -and (Get-HeldSourceSha256 -Merged $universalCopy) -ceq $universalRecord.sourceSha256 -and
         @(Get-ChildItem -LiteralPath (Join-Path $bundleDir 'merged') -Force -Filter '.trusted-*').Count -eq 0) `
         "The universal APK was not passed as the signed bundle's merge, or the merge it was held to was left behind: $($universalRecord | ConvertTo-Json -Depth 5 -Compress)"
     $otherDex = Copy-ApkWith -From $universal -Name 'other-dex' -Change {

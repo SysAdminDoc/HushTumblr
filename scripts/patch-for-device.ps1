@@ -352,7 +352,8 @@ $global:LASTEXITCODE = -1
     -SelectedPatchNames $manifestSelection -AndroidJar $AndroidJar -ApiVersions $ApiVersions
 if ($LASTEXITCODE -ne 0) { throw 'Patched bytecode failed its compiled mutation or structural checks.' }
 }
-Write-Host "[device] applied $(@($report.appliedPatches).Count), failed $(@($report.failedPatches).Count), target $($report.packageName) $($report.packageVersion)"
+# As the report check counted them, so a list the report leaves out isn't counted as one entry.
+Write-Host "[device] applied $($validation.Applied), failed $($validation.Failed), target $($report.packageName) $($report.packageVersion)"
 if ($outputReservation) {
     $input = [IO.File]::OpenRead($out)
     try { $input.CopyTo($outputReservation); $outputReservation.Flush($true) }

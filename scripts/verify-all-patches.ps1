@@ -262,7 +262,9 @@ $result = Resolve-WithinRoot -Path (Join-Path $workRoot "verify-all-result-$runI
     $reportFailed = if ($null -ne $report) { $validation.Failed } else { 0 }
     $target = if ($null -ne $report) { "$($report.packageName) $($report.packageVersion)" } else { 'unknown target' }
     Write-Host "[verify] ${target}: applied $reportApplied, failed $reportFailed, CLI exit $cliExitCode"
-    if ($null -ne $report) {
+    # @($null) holds one item, so a report that leaves the list out would print a failure it
+    # doesn't have. A null entry in the list is a failure the report check counted, and prints.
+    if ($null -ne $report -and $null -ne $report.failedPatches) {
         foreach ($failure in @($report.failedPatches)) {
             $patchName = if ($null -ne $failure.patch) { $failure.patch.name } else { 'unknown patch' }
             Write-Host "[verify] FAILED ${patchName}: $($failure.reason -split "`n" | Select-Object -First 1)"

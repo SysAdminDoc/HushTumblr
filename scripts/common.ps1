@@ -404,8 +404,9 @@ function Copy-BundleMember {
     )
 
     $source = $Entry.Open()
-    $sha = [System.Security.Cryptography.SHA256]::Create()
+    $sha = $null
     try {
+        $sha = [System.Security.Cryptography.SHA256]::Create()
         $buffer = New-Object byte[] 1048576
         $written = 0L
         while ($true) {
@@ -423,7 +424,7 @@ function Copy-BundleMember {
         return ([System.BitConverter]::ToString($sha.Hash) -replace '-', '').ToLowerInvariant()
     } finally {
         $source.Dispose()
-        $sha.Dispose()
+        if ($null -ne $sha) { $sha.Dispose() }
     }
 }
 
