@@ -1093,10 +1093,22 @@ try {
     Assert-True ($stale.ExitCode -ne 0 -and (& $onlyDelta $stale) -and (& $deltaFails $stale).Count -eq 1 -and
         ($stale.Output -join "`n").Contains("dex delta: the selected section [Other patch | Third patch] lists what this run didn't change: $staleLine")) `
         "A stale line in a selected section of the dex delta allowlist passed.`n$($stale.Output -join "`n")"
+    # A line in effect that the run didn't need is stale, an out-of-date hash beside the current one
+    # included: the old one would let those bytes back in.
+    $oldHashLine = 'method Lcom/fixture/Host;->hushHelper()V ' + ('0' * 64)
+    $oldHashAllowlist = Join-Path $caseRoot 'delta-allowlist-old-hash.txt'
+    [IO.File]::WriteAllLines($oldHashAllowlist, [string[]]($allowLines + $oldHashLine), [Text.UTF8Encoding]::new($false))
+    $oldHash = Invoke-DexDiff -Clean $deltaClean -Patched $deltaGood -Allowlist $emptyAllowlist -Name 'delta-good-old-hash' -Contracts $deltaContracts `
+        -Selected $bothSelected -Bundle $deltaBundle -DeltaAllowlist $oldHashAllowlist
+    Assert-True ($oldHash.ExitCode -ne 0 -and (& $onlyDelta $oldHash) -and (& $deltaFails $oldHash).Count -eq 1 -and
+        ($oldHash.Output -join "`n").Contains("dex delta: the selected section [Other patch | Third patch] lists what this run didn't change: $oldHashLine")) `
+        "An out-of-date hash listed beside a method's current one passed.`n$($oldHash.Output -join "`n")"
     # A class one patch reshapes and another adds to: its whole-class line hashes one way for
-    # Fixture patch alone and another for both, and covers Model's implements line in each. With
-    # both lines listed each build passes, the other selection's line unused, and a build that
-    # doesn't reshape Model fails on both.
+    # Fixture patch alone and another for both, and covers Model's implements line in each. The one
+    # for both goes under a header that needs both, and stands in for Fixture patch's own line when
+    # both are selected. Each build passes, and a build that doesn't reshape Model fails on the line
+    # in effect. A run of Fixture patch alone over a build with Other patch's mark in Model fails:
+    # the line for both doesn't apply to it.
     $modelLineOf = { param([string]$Name, [string]$Selected)
         $run = Invoke-DexDiff -Clean $deltaClean -Patched (New-DexApk -Name $Name -Entries ([ordered]@{ 'classes.dex' = (Get-Dex $Name) })) `
             -Allowlist $emptyAllowlist -Name "$Name-first" -Contracts $deltaContracts -Selected $Selected -Bundle $deltaBundle -DeltaAllowlist $deltaAllowlist
@@ -1107,7 +1119,8 @@ try {
     $variantLines = @((& $modelLineOf 'delta-variant-subset' $fixtureSelected), (& $modelLineOf 'delta-variant-good' $bothSelected))
     Assert-True ($variantLines[0] -cne $variantLines[1]) "Model's whole-class line hashed the same for both selections: $($variantLines[0])"
     $variantAllowlist = Join-Path $caseRoot 'delta-allowlist-variant.txt'
-    [IO.File]::WriteAllLines($variantAllowlist, [string[]]($allowLines + '[Fixture patch | Fourth patch]' + $variantLines), [Text.UTF8Encoding]::new($false))
+    [IO.File]::WriteAllLines($variantAllowlist, [string[]]($allowLines + '[Fixture patch | Fourth patch]' + $variantLines[0] +
+        '[Fixture patch + Other patch]' + $variantLines[1]), [Text.UTF8Encoding]::new($false))
     foreach ($variant in @(@{ Name = 'delta-variant-subset'; Selected = $fixtureSelected }, @{ Name = 'delta-variant-good'; Selected = $bothSelected })) {
         $run = Invoke-DexDiff -Clean $deltaClean -Patched (Join-Path $caseRoot "$($variant.Name).apk") -Allowlist $emptyAllowlist -Name "$($variant.Name)-listed" `
             -Contracts $deltaContracts -Selected $variant.Selected -Bundle $deltaBundle -DeltaAllowlist $variantAllowlist
@@ -1117,9 +1130,16 @@ try {
     $unshaped = Invoke-DexDiff -Clean $deltaClean -Patched $deltaGood -Allowlist $emptyAllowlist -Name 'delta-variant-unshaped' -Contracts $deltaContracts `
         -Selected $bothSelected -Bundle $deltaBundle -DeltaAllowlist $variantAllowlist
     $unshapedFails = & $deltaFails $unshaped
-    Assert-True ($unshaped.ExitCode -ne 0 -and (& $onlyDelta $unshaped) -and $unshapedFails.Count -eq 2 -and @($variantLines | Where-Object {
-            $unshapedFails -ccontains "[diff] FAIL: dex delta: the selected section [Fixture patch | Fourth patch] lists what this run didn't change: $_" }).Count -eq 2) `
-        "A build that doesn't reshape Model passed with Model's whole-class lines listed.`n$($unshaped.Output -join "`n")"
+    Assert-True ($unshaped.ExitCode -ne 0 -and (& $onlyDelta $unshaped) -and $unshapedFails.Count -eq 1 -and
+        $unshapedFails -ccontains "[diff] FAIL: dex delta: the selected section [Fixture patch + Other patch] lists what this run didn't change: $($variantLines[1])") `
+        "A build that doesn't reshape Model passed with Model's whole-class line for both patches in effect.`n$($unshaped.Output -join "`n")"
+    $mixed = Invoke-DexDiff -Clean $deltaClean -Patched (New-DexApk -Name 'delta-variant-mixed' -Entries ([ordered]@{ 'classes.dex' = (Get-Dex 'delta-variant-mixed') })) `
+        -Allowlist $emptyAllowlist -Name 'delta-variant-mixed' -Contracts $deltaContracts -Selected $fixtureSelected -Bundle $deltaBundle -DeltaAllowlist $variantAllowlist
+    $mixedFails = & $deltaFails $mixed
+    Assert-True ($mixed.ExitCode -ne 0 -and (& $onlyDelta $mixed) -and $mixedFails.Count -eq 2 -and
+        $mixedFails -ccontains "$unlisted$($variantLines[1])" -and
+        $mixedFails -ccontains "[diff] FAIL: dex delta: the selected section [Fixture patch | Fourth patch] lists what this run didn't change: $($variantLines[0])") `
+        "A run of Fixture patch alone passed with Other patch's mark in Model.`n$($mixed.Output -join "`n")"
     # Tumblr classes with copies in another dex entry: held to every copy, methods and all, in any
     # order. The same copies on both sides pass. A copy the patched APK adds fails however the first
     # one reads, with a selection or without, and so do a copy it drops and a copy whose method
@@ -1194,7 +1214,11 @@ try {
         @{ Name = 'line-twice'; Lines = @('[Fixture patch]', "field Lcom/fixture/Host;->hushFlag:Z $hash", "field Lcom/fixture/Host;->hushFlag:Z $hash"); Line = 3 }
         @{ Name = 'section-twice'; Lines = @('[Fixture patch]', '# again', '[Fixture patch]'); Line = 3 }
         @{ Name = 'section-unnamed'; Lines = @('[]'); Line = 1 }
-        @{ Name = 'section-padded'; Lines = @('[ Fixture patch]'); Line = 1 })
+        @{ Name = 'section-padded'; Lines = @('[ Fixture patch]'); Line = 1 }
+        @{ Name = 'method-no-owner'; Lines = @('[Fixture patch]', "method answer()Z $hash"); Line = 2 }
+        @{ Name = 'field-no-owner'; Lines = @('[Fixture patch]', "field hushFlag:Z $hash"); Line = 2 }
+        @{ Name = 'section-half-joined'; Lines = @('[Fixture patch + ]'); Line = 1 }
+        @{ Name = 'section-empty-alternative'; Lines = @('[Fixture patch |  | Other patch]'); Line = 1 })
     foreach ($case in $malformed) {
         $file = Join-Path $caseRoot "delta-malformed-$($case.Name).txt"
         [IO.File]::WriteAllLines($file, [string[]]$case.Lines, [Text.UTF8Encoding]::new($false))

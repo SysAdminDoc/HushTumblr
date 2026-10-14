@@ -201,6 +201,8 @@ public final class DexDeltaFixture {
         // Fixture patch alone and another for both.
         build(root, "delta-variant-subset", Set.of("patched", "fixture", "superclass"));
         build(root, "delta-variant-good", Set.of("patched", "fixture", "other", "superclass", "model-mark"));
+        // Fixture patch's build with Other patch's mark in Model and nothing else of Other patch's.
+        build(root, "delta-variant-mixed", Set.of("patched", "fixture", "superclass", "model-mark"));
         // Each bad build: its name, the selection it runs with, how many findings it raises, and
         // the text one of them carries.
         List<String> cases = new ArrayList<>();

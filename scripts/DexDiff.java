@@ -5721,26 +5721,29 @@ public class DexDiff {
      */
     private static final class DexDelta {
         static final String UTILS_VERSION = "Lapp/hushtumblr/extension/shared/Utils;->getPatchesReleaseVersion()Ljava/lang/String;";
-        static final java.util.regex.Pattern LINE = java.util.regex.Pattern.compile("(method|field|class) \\S+ [0-9a-f]{64}|implements \\S+ L\\S+;");
+        static final java.util.regex.Pattern LINE = java.util.regex.Pattern.compile(
+                "(method|field) \\S+->\\S+ [0-9a-f]{64}|class \\S+ [0-9a-f]{64}|implements \\S+ L\\S+;");
         final List<String> findings = new ArrayList<>();
         /** Each allowlist line the run needed, and the selected section that lists it, or null. */
         final Map<String, String> needed = new TreeMap<>();
         /**
-         * What the run changed, past the exact lines it needed: each member a line was needed for,
-         * whatever its hash; each class that needed a whole-class line; and each class refused for
-         * being defined more than once.
+         * What the run already refused, whose lines can't be judged: each method and each class
+         * refused for being defined more than once. And each class that needed a whole-class line,
+         * which its interface and field lines are for another selection's shape of.
          */
-        final Set<String> touched = new HashSet<>(), reshaped = new HashSet<>(), refused = new HashSet<>();
+        final Set<String> refusedMembers = new HashSet<>(), reshaped = new HashSet<>(), refused = new HashSet<>();
         final List<String> unseen = new ArrayList<>();
         final List<String> sectionsUsed = new ArrayList<>();
         int validated, reencoded, answered, matchedClasses;
 
         /**
-         * Sections named in brackets for patches, " | " between several, each holding the lines the
-         * report prints for what a run needed: "method signature sha256", "field reference sha256",
-         * "implements type interface" and "class type sha256". Blank lines and lines starting with #
-         * are left out. A section only applies when the run selects one of its patches, or a patch
-         * that depends on one, and each one applies when the run names no selection.
+         * Sections named in brackets for patches, each holding the lines the report prints for what
+         * a run needed: "method signature sha256", "field reference sha256", "implements type
+         * interface" and "class type sha256". Blank lines and lines starting with # are left out. A
+         * header names a patch, or several: " | " between alternatives, " + " between patches an
+         * alternative needs together. A section only applies when the run selects every patch of one
+         * alternative, or a patch that depends on each, and each one applies when the run names no
+         * selection.
          */
         static Map<String, Set<String>> read(File file) throws Exception {
             if (!file.isFile()) throw new IllegalArgumentException("Dex delta allowlist not found: " + file);
@@ -5753,8 +5756,12 @@ public class DexDiff {
                 if (line.isEmpty() || line.startsWith("#")) continue;
                 if (line.startsWith("[") && line.endsWith("]")) {
                     String name = line.substring(1, line.length() - 1);
-                    if (name.isBlank() || !name.equals(name.strip()) || sections.containsKey(name))
-                        throw new IllegalArgumentException(file.getName() + " line " + number + ": a section with no name or one named twice: " + line);
+                    boolean named = true;
+                    for (String alternative : name.split(" \\| ", -1)) for (String patch : alternative.split(" \\+ ", -1))
+                        if (patch.isBlank() || !patch.equals(patch.strip())) named = false;
+                    if (!named || sections.containsKey(name))
+                        throw new IllegalArgumentException(file.getName() + " line " + number
+                                + ": a section with no name, a patch missing on either side of \" | \" or \" + \", or one named twice: " + line);
                     current = new java.util.LinkedHashSet<>();
                     sections.put(name, current);
                     continue;
@@ -5801,7 +5808,6 @@ public class DexDiff {
         void need(String kind, String key, String value, Map<String, String> allowed) {
             String line = kind + " " + key + " " + value;
             needed.put(line, allowed.get(line));
-            touched.add(member(line));
             if (kind.equals("class")) reshaped.add(key);
         }
 
@@ -5812,29 +5818,35 @@ public class DexDiff {
         }
 
         /**
-         * A listed line is stale when this run left what it holds alone. A line whose hash is out of
-         * date isn't, since the member changed and its line is named as unlisted. Neither is a line
-         * of another variant: a method two patches write, or a class one reshapes, hashes differently
-         * for each selection of them, and each variant is listed. A class that needed a whole-class
-         * line takes its implements and field lines with it, and one refused for being defined more
+         * A line in effect is stale when this run didn't need it, a hash that's out of date included.
+         * A method two patches write, or a class one reshapes while another adds to it, hashes
+         * differently for each selection, and each variant goes under a header that names that
+         * selection, so only one is in effect. A class that needed a whole-class line takes its
+         * implements and field lines with it, and a method or class refused for being defined more
          * than once takes all of its lines.
          */
         boolean stale(String line) {
             String[] part = line.split(" ", 3);
             String kind = part[0], key = part[1];
             String type = kind.equals("method") || kind.equals("field") ? key.substring(0, key.indexOf("->")) : key;
-            if (touched.contains(member(line)) || refused.contains(type)) return false;
-            return kind.equals("method") || !reshaped.contains(type);
+            if (refusedMembers.contains(member(line)) || refused.contains(type)) return false;
+            return kind.equals("method") || kind.equals("class") || !reshaped.contains(type);
         }
 
         /**
-         * A section applies when the run selects any patch its header names, " | " between them,
-         * and every section applies to a run that names no selection.
+         * How many patches the alternative of [header] the run satisfies names, the most when it
+         * satisfies more than one: 0 when the section doesn't apply. Every section applies to a run
+         * that names no selection.
          */
-        static boolean applies(String header, Set<String> selected) {
-            if (selected == null) return true;
-            for (String name : header.split(" \\| ", -1)) if (selected.contains(name)) return true;
-            return false;
+        static int applies(String header, Set<String> selected) {
+            int most = 0;
+            for (String alternative : header.split(" \\| ", -1)) {
+                String[] patches = alternative.split(" \\+ ", -1);
+                boolean all = true;
+                for (String patch : patches) if (selected != null && !selected.contains(patch)) all = false;
+                if (all) most = Math.max(most, patches.length);
+            }
+            return most;
         }
 
         /**
@@ -5851,11 +5863,22 @@ public class DexDiff {
 
         void run(Set<String> changed, Set<String> added, FeatureIndex clean, FeatureIndex patched, FeatureCheck check,
                 Map<String, ClassDef> extension, String version, Map<String, Set<String>> allowlist, Set<String> selected) {
+            // A member listed in several sections the run applies takes the lines of the one whose
+            // header names the most patches the run selected together: a variant listed for two
+            // patches stands in for the line one of them has alone. A run that names no selection
+            // applies every line, since it can't tell which variant to expect.
+            Map<String, Integer> narrowest = new HashMap<>();
+            for (Map.Entry<String, Set<String>> section : allowlist.entrySet()) {
+                int fit = applies(section.getKey(), selected);
+                if (fit > 0) for (String line : section.getValue()) narrowest.merge(member(line), fit, Math::max);
+            }
             Map<String, String> allowed = new LinkedHashMap<>();
             for (Map.Entry<String, Set<String>> section : allowlist.entrySet()) {
-                if (!applies(section.getKey(), selected)) continue;
+                int fit = applies(section.getKey(), selected);
+                if (fit == 0) continue;
                 sectionsUsed.add(section.getKey());
-                for (String line : section.getValue()) allowed.putIfAbsent(line, section.getKey());
+                for (String line : section.getValue())
+                    if (selected == null || fit == narrowest.get(member(line))) allowed.putIfAbsent(line, section.getKey());
             }
             // The classes the patch added: each one of the bundle's, or listed with all it has.
             Set<String> addedClasses = new TreeSet<>(patched.classes.keySet());
@@ -5922,7 +5945,7 @@ public class DexDiff {
                 Method after = patched.methods.get(s), before = clean.methods.get(s);
                 if (after == null || patched.duplicates.contains(s) || before != null && clean.duplicates.contains(s)) {
                     findings.add("dex delta: " + s + " is defined more than once, so it can't be held one definition at a time");
-                    touched.add("method " + s);
+                    refusedMembers.add("method " + s);
                     continue;
                 }
                 if (before != null && sameFace(before, after)) {
