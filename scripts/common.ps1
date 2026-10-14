@@ -1277,6 +1277,15 @@ function Get-MergedApk {
             Get-InputIdentity -Apks @($facts.Apks) }
         $sourceSha256 = [string]$opened.Splits.Sha256
         if ($sourceSha256 -cnotmatch '^[0-9a-f]{64}$') { throw "$Apk was unpacked or copied without a digest of its own bytes." }
+        # The bundle an unsigned universal APK was held to, by the digest taken through the handle
+        # it was unpacked from: the signers it vouched with are that bundle's, not the APK's.
+        $signedFormSha256 = $null
+        if ($opened.SignedForm) {
+            $signedFormSha256 = [string]$opened.SignedForm.Sha256
+            if ($signedFormSha256 -cnotmatch '^[0-9a-f]{64}$') {
+                throw "$($opened.SignedForm.Bundle), which vouches for $Apk, was unpacked without a digest of its own bytes."
+            }
+        }
         $recordFacts = [ordered]@{
             input        = $Apk
             sourceSha256 = $sourceSha256
@@ -1284,6 +1293,7 @@ function Get-MergedApk {
             versionCode  = [string]$facts.VersionCode
             signers      = @($facts.Signers)
             signedForm   = if ($opened.SignedForm) { $opened.SignedForm.Bundle } else { $null }
+            signedFormSha256 = $signedFormSha256
             baseSha256   = [string]$facts.Base.Sha256
             mergedSha256 = $merge.Sha256
             inputIdentity = $inputIdentity
@@ -1301,6 +1311,7 @@ function Get-MergedApk {
             BaseSha256  = [string]$facts.Base.Sha256
             InputIdentity = $inputIdentity
             SourceSha256 = $sourceSha256
+            SignedFormSha256 = $signedFormSha256
         }
         $writing = $false
         return $Destination
@@ -1442,6 +1453,27 @@ function Get-HeldSourceSha256 {
         throw "$Merged isn't a merge this process holds, so nothing checked says what it was made from."
     }
     return [string]$entry.SourceSha256
+}
+
+function Get-HeldSignedFormSha256 {
+    <#
+    .SYNOPSIS
+        The SHA-256, lower case, of the bundle that vouched for the unsigned universal APK a merge
+        this process holds was copied from, or $null when the input was a bundle or a signed APK.
+        A throw for a path that isn't held.
+    .DESCRIPTION
+        Taken through the handle that bundle was unpacked from while it was checked in the APK's
+        place (Open-AuthenticInput), so the receipt can name the bundle whose signers it relied on.
+    #>
+    param([Parameter(Mandatory = $true)][string]$Merged)
+
+    $Merged = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Merged)
+    $entry = $null
+    if (-not (Get-HeldMerges).TryGetValue($Merged, [ref]$entry) -or -not $entry.SourceSha256) {
+        throw "$Merged isn't a merge this process holds, so nothing checked says what vouched for it."
+    }
+    if (-not $entry.SignedFormSha256) { return $null }
+    return [string]$entry.SignedFormSha256
 }
 
 function Assert-SameBuild {

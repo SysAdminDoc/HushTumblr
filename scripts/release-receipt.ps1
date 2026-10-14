@@ -1497,6 +1497,12 @@ function Test-ReleaseReceipt {
         if ([string]$target.source.sha256 -notmatch '^[0-9A-F]{64}$') {
             return Fail "The receipt records no source APK hash for $label."
         }
+        # The bundle an unsigned universal APK was trusted on, where one was. Receipts written before
+        # it was recorded leave it out.
+        $vouchedBy = $target.source.PSObject.Properties['signedFormSha256']
+        if ($null -ne $vouchedBy -and $null -ne $vouchedBy.Value -and [string]$vouchedBy.Value -cnotmatch '^[0-9A-F]{64}$') {
+            return Fail "The receipt names the bundle that vouched for $label by something that isn't an upper-case SHA-256: $($vouchedBy.Value)"
+        }
         if ([string]$target.source.package -ne $ExpectedPackageName) {
             return Fail ("The receipt records a run against $($target.source.package); the " +
                 "catalog targets $ExpectedPackageName.")

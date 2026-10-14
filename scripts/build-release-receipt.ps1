@@ -461,7 +461,9 @@ foreach ($apk in $Fixture) {
 
         # The fixture by the digest Get-MergedApk took through the handle it unpacked or copied it
         # from, while the merge made of those bytes is still held, not by a hash of whatever is at its
-        # path now. Upper case, as the receipt writes every digest.
+        # path now. Upper case, as the receipt writes every digest. An unsigned universal APK is
+        # trusted on the bundle beside it, which is named the same way, and null for anything else.
+        $vouchedBy = Get-HeldSignedFormSha256 -Merged $patchInput
         $targets.Add([ordered]@{
             source        = [ordered]@{
                 file        = $label
@@ -469,6 +471,7 @@ foreach ($apk in $Fixture) {
                 versionName = $stock.versionName
                 versionCode = $stock.versionCode
                 sha256      = (Get-HeldSourceSha256 -Merged $patchInput).ToUpperInvariant()
+                signedFormSha256 = if ($vouchedBy) { $vouchedBy.ToUpperInvariant() } else { $null }
                 forced      = $forced
             }
             patches       = $verdicts

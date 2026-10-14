@@ -604,7 +604,7 @@ try {
         }, [ordered]@{
             source = [ordered]@{ file = 'previous.apkm'; package = 'com.example.host'
                 versionName = '46.6.1'; versionCode = '2024606010'; sha256 = ('D' * 64)
-                forced = $false }
+                signedFormSha256 = $null; forced = $false }
             patches = @([ordered]@{ name = 'Alpha'; applied = $true; reason = $null },
                         [ordered]@{ name = 'Beta'; applied = $true; reason = $null })
             sdk = [ordered]@{ stockMinSdk = 36; patchedMinSdk = 36 }
@@ -631,6 +631,10 @@ try {
 
     $valid = Test-TestReceipt -Receipt (New-TestReceipt)
     Assert-True $valid.Valid "A complete receipt was refused: $($valid.Reason)"
+    # An unsigned universal APK's target names the bundle it was trusted on. A bundle's names none
+    # (null), and a receipt from before the field leaves it out, as the first target does.
+    $vouched = Test-TestReceipt -Receipt (New-TestReceipt -Mutate { param($r) $r.targets[1].source.signedFormSha256 = ('E' * 64) })
+    Assert-True $vouched.Valid "A receipt naming the bundle that vouched for a universal APK was refused: $($vouched.Reason)"
 
     # Every fact the receipt exists to pin, put in front of the check one at a time. A gate that
     # has never been shown to fail is a gate nobody has tested.
@@ -649,6 +653,8 @@ try {
         'no extension payload at all'           = { param($r) $r.extension.dexPayloads = @() }
         'no target at all'                      = { param($r) $r.targets = @() }
         'an unhashed source APK'                = { param($r) $r.targets[0].source.sha256 = '' }
+        'a vouching bundle named by no hash'    = { param($r) $r.targets[1].source.signedFormSha256 = 'nope' }
+        'a vouching bundle hash in lower case'  = { param($r) $r.targets[1].source.signedFormSha256 = ('e' * 64) }
         'a target with no binary SDK facts'      = { param($r) $r.targets[0].PSObject.Properties.Remove('sdk') }
         'a target with no stock minimum'        = { param($r) $r.targets[0].sdk.PSObject.Properties.Remove('stockMinSdk') }
         'a target with no patched minimum'      = { param($r) $r.targets[0].sdk.PSObject.Properties.Remove('patchedMinSdk') }
@@ -4883,6 +4889,16 @@ $sourceEntries = @($receiptAst.FindAll({ param($node) $node -is [System.Manageme
 $heldSourceEntries = @($sourceEntries | Where-Object {
         $_ -match '(?m)^\s*sha256\s*=\s*\(Get-HeldSourceSha256 -Merged \$patchInput\)\.ToUpperInvariant\(\)\r?$' -and
         @([regex]::Matches($_, '(?m)^\s*sha256\s*=')).Count -eq 1 })
+# The bundle an unsigned universal APK was trusted on is named the same way, from the held merge.
+$vouchDigests = @(Get-NamedCommands $receiptAst 'Get-HeldSignedFormSha256' | ForEach-Object {
+        $statement = $_
+        while ($null -ne $statement -and $statement -isnot [System.Management.Automation.Language.AssignmentStatementAst]) { $statement = $statement.Parent }
+        if ($statement) { $statement.Extent.Text } else { $_.Extent.Text } })
+$vouchEntries = @($sourceEntries | Where-Object {
+        $_ -match '(?m)^\s*signedFormSha256\s*=\s*if \(\$vouchedBy\) \{ \$vouchedBy\.ToUpperInvariant\(\) \} else \{ \$null \}\r?$' -and
+        @([regex]::Matches($_, '(?m)^\s*signedFormSha256\s*=')).Count -eq 1 })
+Assert-True (($vouchDigests -join '; ') -ceq '$vouchedBy = Get-HeldSignedFormSha256 -Merged $patchInput' -and $vouchEntries.Count -eq 1) `
+    "build-release-receipt.ps1 doesn't name the bundle that vouched for a fixture by the held merge: $($vouchDigests -join '; ')"
 Assert-True ($sourceDigests.Count -eq 1 -and $sourceDigests[0] -ceq 'Get-HeldSourceSha256 -Merged $patchInput' -and
     ($receiptHashes -join '; ') -ceq 'Get-Sha256Hex -Path $Bundle' -and $sourceEntries.Count -eq 1 -and $heldSourceEntries.Count -eq 1) `
     ("build-release-receipt.ps1 doesn't name its fixtures by the held merge's input alone: $($sourceDigests + $receiptHashes -join '; ') " +
@@ -5822,6 +5838,9 @@ try {
             "The receipt says $label was $(if ($builtTarget.source.forced) { 'forced' } else { 'not forced' })."
         Assert-True ($builtTarget.source.sha256 -eq (Get-Sha256Hex -Path $fixturePaths[$label])) `
             "The receipt does not hash the $label fixture it was given."
+        # These fixtures are bundles, which vouch for themselves: the field is there, and null.
+        Assert-True ($null -ne $builtTarget.source.PSObject.Properties['signedFormSha256'] -and $null -eq $builtTarget.source.signedFormSha256) `
+            "The receipt names a bundle that vouched for the $label bundle: $($builtTarget.source.signedFormSha256)"
         Assert-True (@($builtTarget.patches | Where-Object { $_.applied }).Count -eq $releaseNames.Count) `
             "The receipt does not record every patch applied to $label."
         $stockMinSdk = if ($label -eq $newerBuild) { 36 } else { 21 }
