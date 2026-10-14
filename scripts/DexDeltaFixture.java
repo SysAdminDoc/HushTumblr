@@ -29,8 +29,9 @@ import java.util.Set;
 /**
  * The dex delta's fixtures. A clean host, the two extension dex files of the bundle it was
  * patched with, a build two patches wrote into ("Fixture patch" and "Other patch"), the build of
- * the first alone, builds that each change one more thing nothing accounts for, and copies of two
- * Tumblr classes for a second dex entry. The rebuild
+ * the first alone, a pair whose one reshaped class hashes differently for each selection, builds
+ * that each change one more thing nothing accounts for, and copies of Tumblr classes for a second
+ * dex entry. The rebuild
  * re-encodes one host string, and each patched build answers its flags and the bundle's Version
  * ahead of the bundle's bodies, as the patcher does.
  *
@@ -91,11 +92,18 @@ public final class DexDeltaFixture {
         if (traits.contains("stray")) out.add(clazz(STRAY, PUBLIC, OBJECT, List.of(), List.of(), List.of(method(STRAY, "go", "V", PUBLIC | STATIC, 0, code(end())))));
         out.add(clazz(HOST, PUBLIC, OBJECT, List.of(), hostFields, methods));
         int countFlags = PRIVATE | (traits.contains("field-changed") ? AccessFlags.VOLATILE.getValue() : 0);
+        List<Field> modelFields = new ArrayList<>(List.of(field(MODEL, "count", "I", countFlags)));
+        if (traits.contains("model-mark")) modelFields.add(field(MODEL, "hushMark", "Z", PUBLIC));
         out.add(clazz(MODEL, PUBLIC, traits.contains("superclass") ? BASE : OBJECT, traits.contains("fixture") ? List.of(FACE) : List.of(),
-                List.of(field(MODEL, "count", "I", countFlags)), List.of(method(MODEL, "get", "I", PUBLIC, 2,
+                modelFields, List.of(method(MODEL, "get", "I", PUBLIC, 2,
                         code(new ImmutableInstruction22c(Opcode.IGET, 0, 1, new ImmutableFieldReference(MODEL, "count", "I")), returns(0))))));
-        out.add(clazz(BASE, PUBLIC, OBJECT, List.of(), List.of(), List.of()));
+        out.add(base(0));
         return out;
+    }
+
+    /** Base, which no patch touches, with [flags] added to its one method's. */
+    static ClassDef base(int flags) {
+        return clazz(BASE, PUBLIC, OBJECT, List.of(), List.of(), List.of(method(BASE, "go", "V", PUBLIC | STATIC | flags, 0, code(end()))));
     }
 
     static List<Instruction> flagBody() { return code(literal(0, 0), returns(0)); }
@@ -179,12 +187,20 @@ public final class DexDeltaFixture {
         write(root.resolve("delta-conflict.mpe"), List.of(plain(5)));
         // Plain on its own, for a patched APK that carries it in two dex entries.
         write(root.resolve("delta-plain.dex"), List.of(plain(7)));
-        // Copies of Tumblr's classes in a second dex entry, with no methods to be copies of: Model as
-        // the clean build has it, and Base, which no patch touches.
-        write(root.resolve("delta-model-copy.dex"), List.of(clazz(MODEL, PUBLIC, OBJECT, List.of(), List.of(field(MODEL, "count", "I", PRIVATE)), List.of())));
-        write(root.resolve("delta-base-copy.dex"), List.of(clazz(BASE, PUBLIC, OBJECT, List.of(), List.of(), List.of())));
+        // Copies of Tumblr's classes in a second dex entry: Model with the clean build's shape and no
+        // methods, Base, which no patch touches, as it is and with its method made final, and the
+        // two together.
+        ClassDef modelCopy = clazz(MODEL, PUBLIC, OBJECT, List.of(), List.of(field(MODEL, "count", "I", PRIVATE)), List.of());
+        write(root.resolve("delta-model-copy.dex"), List.of(modelCopy));
+        write(root.resolve("delta-model-base-copy.dex"), List.of(modelCopy, base(0)));
+        write(root.resolve("delta-base-copy.dex"), List.of(base(0)));
+        write(root.resolve("delta-base-copy-final.dex"), List.of(base(AccessFlags.FINAL.getValue())));
         build(root, "delta-good", Set.of("patched", "fixture", "other"));
         build(root, "delta-subset", Set.of("patched", "fixture"));
+        // A class one patch reshapes and another adds to, so its whole-class line hashes one way for
+        // Fixture patch alone and another for both.
+        build(root, "delta-variant-subset", Set.of("patched", "fixture", "superclass"));
+        build(root, "delta-variant-good", Set.of("patched", "fixture", "other", "superclass", "model-mark"));
         // Each bad build: its name, the selection it runs with, how many findings it raises, and
         // the text one of them carries.
         List<String> cases = new ArrayList<>();
@@ -192,9 +208,9 @@ public final class DexDeltaFixture {
                 {"helper-leak", Set.of("patched", "fixture", "helper-leak"), SELECT_FIXTURE, 1, UNLISTED + "method " + HOST + "->hushHelper()V "},
                 {"run-body", Set.of("patched", "fixture", "other", "run-body"), SELECT_BOTH, 1, UNLISTED + "method " + HOST + "->run()V "},
                 {"run-flags", Set.of("patched", "fixture", "other", "run-flags"), SELECT_BOTH, 1, UNLISTED + "method " + HOST + "->run()V "},
-                // A whole-class line takes the place of Model's implements line, which then goes stale.
-                {"superclass", Set.of("patched", "fixture", "other", "superclass"), SELECT_BOTH, 2, UNLISTED + "class " + MODEL + " "},
-                {"field-changed", Set.of("patched", "fixture", "other", "field-changed"), SELECT_BOTH, 2, UNLISTED + "class " + MODEL + " "},
+                // A whole-class line takes the place of Model's implements line, which it covers.
+                {"superclass", Set.of("patched", "fixture", "other", "superclass"), SELECT_BOTH, 1, UNLISTED + "class " + MODEL + " "},
+                {"field-changed", Set.of("patched", "fixture", "other", "field-changed"), SELECT_BOTH, 1, UNLISTED + "class " + MODEL + " "},
                 {"plain-edited", Set.of("patched", "fixture", "other", "plain-edited"), SELECT_BOTH, 1, UNLISTED + "method " + PLAIN + "->value()I "},
                 {"plain-missing", Set.of("patched", "fixture", "other", "plain-missing"), SELECT_BOTH, 1,
                         "dex delta: the bundle's class " + PLAIN + " is missing from the patched APK"},

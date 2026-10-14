@@ -999,7 +999,8 @@ try {
     # section when no selection is given, and the build of one alone, and fails each build that
     # changes one thing more, naming it. Other patch's lines sit under a header that also names a
     # patch with no section of its own, since a run with no selection applies every header. A line
-    # a selected section lists that the run didn't need fails it.
+    # a selected section lists for code the run didn't change fails it, while a line of another
+    # selection's variant doesn't.
     Invoke-Checked -Program $Java -Arguments @('-Xmx256m', '-cp', $classPath, 'DexDeltaFixture', $dexDir) -Description 'DexDeltaFixture'
     function New-PatchBundle {
         param([string]$Name, [System.Collections.IDictionary]$Extensions, [string]$Version = '9.9.9')
@@ -1080,7 +1081,7 @@ try {
         $run = Invoke-DexDiff -Clean $deltaClean -Patched $pass.Patched -Allowlist $emptyAllowlist -Name $pass.Name -Contracts $deltaContracts `
             -Selected $pass.Selected -Bundle $deltaBundle -DeltaAllowlist $pass.Allow
         $report = @(Get-Content -LiteralPath $run.Report)
-        $unseenAt = [array]::IndexOf($report, 'Listed in the selected sections and not seen in this run:')
+        $unseenAt = [array]::IndexOf($report, "Listed in the sections this run applied, for code it didn't change:")
         $unseen = @(if ($unseenAt -ge 0) { $report[($unseenAt + 1)..($report.Count - 1)] | Where-Object { $_ -like '  `[*' } })
         Assert-True ($run.ExitCode -eq 0 -and (& $deltaFails $run).Count -eq 0 -and (& $deltaSummary $run) -ceq $pass.Summary -and
             $report -ccontains $pass.Sections -and ($unseen -join "`n") -ceq [string]$pass.Unseen -and
@@ -1092,20 +1093,62 @@ try {
     Assert-True ($stale.ExitCode -ne 0 -and (& $onlyDelta $stale) -and (& $deltaFails $stale).Count -eq 1 -and
         ($stale.Output -join "`n").Contains("dex delta: the selected section [Other patch | Third patch] lists what this run didn't change: $staleLine")) `
         "A stale line in a selected section of the dex delta allowlist passed.`n$($stale.Output -join "`n")"
-    # Tumblr classes with copies in another dex entry: held to every copy, in any order. The same
-    # copies on both sides pass, and a copy the patched APK adds fails however the first one reads.
-    $baseTwice = Invoke-DexDiff -Clean (New-DexApk -Name 'delta-clean-base-twice' -Entries ([ordered]@{
-            'classes.dex' = (Get-Dex 'delta-clean'); 'classes2.dex' = (Get-Dex 'delta-base-copy') })) `
+    # A class one patch reshapes and another adds to: its whole-class line hashes one way for
+    # Fixture patch alone and another for both, and covers Model's implements line in each. With
+    # both lines listed each build passes, the other selection's line unused, and a build that
+    # doesn't reshape Model fails on both.
+    $modelLineOf = { param([string]$Name, [string]$Selected)
+        $run = Invoke-DexDiff -Clean $deltaClean -Patched (New-DexApk -Name $Name -Entries ([ordered]@{ 'classes.dex' = (Get-Dex $Name) })) `
+            -Allowlist $emptyAllowlist -Name "$Name-first" -Contracts $deltaContracts -Selected $Selected -Bundle $deltaBundle -DeltaAllowlist $deltaAllowlist
+        $lines = @(& $deltaLines $run)
+        Assert-True ($run.ExitCode -ne 0 -and (& $deltaFails $run).Count -eq 1 -and $lines.Count -eq 1 -and $lines[0].StartsWith('class Lcom/fixture/Model; ')) `
+            "The dex delta did not ask $Name for Model's whole-class line alone.`n$($run.Output -join "`n")"
+        $lines[0] }
+    $variantLines = @((& $modelLineOf 'delta-variant-subset' $fixtureSelected), (& $modelLineOf 'delta-variant-good' $bothSelected))
+    Assert-True ($variantLines[0] -cne $variantLines[1]) "Model's whole-class line hashed the same for both selections: $($variantLines[0])"
+    $variantAllowlist = Join-Path $caseRoot 'delta-allowlist-variant.txt'
+    [IO.File]::WriteAllLines($variantAllowlist, [string[]]($allowLines + '[Fixture patch | Fourth patch]' + $variantLines), [Text.UTF8Encoding]::new($false))
+    foreach ($variant in @(@{ Name = 'delta-variant-subset'; Selected = $fixtureSelected }, @{ Name = 'delta-variant-good'; Selected = $bothSelected })) {
+        $run = Invoke-DexDiff -Clean $deltaClean -Patched (Join-Path $caseRoot "$($variant.Name).apk") -Allowlist $emptyAllowlist -Name "$($variant.Name)-listed" `
+            -Contracts $deltaContracts -Selected $variant.Selected -Bundle $deltaBundle -DeltaAllowlist $variantAllowlist
+        Assert-True ($run.ExitCode -eq 0 -and (& $deltaFails $run).Count -eq 0) `
+            "The dex delta failed $($variant.Name) with both of Model's whole-class lines listed.`n$($run.Output -join "`n")"
+    }
+    $unshaped = Invoke-DexDiff -Clean $deltaClean -Patched $deltaGood -Allowlist $emptyAllowlist -Name 'delta-variant-unshaped' -Contracts $deltaContracts `
+        -Selected $bothSelected -Bundle $deltaBundle -DeltaAllowlist $variantAllowlist
+    $unshapedFails = & $deltaFails $unshaped
+    Assert-True ($unshaped.ExitCode -ne 0 -and (& $onlyDelta $unshaped) -and $unshapedFails.Count -eq 2 -and @($variantLines | Where-Object {
+            $unshapedFails -ccontains "[diff] FAIL: dex delta: the selected section [Fixture patch | Fourth patch] lists what this run didn't change: $_" }).Count -eq 2) `
+        "A build that doesn't reshape Model passed with Model's whole-class lines listed.`n$($unshaped.Output -join "`n")"
+    # Tumblr classes with copies in another dex entry: held to every copy, methods and all, in any
+    # order. The same copies on both sides pass. A copy the patched APK adds fails however the first
+    # one reads, with a selection or without, and so do a copy it drops and a copy whose method
+    # changed its flags alone.
+    $baseTwiceClean = New-DexApk -Name 'delta-clean-base-twice' -Entries ([ordered]@{
+        'classes.dex' = (Get-Dex 'delta-clean'); 'classes2.dex' = (Get-Dex 'delta-base-copy') })
+    $baseTwice = Invoke-DexDiff -Clean $baseTwiceClean `
         -Patched (New-DexApk -Name 'delta-base-twice' -Entries ([ordered]@{ 'classes.dex' = (Get-Dex 'delta-good'); 'classes2.dex' = (Get-Dex 'delta-base-copy') })) `
         -Allowlist $emptyAllowlist -Name 'delta-base-twice' -Contracts $deltaContracts -Selected $bothSelected -Bundle $deltaBundle -DeltaAllowlist $deltaAllowlist
     Assert-True ($baseTwice.ExitCode -eq 0 -and (& $deltaFails $baseTwice).Count -eq 0) `
         "A Tumblr class copied alike on both sides failed the dex delta.`n$($baseTwice.Output -join "`n")"
-    $modelTwice = Invoke-DexDiff -Clean $deltaClean -Patched (New-DexApk -Name 'delta-model-twice' -Entries ([ordered]@{
-            'classes.dex' = (Get-Dex 'delta-good'); 'classes2.dex' = (Get-Dex 'delta-model-copy') })) `
-        -Allowlist $emptyAllowlist -Name 'delta-model-twice' -Contracts $deltaContracts -Selected '' -Bundle $deltaBundle -DeltaAllowlist $deltaAllowlist
-    Assert-True ($modelTwice.ExitCode -ne 0 -and (& $onlyDelta $modelTwice) -and (& $deltaFails $modelTwice).Count -eq 1 -and
-        ($modelTwice.Output -join "`n").Contains("dex delta: Lcom/fixture/Model; is defined more than once, so it can't be held one definition at a time")) `
-        "A Tumblr class the patched APK carries twice, one copy as the clean build has it, passed the dex delta.`n$($modelTwice.Output -join "`n")"
+    $modelTwiceApk = New-DexApk -Name 'delta-model-twice' -Entries ([ordered]@{ 'classes.dex' = (Get-Dex 'delta-good'); 'classes2.dex' = (Get-Dex 'delta-model-copy') })
+    $twiceCases = @(
+        @{ Name = 'delta-model-twice'; Clean = $deltaClean; Patched = $modelTwiceApk; Selected = ''; Type = 'Lcom/fixture/Model;' }
+        # Model's implements line goes with the refusal rather than standing as stale.
+        @{ Name = 'delta-model-twice-selected'; Clean = $deltaClean; Patched = $modelTwiceApk; Selected = $bothSelected; Type = 'Lcom/fixture/Model;' }
+        # The clean side's classes2.dex adds a copy of Model to Base's, the patched side's has Base's alone.
+        @{ Name = 'delta-model-clean-twice'; Selected = $bothSelected; Type = 'Lcom/fixture/Model;'
+            Clean = (New-DexApk -Name 'delta-clean-model-twice' -Entries ([ordered]@{ 'classes.dex' = (Get-Dex 'delta-clean'); 'classes2.dex' = (Get-Dex 'delta-model-base-copy') }))
+            Patched = (New-DexApk -Name 'delta-good-base-copy' -Entries ([ordered]@{ 'classes.dex' = (Get-Dex 'delta-good'); 'classes2.dex' = (Get-Dex 'delta-base-copy') })) }
+        @{ Name = 'delta-base-final'; Clean = $baseTwiceClean; Selected = $bothSelected; Type = 'Lcom/fixture/Base;'
+            Patched = (New-DexApk -Name 'delta-base-final' -Entries ([ordered]@{ 'classes.dex' = (Get-Dex 'delta-good'); 'classes2.dex' = (Get-Dex 'delta-base-copy-final') })) })
+    foreach ($case in $twiceCases) {
+        $run = Invoke-DexDiff -Clean $case.Clean -Patched $case.Patched -Allowlist $emptyAllowlist -Name $case.Name -Contracts $deltaContracts `
+            -Selected $case.Selected -Bundle $deltaBundle -DeltaAllowlist $deltaAllowlist
+        Assert-True ($run.ExitCode -ne 0 -and (& $onlyDelta $run) -and (& $deltaFails $run).Count -eq 1 -and
+            ($run.Output -join "`n").Contains("dex delta: $($case.Type) is defined more than once, so it can't be held one definition at a time")) `
+            "The dex delta didn't refuse $($case.Name) for its copies of $($case.Type) alone.`n$($run.Output -join "`n")"
+    }
     foreach ($caseLine in Get-Content -LiteralPath (Join-Path $dexDir 'delta-cases.txt')) {
         $values = $caseLine -split '\|', 4
         $selection = if ($values[1] -ceq 'Fixture patch') { $fixtureSelected } else { $bothSelected }

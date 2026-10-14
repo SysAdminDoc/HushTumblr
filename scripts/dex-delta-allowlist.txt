@@ -11,9 +11,13 @@
 # didn't only re-encode and the bundle doesn't carry as it is fails the run unless it's here.
 #
 # A section names a patch, or several with " | " between them for a bridge they all pull in, and
-# applies only when the run selects one of them or a patch that depends on one. Lines for one class
-# from two patches add up, so any selection of them passes. Changing a patch's bytecode, or
-# retargeting Tumblr, means reading a fresh register report and redoing that patch's lines.
+# applies only when the run selects one of them or a patch that depends on one, and every section
+# applies to a run that names no selection. Interface and field lines for one class from two patches
+# add up, so any selection of them passes. A method two patches write, or a class one reshapes while
+# another adds to it, hashes differently for each selection: list each variant, since a line only
+# goes stale when the run leaves what it holds alone. A run that names its selection fails on a
+# stale line of a section it applied. Changing a patch's bytecode, or retargeting Tumblr, means
+# reading a fresh register report and redoing that patch's lines.
 
 [HushTumblr settings]
 method Lapp/hushtumblr/extension/tumblr/settings/SettingsHubRow;->titleOf(Ljava/lang/Object;)I 878af54c8445574d318d7257a66aea2f998980c121cad4b59d2ab228b0e7d26b

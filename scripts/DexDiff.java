@@ -5725,6 +5725,12 @@ public class DexDiff {
         final List<String> findings = new ArrayList<>();
         /** Each allowlist line the run needed, and the selected section that lists it, or null. */
         final Map<String, String> needed = new TreeMap<>();
+        /**
+         * What the run changed, past the exact lines it needed: each member a line was needed for,
+         * whatever its hash; each class that needed a whole-class line; and each class refused for
+         * being defined more than once.
+         */
+        final Set<String> touched = new HashSet<>(), reshaped = new HashSet<>(), refused = new HashSet<>();
         final List<String> unseen = new ArrayList<>();
         final List<String> sectionsUsed = new ArrayList<>();
         int validated, reencoded, answered, matchedClasses;
@@ -5795,6 +5801,30 @@ public class DexDiff {
         void need(String kind, String key, String value, Map<String, String> allowed) {
             String line = kind + " " + key + " " + value;
             needed.put(line, allowed.get(line));
+            touched.add(member(line));
+            if (kind.equals("class")) reshaped.add(key);
+        }
+
+        /** What a line holds apart from its hash: an implements line whole, any other its kind and key. */
+        static String member(String line) {
+            String[] part = line.split(" ", 3);
+            return part[0].equals("implements") ? line : part[0] + " " + part[1];
+        }
+
+        /**
+         * A listed line is stale when this run left what it holds alone. A line whose hash is out of
+         * date isn't, since the member changed and its line is named as unlisted. Neither is a line
+         * of another variant: a method two patches write, or a class one reshapes, hashes differently
+         * for each selection of them, and each variant is listed. A class that needed a whole-class
+         * line takes its implements and field lines with it, and one refused for being defined more
+         * than once takes all of its lines.
+         */
+        boolean stale(String line) {
+            String[] part = line.split(" ", 3);
+            String kind = part[0], key = part[1];
+            String type = kind.equals("method") || kind.equals("field") ? key.substring(0, key.indexOf("->")) : key;
+            if (touched.contains(member(line)) || refused.contains(type)) return false;
+            return kind.equals("method") || !reshaped.contains(type);
         }
 
         /**
@@ -5807,10 +5837,14 @@ public class DexDiff {
             return false;
         }
 
-        /** The class prints of every definition of [type], sorted, so copies compare in any dex entry order. */
+        /**
+         * Every definition of [type], its class print and each method's print, sorted, so copies
+         * compare in any dex entry order. The method diff and the flags check read one copy of a
+         * method, so the methods of a copy are held here.
+         */
         static List<String> classPrints(FeatureIndex index, String type) {
             List<String> out = new ArrayList<>();
-            for (ClassDef cd : index.copies.getOrDefault(type, List.of(index.classes.get(type)))) out.add(classPrint(cd));
+            for (ClassDef cd : index.copies.getOrDefault(type, List.of(index.classes.get(type)))) out.add(classPrint(cd) + methodPrints(cd));
             java.util.Collections.sort(out);
             return out;
         }
@@ -5828,7 +5862,11 @@ public class DexDiff {
             addedClasses.removeAll(clean.classes.keySet());
             for (String type : addedClasses) {
                 ClassDef mine = patched.classes.get(type);
-                if (patched.duplicates.contains(type)) { findings.add("dex delta: " + type + " is defined more than once in the patched APK"); continue; }
+                if (patched.duplicates.contains(type)) {
+                    findings.add("dex delta: " + type + " is defined more than once in the patched APK");
+                    refused.add(type);
+                    continue;
+                }
                 ClassDef theirs = extension.get(type);
                 if (theirs == null && type.startsWith(OWN)) {
                     // The extension's package is the bundle's to fill: a class there it doesn't carry
@@ -5863,8 +5901,10 @@ public class DexDiff {
                 ClassDef was = clean.classes.get(e.getKey());
                 if (was == null) continue;
                 if (clean.copies.containsKey(e.getKey()) || patched.copies.containsKey(e.getKey())) {
-                    if (!classPrints(clean, e.getKey()).equals(classPrints(patched, e.getKey())))
+                    if (!classPrints(clean, e.getKey()).equals(classPrints(patched, e.getKey()))) {
                         findings.add("dex delta: " + e.getKey() + " is defined more than once, so it can't be held one definition at a time");
+                        refused.add(e.getKey());
+                    }
                     continue;
                 }
                 if (!classPrint(was).equals(classPrint(e.getValue()))) shape(was, e.getValue(), allowed);
@@ -5882,6 +5922,7 @@ public class DexDiff {
                 Method after = patched.methods.get(s), before = clean.methods.get(s);
                 if (after == null || patched.duplicates.contains(s) || before != null && clean.duplicates.contains(s)) {
                     findings.add("dex delta: " + s + " is defined more than once, so it can't be held one definition at a time");
+                    touched.add("method " + s);
                     continue;
                 }
                 if (before != null && sameFace(before, after)) {
@@ -5891,10 +5932,10 @@ public class DexDiff {
                 }
                 need("method", s, methodPrint(after), allowed);
             }
-            // A run that names its selection has to need every line of the sections it applied, or
-            // the allowlist carries an exception for code that isn't there any more. A run over an
-            // installed build only reports them, since it applies every section.
-            for (String line : allowed.keySet()) if (!needed.containsKey(line)) {
+            // A run that names its selection has to change what each line of the sections it applied
+            // holds, or the allowlist carries an exception for code that isn't there any more. A run
+            // over an installed build only reports them, since it applies every section.
+            for (String line : allowed.keySet()) if (!needed.containsKey(line) && stale(line)) {
                 unseen.add("[" + allowed.get(line) + "] " + line);
                 if (selected != null) findings.add("dex delta: the selected section [" + allowed.get(line) + "] lists what this run didn't change: " + line);
             }
@@ -6276,7 +6317,7 @@ public class DexDiff {
                         + delta.matchedClasses + ", answering ahead " + delta.answered);
                 for (Map.Entry<String, String> e : delta.needed.entrySet())
                     report.println((e.getValue() == null ? "  FAIL    " : "  allowed [" + e.getValue() + "] ") + e.getKey());
-                report.println("Listed in the selected sections and not seen in this run:");
+                report.println("Listed in the sections this run applied, for code it didn't change:");
                 for (String line : delta.unseen) report.println("  " + line);
                 report.println();
             }
