@@ -91,7 +91,9 @@ if ($Replace) { throw '-Replace is refused. Development installs never uninstall
 if (-not $Root) { $Root = Split-Path -Parent $PSScriptRoot }
 # The argument file is written with [IO.File], which reads a relative path against the process
 # directory, while java is handed the same path from PowerShell's location. Absolute, they agree.
+# The keystore likewise: Open-HeldFile holds it by [IO.File] and the signers read it by that path.
 $OutDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutDir)
+$Keystore = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Keystore)
 . (Join-Path $PSScriptRoot 'patch-target.ps1')
 . (Join-Path $PSScriptRoot 'patch-report.ps1')
 . (Join-Path $PSScriptRoot 'common.ps1')

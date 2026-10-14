@@ -255,6 +255,15 @@ try {
         } else { $faillessValidation.Valid -and $faillessValidation.Failed -eq 0 }
         Assert-True $faillessOk "A result whose failed patches are $failures was judged wrongly: $($faillessValidation.Reason)"
     }
+    # A script hands no path for an output it couldn't hold. That's a result turned down for the
+    # APK alone, not a throw, which Test-ApkFile's Test-Path on an empty path used to be.
+    foreach ($empty in @('', $null)) {
+        $noOutput = Test-PatchingReport -Report $dependencyReport -ExpectedNames $allNames `
+            -AllowedDependencyNames $allDependencies -OutputPath $empty `
+            -ExpectedPackageName $target.PackageName -ExpectedPackageVersion $target.PackageVersion
+        Assert-True (-not $noOutput.Valid -and $noOutput.Reason -ceq 'saved APK is missing or invalid') `
+            "A result handed no output path wasn't turned down for the APK alone: $($noOutput.Reason)"
+    }
 
     # The old replacement expectations contradicted account preservation. Exercise refusal
     # before device mutation, signer checks and ownership instead of expecting uninstalls.
@@ -658,6 +667,7 @@ try {
         'a vouching bundle hash in lower case'  = { param($r) $r.targets[1].source.file = 'previous.apk'; $r.targets[1].source.signedFormSha256 = ('e' * 64) }
         'a vouching bundle hash and a newline'  = { param($r) $r.targets[1].source.file = 'previous.apk'; $r.targets[1].source.signedFormSha256 = ('E' * 64) + "`n" }
         'a vouching bundle named by a number'   = { param($r) $r.targets[1].source.file = 'previous.apk'; $r.targets[1].source.signedFormSha256 = 1234 }
+        'a vouching bundle hash in an array'    = { param($r) $r.targets[1].source.file = 'previous.apk'; $r.targets[1].source.signedFormSha256 = @('E' * 64) }
         'a bundle vouched for by another'       = { param($r) $r.targets[1].source.signedFormSha256 = ('E' * 64) }
         'a target with no binary SDK facts'      = { param($r) $r.targets[0].PSObject.Properties.Remove('sdk') }
         'a target with no stock minimum'        = { param($r) $r.targets[0].sdk.PSObject.Properties.Remove('stockMinSdk') }
@@ -694,6 +704,14 @@ try {
         $result = Test-TestReceipt -Receipt (New-TestReceipt -Mutate $mutations[$description])
         Assert-True (-not $result.Valid) "Receipt validation accepted $description."
         Assert-True ([bool]$result.Reason) "Receipt validation refused $description without saying why."
+    }
+    # Each malformed vouching hash is refused for being no upper-case SHA-256, not by some later
+    # check: a one-element array included, which -cnotmatch alone lets through, since on an array
+    # it answers the elements that don't match.
+    foreach ($description in @($mutations.Keys | Where-Object { $_ -clike 'a vouching bundle*' })) {
+        $result = Test-TestReceipt -Receipt (New-TestReceipt -Mutate $mutations[$description])
+        Assert-True ([string]$result.Reason -clike "The receipt names the bundle that vouched for * by something that isn't an upper-case SHA-256:*") `
+            "Receipt validation refused $description for another reason: $($result.Reason)"
     }
 
     # A receipt built only from forced runs against newer builds has to be refused for that
@@ -5615,6 +5633,8 @@ try {
         'rem A case that needs something to change while a fixture is patched leaves this behind.',
         'if exist "!HERE!during-patch.cmd" call "!HERE!during-patch.cmd"',
         'copy /y "!SRC!.result.json" "!RESULT!" >nul || exit /b 3',
+        'rem A case that leaves cli-leaves-no-apk.txt behind gets a clean exit with the report and no APK.',
+        'if exist "!HERE!cli-leaves-no-apk.txt" exit /b 0',
         'copy /y "!HERE!patched.apk" "!OUT!" >nul || exit /b 4',
         'copy /y "!SRC!.patched.txt" "!OUT!.xmltree" >nul || exit /b 5',
         'rem Given a keystore it signs with that alias, which the stand-in apksigner reads off a .signer file.',
@@ -6592,6 +6612,21 @@ try {
         @(Get-Content -LiteralPath $apksignerLog) -ccontains 'keystore held' -and
         (Get-Content -LiteralPath $standInKeystore -Raw).Trim() -ceq 'stand-in keystore') `
         "Signing a kept APK could write over the keystore its certificate was read from: $(@(Get-Content -LiteralPath $apksignerLog -ErrorAction SilentlyContinue) -join ' | ')"
+    # The control: handed a keystore nothing holds, the same stand-in does write over it, so the
+    # "keystore held" above is the hold and not a copy that could never land.
+    $looseKeystore = Join-Path $tools 'loose.jks'
+    $looseIn = Join-Path $tools 'loose-in.apk'
+    Set-Content -LiteralPath $looseKeystore -Value 'stand-in keystore' -Encoding ASCII
+    Set-Content -LiteralPath $looseIn -Value 'loose' -Encoding ASCII
+    Set-Content -LiteralPath $keystoreSwap -Value 'another keystore' -Encoding ASCII
+    Remove-Item -LiteralPath $apksignerLog -Force -ErrorAction SilentlyContinue
+    try {
+        & (Join-Path $tools 'apksigner.bat') sign --ks $looseKeystore --ks-key-alias sideload --out (Join-Path $tools 'loose-out.apk') $looseIn | Out-Null
+    } finally { Remove-Item -LiteralPath $keystoreSwap -Force -ErrorAction SilentlyContinue }
+    Assert-True (@(Get-Content -LiteralPath $apksignerLog) -ccontains 'keystore swapped' -and
+        (Get-Content -LiteralPath $looseKeystore -Raw).Trim() -ceq 'another keystore') `
+        "The stand-in apksigner couldn't write over a keystore nothing held: $(@(Get-Content -LiteralPath $apksignerLog -ErrorAction SilentlyContinue) -join ' | ')"
+    Remove-Item -LiteralPath $looseKeystore, $looseIn, (Join-Path $tools 'loose-out.apk'), (Join-Path $tools 'loose-out.apk.signer') -Force -ErrorAction SilentlyContinue
     Assert-True ($keytoolCalls.Count -eq 2 -and $keytoolCalls[0] -cnotlike '*-storetype*' -and
         $keytoolCalls[1] -clike ('-list -v -keystore *\sideload.jks* -alias sideload -storepass:env HUSHTUMBLR_KEYTOOL_STOREPASS -storetype BKS ' +
             "-providerclass org.bouncycastle.jce.provider.BouncyCastleProvider -providerpath *$(Split-Path -Leaf $stubJar)* pass=stand-in-password") -and
@@ -6620,6 +6655,14 @@ try {
         Assert-Throws { & (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6> $null } `
             "$notAlone Signer #1 certificate SHA-256 digest: $foreignSigner*" 'patch-for-device.ps1 -NoReuse took a build the CLI handed back signed by another key.'
     } finally { [IO.File]::WriteAllBytes($cliOutput, $cliBytes) }
+    # A CLI that exits cleanly with its report and no APK leaves nothing to hold, so the report is
+    # turned down for the APK: the report check is handed no path, whatever turns up there later.
+    $noApkFlag = Join-Path $tools 'cli-leaves-no-apk.txt'
+    Set-Content -LiteralPath $noApkFlag -Value 'on' -Encoding ASCII
+    try {
+        Assert-Throws { & (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6> $null } `
+            '*Patching did not produce a complete APK: saved APK is missing or invalid*' 'patch-for-device.ps1 went on when the CLI left no APK.'
+    } finally { Remove-Item -LiteralPath $noApkFlag -Force -ErrorAction SilentlyContinue }
     Set-Content -LiteralPath $keytoolFlag -Value 'on' -Encoding ASCII
     try {
         Assert-Throws { & (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6> $null } `
