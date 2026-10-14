@@ -127,6 +127,20 @@ public final class DexDeltaFixture {
                 plain(plain));
     }
 
+    /** The Tumblr extension of a later bundle: Status, the bridge and Plain each have a method more. */
+    static List<ClassDef> tumblrMoved() {
+        List<ClassDef> out = new ArrayList<>();
+        for (ClassDef cd : tumblr(7)) {
+            List<Method> methods = new ArrayList<>();
+            for (Method m : cd.getMethods()) methods.add(m);
+            if (!cd.getType().equals(FACE)) methods.add(method(cd.getType(), "moved", "V", PUBLIC | STATIC, 0, code(end())));
+            List<Field> fields = new ArrayList<>();
+            for (Field f : cd.getFields()) fields.add(f);
+            out.add(clazz(cd.getType(), cd.getAccessFlags(), cd.getSuperclass(), cd.getInterfaces(), fields, methods));
+        }
+        return out;
+    }
+
     static ClassDef plain(int value) {
         return clazz(PLAIN, PUBLIC, OBJECT, List.of(), List.of(), List.of(method(PLAIN, "value", "I", PUBLIC | STATIC, 1, code(literal(0, value), returns(0)))));
     }
@@ -183,6 +197,7 @@ public final class DexDeltaFixture {
         write(root.resolve("delta-clean.dex"), host(Set.of()));
         write(root.resolve("delta-shared.mpe"), shared());
         write(root.resolve("delta-tumblr.mpe"), tumblr(7));
+        write(root.resolve("delta-tumblr-moved.mpe"), tumblrMoved());
         // A second extension that defines Plain again, another way.
         write(root.resolve("delta-conflict.mpe"), List.of(plain(5)));
         // Plain on its own, for a patched APK that carries it in two dex entries.

@@ -5734,7 +5734,11 @@ public class DexDiff {
         final Set<String> refusedMembers = new HashSet<>(), reshaped = new HashSet<>(), refused = new HashSet<>();
         final List<String> unseen = new ArrayList<>();
         final List<String> sectionsUsed = new ArrayList<>();
-        int validated, reencoded, answered, matchedClasses;
+        /**
+         * The bundle's classes the patched APK lacks or holds otherwise than its allowlist lines and
+         * answers account for, and the classes under the extension's package the bundle lacks.
+         */
+        int validated, reencoded, answered, matchedClasses, differingClasses;
 
         /**
          * Sections named in brackets for patches, each holding the lines the report prints for what
@@ -5895,6 +5899,7 @@ public class DexDiff {
                     // The extension's package is the bundle's to fill: a class there it doesn't carry
                     // came from somewhere else, so no section can take it.
                     findings.add("dex delta: " + type + " is under " + OWN + " but none of the bundle's extensions carry it");
+                    differingClasses++;
                     continue;
                 }
                 if (theirs == null) {
@@ -5902,6 +5907,7 @@ public class DexDiff {
                     for (Method m : mine.getMethods()) need("method", m.toString(), methodPrint(m), allowed);
                     continue;
                 }
+                int neededBefore = needed.size();
                 boolean same = shape(theirs, mine, allowed);
                 Map<String, Method> bundled = new TreeMap<>();
                 for (Method m : theirs.getMethods()) bundled.put(m.toString(), m);
@@ -5914,9 +5920,12 @@ public class DexDiff {
                 }
                 for (String gone : bundled.keySet()) findings.add("dex delta: the bundle's " + gone + " is missing from the patched APK");
                 if (same && bundled.isEmpty()) matchedClasses++;
+                if (needed.size() > neededBefore || !bundled.isEmpty()) differingClasses++;
             }
-            for (String type : extension.keySet())
-                if (!patched.classes.containsKey(type)) findings.add("dex delta: the bundle's class " + type + " is missing from the patched APK");
+            for (String type : extension.keySet()) if (!patched.classes.containsKey(type)) {
+                findings.add("dex delta: the bundle's class " + type + " is missing from the patched APK");
+                differingClasses++;
+            }
             // Tumblr's own classes: the same shape, or what the patches added to it listed one by one.
             // A class with copies in other dex entries is held to all of them unchanged, since the
             // first one found can be any copy.
@@ -6287,6 +6296,12 @@ public class DexDiff {
             System.out.println("[diff] dex delta: " + delta.validated + " Tumblr methods validated by their contracts, "
                     + delta.reencoded + " only re-encoded, " + delta.needed.size() + " changes the allowlist has to name, "
                     + delta.matchedClasses + " extension classes as the bundle has them, " + delta.answered + " answering ahead of the bundle's body");
+            // A build patched from another build of the bundle, one main has moved past since,
+            // differs in most of its extension classes. Not a finding of its own: each is named.
+            if (!extension.isEmpty() && delta.differingClasses * 2 > extension.size())
+                System.out.println("[diff] dex delta: " + delta.differingClasses + " of the bundle's " + extension.size()
+                        + " extension classes differ between it and the patched APK, so the APK may have been patched from another build"
+                        + " of the bundle than " + bundle.getName() + ". Hand that one over with -Bundle.");
             structural.computeIfAbsent("contract", k -> new ArrayList<>()).addAll(delta.findings);
         }
         int structuralCount = 0;

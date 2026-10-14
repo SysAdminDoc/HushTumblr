@@ -1175,10 +1175,22 @@ try {
         $run = Invoke-DexDiff -Clean $deltaClean -Patched (New-DexApk -Name $values[0] -Entries ([ordered]@{ 'classes.dex' = (Get-Dex $values[0]) })) `
             -Allowlist $emptyAllowlist -Name $values[0] -Contracts $deltaContracts -Selected $selection -Bundle $deltaBundle -DeltaAllowlist $deltaAllowlist
         $fails = & $deltaFails $run
+        # One fault each, so none of them reads as a build patched from another bundle.
         Assert-True ($run.ExitCode -ne 0 -and (& $onlyDelta $run) -and $fails.Count -eq [int]$values[2] -and
-            @($fails | Where-Object { $_.StartsWith("[diff] FAIL: $($values[3])") }).Count -eq 1) `
-            "The dex delta did not refuse $($values[0]) for what it changed ($($values[3])).`n$($run.Output -join "`n")"
+            @($fails | Where-Object { $_.StartsWith("[diff] FAIL: $($values[3])") }).Count -eq 1 -and
+            -not ($run.Output -join "`n").Contains('Hand that one over with -Bundle.')) `
+            "The dex delta did not refuse $($values[0]) for what it changed ($($values[3])), or blamed the bundle for it.`n$($run.Output -join "`n")"
     }
+    # A bundle main moved on from since the APK was patched: each Tumblr extension class has a
+    # method the build lacks. Each is a finding, and one line more says the bundle may be the wrong one.
+    $movedBundle = New-PatchBundle -Name 'delta-moved' -Extensions ([ordered]@{ 'extensions/shared.mpe' = $bothExtensions['extensions/shared.mpe']
+        'extensions/tumblr.mpe' = (Join-Path $dexDir 'delta-tumblr-moved.mpe') })
+    $moved = Invoke-DexDiff -Clean $deltaClean -Patched $deltaGood -Allowlist $emptyAllowlist -Name 'delta-moved' -Contracts $deltaContracts `
+        -Selected $bothSelected -Bundle $movedBundle -DeltaAllowlist $deltaAllowlist
+    Assert-True ($moved.ExitCode -ne 0 -and (& $onlyDelta $moved) -and (& $deltaFails $moved).Count -eq 3 -and
+        $moved.Output -ccontains ("[diff] dex delta: 3 of the bundle's 5 extension classes differ between it and the patched APK, so the APK may have " +
+            'been patched from another build of the bundle than delta-moved.mpp. Hand that one over with -Bundle.')) `
+        "A bundle that moved on from the patched APK wasn't named as maybe the wrong one.`n$($moved.Output -join "`n")"
     # The bundle itself: no extensions, no Version, a class two of its extensions define two ways,
     # another Version than the build answers, and a patched APK carrying one of its classes twice.
     $deltaBundles = @(
