@@ -127,7 +127,7 @@ Every patch is checked against this exact build, and other versions aren't suppo
 Each release ships `SHA256SUMS.txt`, signed as `SHA256SUMS.txt.asc` with the HushTumblr release key. Its fingerprint is `2143 368A A5CE 6E5D FFEA  79CF BBC1 3768 83CF 3AB4` and the public key is [keys/hushtumblr-release.asc](keys/hushtumblr-release.asc). Morphe Manager doesn't check it, so that's up to you. The v0.0.1 bundle's line:
 
 ```text
-6d49cf32bd050f622ec7d859a34c4eabb1460d750febe07c8be0e3d48b205b7c  patches-0.0.1.mpp
+7ed0d301ab75a2fb6c7dd5b0aecb6dd541c7bad97d9b5c70d5dfc778219b8c0d  patches-0.0.7.mpp
 ```
 
 ```text
