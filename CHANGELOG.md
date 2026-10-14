@@ -3,6 +3,8 @@
 ## Unreleased
 
 * **Tumblr:** Quick setups can be hidden from the settings home with a long press on its row, and its help line now says so. The **Quick setups on the home page** row on Pause, backup and diagnostics brings it back. The choice stays out of settings backups and Quick setups, and Pause leaves it alone.
+* **Tooling:** Patch runs now hold the merged APK from the moment the merger writes it, so another program on the PC can't swap it before the patcher and the checks read it. The package and version a run was let through on are read again off that held file before anything is patched.
+* **Tooling:** `patch-for-device.ps1 -Option 'Patch name:key=value'` gives a patch an option value for a test build, such as a custom Dark background color. A run with an option always patches in full instead of reusing a kept run.
 
 ## 0.0.7 (2026-10-14)
 
