@@ -130,6 +130,9 @@ $outputReservation = $null
 $reservedPath = $null
 $patchInput = $null
 $recorded = $null
+$outHandle = $null
+$resultHandle = $null
+$reservedHandle = $null
 try {
 if ($OutputApk) {
     $reservedPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputApk)
@@ -273,7 +276,6 @@ if ($recorded) {
     Copy-Item -LiteralPath $recorded.Result -Destination $result
     $reportPath = $recorded.Result
 } else {
-$reportPath = $result
 $enable = @()
 foreach ($name in $names) {
     $enable += '-e'; $enable += $name
@@ -320,6 +322,19 @@ try {
     }
     Remove-Item -LiteralPath $argumentFile -Force -ErrorAction SilentlyContinue
 }
+# The CLI's report is held from the moment it exits and read by the path its handle is at.
+if (Test-Path -LiteralPath $result -PathType Leaf) {
+    $resultHandle = Open-HeldFile -Path $result -What 'The result report'
+    $reportPath = Get-HeldPath -Stream $resultHandle
+} else {
+    $reportPath = $result
+}
+}
+# The signed APK is held from here to the install, the copy to -OutputApk included, and every
+# check reads it by the path its handle is at: nothing can swap it once it's been checked.
+if (Test-Path -LiteralPath $out -PathType Leaf) {
+    $outHandle = Open-HeldFile -Path $out -What 'The signed APK'
+    $out = Get-HeldPath -Stream $outHandle
 }
 # The same report check the throwaway verification applies: every requested patch, every
 # step, the target, and a real APK. The build that goes onto a phone deserves no less.
@@ -345,6 +360,26 @@ if ($recorded) {
     # host reference check when the gate kept the run.
     Write-Host '[device] the structural and host reference checks passed on this dex in the kept run'
 } else {
+# The rebuilt resource table against the merge's, and every archive entry patching doesn't write
+# against the merge's bytes: the CLI rebuilt a copy of the merge nothing held while it was copied.
+$resourceReport = Join-Path $OutDir 'resources.txt'
+$preference = $ErrorActionPreference
+$queued = Enter-HushTumblrQueue -Job 'device resources'
+try {
+    $ErrorActionPreference = 'Continue'
+    $global:LASTEXITCODE = -1
+    $resourceOutput = @(& $Java '-Xmx4g' '-cp' $DesktopJar (Join-Path $PSScriptRoot 'ResourceTableCheck.java') `
+        $patchInput $out $resourceReport 2>&1)
+    $resourceExitCode = $LASTEXITCODE
+} finally {
+    $ErrorActionPreference = $preference
+    Exit-HushTumblrQueue $queued
+}
+$resourceOutput | ForEach-Object { Write-Host "[device] $_" }
+if ($resourceExitCode -ne 0) {
+    throw ("The patched resource table or archive failed its check against the merge (exit $resourceExitCode). " +
+        "Report: $resourceReport. $(@($resourceOutput | Select-Object -Last 2) -join ' ')")
+}
 $registerReport = Join-Path $OutDir 'injected-registers.txt'
 $global:LASTEXITCODE = -1
 & (Join-Path $PSScriptRoot 'verify-injected-registers.ps1') -CleanApk $Apk -CleanMerged $patchInput `
@@ -355,12 +390,24 @@ if ($LASTEXITCODE -ne 0) { throw 'Patched bytecode failed its compiled mutation 
 # As the report check counted them, so a list the report leaves out isn't counted as one entry.
 Write-Host "[device] applied $($validation.Applied), failed $($validation.Failed), target $($report.packageName) $($report.packageVersion)"
 if ($outputReservation) {
-    $input = [IO.File]::OpenRead($out)
-    try { $input.CopyTo($outputReservation); $outputReservation.Flush($true) }
-    finally { $input.Dispose() }
+    # Copied from the held handle and hashed as it goes, then the copy is held to that digest
+    # through the install: the reserved file is closed in between, and anything could write to it.
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $outHandle.Position = 0
+        $buffer = New-Object byte[] 1048576
+        while (($read = $outHandle.Read($buffer, 0, $buffer.Length)) -gt 0) {
+            $outputReservation.Write($buffer, 0, $read)
+            [void]$sha.TransformBlock($buffer, 0, $read, $null, 0)
+        }
+        $outputReservation.Flush($true)
+        [void]$sha.TransformFinalBlock((New-Object byte[] 0), 0, 0)
+        $copied = ([System.BitConverter]::ToString($sha.Hash) -replace '-', '').ToLowerInvariant()
+    } finally { $sha.Dispose() }
     $outputReservation.Dispose()
     $outputReservation = $null
-    $out = $reservedPath
+    $reservedHandle = Open-HeldFile -Path $reservedPath -Sha256 $copied -What 'The APK copied to -OutputApk'
+    $out = Get-HeldPath -Stream $reservedHandle
 }
 $complete = $true
 Write-Host "[device] $out"
@@ -382,6 +429,7 @@ try {
 } finally {
     if ($outputReservation) { $outputReservation.Dispose() }
     # Held until every reader is done, and a held file can't be deleted.
+    foreach ($held in @($outHandle, $resultHandle, $reservedHandle)) { if ($null -ne $held) { $held.Dispose() } }
     Close-AppliedRecord -Record $recorded
     Close-MergedApk -Merged $patchInput
     # These are this run's paths only. A missing or replaced owner marker fails closed.

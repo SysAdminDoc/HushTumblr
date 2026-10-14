@@ -4410,7 +4410,7 @@ $queuedJobs = [ordered]@{
     'verify-all-patches.ps1'           = @('verify patch', 'verify resources')
     'build-release-receipt.ps1'        = @('receipt patch', 'receipt resources')
     'verify-injected-registers.ps1'    = @('dex diff', 'host references')
-    'patch-for-device.ps1'             = @('device patch')
+    'patch-for-device.ps1'             = @('device patch', 'device resources')
     'fingerprint-candidates.ps1'       = @('fingerprint candidates')
     'pre-push.ps1'                     = @('gate gradle')
     'test-bouncycastle-test-graph.ps1' = @('bouncycastle review')
@@ -4799,8 +4799,9 @@ foreach ($reader in @(@{ Name = 'patch-for-device.ps1'; Reads = '$reportPath' },
         ($reader.Name -ne 'patch-for-device.ps1' -or $reads -cnotcontains '$result')) `
         "$($reader.Name) doesn't check a kept run's report through the path Find-AppliedRecord holds: $($reads -join ', ')"
 }
-# In patch-for-device.ps1 the report path is set twice: the held kept report where a kept run is
-# used, the CLI's own report in the else branch of the same if, and nowhere after.
+# In patch-for-device.ps1 the report path is set in the kept-run if alone: the held kept report
+# where a kept run is used, and in the else branch the path the CLI's report is held at, or the
+# bare path where the CLI left none (the report check then fails on it). Nowhere after.
 $deviceAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'patch-for-device.ps1'), [ref]$null, [ref]$null)
 $reportSets = @($deviceAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
             $node.Left.Extent.Text -ceq '$reportPath' }, $true))
@@ -4809,11 +4810,53 @@ $reportBranches = @($deviceAst.FindAll({ param($node) $node -is [System.Manageme
         $branch = $_
         $kept = @($reportSets | Where-Object { $_.Right.Extent.Text -ceq '$recorded.Result' -and
                 $_.Extent.StartOffset -ge $branch.Clauses[0].Item2.Extent.StartOffset -and $_.Extent.EndOffset -le $branch.Clauses[0].Item2.Extent.EndOffset })
-        $own = @($reportSets | Where-Object { $_.Right.Extent.Text -ceq '$result' -and
-                $_.Extent.StartOffset -ge $branch.ElseClause.Extent.StartOffset -and $_.Extent.EndOffset -le $branch.ElseClause.Extent.EndOffset })
-        $kept.Count -eq 1 -and $own.Count -eq 1 })
-Assert-True ($reportSets.Count -eq 2 -and $reportBranches.Count -eq 1) `
-    "patch-for-device.ps1 sets the report path other than once in each branch of the kept-run if: $(@($reportSets | ForEach-Object { $_.Extent.Text }) -join '; ')"
+        $own = @($reportSets | Where-Object { $_.Extent.StartOffset -ge $branch.ElseClause.Extent.StartOffset -and
+                $_.Extent.EndOffset -le $branch.ElseClause.Extent.EndOffset } | ForEach-Object { $_.Right.Extent.Text })
+        $kept.Count -eq 1 -and ($own -join '; ') -ceq 'Get-HeldPath -Stream $resultHandle; $result' })
+Assert-True ($reportSets.Count -eq 3 -and $reportBranches.Count -eq 1) `
+    "patch-for-device.ps1 sets the report path outside the branches of the kept-run if: $(@($reportSets | ForEach-Object { $_.Extent.Text }) -join '; ')"
+# What the CLI wrote is held from the moment it exits: the patched APK and the report are opened
+# by Open-HeldFile before anything reads them, and from then on read by the path the handle is at.
+# patch-for-device.ps1 holds the APK after the kept-run if, so apksigner's output is held too.
+foreach ($writer in @(
+        @{ Name = 'verify-all-patches.ps1'; Apk = '$out'; Report = '$result' },
+        @{ Name = 'build-release-receipt.ps1'; Apk = '$out'; Report = '$resultPath' },
+        @{ Name = 'patch-for-device.ps1'; Apk = '$out'; Report = '$result' })) {
+    $writerAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot $writer.Name), [ref]$null, [ref]$null)
+    $cliAt = @($writerAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] -and (& $isCliPatch $node) }, $true) |
+        ForEach-Object { $_.Extent.EndOffset } | Sort-Object)
+    # The first report check after the CLI: verify-all checks a kept run's report before it.
+    $firstRead = if ($cliAt.Count -eq 1) {
+        Get-FirstCommandOffset $writerAst { param($node) $node.GetCommandName() -eq 'Test-PatchingReport' -and $node.Extent.StartOffset -gt $cliAt[0] }
+    } else { -1 }
+    $unheld = @()
+    foreach ($held in @(@{ Path = $writer.Apk; Handle = '$outHandle' }, @{ Path = $writer.Report; Handle = '$resultHandle' })) {
+        $opens = @($writerAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
+                    $node.Left.Extent.Text -ceq $held.Handle -and $node.Right.Extent.Text -clike "Open-HeldFile -Path $($held.Path) -What *" }, $true))
+        $moves = @($writerAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
+                    $node.Left.Extent.Text -ceq $held.Path -and $node.Right.Extent.Text -ceq "Get-HeldPath -Stream $($held.Handle)" }, $true))
+        if ($opens.Count -ne 1 -or $moves.Count -ne 1 -or $cliAt.Count -ne 1 -or $firstRead -lt 0 -or
+            $opens[0].Extent.StartOffset -lt $cliAt[0] -or $moves[0].Extent.StartOffset -lt $opens[0].Extent.EndOffset -or
+            $moves[0].Extent.EndOffset -gt $firstRead) { $unheld += $held.Path }
+    }
+    if ($writer.Name -eq 'patch-for-device.ps1') {
+        # The device run's report comes in a $reportPath of its own, checked above.
+        $unheld = @($unheld | Where-Object { $_ -cne '$result' })
+        $deviceReportOpen = @($writerAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
+                    $node.Left.Extent.Text -ceq '$resultHandle' -and $node.Right.Extent.Text -clike 'Open-HeldFile -Path $result -What *' }, $true))
+        if ($deviceReportOpen.Count -ne 1 -or $deviceReportOpen[0].Extent.StartOffset -lt $cliAt[0]) { $unheld += '$result' }
+    }
+    $disposed = @($writerAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.ForEachStatementAst] -and
+                $node.Condition.Extent.Text -clike '@($outHandle, $resultHandle*)' -and $node.Parent.Parent -is [System.Management.Automation.Language.TryStatementAst] -and
+                $node.Parent -eq $node.Parent.Parent.Finally }, $true))
+    Assert-True ($unheld.Count -eq 0 -and $disposed.Count -eq 1) `
+        "$($writer.Name) reads what the CLI wrote before it holds it, or never lets it go: $($unheld -join ', ') ($($disposed.Count) finally disposing the handles)"
+}
+# A kept run is copied from the handles the run held, never from a path.
+$verifyAllAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'verify-all-patches.ps1'), [ref]$null, [ref]$null)
+$keepCalls = @(Get-NamedCommands $verifyAllAst 'Save-AppliedRecord' | ForEach-Object { $_.Extent.Text })
+Assert-True ($keepCalls.Count -eq 1 -and $keepCalls[0] -clike '*-PatchedApk $outHandle*' -and $keepCalls[0] -clike '*-Result $resultHandle *') `
+    "verify-all-patches.ps1 keeps a run from something other than its held handles: $($keepCalls -join '; ')"
 # The receipt builder checks its whole fixture list before it merges any fixture.
 $receiptAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'build-release-receipt.ps1'), [ref]$null, [ref]$null)
 $fixtureCheckAt = Get-FirstCommandOffset $receiptAst { param($node) $node.GetCommandName() -eq 'Assert-AuthenticInput' }
@@ -6169,10 +6212,11 @@ try {
     $keptDevice = @{ Root = $releaseRepo; DesktopJar = $stubJar; Java = $stubJava; Aapt2 = $stubAapt2
         OutDir = (Join-Path $releaseRoot 'device-kept'); AndroidJar = $stubAndroidJar; ApiVersions = $stubApiVersions
         Apk = $newestFixture; AppliedDir = $receiptStore }
-    Remove-Item -LiteralPath $javaLog, $apksignerLog, $zipalignLog -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $javaLog, $apksignerLog, $zipalignLog, $resourceStock -Force -ErrorAction SilentlyContinue
     $said = @(& (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6>&1 | ForEach-Object { "$_" })
     $handed = [string]$said[-1]
-    Assert-True (-not (Test-Path -LiteralPath $javaLog) -and (Test-Path -LiteralPath $handed -PathType Leaf) -and
+    Assert-True (-not (Test-Path -LiteralPath $javaLog) -and -not (Test-Path -LiteralPath $resourceStock) -and
+        (Test-Path -LiteralPath $handed -PathType Leaf) -and
         ($said -join "`n") -like '*passed every check in the gate run kept as*' -and
         (Get-Content -LiteralPath $apksignerLog -Raw) -like '*sign alias=sideload in=*patched.apk out=*') `
         "patch-for-device.ps1 did not sign the kept run instead of patching: $($said -join ' | ')"
@@ -6193,11 +6237,17 @@ try {
         @(Get-ChildItem -LiteralPath $keptDevice.OutDir -Directory).Count -eq $keptRunsBefore) `
         'patch-for-device.ps1 signed a kept APK that failed the 16 KB layout check, or left its run folder behind.'
     $keptDevice['NoReuse'] = $true
-    Remove-Item -LiteralPath $javaLog, $apksignerLog -Force -ErrorAction SilentlyContinue
-    $said = @(& (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6> $null)
+    Remove-Item -LiteralPath $javaLog, $apksignerLog, $resourceStock -Force -ErrorAction SilentlyContinue
+    $said = @(& (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6>&1 | ForEach-Object { "$_" })
     Assert-True ((@(Get-Content -LiteralPath $javaLog) -join '; ') -eq "patch $newestFixture merged forced=0" -and
         -not (Test-Path -LiteralPath $apksignerLog)) `
         "patch-for-device.ps1 -NoReuse did not patch with the CLI: $(@(Get-Content -LiteralPath $javaLog -ErrorAction SilentlyContinue) -join '; ')"
+    # What it patched is held to the merge's resource table and archive, as verify-all's runs are,
+    # and the check's report lines are shown. The kept run above was checked when it was kept.
+    Assert-True ((Test-Path -LiteralPath $resourceStock) -and
+        (Get-Content -LiteralPath $resourceStock -Raw) -ceq (Get-Content -LiteralPath "$newestFixture.merged.txt" -Raw) -and
+        ($said -join "`n") -like '*`[device`] `[resources`] stand-in: every stock resource resolves*') `
+        "patch-for-device.ps1 -NoReuse didn't check what it patched against the merge's resource table and archive: $($said -join ' | ')"
 
     # -Option hands a named patch an option value: the CLI's -O, right after that patch's -e. The
     # kept run above was patched with the options as the bundle ships them, so a run with one

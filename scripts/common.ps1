@@ -684,6 +684,41 @@ function Get-StreamSha256 {
     } finally { $sha.Dispose() }
 }
 
+function Copy-HeldStream {
+    <#
+    .SYNOPSIS
+        Everything a held file holds, read through its handle and written to a new -Destination,
+        and the SHA-256 of what was written, lower case.
+    .DESCRIPTION
+        -Destination is created and refused if anything is already there. The digest is taken as
+        the bytes go out, so it is of what this copy wrote, whatever a path read later gives.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][System.IO.Stream]$Stream,
+        [Parameter(Mandatory = $true)][string]$Destination
+    )
+
+    $sha = $null
+    $sink = $null
+    try {
+        $sha = [System.Security.Cryptography.SHA256]::Create()
+        $sink = [System.IO.File]::Open($Destination, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write,
+            [System.IO.FileShare]::None)
+        $Stream.Position = 0
+        $buffer = New-Object byte[] 1048576
+        while (($read = $Stream.Read($buffer, 0, $buffer.Length)) -gt 0) {
+            $sink.Write($buffer, 0, $read)
+            [void]$sha.TransformBlock($buffer, 0, $read, $null, 0)
+        }
+        $sink.Flush($true)
+        [void]$sha.TransformFinalBlock((New-Object byte[] 0), 0, 0)
+        return ([System.BitConverter]::ToString($sha.Hash) -replace '-', '').ToLowerInvariant()
+    } finally {
+        if ($null -ne $sink) { $sink.Dispose() }
+        if ($null -ne $sha) { $sha.Dispose() }
+    }
+}
+
 function Open-HeldFile {
     <#
     .SYNOPSIS
@@ -2270,12 +2305,17 @@ function Save-AppliedRecord {
         stops halfway leaves nothing under a key (Find-AppliedRecord and Get-AppliedRecords never
         read a staging folder). The newest -Keep records stay and older ones go, as do staging
         folders a killed run left more than a day ago.
+
+        -PatchedApk and -Result are the handles the run held them by since the CLI exited
+        (Open-HeldFile), and each is copied from its handle and hashed as it's written: the
+        digests record.json holds them to are of the bytes every check read, not of whatever was
+        at a path once the checks were over.
     #>
     param(
         [Parameter(Mandatory = $true)][string]$Store,
         [Parameter(Mandatory = $true)]$Identity,
-        [Parameter(Mandatory = $true)][string]$PatchedApk,
-        [Parameter(Mandatory = $true)][string]$Result,
+        [Parameter(Mandatory = $true)][System.IO.FileStream]$PatchedApk,
+        [Parameter(Mandatory = $true)][System.IO.FileStream]$Result,
         # Name in the record to the report it copies. A report the run didn't write is left out.
         [System.Collections.IDictionary]$Reports = @{},
         $Target,
@@ -2285,9 +2325,9 @@ function Save-AppliedRecord {
     )
 
     $key = [string]$Identity.Key
-    if ($key -notmatch '^[0-9a-f]{64}$') { throw "Not an applied record key: $key" }
+    if ($key -cnotmatch '^[0-9a-f]{64}\z') { throw "Not an applied record key: $key" }
     foreach ($required in @($PatchedApk, $Result)) {
-        if (-not (Test-Path -LiteralPath $required -PathType Leaf)) { throw "Nothing to keep: $required is missing." }
+        if (-not $required.CanRead -or $required.CanWrite) { throw "Nothing to keep: $($required.Name) isn't held open for reading alone." }
     }
     New-Item -ItemType Directory -Force -Path $Store | Out-Null
     $storeRoot = (Resolve-Path -LiteralPath $Store).Path
@@ -2295,8 +2335,8 @@ function Save-AppliedRecord {
     $staging = Resolve-WithinRoot -Path (Join-Path $storeRoot ('.partial-' + [guid]::NewGuid().ToString('N'))) -Root $storeRoot
     New-Item -ItemType Directory -Path $staging | Out-Null
     try {
-        Copy-Item -LiteralPath $PatchedApk -Destination (Join-Path $staging 'patched.apk')
-        Copy-Item -LiteralPath $Result -Destination (Join-Path $staging 'result.json')
+        $patchedSha256 = Copy-HeldStream -Stream $PatchedApk -Destination (Join-Path $staging 'patched.apk')
+        $resultSha256 = Copy-HeldStream -Stream $Result -Destination (Join-Path $staging 'result.json')
         $kept = @()
         foreach ($name in @($Reports.Keys)) {
             if ([string]$name -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$' -or $name -in @('patched.apk', 'result.json', 'record.json')) {
@@ -2319,8 +2359,8 @@ function Save-AppliedRecord {
             recordedAt    = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
             inputs        = $Identity.Inputs
             target        = $targetFacts
-            patchedSha256 = (Get-FileHash -LiteralPath (Join-Path $staging 'patched.apk') -Algorithm SHA256).Hash.ToLowerInvariant()
-            resultSha256  = (Get-FileHash -LiteralPath (Join-Path $staging 'result.json') -Algorithm SHA256).Hash.ToLowerInvariant()
+            patchedSha256 = $patchedSha256
+            resultSha256  = $resultSha256
             reports       = $kept
         }
         [System.IO.File]::WriteAllText((Join-Path $staging 'record.json'), ($record | ConvertTo-Json -Depth 8),

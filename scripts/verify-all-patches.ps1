@@ -125,6 +125,8 @@ New-Item -ItemType Directory -Force -Path $runDir | Out-Null
 $exitCode = 1
 $patchInput = $null
 $recorded = $null
+$outHandle = $null
+$resultHandle = $null
 try {
 
 # A distributor's build of Tumblr can come as a split bundle. aapt2 reads the version facts off
@@ -248,6 +250,17 @@ $result = Resolve-WithinRoot -Path (Join-Path $workRoot "verify-all-result-$runI
         $line = [string]$_
         if ($line -match 'SEVERE|ERROR|WARNING|Exception|result saved|Saved to') { Write-Host "[verify] $line" }
     }
+    # What the CLI wrote is held from the moment it exits to the last reader, the copy a kept run
+    # takes included: nothing can write to it, rename it or delete it while it's checked, and every
+    # check reads it by the path its handle is at (Open-HeldFile, Get-HeldPath).
+    if (Test-Path -LiteralPath $out -PathType Leaf) {
+        $outHandle = Open-HeldFile -Path $out -What 'The patched APK'
+        $out = Get-HeldPath -Stream $outHandle
+    }
+    if (Test-Path -LiteralPath $result -PathType Leaf) {
+        $resultHandle = Open-HeldFile -Path $result -What 'The result report'
+        $result = Get-HeldPath -Stream $resultHandle
+    }
 
     $report = $null
     if (Test-Path -LiteralPath $result -PathType Leaf) {
@@ -347,8 +360,8 @@ $result = Resolve-WithinRoot -Path (Join-Path $workRoot "verify-all-result-$runI
                 # patch, not this one its verdict, so a store that can't be written is a warning.
                 if ($appliedIdentity) {
                     try {
-                        $keptRun = Save-AppliedRecord -Store $KeepIn -Identity $appliedIdentity -PatchedApk $out `
-                            -Result $result -Target $stock -Reports ([ordered]@{
+                        $keptRun = Save-AppliedRecord -Store $KeepIn -Identity $appliedIdentity -PatchedApk $outHandle `
+                            -Result $resultHandle -Target $stock -Reports ([ordered]@{
                                 'resources.txt'       = $resourceReport
                                 'registers.txt'       = $registerReport
                                 'host-references.txt' = "$registerReport.host-references.txt" })
@@ -367,6 +380,7 @@ $result = Resolve-WithinRoot -Path (Join-Path $workRoot "verify-all-result-$runI
     }
 } finally {
     # Held until every reader is done, and a held file can't be deleted.
+    foreach ($held in @($outHandle, $resultHandle)) { if ($null -ne $held) { $held.Dispose() } }
     Close-AppliedRecord -Record $recorded
     Close-MergedApk -Merged $patchInput
     Remove-GeneratedPath -Path $runDir -Root $workRoot

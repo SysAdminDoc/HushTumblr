@@ -344,6 +344,8 @@ foreach ($apk in $Fixture) {
     $runDir = Resolve-WithinRoot -Path (Join-Path $workRoot "receipt-$runId") -Root $workRoot
     New-Item -ItemType Directory -Force -Path $runDir | Out-Null
     $patchInput = $null
+    $outHandle = $null
+    $resultHandle = $null
     try {
         $stock = $stockFacts[$apk]
 
@@ -395,6 +397,14 @@ foreach ($apk in $Fixture) {
 
         if (-not (Test-Path -LiteralPath $resultPath -PathType Leaf)) {
             throw "The desktop CLI wrote no result report for $label (exit $cliExitCode)."
+        }
+        # What the CLI wrote is held from the moment it exits to the last check, and every check
+        # reads it by the path its handle is at, so nothing can swap it in between (Open-HeldFile).
+        $resultHandle = Open-HeldFile -Path $resultPath -What "The result report for $label"
+        $resultPath = Get-HeldPath -Stream $resultHandle
+        if (Test-Path -LiteralPath $out -PathType Leaf) {
+            $outHandle = Open-HeldFile -Path $out -What "The patched APK of $label"
+            $out = Get-HeldPath -Stream $outHandle
         }
         $report = Get-Content -LiteralPath $resultPath -Raw | ConvertFrom-Json
         $validation = Test-PatchingReport -Report $report -ExpectedNames $patchNames `
@@ -468,6 +478,7 @@ foreach ($apk in $Fixture) {
         })
     } finally {
         # Held until every reader is done, and a held file can't be deleted.
+        foreach ($held in @($outHandle, $resultHandle)) { if ($null -ne $held) { $held.Dispose() } }
         Close-MergedApk -Merged $patchInput
         if ($runDir.StartsWith($workRoot, [System.StringComparison]::OrdinalIgnoreCase) -and
             (Test-Path -LiteralPath $runDir)) {

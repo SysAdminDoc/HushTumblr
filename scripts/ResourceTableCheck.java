@@ -17,7 +17,10 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -41,7 +44,9 @@ import java.util.zip.ZipFile;
  * id, with the same type and a value in every configuration the stock table gives it; every file
  * a patched value names has to be in the patched archive; and every value the patches changed has
  * to point at something the patched table has. A style keeps its parent, and a file keeps the bytes
- * the stock archive has for it, since no patch writes either. A failure names the id and exits 1.
+ * the stock archive has for it, since no patch writes either. Every other archive entry patching
+ * doesn't write keeps its stock bytes too (checkArchive). A failure names the id or entry and
+ * exits 1.
  *
  * <p>What the patches changed is reported, not failed: each rewritten value with its old and new
  * value (the AMOLED dark theme's palette and sheet colors), each entry the rebuild renamed (it
@@ -74,6 +79,14 @@ public final class ResourceTableCheck {
     private final List<String> added = new ArrayList<>();
     private final List<String> moved = new ArrayList<>();
     private final List<String> absentInStock = new ArrayList<>();
+    /**
+     * Archive paths the patched table names that the stock table doesn't, and stock paths a file
+     * moved from or that went with the split descriptor.
+     */
+    private final Set<String> namedByPatches = new HashSet<>();
+    private final Set<String> movedFrom = new HashSet<>();
+    private int entriesCompared;
+    private int signatureEntries;
     private int stockResources;
     private int stockValues;
     private int patchedResources;
@@ -107,7 +120,7 @@ public final class ResourceTableCheck {
         }
     }
 
-    private void run(TableBlock stock, ZipFile stockZip, TableBlock patched, ZipFile patchedZip) {
+    private void run(TableBlock stock, ZipFile stockZip, TableBlock patched, ZipFile patchedZip) throws IOException {
         Map<Integer, PackageBlock> patchedPackages = new LinkedHashMap<>();
         for (PackageBlock block : patched.listPackages()) {
             patchedPackages.put(block.getId(), block);
@@ -136,6 +149,12 @@ public final class ResourceTableCheck {
                 if (match == null) {
                     if (isSplitDescriptor(resource)) {
                         droppedWithSplits.add(hex(id) + " " + label(resource));
+                        // Its file goes with it, which the archive check allows.
+                        for (Entry entry : values(resource)) {
+                            if (entry.isComplex()) continue;
+                            String path = filePath(entry.getResValue(), resource.getType());
+                            if (path != null) movedFrom.add(path);
+                        }
                         continue;
                     }
                     failures.add(hex(id) + " " + label(resource) + ": not in the patched table");
@@ -162,6 +181,78 @@ public final class ResourceTableCheck {
             }
         }
         checkFiles(stock, stockZip, patched, patchedZip);
+        checkArchive(stockZip, patchedZip);
+    }
+
+    /**
+     * Every entry patching doesn't write is the stock one, byte for byte, read and hashed rather
+     * than taken from the archive's CRC fields. The desktop CLI copies its input into a folder of
+     * its own and rebuilds that copy, so an entry no patch touches comes from a file nothing held
+     * while it was copied; held to the stock merge here, a swap there is refused. Patching writes
+     * the dex (changed or added), the resource table and the manifest, each checked on its own,
+     * and the files the patched table names that the stock one doesn't. Signature files are the
+     * signer's: an unsigned output leaves the bundle's out and a signed one has its own. A name
+     * that appears twice in either archive is refused, since a reader would see only one of them.
+     */
+    private void checkArchive(ZipFile stockZip, ZipFile patchedZip) throws IOException {
+        Map<String, ZipEntry> patchedEntries = entries(patchedZip, "patched");
+        Map<String, ZipEntry> stockEntries = entries(stockZip, "stock");
+        for (Map.Entry<String, ZipEntry> pair : stockEntries.entrySet()) {
+            String name = pair.getKey();
+            if (isWrittenByPatching(name)) continue;
+            if (isSignature(name)) {
+                signatureEntries++;
+                continue;
+            }
+            ZipEntry patchedEntry = patchedEntries.get(name);
+            if (patchedEntry == null) {
+                if (!movedFrom.contains(name)) failures.add("archive entry " + name + ": not in the patched archive");
+                continue;
+            }
+            entriesCompared++;
+            if (!MessageDigest.isEqual(digest(stockZip, pair.getValue()), digest(patchedZip, patchedEntry))) {
+                failures.add("archive entry " + name + ": not the bytes the stock archive holds");
+            }
+        }
+        for (String name : patchedEntries.keySet()) {
+            if (stockEntries.containsKey(name) || isWrittenByPatching(name) || isSignature(name) || namedByPatches.contains(name)) continue;
+            failures.add("archive entry " + name + ": added, and patching writes no such file");
+        }
+    }
+
+    private Map<String, ZipEntry> entries(ZipFile zip, String side) {
+        Map<String, ZipEntry> entries = new LinkedHashMap<>();
+        for (Enumeration<? extends ZipEntry> all = zip.entries(); all.hasMoreElements(); ) {
+            ZipEntry entry = all.nextElement();
+            if (entry.isDirectory()) continue;
+            if (entries.put(entry.getName(), entry) != null) {
+                failures.add("archive entry " + entry.getName() + ": appears more than once in the " + side + " archive");
+            }
+        }
+        return entries;
+    }
+
+    private static boolean isWrittenByPatching(String name) {
+        return name.matches("classes[0-9]*\\.dex") || name.equals(TableBlock.FILE_NAME) || name.equals("AndroidManifest.xml");
+    }
+
+    private static boolean isSignature(String name) {
+        return name.startsWith("META-INF/") && name.indexOf('/', "META-INF/".length()) < 0
+                && name.toUpperCase(Locale.ROOT).matches("META-INF/(MANIFEST\\.MF|[^/]+\\.(SF|RSA|DSA|EC))");
+    }
+
+    private static byte[] digest(ZipFile zip, ZipEntry entry) throws IOException {
+        MessageDigest sha;
+        try {
+            sha = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException missing) {
+            throw new IOException(missing);
+        }
+        try (InputStream in = zip.getInputStream(entry)) {
+            byte[] buffer = new byte[1 << 16];
+            for (int read; (read = in.read(buffer)) > 0; ) sha.update(buffer, 0, read);
+        }
+        return sha.digest();
     }
 
     /** Whether this is bundletool's split descriptor, which a merge into one APK drops. */
@@ -279,8 +370,16 @@ public final class ResourceTableCheck {
                         }
                         continue;
                     }
-                    if (stockPath == null || stockFile == null) continue;
-                    if (!stockPath.equals(path)) moved.add(where + " " + stockPath + " -> " + path);
+                    if (stockPath == null || stockFile == null) {
+                        // A file only the patched table names: one a patch added.
+                        namedByPatches.add(path);
+                        continue;
+                    }
+                    if (!stockPath.equals(path)) {
+                        moved.add(where + " " + stockPath + " -> " + path);
+                        movedFrom.add(stockPath);
+                        namedByPatches.add(path);
+                    }
                     // No patch writes a resource file, so a file whose bytes changed is one the
                     // rebuild swapped or damaged (a path clash loses content as well as paths).
                     if (stockFile.getCrc() != file.getCrc() || stockFile.getSize() != file.getSize()) {
@@ -419,6 +518,8 @@ public final class ResourceTableCheck {
                 files, moved.size(), absentInStock.size()));
         for (String line : moved) lines.add("  moved " + line);
         for (String line : absentInStock) lines.add("  absent in both " + line);
+        lines.add(String.format(Locale.ROOT, "[resources] archive: %d entries patching doesn't write hold the stock bytes, %d stock signature files left to the signer",
+                entriesCompared, signatureEntries));
         if (failures.isEmpty()) {
             lines.add(String.format(Locale.ROOT, "[resources] every one of the stock table's %d resources resolves in the patched table, with its type and a value in each of its configurations, and every file and reference the patched values name is there",
                     stockResources));
