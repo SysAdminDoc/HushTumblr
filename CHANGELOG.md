@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.0.7 (2026-10-14)
 
 * **Tumblr:** With Debug logging on, the log now says how long the settings' restart marker took to save and to read back, and how long Clear diagnostic data and its undo kept the log locked.
 * **Tumblr:** With Tumblr set to a right-to-left language, the settings' page titles, section headings, search field and dialog labels now sit on the same side as the rows. They used to stay at the left.
@@ -18,24 +18,17 @@
 * **Tumblr:** Manage muted posts now says that this device keeps muted post lists for eight accounts, and that a ninth account's first mute deletes the list that's gone longest without a change.
 * **Tumblr:** Hide reblogs has a new option, Keep reblogs with added content. Turn it on to keep reblogs where the reblogger added something of their own while empty reblogs stay hidden.
 * **Tumblr:** The setup guide's two help buttons now open Tumblr's own articles on resetting a password and on requesting your personal data. The guide also says that request is made on Tumblr's website, not in the app.
-* **Tooling:** Patched APKs are now checked for devices with 16 KB memory pages before they're kept, receipted or signed for a phone, and Tumblr's own native libraries are confirmed untouched.
-* **Tooling:** An unsigned universal APK now has to match the merge of the signed bundle beside it file for file, so one that leaves an asset out or carries a swapped resource or resource table is refused before patching.
-* **Tooling:** The settings, pause and restart checks now also run against Android 17 (API 37).
 * **Tumblr:** Long-press the Tumblr logo at the top of your dashboard to open HushTumblr settings. A tap on the logo still does what it always did.
 * **Tumblr:** Quick setups, under the status card, turns on the Quiet or Privacy switches in one tap, or puts every switch back. A toast says how many changed.
 * **Tumblr:** Report a problem sits just above the Ko-fi row. It opens a GitHub bug report with your versions, phone and switches filled in.
 * **Tumblr:** Settings search no longer matches the word "null" on rows that have no description.
 * **Tumblr:** A change that needs a restart puts a Restart row at the top of every settings page. Tap it and Tumblr reopens on the same page. Hide ads now asks for it too.
 * **Tumblr:** Every settings page opens straight from the HushTumblr home page. Links, Notifications, Updates, backup and About moved off their own More settings page and now sit under a More settings heading, so nothing is more than one tap deep. With TalkBack on, Back scrolls to the row you came from when it's off screen, so focus lands there right away.
-* **Tooling:** The patch scripts refuse a bundle whose file names try to reach outside the folder it's unpacked into. They also check every APK in it against Tumblr's signing certificate, package and version before anything is merged, patched, signed or installed. A bundle that would unpack past 1 GB for one APK, or 2 GB in all, is refused before anything is written, and so is an .xapk whose manifest.json would pass 1 MB. A merged universal APK kept beside its bundle now has to carry that bundle's own files throughout, not only its code and native libraries.
 * **Tumblr:** Settings pages have larger headers and short descriptions. Each control has its own navy card, with clearer spacing and rectangular switch thumbs. Short windows use a compact header to keep the list within reach.
 * **Tumblr:** The status card puts Pause or Resume below its message. Both actions save on a worker and prevent repeated taps. Choice dialogs share the page styling, and tab-order rows show an upward arrow for their move action.
 * **Tumblr:** Tab-order actions now draw upward arrows. Switch tracks keep their full size, with evenly inset thumbs.
 * **Tumblr:** A local mute that can't refresh the feed or undo itself keeps an Unmute post action. Recovery changes only that post and preserves later edits to the account's muted list.
 * **Tumblr:** Clearing diagnostic data and putting it back use a shared worker operation. Rows show progress, prevent repeated actions and keep failed restores available to retry.
-* **Tooling:** Settings title checks compile against the public Android SDK.
-* **Tooling:** Split-input tests check AAPT2's complete manifest split name. Gate-isolation fixtures include both suites that shared merge changes require.
-* **Tooling:** Concurrent device-build tests keep their queue log intact on Windows PowerShell 5.1.
 * **Tumblr:** Word lists, tab order and switches save on a worker. Busy controls keep the saved value visible, block repeated taps and report failures. Replacement settings pages refresh when an edit finishes. Backup actions stay busy while a failed refresh waits to retry.
 * **Tumblr:** Backup previews and import results count word lists and tab order alongside switches. Import and Undo messages now refer to settings, and the setup guide explains which data the backup includes.
 * **Tumblr:** Settings controls now show focus and disabled states consistently. Search and word fields have clearer boundaries, and dialog actions wrap without losing their touch targets at large text sizes.
@@ -45,21 +38,27 @@
 * **Tumblr:** HushTumblr settings and their dialogs now mirror navigation for right-to-left languages, even when Tumblr's own layouts don't support it.
 * **Tumblr:** Moving a tab keeps TalkBack focus on that tab and announces its new position. Reset and refused saves keep focus aligned with the saved order.
 * **Tumblr:** Hide ads also removes paid Blaze posts from blogs you don't follow. It keeps your own posts and posts from blogs you follow.
-* **Tooling:** Expanded compiled-code checks to cover every patch family and its original fallback, including the redesigned post menus and their retained timeline owners. Altered hooks are rejected before a device build.
 * **Tumblr:** Long word lists now scroll inside the editor, keeping Save and Cancel within reach.
 * **Tumblr:** Saving a word list during an import now checks and saves the combined size in one step. Older backups ignore unsupported allowed-word fields instead of rejecting the whole file.
-* **Tooling:** Gallery cleanup is checked against the captions it owns, including recycling while the feature is paused. The verifier rejects unowned removals and escaped caption references.
 * **Tumblr:** Failed saves keep the words draft and the earlier tab order. The words editor also keeps its draft and selection when the settings page is recreated. Import and Undo refresh the list summaries and retain any required restart notice.
 * **Tumblr:** Settings backups check the complete file size before replacing an export. Oversized saved lists stay available to edit, and a refused Save keeps the draft. Diagnostic choices close with their settings page.
 * **Tumblr:** Word matching recognizes canonically equivalent text and checks whole words by Unicode code point. Added field choices and allowed words. Those exceptions affect the word filter only. Hide reblogs can optionally keep reblogs with their own tags.
 * **Tumblr:** Added activity filters for likes, reblogs, replies, follows, mentions, asks and boops. They start off and leave push notification choices alone. Post timestamps and visible image descriptions also start off.
 * **Tumblr:** Added private post muting to the native post menus, including the redesigned menu and your own blog's menu. It removes originals and their reblogs, with Undo and account-specific management. Optional mature-content reveal keeps Tumblr's age and account restrictions.
 * **Tumblr:** Optional mutual markers use a follower cache for your primary blog. Unknown relationships and sideblogs keep their existing headers.
-* **Tumblr:** The installation steps point to the published 0.0.1 bundle. New source features wait for the next release.
-* **Tooling:** Updated the checked Gradle wrapper to 9.8.1. Build and release entry points reject an affected, incomplete or mismatched wrapper before it runs.
 * **Tumblr:** Refreshed every HushTumblr settings page with navy cards, pale blue controls and larger page titles. Navigation has outlined icon tiles, and switch descriptions have more room.
 * **Tumblr:** Backup and diagnostic actions now have separate cards. The words editor, tab order list and other dialogs use the same colors as the settings pages. Search, recovery and enlarged text follow the new design too.
 * **Tumblr:** Kept the existing settings, defaults and saved choices. Added current settings screenshots to the README.
+* **Tooling:** Patched APKs are now checked for devices with 16 KB memory pages before they're kept, receipted or signed for a phone, and Tumblr's own native libraries are confirmed untouched.
+* **Tooling:** An unsigned universal APK now has to match the merge of the signed bundle beside it file for file, so one that leaves an asset out or carries a swapped resource or resource table is refused before patching.
+* **Tooling:** The settings, pause and restart checks now also run against Android 17 (API 37).
+* **Tooling:** The patch scripts refuse a bundle whose file names try to reach outside the folder it's unpacked into. They also check every APK in it against Tumblr's signing certificate, package and version before anything is merged, patched, signed or installed. A bundle that would unpack past 1 GB for one APK, or 2 GB in all, is refused before anything is written, and so is an .xapk whose manifest.json would pass 1 MB. A merged universal APK kept beside its bundle now has to carry that bundle's own files throughout, not only its code and native libraries.
+* **Tooling:** Settings title checks compile against the public Android SDK.
+* **Tooling:** Split-input tests check AAPT2's complete manifest split name. Gate-isolation fixtures include both suites that shared merge changes require.
+* **Tooling:** Concurrent device-build tests keep their queue log intact on Windows PowerShell 5.1.
+* **Tooling:** Expanded compiled-code checks to cover every patch family and its original fallback, including the redesigned post menus and their retained timeline owners. Altered hooks are rejected before a device build.
+* **Tooling:** Gallery cleanup is checked against the captions it owns, including recycling while the feature is paused. The verifier rejects unowned removals and escaped caption references.
+* **Tooling:** Updated the checked Gradle wrapper to 9.8.1. Build and release entry points reject an affected, incomplete or mismatched wrapper before it runs.
 * **Tooling:** Source updates can keep their notes under Unreleased while the published bundle stays on its released version. Release checks still require a dated entry.
 * **Tooling:** The README is much shorter now and sticks to what you need to install and use HushTumblr. The longer version is still in the repository history.
 
