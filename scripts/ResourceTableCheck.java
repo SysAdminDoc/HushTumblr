@@ -1,6 +1,8 @@
 import com.reandroid.arsc.chunk.PackageBlock;
 import com.reandroid.arsc.chunk.TableBlock;
 import com.reandroid.arsc.container.SpecTypePair;
+import com.reandroid.arsc.item.StringItem;
+import com.reandroid.arsc.item.StyleSpan;
 import com.reandroid.arsc.model.ResourceEntry;
 import com.reandroid.arsc.value.Entry;
 import com.reandroid.arsc.value.ResConfig;
@@ -672,9 +674,11 @@ public final class ResourceTableCheck {
      * A value as text that does not depend on where the rebuild put it in a string pool, or on the
      * id the rebuild picked for a resource a patch added. Two values render alike only when they
      * are alike: a string's backslashes and quotes are escaped along with its line breaks, so one
-     * can't read as another or as the end of a report line, each color type and each dynamic kind
-     * is named (an 8-digit color, the form a patch writes, stays bare for the #{option} lines), and
-     * an unreadable string carries its pool index.
+     * can't read as another or as the end of a report line, and a styled string's spans follow its
+     * text one by one (tag and character range), so markup a span makes never reads as the same
+     * markup typed into a plain string. Each color type and each dynamic kind is named (an 8-digit
+     * color, the form a patch writes, stays bare for the #{option} lines), and an unreadable string
+     * carries its pool index.
      */
     private String value(ValueItem value, String resourceType) {
         if (value == null) return "(none)";
@@ -683,10 +687,16 @@ public final class ResourceTableCheck {
         if (type == null) return String.format(Locale.ROOT, "type 0x%02x 0x%08x", value.getType() & 0xff, data);
         switch (type) {
             case STRING:
-                String text = value.getValueAsString();
+                StringItem item = value.getDataAsPoolString();
+                String text = item == null ? null : item.get();
                 if (text == null) return String.format(Locale.ROOT, "string (unreadable, pool index %d)", data);
-                if (resourceType != null && !"string".equals(resourceType) && text.startsWith("res/")) return "file " + text;
-                return "\"" + text.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") + "\"";
+                List<String> spans = new ArrayList<>();
+                if (item.hasStyle()) for (StyleSpan span : item.getStyle()) {
+                    String tag = span.getString();
+                    spans.add((tag == null ? "unreadable" : quoted(tag)) + " " + span.getFirstChar() + "-" + span.getLastChar());
+                }
+                if (spans.isEmpty() && resourceType != null && !"string".equals(resourceType) && text.startsWith("res/")) return "file " + text;
+                return quoted(text) + (spans.isEmpty() ? "" : " with spans " + String.join(", ", spans));
             case REFERENCE:
                 return reference(data);
             case DYNAMIC_REFERENCE:
@@ -704,6 +714,10 @@ public final class ResourceTableCheck {
             default:
                 return type.name().toLowerCase(Locale.ROOT) + String.format(Locale.ROOT, " 0x%08x", data);
         }
+    }
+
+    private static String quoted(String text) {
+        return "\"" + text.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") + "\"";
     }
 
     private String filePath(ValueItem value, String resourceType) {

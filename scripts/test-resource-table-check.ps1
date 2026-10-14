@@ -449,7 +449,8 @@ try {
 
     $valueIds = Join-Path $caseRoot 'value-ids.txt'
     $valueFiles = [ordered]@{
-        'res/values/strings.xml' = '<resources><string name="line">a\\nb</string><string name="quote">say \"hi\"</string></resources>'
+        'res/values/strings.xml' = ('<resources><string name="line">a\\nb</string><string name="quote">say \"hi\"</string>' +
+            '<string name="tap">By tapping <b>Next</b>:</string></resources>')
         'res/values/styles.xml' = '<resources><style name="SearchTheme"><item name="android:textColor">?android:attr/textColorPrimary</item></style></resources>'
     }
     $valueStock = New-ResourceApk -Name 'value-stock' -Files $valueFiles -EmitIds $valueIds
@@ -458,14 +459,17 @@ try {
         if ($line -match '^[^:]+:(\S+) = (0x[0-9a-f]{8})$') { $valueIdOf[$Matches[1]] = $Matches[2] }
     }
     $escapedFiles = [ordered]@{
-        'res/values/strings.xml' = '<resources><string name="line">a\nb</string><string name="quote">say hi</string></resources>'
+        'res/values/strings.xml' = ('<resources><string name="line">a\nb</string><string name="quote">say hi</string>' +
+            '<string name="tap">By tapping &lt;b>Next&lt;/b>:</string></resources>')
         'res/values/styles.xml' = $valueFiles['res/values/styles.xml']
     }
+    # A bold span on Next and the same tags typed into a plain string read apart.
     $escaped = Invoke-Check -Stock $valueStock -Patched (New-ResourceApk -Name 'value-escaped' -Files $escapedFiles -StableIds $valueIds) -Name 'value-escaped'
     Assert-True ($escaped.ExitCode -eq 0 -and
         $escaped.Output -match [regex]::Escape("$($valueIdOf['string/line']) string/line [default] `"a\\nb`" -> `"a\nb`"") -and
-        $escaped.Output -match [regex]::Escape("$($valueIdOf['string/quote']) string/quote [default] `"say \`"hi\`"`" -> `"say hi`"")) `
-        "A backslash and n become a line break, or a string that lost its quotes, wasn't reported escaped.`n$($escaped.Output)"
+        $escaped.Output -match [regex]::Escape("$($valueIdOf['string/quote']) string/quote [default] `"say \`"hi\`"`" -> `"say hi`"") -and
+        $escaped.Output -match [regex]::Escape("$($valueIdOf['string/tap']) string/tap [default] `"By tapping Next:`" with spans `"b`" 11-14 -> `"By tapping <b>Next</b>:`"")) `
+        "A backslash and n become a line break, a string that lost its quotes, or a span typed out as tags, wasn't reported escaped.`n$($escaped.Output)"
     # textColorPrimary, 0x01010036, as an attribute value.
     $attribute = [byte[]](8, 0, 0, 2, 0x36, 0, 1, 1)
     $dynamicAttribute = [byte[]](8, 0, 0, 8, 0x36, 0, 1, 1)

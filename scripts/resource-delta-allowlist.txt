@@ -16,7 +16,7 @@
 
 [rebuild]
 rewritten 0x7f150581 style/TimelineView [default] item 0x0101007f hex 0x02000000 -> dec 0x02000000
-rewritten 0x7f140c65 string/sign_up_tos_description [default] "By tapping <b>\"Next\"</b>:" -> "By tapping <b>Next</b>:"
+rewritten 0x7f140c65 string/sign_up_tos_description [default] "By tapping \"Next\":" with spans "b" 11-16 -> "By tapping Next:" with spans "b" 11-14
 renamed 0x7f0b0b2f id/scrollView is id/id_0x7f0b0b2f
 renamed 0x7f0b0b34 id/scrollview is id/id_0x7f0b0b34
 renamed 0x7f0b0b62 id/seekBar is id/id_0x7f0b0b62
