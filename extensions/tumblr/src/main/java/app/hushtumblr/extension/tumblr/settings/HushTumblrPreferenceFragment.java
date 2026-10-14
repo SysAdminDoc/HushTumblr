@@ -1079,6 +1079,11 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                 .setPositiveButton(L10n.t("Save"), null)
                 .setNegativeButton(L10n.t("Cancel"), null));
         if (dialog == null) return;
+        // With no mode of its own the dialog pans for the keyboard: it slid up to the cursor and
+        // left Save and Cancel under the Samsung keyboard at twice the text size. Resized, the
+        // body scrolls and the buttons stay above the keyboard.
+        android.view.Window window = dialog.getWindow();
+        if (window != null) window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         wordsDialog = dialog;
         wordsField = field;
         restoreWordsEditor = false;

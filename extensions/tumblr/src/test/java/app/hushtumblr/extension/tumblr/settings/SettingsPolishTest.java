@@ -247,6 +247,10 @@ public class SettingsPolishTest {
         for (String key : new String[]{HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW,
                 HushTumblrPreferenceFragment.ALLOWED_WORDS_ROW}) {
             AlertDialog editor = click(page.findPreference(key));
+            // Resized for the keyboard rather than panned, which left the buttons under it on a
+            // Samsung phone at this text size.
+            assertEquals(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE,
+                    editor.getWindow().getAttributes().softInputMode & WindowManager.LayoutParams.SOFT_INPUT_MASK_ADJUST);
             EditText field = editor.findViewById(android.R.id.edit);
             String draft = phrases(60);
             field.setText(draft);
@@ -601,10 +605,6 @@ public class SettingsPolishTest {
         layout(settings.getView());
     }
 
-    private EditText search() {
-        return (EditText) described(settings.getView(), L10n.t("Search settings"));
-    }
-
     /**
      * The home page's row titled [title], brought into view first. Home is taller than the 600dp
      * test screen since Quick setups gained its press-and-hold line, and a list lays out only the
@@ -624,6 +624,10 @@ public class SettingsPolishTest {
         list.setSelection(position);
         layout(settings.getView());
         return visibleText(settings.getView(), title);
+    }
+
+    private EditText search() {
+        return (EditText) described(settings.getView(), L10n.t("Search settings"));
     }
 
     private ImageButton clear() {
