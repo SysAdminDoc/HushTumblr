@@ -28,15 +28,26 @@
     with exactly those bytes.
 
     Then the same APKs signed with keytool and apksigner, one key standing for Tumblr's and one for
-    anybody else's: a bundle whose APKs all carry the declared key merges, with a record of the
-    check beside it that Assert-AuthenticMerge accepts, and an unsigned universal APK passes as the
-    merge of the same-named bundle beside it. An unsigned split, a split signed by the other key,
+    anybody else's: a bundle whose APKs all carry the declared key merges, and Assert-AuthenticMerge
+    takes that merge as the one this process made and holds. An unsigned universal APK passes as
+    the merge of the same-named bundle beside it. An unsigned split, a split signed by the other key,
     a split changed after signing, and a universal APK whose dex, native libraries, assets or res
     files aren't the bundle's are each refused before the JDK starts, leaving nothing behind. A
     universal APK made only of the bundle's own files is still refused when it isn't the bundle's
     merge: one that left an asset out, one with the base APK's resource table and nothing the split
     adds, and one with a signed res file under another name. Those take the merge to tell, so the
     JDK runs for them, and they leave nothing behind either.
+
+    Then a second process of the same user, which can write to anything this one can, tried at
+    every point where a path used to be read twice. MergeSplits.java is held to the bytes of the
+    CLI's own ApkMerger.merge first. A split put beside the checked ones during the merge isn't
+    merged. An APK being merged, the merger's compression buffer and the APK being written can't
+    be written, mapped, deleted, renamed or replaced, and neither can a merge the scripts hold
+    until they let it go. A destination or an unpacked APK another process already has open to
+    write, or mapped, is refused or left behind. An APK put in the merge's place between the
+    merger closing it and the scripts opening it is refused by the digest the merger printed. A
+    forged merge with a record written to match is refused, and the merge's own bytes pass with
+    no record. A junction turned during the merge moves nothing.
 
     Last, what a device with 16 KB pages needs of a patched APK (Assert-PageAlignment), with the
     build-tools' zipalign and apksigner: an APK aligned and then signed passes, the same files left
@@ -107,6 +118,114 @@ $layout = @'
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
     android:background="@color/surface" />
+'@
+
+# What a second process tries on a file, one step a line (step|path|argument), and what came of each:
+# done, or refused with the error Windows gave. With -Ready it keeps what the hold steps opened until
+# -Release is written, then writes through each of them and leaves.
+$intruderText = @'
+param([string]$Plan, [string]$Ready, [string]$Release)
+$ErrorActionPreference = 'Stop'
+$kept = New-Object System.Collections.Generic.List[object]
+$all = [System.IO.FileShare]'ReadWrite, Delete'
+function Step([string]$Name, [string]$Path, [scriptblock]$Do) {
+    try { & $Do; "$Name|$Path|done" }
+    catch {
+        $e = $_.Exception
+        while ($e.InnerException) { $e = $e.InnerException }
+        "$Name|$Path|refused: $($e.GetType().Name) " + ('0x{0:x8}' -f $e.HResult)
+    }
+}
+foreach ($line in [System.IO.File]::ReadAllLines($Plan)) {
+    $op, $path, $arg = $line.Split('|')
+    switch ($op) {
+        'read' { Step $op $path { $s = [System.IO.File]::Open($path, 'Open', 'Read', $all); try { [void]$s.ReadByte() } finally { $s.Dispose() } } }
+        'write' { Step $op $path { $s = [System.IO.File]::Open($path, 'Open', 'Write', $all); try { $s.WriteByte(0x58) } finally { $s.Dispose() } } }
+        'append' { Step $op $path { $s = [System.IO.File]::Open($path, 'Append', 'Write', $all); try { $s.WriteByte(0x58) } finally { $s.Dispose() } } }
+        'delete' { Step $op $path { [System.IO.File]::Delete($path); if ([System.IO.File]::Exists($path)) { throw 'it is still there' } } }
+        'move' { Step $op $path { [System.IO.Directory]::Move($path, $arg) } }
+        'copy' { Step $op $path { [System.IO.File]::Copy($arg, $path, $true) } }
+        'create' { Step $op $path { [System.IO.File]::Copy($arg, $path, $false) } }
+        'unlink' { Step $op $path { [System.IO.Directory]::Delete($path, $false) } }
+        'junction' { Step $op $path { New-Item -ItemType Junction -Path $path -Target $arg -ErrorAction Stop | Out-Null } }
+        # [NullString]: $null would be handed over as an empty map name, which is refused for that.
+        'map' { Step $op $path {
+                $m = [System.IO.MemoryMappedFiles.MemoryMappedFile]::CreateFromFile($path, 'Open', [NullString]::Value, 0, 'ReadWrite')
+                try { $v = $m.CreateViewAccessor(0, 1); try { $v.Write(0, [byte]0x58) } finally { $v.Dispose() } } finally { $m.Dispose() }
+            } }
+        'hold-writer' { Step $op $path { $kept.Add([System.IO.File]::Open($path, 'Open', 'ReadWrite', $all)) } }
+        # The mapping is let go of and the view kept: no handle to the file is left, only the view.
+        'hold-map' { Step $op $path {
+                $m = [System.IO.MemoryMappedFiles.MemoryMappedFile]::CreateFromFile($path, 'Open', [NullString]::Value, 0, 'ReadWrite')
+                try { $kept.Add($m.CreateViewAccessor(0, 1)) } finally { $m.Dispose() }
+            } }
+        default { "$op|$path|refused: no such step" }
+    }
+}
+if ($Ready) {
+    [System.IO.File]::WriteAllText($Ready, 'ready')
+    # Until it is let go, or the test's folder has gone from under it.
+    while (-not (Test-Path -LiteralPath $Release) -and (Test-Path -LiteralPath $Plan)) { Start-Sleep -Milliseconds 20 }
+    foreach ($thing in $kept) {
+        Step 'late-write' $thing.GetType().Name {
+            if ($thing -is [System.IO.FileStream]) { $thing.Position = 0; $thing.WriteByte(0x59); $thing.Flush() }
+            else { $thing.Write(0, [byte]0x59); $thing.Flush() }
+        }
+        $thing.Dispose()
+    }
+}
+'@
+
+# Stands in for java in the swap cases: Get-MergedApk runs it as it runs the JDK. It starts the real
+# one with -Dhushtumblr.merge.hold, so MergeSplits.java stops at each point it can be held at, runs
+# the case's steps there and once the JDK has exited (closed), and hands back what the JDK printed
+# and its exit code. $global:HushTumblrHeldJava carries the case: Java, Work, At and Reached.
+$heldJavaText = @'
+$plan = $global:HushTumblrHeldJava
+$hold = Join-Path $plan.Work ('hold-' + [guid]::NewGuid().ToString('N'))
+[void][System.IO.Directory]::CreateDirectory($hold)
+$quoted = @(@("-Dhushtumblr.merge.hold=$hold") + $args | ForEach-Object {
+        '"' + (([string]$_) -replace '(\\*)"', '$1$1\"' -replace '(\\+)$', '$1$1') + '"' })
+$info = New-Object System.Diagnostics.ProcessStartInfo
+$info.FileName = $plan.Java
+$info.Arguments = $quoted -join ' '
+$info.UseShellExecute = $false
+$info.CreateNoWindow = $true
+$info.RedirectStandardOutput = $true
+$info.RedirectStandardError = $true
+$process = [System.Diagnostics.Process]::Start($info)
+$out = $process.StandardOutput.ReadToEndAsync()
+$err = $process.StandardError.ReadToEndAsync()
+try {
+    foreach ($point in 'checked', 'buffered', 'written') {
+        while (-not (Test-Path -LiteralPath (Join-Path $hold "$point.reached")) -and -not $process.HasExited) { Start-Sleep -Milliseconds 15 }
+        if ($process.HasExited) { break }
+        $plan.Reached += $point
+        if ($plan.At.ContainsKey($point)) { & $plan.At[$point] $args[4] $args[5] | Out-Null }
+        [System.IO.File]::WriteAllText((Join-Path $hold "$point.go"), 'go')
+    }
+    $process.WaitForExit()
+    if ($plan.At.ContainsKey('closed')) { & $plan.At['closed'] $args[4] $args[5] | Out-Null }
+} finally {
+    if (-not $process.HasExited) { $process.Kill(); $process.WaitForExit() }
+}
+foreach ($line in @($err.Result -split "`r?`n" | Where-Object { $_ })) { Write-Error $line -ErrorAction Continue }
+$out.Result -split "`r?`n" | Where-Object { $_ }
+exit $process.ExitCode
+'@
+
+# The CLI's own merge of a folder of APKs, with the arguments its patch command passes, for the
+# swap cases to hold MergeSplits.java's bytes to.
+$pinnedMergeText = @'
+import app.morphe.patcher.apk.ApkMerger;
+
+import java.io.File;
+
+public final class PinnedMerge {
+    public static void main(String[] args) throws Exception {
+        new ApkMerger().merge(new File(args[0]), new File(args[1]), true, null, true, null, false);
+    }
+}
 '@
 
 <#
@@ -203,6 +322,9 @@ $requiredPrefix = $tempBase.TrimEnd([System.IO.Path]::DirectorySeparatorChar) + 
 if (-not $caseRoot.StartsWith($requiredPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
     throw "Refusing to create test files outside the temporary directory: $caseRoot"
 }
+$caseRootAsked = $caseRoot
+# Every second process a swap case starts, so none outlives the run.
+$intruders = New-Object System.Collections.Generic.List[System.Diagnostics.Process]
 
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -212,6 +334,12 @@ $savedQueueScript = $env:BUILD_QUEUE_SCRIPT
 $env:BUILD_QUEUE_SCRIPT = $null
 try {
     New-Item -ItemType Directory -Path $caseRoot | Out-Null
+    # By its real path from here on, which is how Get-MergedApk names what it returns: a temp
+    # folder reached through a short name or a link would otherwise never equal the paths asked
+    # for below. The cleanup keeps the path that was checked against the temp folder.
+    $caseHeld = Open-HeldDirectory -Path $caseRoot
+    $caseRoot = $caseHeld.Path
+    $caseHeld.Anchor.Dispose()
     $ids = Join-Path $caseRoot 'stock-ids.txt'
     $stockFiles = [ordered]@{
         'res/values/colors.xml' = $colors
@@ -455,7 +583,10 @@ try {
         $splits = Expand-SplitBundle -Apk $Bundle -Destination $Destination
         try {
             Lock-SplitFiles -Splits $splits
-            return Invoke-SplitMerge -Splits $splits -Destination $Destination -Java $Java -DesktopJar $DesktopJar
+            # The merge comes back held to the digest the merger printed. These cases only read it.
+            $merge = Invoke-SplitMerge -Splits $splits -Destination $Destination -Java $Java -DesktopJar $DesktopJar
+            $merge.Handle.Dispose()
+            return $merge.Path
         } finally {
             Remove-SplitDirectory -Splits $splits
         }
@@ -524,10 +655,10 @@ try {
     # refused, and so is a directory holding anything but regular .apk files, or none, all before
     # the merger runs. Each APK's hash, taken where its signature was checked, comes after the two
     # paths, and the directory has to hold exactly the APKs listed, with exactly those bytes.
-    function Invoke-MergeSplits([string]$Splits, [string]$Merged, [string[]]$Digests = @()) {
+    function Invoke-MergeSplits([string]$Splits, [string]$Merged, [string[]]$Digests = @(), [string]$With = $Java) {
         $ErrorActionPreference = 'Continue'
         $global:LASTEXITCODE = -1
-        $said = @(& $Java '-Xmx1g' '-cp' $DesktopJar (Join-Path $PSScriptRoot 'MergeSplits.java') $Splits $Merged @Digests 2>&1 |
+        $said = @(& $With '-Xmx1g' '-cp' $DesktopJar (Join-Path $PSScriptRoot 'MergeSplits.java') $Splits $Merged @Digests 2>&1 |
             ForEach-Object { "$_" })
         [pscustomobject]@{ ExitCode = $LASTEXITCODE; Text = $said -join "`n" }
     }
@@ -647,7 +778,14 @@ try {
         # AAPT2 adds the density qualifier's API 4 floor to the manifest split name.
         (@($record.apks | ForEach-Object { "$($_.member)=$($_.split)" } | Sort-Object) -join ';') -ceq 'base.apk=;split_config.xxhdpi.apk=config.xxhdpi_v4') `
         "The record of the signed merge is wrong: $($record | ConvertTo-Json -Depth 5 -Compress)"
-    Assert-AuthenticMerge -Merged $signedMerged -Base $baseA -PackageName 'com.tumblr'
+    # The merge is one this process made and still holds, which is the evidence: nothing is opened
+    # or merged again for it, and its base is the APK whose signer was checked.
+    $heldBaseA = Open-HeldFile -Path $baseA -What 'The base APK'
+    try {
+        $opened = Assert-AuthenticMerge -Merged $signedMerged -Base $heldBaseA -Apk $signedApkm -Scratch (Join-Path $bundleDir 'merged') `
+            -Java $noJava -DesktopJar $DesktopJar -Aapt2 $Aapt2 -PackageName 'com.tumblr' -Signers $pinned
+        Assert-True ($null -eq $opened) 'A merge this process still holds was opened a second time to be checked.'
+    } finally { $heldBaseA.Dispose() }
     $signedCaught = Invoke-Check -Stock $signedMerged -Patched $baseApk -Name 'signed-merged-stock'
     Assert-True ($signedCaught.ExitCode -eq 1 -and $signedCaught.Output -match 'FAIL 0x7f\w{6} dimen/tray_height: not in the patched table') `
         "The signed bundle's merge does not carry the split's resource.`n$($signedCaught.Output)"
@@ -765,13 +903,444 @@ try {
             "$(Split-Path -Leaf $case.Apk) was not refused before anything was handed on: $refused"
     }
 
+    # Another process of the same user can write to anything this one can, so every check above was
+    # only as good as the last time a path was read. From here a second copy of this shell does what
+    # such a process could ($intruderText), at each point where a path used to be read a second
+    # time: while the merger holds its files, in the moment after it lets go of the merged APK, and
+    # while the merge is read by whatever comes after. A stand-in for java starts the real merger
+    # and stops it at those points ($heldJavaText). Each case has to end in the bytes that were
+    # checked or in a refusal, and the second process has to have really tried.
+    $swapDir = Join-Path $bundleDir 'swap'
+    New-Item -ItemType Directory -Force -Path $swapDir | Out-Null
+    $intruderScript = Join-Path $swapDir 'intruder.ps1'
+    $heldJava = Join-Path $swapDir 'held-java.ps1'
+    $pinnedMerge = Join-Path $swapDir 'PinnedMerge.java'
+    [System.IO.File]::WriteAllText($intruderScript, $intruderText)
+    [System.IO.File]::WriteAllText($heldJava, $heldJavaText)
+    [System.IO.File]::WriteAllText($pinnedMerge, $pinnedMergeText)
+    $shell = (Get-Process -Id $PID).Path
+    function Start-Intruder([string[]]$Steps, [switch]$Stay) {
+        $list = Join-Path $swapDir ([guid]::NewGuid().ToString('N') + '.steps')
+        [System.IO.File]::WriteAllLines($list, $Steps)
+        $start = New-Object System.Diagnostics.ProcessStartInfo
+        $start.FileName = $shell
+        $start.Arguments = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$intruderScript`" -Plan `"$list`""
+        if ($Stay) { $start.Arguments += " -Ready `"$list.ready`" -Release `"$list.release`"" }
+        $start.UseShellExecute = $false
+        $start.CreateNoWindow = $true
+        $start.RedirectStandardOutput = $true
+        $start.RedirectStandardError = $true
+        $second = [System.Diagnostics.Process]::Start($start)
+        $intruders.Add($second)
+        $intruder = [pscustomobject]@{ Process = $second; Said = $second.StandardOutput.ReadToEndAsync()
+            Failed = $second.StandardError.ReadToEndAsync(); Release = "$list.release" }
+        while ($Stay -and -not (Test-Path -LiteralPath "$list.ready")) {
+            if ($second.HasExited) { throw "The second process left before it was let go: $($intruder.Said.Result) $($intruder.Failed.Result)" }
+            Start-Sleep -Milliseconds 15
+        }
+        return $intruder
+    }
+    # What each step came to, a line a step: <step>|<path>|done, or refused with what Windows said.
+    function Stop-Intruder($Intruder) {
+        [System.IO.File]::WriteAllText($Intruder.Release, 'go')
+        $Intruder.Process.WaitForExit()
+        if ($Intruder.Process.ExitCode -ne 0) { throw "The second process failed: $($Intruder.Said.Result) $($Intruder.Failed.Result)" }
+        return @($Intruder.Said.Result -split "`r?`n" | Where-Object { $_ })
+    }
+    function Invoke-Intruder([string[]]$Steps) {
+        $intruder = Start-Intruder -Steps $Steps
+        $intruder.Process.WaitForExit()
+        if ($intruder.Process.ExitCode -ne 0) { throw "The second process failed: $($intruder.Said.Result) $($intruder.Failed.Result)" }
+        return @($intruder.Said.Result -split "`r?`n" | Where-Object { $_ })
+    }
+    # How Windows turns a second opener away from a held file (a sharing violation), and a rename
+    # away from a folder with an open file under it (access denied). A step refused any other way,
+    # for a path that isn't there or an argument that is wrong, tried nothing.
+    $sharing = 'refused: IOException 0x80070020'
+    $denied = 'refused: IOException 0x80070005'
+    # Everything a second process could do to one file: read it, write into it, add to it, map it
+    # to write, delete it, rename it, and copy another file over it.
+    function Get-Attempts([string]$Path) {
+        return @("read|$Path", "write|$Path", "append|$Path", "map|$Path", "delete|$Path", "move|$Path|$Path.moved", "copy|$Path|$probe")
+    }
+    function Assert-Attempts([string[]]$Said, [string]$Path, [string]$Read, [string]$Rest, [string]$What) {
+        $expected = @("read|$Path|$Read") + @('write', 'append', 'map', 'delete', 'move', 'copy' | ForEach-Object { "$_|$Path|$Rest" })
+        Assert-True (($Said -join "`n") -ceq ($expected -join "`n")) "${What}:`n$($Said -join "`n")`nwhere this was expected:`n$($expected -join "`n")"
+    }
+    function Invoke-Said([string]$Program, [string[]]$Arguments) {
+        $ErrorActionPreference = 'Continue'
+        $global:LASTEXITCODE = -1
+        $said = @(& $Program @Arguments 2>&1 | ForEach-Object { "$_" })
+        [pscustomobject]@{ ExitCode = $LASTEXITCODE; Text = $said -join "`n" }
+    }
+    function Get-PrintedDigest([string]$Text) { [regex]::Match($Text, '(?m)^\[merge\] sha256 ([0-9a-f]{64})\s*$').Groups[1].Value }
+    function Invoke-PinnedMerge([string]$Splits, [string]$Merged) {
+        Invoke-Checked -Program $Java -Arguments @('-Xmx1g', '-cp', $DesktopJar, $pinnedMerge, $Splits, $Merged) -Description 'ApkMerger.merge'
+        return Get-TestSha256 $Merged
+    }
+    # Get-MergedApk on the signed bundle with the stand-in for java, so -At's blocks run where the
+    # merger is held (checked, buffered, written) and once it has exited (closed). A block is
+    # handed the folder of unpacked APKs and the merged APK's path. It runs under Get-MergedApk, so
+    # it reads this script's variables but not ones a function on the way names too, and it keeps
+    # what it learns in $swap.
+    $swap = @{ Said = @{} }
+    function Invoke-HeldMerge([hashtable]$At, [string]$To) {
+        $global:HushTumblrHeldJava = @{ Java = $Java; Work = $swapDir; At = $At; Reached = @() }
+        $result = [pscustomobject]@{ Path = $null; Refused = $null; Reached = @() }
+        try {
+            $result.Path = Get-MergedApk -Apk $signedApkm -Destination $To -Java $heldJava -DesktopJar $DesktopJar `
+                -Aapt2 $Aapt2 -PackageName 'com.tumblr' -Signers $pinned
+        } catch {
+            $result.Refused = $_.Exception.Message
+        }
+        $result.Reached = @($global:HushTumblrHeldJava.Reached)
+        return $result
+    }
+    # Nothing of a refused merge is left for a caller to pick up: it isn't held, and no record, no
+    # unpacked APKs, no buffer and no file kept open are beside where it would have been.
+    function Test-NothingHandedOn([string]$To) {
+        $folder = Split-Path -Parent $To
+        return -not (Get-HeldMerges).ContainsKey($To) -and -not (Test-Path -LiteralPath "$To.authentic.json") -and
+            -not (Test-Path -LiteralPath "$To.buffer") -and
+            @(Get-ChildItem -LiteralPath $folder -Force | Where-Object { $_.Name -like '.splits-*' -or $_.Name -like '.held-*' }).Count -eq 0
+    }
+    $cleanDigest = (Get-HeldMerges)[$signedMerged].Sha256
+    Assert-True ($cleanDigest -match '^[0-9a-f]{64}$' -and $cleanDigest -ceq (Get-TestSha256 $signedMerged)) `
+        "The signed bundle's merge is not held to the digest of the file that is there: $cleanDigest"
+    $heldBefore = (Get-HeldMerges).Count
+    $forgedSource = Join-Path $signed 'other-dex.apk'
+    $forgedDigest = Get-TestSha256 $forgedSource
+    $probe = Join-Path $swapDir 'probe.bin'
+    [System.IO.File]::WriteAllBytes($probe, [byte[]](1..200))
+    $probeDigest = Get-TestSha256 $probe
+
+    # MergeSplits.java does the merger's steps itself now, through the channels it holds, so it is
+    # held to ApkMerger.merge on the same APKs: the same bytes, and so the same manifest and
+    # resource table, the same entries in the same order and the same alignment. This bundle's
+    # manifest says its splits are required, twice over, which is what the merger takes out of a
+    # manifest, and keeps native libraries in the APK (extractNativeLibs false, as Tumblr's does).
+    # Its base carries one, which is what the 16 KB alignment moves: zipalign finds it stored on a
+    # 16 KB boundary in the merge.
+    $jar = Join-Path (Split-Path -Parent $Java) 'jar.exe'
+    if (-not (Test-Path -LiteralPath $jar -PathType Leaf)) { throw "Required tool not found: $jar" }
+    $zipalign = Resolve-Zipalign -Aapt2 $Aapt2
+    $equalIn = Join-Path $swapDir 'equal-in'
+    $libraryTree = Join-Path $swapDir 'library'
+    New-Item -ItemType Directory -Force -Path $equalIn, (Join-Path $libraryTree 'lib/arm64-v8a') | Out-Null
+    [System.IO.File]::WriteAllBytes((Join-Path $libraryTree 'lib/arm64-v8a/libstandin.so'), (New-Object byte[] 5000))
+    $equalManifest = Join-Path $swapDir 'equal-manifest.xml'
+    [System.IO.File]::WriteAllText($equalManifest, ('<manifest xmlns:android="http://schemas.android.com/apk/res/android" ' +
+        'package="com.tumblr" android:versionCode="1460500109"><application android:extractNativeLibs="false" ' +
+        'android:isSplitRequired="true"><meta-data android:name="com.android.vending.splits.required" android:value="true" />' +
+        '</application></manifest>'), [System.Text.UTF8Encoding]::new($false))
+    Invoke-Checked -Program $Aapt2 -Arguments @('link', '-o', (Join-Path $equalIn 'base.apk'), '-I', $androidJar, '--manifest', $equalManifest,
+        '--package-id', '0x7f', '--allow-reserved-package-id',
+        '--split', ((Join-Path $equalIn 'split_config.xxhdpi.apk') + [System.IO.Path]::PathSeparator + 'xxhdpi'), $bundleCompiled) `
+        -Description 'aapt2 link for the bundle with a library'
+    Invoke-Checked -Program $jar -Arguments @('--update', '--no-compress', '--no-manifest', '--file', (Join-Path $equalIn 'base.apk'),
+        '-C', $libraryTree, 'lib') -Description 'jar for a stored library'
+    $equalDigests = @(Get-ChildItem -LiteralPath $equalIn -Filter '*.apk' | ForEach-Object { "$($_.Name):$(Get-TestSha256 $_.FullName)" })
+    $equalOut = Join-Path $swapDir 'equal-held.apk'
+    $equal = Invoke-MergeSplits $equalIn $equalOut $equalDigests
+    Assert-True ($equal.ExitCode -eq 0 -and (Get-PrintedDigest $equal.Text) -and (Get-PrintedDigest $equal.Text) -ceq (Get-TestSha256 $equalOut) -and
+        -not (Test-Path -LiteralPath "$equalOut.buffer")) `
+        "MergeSplits.java did not print the digest of the APK it wrote, or left its buffer behind.`n$($equal.Text)"
+    $equalPinned = Invoke-PinnedMerge $equalIn (Join-Path $swapDir 'equal-pinned.apk')
+    Assert-True ((Get-PrintedDigest $equal.Text) -ceq $equalPinned) `
+        "MergeSplits.java does not write the bytes ApkMerger.merge writes for the same APKs: $(Get-PrintedDigest $equal.Text) and $equalPinned."
+    $equalBaseSaid = Invoke-Said $Aapt2 @('dump', 'xmltree', '--file', 'AndroidManifest.xml', (Join-Path $equalIn 'base.apk'))
+    Assert-True ($equalBaseSaid.Text -match 'isSplitRequired' -and $equalBaseSaid.Text -match 'com\.android\.vending\.splits\.required') `
+        "The base APK's manifest does not say its splits are required, so the merge has nothing to take out.`n$($equalBaseSaid.Text)"
+    $equalSaid = Invoke-Said $Aapt2 @('dump', 'xmltree', '--file', 'AndroidManifest.xml', $equalOut)
+    Assert-True ($equalSaid.ExitCode -eq 0 -and $equalSaid.Text -match 'extractNativeLibs\(0x[0-9a-f]+\)=false' -and
+        $equalSaid.Text -notmatch 'isSplitRequired|com\.android\.vending') `
+        "The merge's manifest still says its splits are required, or lost what keeps libraries in the APK.`n$($equalSaid.Text)"
+    $aligned = Invoke-Said $zipalign @('-c', '-P', '16', '-v', '4', $equalOut)
+    Assert-True ($aligned.ExitCode -eq 0 -and $aligned.Text -match 'lib/arm64-v8a/libstandin\.so \(OK\)') `
+        "The merge does not keep a stored library on a 16 KB boundary, so the comparison above did not cover it.`n$($aligned.Text)"
+
+    # (1) A split nobody checked, put beside the checked ones once they have been hashed and taken
+    # away again before the merge ends, so no listing before or after finds it. ApkMerger.merge
+    # lists the folder for itself in between: the same three APKs through it are other bytes. The
+    # merge is made of the two that were checked, read through the channels they were hashed by.
+    $extraDir = Join-Path $swapDir 'extra'
+    foreach ($values in 'values', 'values-xxhdpi') {
+        New-Item -ItemType Directory -Force -Path (Join-Path $extraDir "res/$values") | Out-Null
+        Copy-Item -LiteralPath (Join-Path $bundleDir "res/$values/dimens.xml") -Destination (Join-Path $extraDir "res/$values/dimens.xml")
+    }
+    New-Item -ItemType Directory -Force -Path (Join-Path $extraDir 'res/values-xhdpi') | Out-Null
+    [System.IO.File]::WriteAllText((Join-Path $extraDir 'res/values-xhdpi/dimens.xml'),
+        '<resources><dimen name="gap">5dp</dimen></resources>', [System.Text.UTF8Encoding]::new($false))
+    Invoke-Checked -Program $Aapt2 -Arguments @('compile', '--dir', (Join-Path $extraDir 'res'), '-o', (Join-Path $extraDir 'compiled.zip')) `
+        -Description 'aapt2 compile for the unchecked split'
+    $extraSplit = Join-Path $extraDir 'split_config.xhdpi.apk'
+    Invoke-Checked -Program $Aapt2 -Arguments @('link', '-o', (Join-Path $extraDir 'base.apk'), '-I', $androidJar, '--manifest', $bundleManifest,
+        '--package-id', '0x7f', '--allow-reserved-package-id',
+        '--split', ((Join-Path $extraDir 'split_config.xxhdpi.apk') + [System.IO.Path]::PathSeparator + 'xxhdpi'),
+        '--split', ($extraSplit + [System.IO.Path]::PathSeparator + 'xhdpi'), (Join-Path $extraDir 'compiled.zip')) `
+        -Description 'aapt2 link for the unchecked split'
+    $listedDir = Join-Path $swapDir 'listed'
+    New-Item -ItemType Directory -Force -Path $listedDir | Out-Null
+    $inserted = Invoke-HeldMerge -To (Join-Path $swapDir 'inserted/out.apk') -At @{
+        checked = {
+            param($splitDir, $mergedPath)
+            $swap.Extra = Join-Path $splitDir 'split_config.xhdpi.apk'
+            $swap.Said['put'] = Invoke-Intruder @("create|$($swap.Extra)|$extraSplit")
+            # The folder as a merger that lists it now would find it.
+            Copy-Item -Path (Join-Path $splitDir '*.apk') -Destination $listedDir
+        }
+        written = { $swap.Said['took'] = Invoke-Intruder @("delete|$($swap.Extra)") }
+    }
+    Assert-True ($null -eq $inserted.Refused -and ($inserted.Reached -join ' ') -ceq 'checked buffered written') `
+        "The merger was not stopped where its files are held: [$($inserted.Reached -join ' ')] $($inserted.Refused)"
+    Assert-True ($swap.Said['put'] -ceq "create|$($swap.Extra)|done" -and $swap.Said['took'] -ceq "delete|$($swap.Extra)|done") `
+        "The second process could not put a split beside the checked ones and take it away, so nothing was tried: $($swap.Said['put']) $($swap.Said['took'])"
+    $listedDigest = Invoke-PinnedMerge $listedDir (Join-Path $swapDir 'listed.apk')
+    Assert-True (@(Get-ChildItem -LiteralPath $listedDir -Filter '*.apk').Count -eq 3 -and $listedDigest -cne $cleanDigest) `
+        "A merge that lists the folder is no different with the unchecked split in it, so the case shows nothing: $listedDigest"
+    Assert-True ((Get-HeldMerges)[$inserted.Path].Sha256 -ceq $cleanDigest -and (Get-TestSha256 $inserted.Path) -ceq $cleanDigest) `
+        ("A split nobody checked, beside the checked ones while they were merged, is in the merge: it hashes to " +
+        "$((Get-HeldMerges)[$inserted.Path].Sha256), and the checked APKs alone merge to $cleanDigest.")
+
+    # (2) Writers and mappings. First the merger on its own, with nothing of the scripts' holding
+    # its files: what a second process can do to an APK being merged, to the buffer the merger
+    # compresses changed entries into, and to the APK being written, during the merge and once it
+    # is whole. It can read the first and the last. The buffer it can't so much as read.
+    $heldIn = Join-Path $swapDir 'held-in'
+    New-Item -ItemType Directory -Force -Path $heldIn | Out-Null
+    Copy-Item -LiteralPath $baseA -Destination (Join-Path $heldIn 'base.apk')
+    Copy-Item -LiteralPath $splitA -Destination (Join-Path $heldIn 'split_config.xxhdpi.apk')
+    $heldSplit = Join-Path $heldIn 'base.apk'
+    $heldOut = Join-Path $swapDir 'held-out.apk'
+    $global:HushTumblrHeldJava = @{ Java = $Java; Work = $swapDir; Reached = @(); At = @{
+            checked = { $swap.Said['split'] = Invoke-Intruder (Get-Attempts $heldSplit) }
+            buffered = {
+                $swap.BufferLength = ([System.IO.FileInfo]"$heldOut.buffer").Length
+                $swap.Said['buffer'] = Invoke-Intruder (Get-Attempts "$heldOut.buffer")
+                $swap.Said['output'] = Invoke-Intruder (Get-Attempts $heldOut)
+            }
+            written = { $swap.Said['whole'] = Invoke-Intruder (Get-Attempts $heldOut) }
+        } }
+    $heldRun = Invoke-MergeSplits $heldIn $heldOut @("base.apk:$(Get-TestSha256 $baseA)", "split_config.xxhdpi.apk:$(Get-TestSha256 $splitA)") $heldJava
+    # Each point's attempts are read before the next point is asked about: a write that got through
+    # breaks the merge, and the merger then never reaches the points after it.
+    $reached = @($global:HushTumblrHeldJava.Reached)
+    $stopped = "The merger was not stopped where its files are held: [$($reached -join ' ')]`n$($heldRun.Text)"
+    Assert-True ($reached -ccontains 'checked') $stopped
+    Assert-Attempts $swap.Said['split'] $heldSplit 'done' $sharing 'An APK being merged was not kept from a second process'
+    Assert-True ($reached -ccontains 'buffered') $stopped
+    Assert-True ($swap.BufferLength -gt 0) 'The merger compressed nothing into its buffer, so holding it showed nothing.'
+    Assert-Attempts $swap.Said['buffer'] "$heldOut.buffer" $sharing $sharing 'The buffer of compressed entries was not kept from a second process'
+    Assert-Attempts $swap.Said['output'] $heldOut 'done' $sharing 'The APK being written was not kept from a second process'
+    Assert-True (($reached -join ' ') -ceq 'checked buffered written') $stopped
+    Assert-Attempts $swap.Said['whole'] $heldOut 'done' $sharing 'The written APK was not kept from a second process until its digest was printed'
+    Assert-True ($heldRun.ExitCode -eq 0 -and (Get-PrintedDigest $heldRun.Text) -ceq $cleanDigest -and (Get-TestSha256 $heldOut) -ceq $cleanDigest -and
+        (Get-TestSha256 $heldSplit) -ceq (Get-TestSha256 $baseA) -and -not (Test-Path -LiteralPath "$heldOut.buffer") -and
+        @(Get-ChildItem -LiteralPath $swapDir, $heldIn -Force -Filter '*.moved').Count -eq 0) `
+        "A merge a second process tried all of that on is not the checked APKs' merge.`n$($heldRun.Text)"
+
+    # A mapping and then a writer another process took on the destination before the merge began.
+    # The merge is made as a new file, so both are left with the old one: what they write later
+    # lands there, and the merge is still the checked bytes. Where Windows won't delete a mapped
+    # file the merge is refused instead, which serves as well.
+    $preOut = Join-Path $swapDir 'pre-opened/out.apk'
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $preOut) | Out-Null
+    Copy-Item -LiteralPath $forgedSource -Destination $preOut
+    $holder = Start-Intruder -Stay -Steps @("hold-map|$preOut", "hold-writer|$preOut")
+    try { $pre = Invoke-HeldMerge -To $preOut -At @{} } finally { $late = Stop-Intruder $holder }
+    Assert-True (($late -join "`n") -ceq (@("hold-map|$preOut|done", "hold-writer|$preOut|done", 'late-write|MemoryMappedViewAccessor|done',
+            'late-write|FileStream|done') -join "`n")) "The second process did not hold the destination before the merge and write to it after:`n$($late -join "`n")"
+    if ($pre.Refused) {
+        Assert-True (Test-NothingHandedOn $preOut) "A merge refused over a destination already held left something to pick up: $($pre.Refused)"
+    } else {
+        Assert-True ((Get-HeldMerges)[$pre.Path].Sha256 -ceq $cleanDigest -and
+            (Get-StreamSha256 -Stream (Get-HeldMerges)[$pre.Path].Handle) -ceq $cleanDigest -and (Get-TestSha256 $pre.Path) -ceq $cleanDigest) `
+            "A writer and a mapping taken on the destination before the merge reached the merge: $(Get-TestSha256 $pre.Path)"
+    }
+
+    # A mapping taken in the moment after the merger closes the APK and before the scripts open
+    # it. What it maps could change under every later reader, so the APK is not taken.
+    $swap.Holder = $null
+    $late = @()
+    $mappedOut = Join-Path $swapDir 'mapped/out.apk'
+    try {
+        $mapped = Invoke-HeldMerge -To $mappedOut -At @{
+            closed = { param($splitDir, $mergedPath) $swap.Holder = Start-Intruder -Stay -Steps @("hold-map|$mergedPath") } }
+    } finally {
+        if ($swap.Holder) { $late = Stop-Intruder $swap.Holder }
+    }
+    Assert-True ($late.Count -eq 2 -and $late[0] -ceq "hold-map|$mappedOut|done") "The second process did not map the merged APK once the merger closed it:`n$($late -join "`n")"
+    Assert-True ($mapped.Refused -like "The merge of signed.apkm at $mappedOut can't be opened so that nothing else can write to it, so it isn't used:*" -and
+        (Test-NothingHandedOn $mappedOut)) "A merged APK another process had mapped to write was taken: $($mapped.Refused)"
+
+    # The same for any file the scripts take (Open-HeldFile): one a second process has open to
+    # write, or mapped, is refused, and so is one whose bytes aren't the ones it was written with
+    # once that process has let go. As it is, with its own digest, it is taken.
+    foreach ($kind in 'hold-writer', 'hold-map') {
+        $holder = Start-Intruder -Stay -Steps @("$kind|$probe")
+        $refused = $null
+        try { (Open-HeldFile -Path $probe -Sha256 $probeDigest -What 'The probe').Dispose() }
+        catch { $refused = $_.Exception.Message }
+        finally { $late = Stop-Intruder $holder }
+        Assert-True ($late.Count -eq 2 -and $late[0] -ceq "$kind|$probe|done" -and $late[1] -like 'late-write|*|done' -and
+            $refused -like "The probe at $probe can't be opened so that nothing else can write to it, so it isn't used:*") `
+            "A file another process held with $kind was opened as one nothing can write to: $refused`n$($late -join "`n")"
+    }
+    $refused = $null
+    try { (Open-HeldFile -Path $probe -Sha256 $probeDigest -What 'The probe').Dispose() } catch { $refused = $_.Exception.Message }
+    Assert-True ($refused -ceq ("The probe at $probe isn't what was written there: read through a handle nothing else can write past, it hashes to " +
+            "$(Get-TestSha256 $probe), and what was written hashed to $probeDigest. Something changed it in between, so it isn't used.")) `
+        "A file written to since its digest was taken was opened as the file that was written: $refused"
+    (Open-HeldFile -Path $probe -Sha256 (Get-TestSha256 $probe) -What 'The probe').Dispose()
+    # And for an unpacked APK that is mapped before the scripts lock it.
+    $lockedSplits = Expand-SplitBundle -Apk $signedApkm -Destination (Join-Path $swapDir 'locked/out.apk')
+    $refused = $null
+    try {
+        $holder = Start-Intruder -Stay -Steps @("hold-map|$($lockedSplits.Files[0].Path)")
+        try { Lock-SplitFiles -Splits $lockedSplits } catch { $refused = $_.Exception.Message } finally { $late = Stop-Intruder $holder }
+    } finally {
+        Remove-SplitDirectory -Splits $lockedSplits
+    }
+    Assert-True ($late.Count -eq 2 -and $late[0] -like 'hold-map|*|done' -and
+        $refused -like "base.apk at $($lockedSplits.Files[0].Path) can't be opened so that nothing else can write to it, so it isn't used:*") `
+        "An unpacked APK another process had mapped to write was locked and hashed as it was: $refused`n$($late -join "`n")"
+
+    # (3) The moment between the merger closing the merged APK and the scripts opening it, which
+    # no handle covers: one that can write and one that turns writers away can't both be open.
+    # Another APK is put in its place then. The merger printed the digest of what it wrote, the
+    # scripts hash what they now hold, and the two differ.
+    $swappedOut = Join-Path $swapDir 'swapped/out.apk'
+    $swapped = Invoke-HeldMerge -To $swappedOut -At @{
+        closed = { param($splitDir, $mergedPath) $swap.Said['swap'] = Invoke-Intruder @("copy|$mergedPath|$forgedSource") } }
+    Assert-True ($swap.Said['swap'] -ceq "copy|$swappedOut|done") "The second process could not put another APK where the merge was: $($swap.Said['swap'])"
+    Assert-True ($swapped.Refused -ceq ("The merge of signed.apkm at $swappedOut isn't what was written there: read through a handle nothing else " +
+            "can write past, it hashes to $forgedDigest, and what was written hashed to $cleanDigest. Something changed it in between, so it isn't used.") -and
+        -not (Test-Path -LiteralPath $swappedOut) -and (Test-NothingHandedOn $swappedOut)) `
+        "An APK put in the merge's place after the merger closed it was taken as the merge: $($swapped.Refused)"
+
+    # (4) A merged APK handed over with a record beside it that says everything right. The record
+    # used to be the proof. Whoever can write the APK can write the record, so the proof is the
+    # merge made again from the checked APKs: the forged pair is refused, and the merge's own
+    # bytes, with no record at all, pass and come back held. Either way the base has to be the
+    # APK whose signer was checked.
+    $forged = Join-Path $swapDir 'forged.apk'
+    Copy-Item -LiteralPath $forgedSource -Destination $forged
+    $forgedRecord = Get-Content -LiteralPath "$signedMerged.authentic.json" -Raw | ConvertFrom-Json
+    $forgedRecord.mergedSha256 = $forgedDigest
+    [System.IO.File]::WriteAllText("$forged.authentic.json", ($forgedRecord | ConvertTo-Json -Depth 5), (New-Object System.Text.UTF8Encoding($false)))
+    $handed = Join-Path $swapDir 'handed.apk'
+    Copy-Item -LiteralPath $signedMerged -Destination $handed
+    $rebuiltIn = Join-Path $swapDir 'rebuilt'
+    $heldAtFour = (Get-HeldMerges).Count
+    $heldBaseA = Open-HeldFile -Path $baseA -What 'The base APK'
+    $heldSplitA = Open-HeldFile -Path $splitA -What 'Another APK'
+    $handedHeld = $null
+    try {
+        # What a call hands back is a hold on the file, and is let go here whether or not the call
+        # should have handed anything back, or it would outlast the case.
+        $refused = $null
+        try {
+            $handedHeld = Assert-AuthenticMerge -Merged $forged -Base $heldBaseA -Apk $signedApkm -Scratch $rebuiltIn -Java $Java -DesktopJar $DesktopJar `
+                -Aapt2 $Aapt2 -PackageName 'com.tumblr' -Signers $pinned
+        } catch { $refused = $_.Exception.Message }
+        if ($handedHeld) { $handedHeld.Dispose(); $handedHeld = $null }
+        Assert-True ($refused -like("$forged is not the merge of signed.apkm: read through a handle nothing else can write past, it hashes to " +
+                "$forgedDigest, and that input's APKs, checked against the declared signer and merged here, hash to $cleanDigest. A record beside it is not evidence*")) `
+            "A merged APK with other code in it and a record written to match was taken as the bundle's merge: $refused"
+        $handedHeld = Assert-AuthenticMerge -Merged $handed -Base $heldBaseA -Apk $signedApkm -Scratch $rebuiltIn -Java $Java -DesktopJar $DesktopJar `
+            -Aapt2 $Aapt2 -PackageName 'com.tumblr' -Signers $pinned
+        Assert-True ($handedHeld -is [System.IO.FileStream] -and (Get-HeldPath -Stream $handedHeld) -eq $handed -and
+            (Invoke-Intruder @("write|$handed")) -ceq "write|$handed|$sharing") `
+            'The bundle''s own merge, handed over without a record, was not taken and held.'
+        $handedHeld.Dispose()
+        $handedHeld = $null
+        $refused = $null
+        try {
+            $handedHeld = Assert-AuthenticMerge -Merged $handed -Base $heldSplitA -Apk $signedApkm -Scratch $rebuiltIn -Java $Java -DesktopJar $DesktopJar `
+                -Aapt2 $Aapt2 -PackageName 'com.tumblr' -Signers $pinned
+        } catch { $refused = $_.Exception.Message }
+        if ($handedHeld) { $handedHeld.Dispose(); $handedHeld = $null }
+        Assert-True ($refused -ceq"The clean base APK $splitA hashes to $(Get-TestSha256 $splitA), and the base whose signer stands for $handed hashed to $(Get-TestSha256 $baseA), so they aren't the same build.") `
+            "A merge was taken beside a base APK that isn't the one its signer was checked on: $refused"
+    } finally {
+        if ($handedHeld) { $handedHeld.Dispose() }
+        $heldBaseA.Dispose()
+        $heldSplitA.Dispose()
+    }
+    Assert-True (@(Get-ChildItem -LiteralPath $rebuiltIn -Force).Count -eq 0 -and (Get-HeldMerges).Count -eq $heldAtFour) `
+        'The merges made to hold a handed one to were left behind, or left held.'
+
+    # (5) A destination reached through a junction, which a second process turns to another folder
+    # once the APKs have been checked, with another APK waiting there under the same name. The
+    # folder was taken by its real path before anything was written, so the merge is made there,
+    # handed back by that path, and nothing is written where the junction now leads. The folder
+    # itself, and the one the APKs were unpacked into, can't be renamed while a file in them is
+    # held, during the merge or after it, and can once the merge is let go.
+    $realDir = Join-Path $swapDir 'real'
+    $otherDir = Join-Path $swapDir 'other'
+    $link = Join-Path $swapDir 'link'
+    New-Item -ItemType Directory -Force -Path $realDir, $otherDir | Out-Null
+    Copy-Item -LiteralPath $forgedSource -Destination (Join-Path $otherDir 'out.apk')
+    [System.IO.File]::WriteAllText((Join-Path $otherDir 'other-folder.txt'), 'the folder the junction is turned to')
+    New-Item -ItemType Junction -Path $link -Target $realDir | Out-Null
+    try {
+        $turned = Invoke-HeldMerge -To (Join-Path $link 'out.apk') -At @{
+            checked = {
+                param($splitDir, $mergedPath)
+                $swap.Said['turn'] = Invoke-Intruder @("move|$realDir|$realDir.moved", "move|$splitDir|$splitDir.moved", "unlink|$link", "junction|$link|$otherDir")
+                $swap.Unpacked = $splitDir
+            } }
+        Assert-True (($swap.Said['turn'] -join "`n") -ceq (@("move|$realDir|$denied", "move|$($swap.Unpacked)|$denied", "unlink|$link|done",
+                "junction|$link|done") -join "`n")) "The folders a merge is made in were not kept where they are, or the junction was not turned:`n$($swap.Said['turn'] -join "`n")"
+        Assert-True (Test-Path -LiteralPath (Join-Path $link 'other-folder.txt') -PathType Leaf) `
+            'The junction does not lead to the other folder, so the case shows nothing.'
+        Assert-True ($null -eq $turned.Refused -and $turned.Path -eq (Join-Path $realDir 'out.apk')) `
+            "A merge asked for through a junction was not handed back by the real path of the folder it was made in: $($turned.Path) $($turned.Refused)"
+        Assert-True ((Get-HeldMerges)[$turned.Path].Sha256 -ceq $cleanDigest -and (Get-TestSha256 $turned.Path) -ceq $cleanDigest -and
+            (Test-Path -LiteralPath "$($turned.Path).authentic.json") -and
+            (@(Get-ChildItem -LiteralPath $otherDir -Force | ForEach-Object { $_.Name } | Sort-Object) -join ' ') -ceq 'other-folder.txt out.apk' -and
+            (Get-TestSha256 (Join-Path $otherDir 'out.apk')) -ceq $forgedDigest) `
+            'A junction turned while the merge was made moved what was merged, or where it was written.'
+        Assert-True ((Invoke-Intruder @("move|$realDir|$realDir.moved")) -ceq "move|$realDir|$denied") `
+            'The folder of a merge that is still held could be renamed, and another put in its place.'
+        Close-MergedApk -Merged $turned.Path
+        Assert-True ((Invoke-Intruder @("move|$realDir|$realDir.moved")) -ceq "move|$realDir|done") `
+            'A folder with nothing held in it could not be renamed either, so the refusals above were not the hold.'
+    } finally {
+        if (Test-Path -LiteralPath $link) { [System.IO.Directory]::Delete($link, $false) }
+    }
+
+    # (6) While the merge is held, which is from the moment it is taken until Close-MergedApk:
+    # through the patch run and every check that reads it. A second process can read it, as the
+    # tools do, and can't write into it, add to it, map it to write, delete it, rename it or put
+    # another file in its place. The record beside it is nobody's evidence, so writing over that
+    # changes nothing. Once the merge is let go the same write goes through, so it was the hold.
+    $kept = $inserted.Path
+    $swap.Said['kept'] = Invoke-Intruder ((Get-Attempts $kept) + @("copy|$kept.authentic.json|$probe"))
+    Assert-Attempts @($swap.Said['kept'] | Select-Object -First 7) $kept 'done' $sharing 'A merge that is held was not kept from a second process'
+    Assert-True ($swap.Said['kept'][7] -ceq "copy|$kept.authentic.json|done") "The record beside the merge could not be written over, so nothing was tried: $($swap.Said['kept'][7])"
+    $whole = Invoke-Check -Stock $kept -Patched $kept -Name 'kept-merged-whole'
+    Assert-True ($whole.ExitCode -eq 0) "The resource check could not read a merge that is held.`n$($whole.Output)"
+    $heldBaseA = Open-HeldFile -Path $baseA -What 'The base APK'
+    try {
+        $opened = Assert-AuthenticMerge -Merged $kept -Base $heldBaseA -Apk $signedApkm -Scratch $rebuiltIn -Java $noJava -DesktopJar $DesktopJar `
+            -Aapt2 $Aapt2 -PackageName 'com.tumblr' -Signers $pinned
+    } finally { $heldBaseA.Dispose() }
+    Assert-True ($null -eq $opened -and (Get-StreamSha256 -Stream (Get-HeldMerges)[$kept].Handle) -ceq $cleanDigest -and (Get-TestSha256 $kept) -ceq $cleanDigest) `
+        'A merge that is held changed, or stopped being the merge this process made, when the record beside it was written over.'
+    Close-MergedApk -Merged $kept
+    Assert-True ((Invoke-Intruder @("write|$kept")) -ceq "write|$kept|done" -and (Get-TestSha256 $kept) -cne $cleanDigest) `
+        'A merge that was let go could not be written to either, so the refusals above were not the hold.'
+
+    Close-MergedApk -Merged $pre.Path
+    Assert-True ((Get-HeldMerges).Count -eq $heldBefore -and @($intruders | Where-Object { -not $_.HasExited }).Count -eq 0) `
+        'A swap case left a merge held or a second process running.'
+    $global:HushTumblrHeldJava = $null
+
     # What a device with 16 KB pages needs of a patched APK (Assert-PageAlignment), with the
     # build-tools' own zipalign and apksigner on archives the JDK's jar packs uncompressed. A
     # library here is an ELF header and its program headers, which is all the check reads: one LOAD
     # segment, and a GNU_RELRO from 0x4000 up to -RelroEnd when one is asked for.
-    $zipalign = Resolve-Zipalign -Aapt2 $Aapt2
-    $jar = Join-Path (Split-Path -Parent $Java) 'jar.exe'
-    if (-not (Test-Path -LiteralPath $jar -PathType Leaf)) { throw "Required tool not found: $jar" }
     $pageDir = Join-Path $caseRoot 'pages'
     function New-TestLibrary([long]$LoadAlign = 0x4000, [long]$RelroEnd = 0) {
         $bytes = New-Object byte[] 176
@@ -865,9 +1434,13 @@ try {
         "An APK with one of Tumblr's libraries rewritten to fit was not refused: $($said.Refused) $($said.Limits -join ' ')"
 } finally {
     $env:BUILD_QUEUE_SCRIPT = $savedQueueScript
-    if ($caseRoot.StartsWith($requiredPrefix, [System.StringComparison]::OrdinalIgnoreCase) -and `
-        (Test-Path -LiteralPath $caseRoot)) {
-        Remove-Item -LiteralPath $caseRoot -Recurse -Force
+    # Whatever is still held, a failed case's included: a held file can't be deleted.
+    foreach ($heldMerge in @((Get-HeldMerges).Keys)) { Close-MergedApk -Merged $heldMerge }
+    foreach ($second in $intruders) { if (-not $second.HasExited) { $second.Kill(); $second.WaitForExit() } }
+    $global:HushTumblrHeldJava = $null
+    if ($caseRootAsked.StartsWith($requiredPrefix, [System.StringComparison]::OrdinalIgnoreCase) -and `
+        (Test-Path -LiteralPath $caseRootAsked)) {
+        Remove-Item -LiteralPath $caseRootAsked -Recurse -Force
     }
 }
 

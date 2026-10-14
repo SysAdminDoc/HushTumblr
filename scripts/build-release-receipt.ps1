@@ -354,6 +354,7 @@ foreach ($apk in $Fixture) {
     $runId = [guid]::NewGuid().ToString('N')
     $runDir = Resolve-WithinRoot -Path (Join-Path $workRoot "receipt-$runId") -Root $workRoot
     New-Item -ItemType Directory -Force -Path $runDir | Out-Null
+    $patchInput = $null
     try {
         $stock = $stockFacts[$apk]
 
@@ -369,7 +370,8 @@ foreach ($apk in $Fixture) {
 
         # The one APK the CLI patches: the fixture's merge when it's a split bundle, made here
         # because the CLI deletes its own, or a copy of the fixture. No merge, no receipt, and no
-        # merge of an APK that doesn't carry Tumblr's declared signer (Get-MergedApk).
+        # merge of an APK that doesn't carry Tumblr's declared signer (Get-MergedApk). It comes back
+        # held, so nothing can write to it or replace it until the finally, and by its real path.
         $mergedApk = Resolve-WithinRoot -Path (Join-Path $runDir 'stock-merged.apk') -Root $workRoot
         $patchInput = Get-MergedApk -Apk $apk -Destination $mergedApk -Java $Java -DesktopJar $DesktopJar `
             -Aapt2 $Aapt2 -PackageName $expectedTarget.PackageName -Signers $declaredSigners
@@ -494,6 +496,8 @@ foreach ($apk in $Fixture) {
             manifestDelta = $delta
         })
     } finally {
+        # Held until every reader is done, and a held file can't be deleted.
+        Close-MergedApk -Merged $patchInput
         if ($runDir.StartsWith($workRoot, [System.StringComparison]::OrdinalIgnoreCase) -and
             (Test-Path -LiteralPath $runDir)) {
             Remove-Item -LiteralPath $runDir -Recurse -Force -ErrorAction SilentlyContinue

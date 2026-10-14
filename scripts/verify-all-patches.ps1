@@ -122,6 +122,7 @@ $runId = [guid]::NewGuid().ToString('N')
 $runDir = Join-Path $workRoot "verify-$runId"
 New-Item -ItemType Directory -Force -Path $runDir | Out-Null
 $exitCode = 1
+$patchInput = $null
 try {
 
 # A distributor's build of Tumblr can come as a split bundle. aapt2 reads the version facts off
@@ -203,6 +204,8 @@ $result = Resolve-WithinRoot -Path (Join-Path $workRoot "verify-all-result-$runI
     # APK either is made from has to carry Tumblr's declared signer first (Get-MergedApk).
     $mergedApk = Resolve-WithinRoot -Path (Join-Path $runDir 'stock-merged.apk') -Root $workRoot
     $declaredSigners = @(Get-DeclaredSigners -PatchList $catalog -PackageName $expectedTarget.PackageName)
+    # It comes back held: nothing can write to it or put another file in its place from here to the
+    # finally, through the patch run and every check that reads it, and the path is its real one.
     $patchInput = Get-MergedApk -Apk $Apk -Destination $mergedApk -Java $Java -DesktopJar $DesktopJar `
         -Aapt2 $Aapt2 -PackageName $expectedTarget.PackageName -Signers $declaredSigners
     if (Test-SplitBundlePath -Path $Apk) { Write-Host "[verify] merged $(Split-Path -Leaf $Apk) into one APK for the CLI" }
@@ -348,6 +351,8 @@ $result = Resolve-WithinRoot -Path (Join-Path $workRoot "verify-all-result-$runI
         }
     }
 } finally {
+    # Held until every reader is done, and a held file can't be deleted.
+    Close-MergedApk -Merged $patchInput
     Remove-GeneratedPath -Path $runDir -Root $workRoot
 }
 

@@ -4470,6 +4470,59 @@ foreach ($script in @(Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.ps1' -
             $checkedSteps -contains $node.GetCommandName() }, $true))
     Assert-True ($direct.Count -eq 0) `
         "$($script.Name) calls $(@($direct | ForEach-Object { $_.GetCommandName() }) -join ', ') itself instead of going through Get-MergedApk."
+    # What was checked about a merge is kept in the process, with the handle that holds it, and
+    # only common.ps1 reads or writes that table.
+    $table = @($scriptAst.FindAll({ param($node)
+            ($node -is [System.Management.Automation.Language.CommandAst] -and $node.GetCommandName() -eq 'Get-HeldMerges') -or
+            ($node -is [System.Management.Automation.Language.VariableExpressionAst] -and $node.VariablePath.UserPath -match '(?i)HushTumblrHeldMerges') }, $true))
+    Assert-True ($table.Count -eq 0) "$($script.Name) reads or writes the table of merges this process holds, which is common.ps1's alone."
+}
+# Another process of the same user can write to anything this one can, so Get-MergedApk hands the
+# merge back held: opened so nothing can write to it, and kept that way through the patch run,
+# the signing and every check that reads it. Each script lets go of it once, in a finally, since a
+# held file can't be deleted, and reads it nowhere after that. The merger does its steps through
+# files it holds rather than by a path a second time: it never hands the folder back to the
+# library to list, opens what it writes as new files that other processes can't write or delete,
+# and prints the digest of what it wrote. And nothing that vouches for a merge reads the record
+# beside one, since whoever could write the merge could write the record to match.
+foreach ($release in @(@{ Name = 'patch-for-device.ps1'; Variable = 'patchInput' }, @{ Name = 'build-release-receipt.ps1'; Variable = 'patchInput' },
+        @{ Name = 'verify-all-patches.ps1'; Variable = 'patchInput' }, @{ Name = 'verify-injected-registers.ps1'; Variable = 'CleanMerged' })) {
+    $scriptAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot $release.Name), [ref]$null, [ref]$null)
+    $closes = @($scriptAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] -and
+            $node.GetCommandName() -eq 'Close-MergedApk' }, $true))
+    $inFinally = @($closes | Where-Object {
+            $found = $false
+            for ($parent = $_.Parent; $null -ne $parent; $parent = $parent.Parent) {
+                if ($parent -is [System.Management.Automation.Language.TryStatementAst] -and $null -ne $parent.Finally -and
+                        $_.Extent.StartOffset -ge $parent.Finally.Extent.StartOffset -and
+                        $_.Extent.EndOffset -le $parent.Finally.Extent.EndOffset) { $found = $true }
+            }
+            $found })
+    Assert-True ($closes.Count -eq 1 -and $inFinally.Count -eq 1 -and $closes[0].Extent.Text -ceq "Close-MergedApk -Merged `$$($release.Variable)") `
+        "$($release.Name) does not let go of the merge Get-MergedApk handed it once, in a finally."
+    $readsAfter = @($scriptAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.VariableExpressionAst] -and
+            $node.VariablePath.UserPath -eq $release.Variable -and $node.Extent.StartOffset -gt $closes[0].Extent.EndOffset }, $true))
+    Assert-True ($readsAfter.Count -eq 0) "$($release.Name) reads the merge after it has let go of it, when anything could have been written there."
+}
+$mergerText = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'MergeSplits.java') -Raw
+$mergerCode = [regex]::Replace($mergerText, '(?s)/\*.*?\*/|//[^\r\n]*', '')
+Assert-True ($mergerCode -notmatch 'loadApkDirectory|loadApkFile|\.merge\(' -and
+    $mergerCode -match 'NOSHARE_READ' -and $mergerCode -match 'NOSHARE_WRITE' -and $mergerCode -match 'NOSHARE_DELETE' -and
+    @([regex]::Matches($mergerCode, 'StandardOpenOption\.CREATE_NEW')).Count -eq 2 -and
+    $mergerCode -notmatch 'StandardOpenOption\.(CREATE|TRUNCATE_EXISTING|APPEND)\b' -and
+    $mergerCode -match 'System\.out\.println\("\[merge\] sha256 " \+ digest\)') `
+    'MergeSplits.java hands the folder or a path back to the library to read, writes into a file that was already there, or does not print the digest of what it wrote.'
+$commonAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'common.ps1'), [ref]$null, [ref]$null)
+foreach ($vouching in 'Get-MergedApk', 'Assert-AuthenticMerge', 'Open-AuthenticInput', 'Invoke-SplitMerge') {
+    $body = @($commonAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+            $node.Name -eq $vouching }, $true))
+    Assert-True ($body.Count -eq 1) "common.ps1 does not define $vouching once."
+    $readers = @($body[0].Body.FindAll({ param($node)
+            ($node -is [System.Management.Automation.Language.CommandAst] -and
+                @('Get-Content', 'ConvertFrom-Json', 'Import-Clixml') -contains $node.GetCommandName()) -or
+            ($node -is [System.Management.Automation.Language.InvokeMemberExpressionAst] -and
+                $node.Member.Extent.Text -match '^(ReadAllText|ReadAllBytes|ReadAllLines|OpenText)$') }, $true))
+    Assert-True ($readers.Count -eq 0) "$vouching reads a file's word for where a merge came from: $(@($readers | ForEach-Object { $_.Extent.Text }) -join '; ')"
 }
 $mergeCommand = Get-Command -Name Get-MergedApk -CommandType Function
 $mergeParameters = @($mergeCommand.Parameters.Keys | Where-Object {
@@ -4497,7 +4550,7 @@ foreach ($order in @(
             @{ What = 'the CLI patches'; Match = $isCliPatch }) },
         @{ Name = 'verify-all-patches.ps1'; After = @(@{ What = 'the CLI patches'; Match = $isCliPatch }) },
         @{ Name = 'verify-injected-registers.ps1'; After = @(
-            @{ What = 'the merge is held to its record'; Match = { param($node) $node.GetCommandName() -eq 'Assert-AuthenticMerge' } },
+            @{ What = 'the merge is held to what was checked'; Match = { param($node) $node.GetCommandName() -eq 'Assert-AuthenticMerge' } },
             @{ What = 'DexDiff compares the clean side'; Match = { param($node) $node.GetCommandName() -eq 'Invoke-DexDiff' } }) })) {
     $scriptPath = Join-Path $PSScriptRoot $order.Name
     $scriptAst = [System.Management.Automation.Language.Parser]::ParseFile($scriptPath, [ref]$null, [ref]$null)
@@ -4520,8 +4573,8 @@ $receiptAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Pa
 $fixtureCheckAt = Get-FirstCommandOffset $receiptAst { param($node) $node.GetCommandName() -eq 'Assert-AuthenticInput' }
 Assert-True ($fixtureCheckAt -ge 0 -and $fixtureCheckAt -lt (Get-FirstCommandOffset $receiptAst $isMerge)) `
     'build-release-receipt.ps1 merges a fixture before it has checked every fixture (Assert-AuthenticInput), or never checks them.'
-# The verifier holds whatever merge it compares to the record, a merge it was handed included, so
-# that check can't sit behind a condition.
+# The verifier holds whatever merge it compares to the APKs that were checked, a merge it was
+# handed included, so that check can't sit behind a condition.
 $verifierAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'verify-injected-registers.ps1'),
     [ref]$null, [ref]$null)
 $recordChecks = @($verifierAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] -and
@@ -4537,7 +4590,7 @@ $conditional = @($recordChecks | Where-Object {
         }
         $inside })
 Assert-True ($recordChecks.Count -eq 1 -and $conditional.Count -eq 0) `
-    'verify-injected-registers.ps1 does not hold the merge it compares to the record of its signer check on every run.'
+    'verify-injected-registers.ps1 does not hold the merge it compares to the APKs whose signer was checked on every run.'
 
 # Every script that patches holds the APK it made to what a device with 16 KB pages needs
 # (Assert-PageAlignment), against the stock APK the CLI was handed, once the CLI has patched. The
@@ -5050,7 +5103,9 @@ try {
         'copy /y "!SRC!.patched.txt" "!OUT!.xmltree" >nul || exit /b 5',
         'exit /b 0',
         'rem MergeSplits.java <split directory> <merged.apk>. The base APK the scripts unpacked into that',
-        'rem directory names the fixture it came from. A case can make it fail, or leave no APK behind.',
+        'rem directory names the fixture it came from. It prints the digest of what it wrote on standard',
+        'rem output, as the merger does. A case can make it fail, leave no APK behind, or print no digest,',
+        'rem two, one on standard error alone, or one of other bytes.',
         ':merge',
         'set "BUNDLE="',
         'for %%F in ("%~5\*.apk") do for /f "tokens=1,* delims==" %%A in (''findstr /b /l /c:"N: stand-in-bundle=" "%%~F"'') do set "BUNDLE=%%B"',
@@ -5063,6 +5118,16 @@ try {
         'if not defined BUNDLE exit /b 6',
         'copy /y "!BUNDLE!.merged.txt" "%~6" >nul || exit /b 7',
         '>"%~6.source" echo !BUNDLE!',
+        'set "DIGEST="',
+        'for /f "skip=1 delims=" %%H in (''certutil -hashfile "%~6" SHA256'') do if not defined DIGEST set "DIGEST=%%H"',
+        'if exist "!HERE!merge-prints-no-digest.txt" exit /b 0',
+        'if exist "!HERE!merge-prints-digest-on-stderr.txt" (',
+        '    echo [merge] sha256 !DIGEST! 1>&2',
+        '    exit /b 0',
+        ')',
+        'if exist "!HERE!merge-prints-other-digest.txt" set "DIGEST=0000000000000000000000000000000000000000000000000000000000000000"',
+        'echo [merge] sha256 !DIGEST!',
+        'if exist "!HERE!merge-prints-two-digests.txt" echo [merge] sha256 !DIGEST!',
         'exit /b 0',
         'rem ResourceTableCheck.java <stock> <patched> <report>: keeps what it was handed as the stock side.',
         ':resources',
@@ -5315,6 +5380,19 @@ try {
             @(Get-ChildItem -LiteralPath $authRoot -Force -Filter '.splits-*').Count -eq 0) `
             "Refusing a plain APK $($plainCase.Case) changed the last checked copy or left something behind."
     }
+    # What Get-MergedApk hands back is held, in this process, from that moment until Close-MergedApk:
+    # no handle that could write to it opens (a sharing violation, 0x80070020), so the CLI, the
+    # signer and every check read the bytes that were checked. Let go, it is an ordinary file again.
+    # A second process is tried against the real merger in test-resource-table-check.ps1.
+    $openToWrite = { [System.IO.File]::Open($authMerge, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Write,
+            [System.IO.FileShare]'ReadWrite, Delete').Dispose() }
+    $turnedAway = $null
+    try { & $openToWrite } catch { $turnedAway = $_.Exception.GetBaseException() }
+    Assert-True ((Get-HeldMerges).ContainsKey($authMerge) -and $turnedAway -is [System.IO.IOException] -and
+        $turnedAway.HResult -eq -2147024864) "A checked copy that Get-MergedApk still holds could be opened to write: $turnedAway"
+    Close-MergedApk -Merged $authMerge
+    & $openToWrite
+    Assert-True (-not (Get-HeldMerges).ContainsKey($authMerge)) 'Close-MergedApk left the checked copy held.'
     $releaseBundle = Get-ReleaseBundlePath -Root $releaseRepo
     New-Item -ItemType Directory -Path (Split-Path -Parent $releaseBundle) -Force | Out-Null
     New-TestBundleArchive -Path $releaseBundle -Entries ([ordered]@{
@@ -5486,10 +5564,20 @@ try {
 
     # A merge that fails, and one that exits 0 and writes nothing, stop the run before the CLI
     # patches anything. base.apk is not what the CLI patches, so there's no receipt to fall back to.
+    # So does a merger that doesn't say what it wrote: the scripts take the merged APK only as the
+    # bytes whose digest the merger printed on its standard output, one line of it, and a merger
+    # that prints none, two, or one on standard error alone leaves nothing to hold the file to.
+    # One that prints the digest of other bytes is the same to them as a file swapped after it.
     $builtReceiptBeforeMerge = [System.IO.File]::ReadAllBytes($releaseReceipt)
     $brokenMerges = @(
         @{ Flag = 'merge-fails.txt'; Pattern = '*Could not merge tumblr-*.xapk into one APK (exit 9)*could not read the bundle*' },
-        @{ Flag = 'merge-writes-nothing.txt'; Pattern = '*The merge of tumblr-*.xapk wrote no APK at *stock-merged.apk*' })
+        @{ Flag = 'merge-writes-nothing.txt'; Pattern = '*The merge of tumblr-*.xapk wrote no APK at *stock-merged.apk*' },
+        @{ Flag = 'merge-prints-no-digest.txt'; Pattern = '*The merge of tumblr-*.xapk printed 0 digests of what it wrote on its standard output, where it prints one*' },
+        @{ Flag = 'merge-prints-digest-on-stderr.txt'; Pattern = '*The merge of tumblr-*.xapk printed 0 digests of what it wrote on its standard output, where it prints one*' },
+        @{ Flag = 'merge-prints-two-digests.txt'; Pattern = '*The merge of tumblr-*.xapk printed 2 digests of what it wrote on its standard output, where it prints one*' },
+        @{ Flag = 'merge-prints-other-digest.txt'
+            Pattern = ("*The merge of tumblr-*.xapk at *stock-merged.apk isn't what was written there: read through a handle nothing else can " +
+                "write past, it hashes to *, and what was written hashed to $('0' * 64).*") })
     foreach ($broken in $brokenMerges) {
         $flag = Join-Path $tools $broken.Flag
         Set-Content -LiteralPath $flag -Value 'on' -Encoding ASCII

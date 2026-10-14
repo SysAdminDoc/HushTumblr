@@ -121,6 +121,7 @@ try {
 $complete = $false
 $outputReservation = $null
 $reservedPath = $null
+$patchInput = $null
 try {
 if ($OutputApk) {
     $reservedPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputApk)
@@ -183,6 +184,8 @@ if (Test-Path -LiteralPath $out) { throw 'The new run already has an APK output.
 Write-Host "[device] $($names.Count) patches from $(Split-Path -Leaf $bundle) onto $(Split-Path -Leaf $Apk)"
 # Every APK the merge is made from, or the plain APK, has to carry Tumblr's declared signer
 # (Get-MergedApk), before anything is merged, signed or installed.
+# It comes back held: nothing can write to it or put another file in its place until the finally,
+# through the patch or signing run and every check that reads it, and the path is its real one.
 $declaredSigners = @(Get-DeclaredSigners -PatchList $catalog -PackageName $target.PackageName)
 $patchInput = Get-MergedApk -Apk $Apk -Destination (Join-Path $OutDir 'stock-merged.apk') `
     -Java $Java -DesktopJar $DesktopJar -Aapt2 $Aapt2 -PackageName $target.PackageName -Signers $declaredSigners
@@ -334,13 +337,16 @@ try {
 
 } finally {
     if ($outputReservation) { $outputReservation.Dispose() }
+    # Held until every reader is done, and a held file can't be deleted.
+    Close-MergedApk -Merged $patchInput
     # These are this run's paths only. A missing or replaced owner marker fails closed.
     $safeRun = Resolve-WithinRoot -Path $OutDir -Root $runParent
     if (-not (Test-Path -LiteralPath $ownerFile -PathType Leaf) -or [IO.File]::ReadAllText($ownerFile) -cne $runToken) {
         throw 'Patch workspace ownership changed. Cleanup refused.'
     }
     foreach ($path in @((Join-Path $safeRun 'tmp'), (Join-Path $safeRun 'morphe-patch.args'),
-            (Join-Path $safeRun 'stock-merged.apk'), (Join-Path $safeRun 'stock-merged.apk.source'),
+            (Join-Path $safeRun 'stock-merged.apk'), (Join-Path $safeRun 'stock-merged.apk.buffer'),
+            (Join-Path $safeRun 'stock-merged.apk.source'),
             (Join-Path $safeRun 'stock-merged.apk.xmltree'), (Join-Path $safeRun 'stock-merged.apk.authentic.json'))) {
         $safePath = Resolve-WithinRoot -Path $path -Root $safeRun
         if (Test-Path -LiteralPath $safePath) { Remove-Item -LiteralPath $safePath -Recurse -Force }
