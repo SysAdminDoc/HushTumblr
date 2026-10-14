@@ -329,14 +329,19 @@ $result = Resolve-WithinRoot -Path (Join-Path $workRoot "verify-all-result-$runI
         # Continue for the call alone, as for the CLI: a JDK note or a stack trace on stderr would
         # otherwise end the run under Windows PowerShell 5.1 before the exit code is read.
         $preference = $ErrorActionPreference
+        # What the table and its files changed is held to resource-delta-allowlist.txt: what any
+        # rebuild does, and what the patches this run selected (and those they pull in) add.
+        $selectionBefore = $env:HUSHTUMBLR_PATCH_SELECTION
         $queued = Enter-HushTumblrQueue -Job 'verify resources'
         try {
             $ErrorActionPreference = 'Continue'
+            $env:HUSHTUMBLR_PATCH_SELECTION = (@($names) + @($dependencyNames)) -join "`n"
             $global:LASTEXITCODE = -1
             $resourceOutput = @(& $Java '-Xmx4g' '-cp' $DesktopJar (Join-Path $PSScriptRoot 'ResourceTableCheck.java') `
-                $patchInput $out $resourceReport 2>&1)
+                $patchInput $out $resourceReport (Join-Path $PSScriptRoot 'resource-delta-allowlist.txt') 2>&1)
             $resourceExitCode = $LASTEXITCODE
         } finally {
+            $env:HUSHTUMBLR_PATCH_SELECTION = $selectionBefore
             $ErrorActionPreference = $preference
             Exit-HushTumblrQueue $queued
         }

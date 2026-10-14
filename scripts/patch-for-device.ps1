@@ -375,16 +375,21 @@ if ($recorded) {
 } else {
 # The rebuilt resource table against the merge's, and every archive entry patching doesn't write
 # against the merge's bytes: the CLI rebuilt a copy of the merge nothing held while it was copied.
+# What the table and its files changed is held to resource-delta-allowlist.txt, for the patches
+# this build selected.
 $resourceReport = Join-Path $OutDir 'resources.txt'
 $preference = $ErrorActionPreference
+$selectionBefore = $env:HUSHTUMBLR_PATCH_SELECTION
 $queued = Enter-HushTumblrQueue -Job 'device resources'
 try {
     $ErrorActionPreference = 'Continue'
+    $env:HUSHTUMBLR_PATCH_SELECTION = (@($names) + @($dependencyNames)) -join "`n"
     $global:LASTEXITCODE = -1
     $resourceOutput = @(& $Java '-Xmx4g' '-cp' $DesktopJar (Join-Path $PSScriptRoot 'ResourceTableCheck.java') `
-        $patchInput $out $resourceReport 2>&1)
+        $patchInput $out $resourceReport (Join-Path $PSScriptRoot 'resource-delta-allowlist.txt') 2>&1)
     $resourceExitCode = $LASTEXITCODE
 } finally {
+    $env:HUSHTUMBLR_PATCH_SELECTION = $selectionBefore
     $ErrorActionPreference = $preference
     Exit-HushTumblrQueue $queued
 }

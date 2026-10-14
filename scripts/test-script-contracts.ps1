@@ -2559,8 +2559,8 @@ try {
             'patch-for-device.ps1', 'injected-mutation-contracts.txt',
             'injected-register-contracts.ps1', 'injected-register-removal-allowlist.txt', 'script-wiring.ps1',
             'test-injected-registers.ps1', 'verify-all-patches.ps1', 'verify-injected-registers.ps1')
-        'scripts/test-resource-table-check.ps1' = @('MergeSplits.java', 'ResourceTableCheck.java', 'test-resource-table-check.ps1',
-            'verify-all-patches.ps1')
+        'scripts/test-resource-table-check.ps1' = @('MergeSplits.java', 'ResourceTableCheck.java', 'resource-delta-allowlist.txt',
+            'test-resource-table-check.ps1', 'verify-all-patches.ps1')
         'scripts/test-injected-register-device.ps1' = @('injected-register-device.ps1', 'script-wiring.ps1',
             'test-injected-register-device.ps1', 'verify-injected-registers.ps1')
         'scripts/test-fingerprint-candidates.ps1' = @('FingerprintCandidates.java', 'FingerprintFixture.java',
@@ -4892,6 +4892,34 @@ $verifyReportReads = @(Get-NamedCommands ([System.Management.Automation.Language
         if ($guard) { $guard.Clauses[0].Item1.Extent.Text } else { '(no if)' } })
 Assert-True (($verifyReportReads -join '; ') -ceq '$null -ne $resultHandle') `
     "verify-all-patches.ps1 reads the CLI's report without its handle holding it: $($verifyReportReads -join '; ')"
+# Each resource check holds what the table and its files changed to resource-delta-allowlist.txt,
+# with the run's patches and the ones they pull in as HUSHTUMBLR_PATCH_SELECTION, set in the try
+# around the call and put back in its finally.
+foreach ($resourceRun in @(@{ Name = 'verify-all-patches.ps1'; Names = '$names' }, @{ Name = 'build-release-receipt.ps1'; Names = '$patchNames' },
+        @{ Name = 'patch-for-device.ps1'; Names = '$names' })) {
+    $runAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot $resourceRun.Name), [ref]$null, [ref]$null)
+    $selection = '(@(' + $resourceRun.Names + ') + @($dependencyNames)) -join "`n"'
+    $resourceCalls = @($runAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] -and
+                $node.Extent.Text -match '^&[^\r\n]*ResourceTableCheck\.java' }, $true))
+    $wired = @($resourceCalls | Where-Object {
+            $call = $_
+            $around = $call
+            while ($null -ne $around -and $around -isnot [System.Management.Automation.Language.TryStatementAst]) { $around = $around.Parent }
+            $setsIn = { param($Block) if ($null -eq $Block) { return '' }
+                @($Block.FindAll({ param($node) $node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
+                            $node.Left.Extent.Text -ceq '$env:HUSHTUMBLR_PATCH_SELECTION' }, $true) | ForEach-Object { $_.Right.Extent.Text }) -join '; ' }
+            $null -ne $around -and @($call.CommandElements)[-1].Extent.Text -ceq "(Join-Path `$PSScriptRoot 'resource-delta-allowlist.txt')" -and
+                (& $setsIn $around.Body) -ceq $selection -and (& $setsIn $around.Finally) -ceq '$selectionBefore' })
+    Assert-True ($resourceCalls.Count -eq 1 -and $wired.Count -eq 1) `
+        "$($resourceRun.Name) doesn't hold its resource check to resource-delta-allowlist.txt for the patches it selected."
+}
+# The allowlist's sections are [rebuild] and patches the catalog lists.
+$resourceSections = @(Get-Content -LiteralPath (Join-Path $PSScriptRoot 'resource-delta-allowlist.txt') |
+    Where-Object { $_ -match '^\[(.+)\]$' } | ForEach-Object { $Matches[1] })
+$catalogNames = @($catalog.patches | ForEach-Object { [string]$_.name })
+$strangeSections = @($resourceSections | Where-Object { $_ -cne 'rebuild' -and $catalogNames -cnotcontains $_ })
+Assert-True ($resourceSections -ccontains 'rebuild' -and $strangeSections.Count -eq 0) `
+    "resource-delta-allowlist.txt has sections for no patch the catalog lists: $($strangeSections -join ', ')"
 # A kept run is copied from the handles the run held, never from a path.
 $verifyAllAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'verify-all-patches.ps1'), [ref]$null, [ref]$null)
 $keepCalls = @(Get-NamedCommands $verifyAllAst 'Save-AppliedRecord' | ForEach-Object { $_.Extent.Text })
@@ -5528,8 +5556,11 @@ try {
         'echo [merge] sha256 !DIGEST!',
         'if exist "!HERE!merge-prints-two-digests.txt" echo [merge] sha256 !DIGEST!',
         'exit /b 0',
-        'rem ResourceTableCheck.java <stock> <patched> <report>: keeps what it was handed as the stock side.',
+        ('rem ResourceTableCheck.java <stock> <patched> <report> <allowlist>: keeps what it was handed as the stock side, ' +
+            'and stops on a run that hands it no allowlist or no patch selection.'),
         ':resources',
+        'if not exist "%~8" exit /b 9',
+        'if not defined HUSHTUMBLR_PATCH_SELECTION exit /b 10',
         'copy /y "%~5" "!HERE!resource-stock.txt" >nul || exit /b 8',
         'echo Note: the source launcher compiled with a warning 1>&2',
         'echo [resources] stand-in: every stock resource resolves in the patched table',

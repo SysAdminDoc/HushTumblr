@@ -2117,7 +2117,7 @@ function Get-AppliedRecordVerifierFiles {
         'patch-target.ps1', 'common.ps1', 'Resolve-Java.ps1',
         'DexDiff.java', 'HostReferences.java', 'ResourceTableCheck.java', 'MergeSplits.java',
         'injected-mutation-contracts.txt', 'injected-register-removal-allowlist.txt',
-        'host-reference-contracts.txt', 'manifest-delta-allowlist.txt'
+        'host-reference-contracts.txt', 'manifest-delta-allowlist.txt', 'resource-delta-allowlist.txt'
     )
 }
 

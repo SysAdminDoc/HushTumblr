@@ -25,10 +25,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -48,16 +50,30 @@ import java.util.zip.ZipFile;
  * doesn't write keeps its stock bytes too (checkArchive). A failure names the id or entry and
  * exits 1.
  *
- * <p>What the patches changed is reported, not failed: each rewritten value with its old and new
- * value (the AMOLED dark theme's palette and sheet colors), each entry the rebuild renamed (it
- * still resolves by id, but a lookup by its old name finds nothing), and each added one.
+ * <p>What the patches changed is reported: each rewritten value with its old and new value (the
+ * AMOLED dark theme's palette and sheet colors), each entry the rebuild renamed (it still resolves
+ * by id, but a lookup by its old name finds nothing), each added one and each file only the
+ * patched table names. Given an allowlist, each of those has to be one it allows: under
+ * {@code [rebuild]}, which any rebuild of the table does, or under a patch the run selected
+ * ({@code HUSHTUMBLR_PATCH_SELECTION}, one name a line). Anything else fails, so a table or file
+ * swapped into the CLI's copy of its input can't pass as something a patch did.
  *
  * <p>Usage: {@code java -cp <morphe desktop jar> ResourceTableCheck.java <stock.apk> <patched.apk>
- * [report.txt]}. The report file gets every line; the console gets the counts and the first lines
- * of each list.
+ * [report.txt [allowlist.txt]]}. The report file gets every line; the console gets the counts and
+ * the first lines of each list. A malformed allowlist, or one given with no selection, exits 2.
  */
 public final class ResourceTableCheck {
     private static final int SHOWN = 40;
+    /**
+     * The files a signer writes at the top of META-INF. CASE_INSENSITIVE without UNICODE_CASE folds
+     * ASCII letters alone, so a name such as META-INF/payload.ſf, which Locale.ROOT folds to .SF,
+     * is an ordinary entry held to the stock archive like any other.
+     */
+    private static final Pattern SIGNATURE = Pattern.compile("META-INF/(MANIFEST\\.MF|[A-Za-z0-9._-]+\\.(SF|RSA|DSA|EC))",
+            Pattern.CASE_INSENSITIVE);
+    /** What an allowlist line can name, each the way the report lists it. */
+    private static final Set<String> KINDS = Set.of("rewritten", "renamed", "dropped", "added", "moved", "file");
+    private static final String SELECTION = "HUSHTUMBLR_PATCH_SELECTION";
 
     private final Map<Integer, String> stockNames = new HashMap<>();
     /**
@@ -78,6 +94,13 @@ public final class ResourceTableCheck {
     private final List<String> droppedWithSplits = new ArrayList<>();
     private final List<String> added = new ArrayList<>();
     private final List<String> moved = new ArrayList<>();
+    /** Files a patched value names that the stock table doesn't give it: ones a patch added. */
+    private final List<String> addedFiles = new ArrayList<>();
+    /** The allowlist's lines the run's sections hold and no change of this run matched. */
+    private final List<String> unseen = new ArrayList<>();
+    private final List<String> sectionsUsed = new ArrayList<>();
+    private String allowlistName;
+    private int deltaChecked;
     private final List<String> absentInStock = new ArrayList<>();
     /**
      * Archive paths the patched table names that the stock table doesn't, and stock paths a file
@@ -93,18 +116,36 @@ public final class ResourceTableCheck {
     private int files;
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 2 || args.length > 3) {
-            System.err.println("usage: ResourceTableCheck <stock.apk> <patched.apk> [report.txt]");
+        if (args.length < 2 || args.length > 4) {
+            System.err.println("usage: ResourceTableCheck <stock.apk> <patched.apk> [report.txt [allowlist.txt]]");
             System.exit(2);
         }
         File stockFile = new File(args[0]);
         File patchedFile = new File(args[1]);
+        Map<String, Set<String>> allowlist = null;
+        Set<String> selected = null;
+        if (args.length == 4) {
+            String selection = System.getenv(SELECTION);
+            if (selection == null) {
+                System.err.println("An allowlist was given with no patch selection in " + SELECTION + ".");
+                System.exit(2);
+            }
+            selected = new HashSet<>();
+            for (String name : selection.split("\r?\n")) if (!name.isEmpty()) selected.add(name);
+            try {
+                allowlist = readAllowlist(new File(args[3]));
+            } catch (IllegalArgumentException malformed) {
+                System.err.println(malformed.getMessage());
+                System.exit(2);
+            }
+        }
         ResourceTableCheck check = new ResourceTableCheck();
         try (ZipFile stockZip = new ZipFile(stockFile); ZipFile patchedZip = new ZipFile(patchedFile)) {
             check.run(table(stockZip), stockZip, table(patchedZip), patchedZip);
         }
+        if (allowlist != null) check.holdToAllowlist(new File(args[3]).getName(), allowlist, selected);
         List<String> lines = check.lines(stockFile.getName(), patchedFile.getName());
-        if (args.length == 3) {
+        if (args.length >= 3) {
             Files.write(new File(args[2]).toPath(), lines, StandardCharsets.UTF_8);
         }
         PrintWriter out = new PrintWriter(System.out, true, StandardCharsets.UTF_8);
@@ -237,11 +278,90 @@ public final class ResourceTableCheck {
     }
 
     private static boolean isSignature(String name) {
-        return name.startsWith("META-INF/") && name.indexOf('/', "META-INF/".length()) < 0
-                && name.toUpperCase(Locale.ROOT).matches("META-INF/(MANIFEST\\.MF|[^/]+\\.(SF|RSA|DSA|EC))");
+        return SIGNATURE.matcher(name).matches();
     }
 
-    private static byte[] digest(ZipFile zip, ZipEntry entry) throws IOException {
+    /**
+     * An allowlist: sections named in brackets, [rebuild] or a patch's name, each holding lines of
+     * a kind and an item as the report lists it, except that an added resource and a file only
+     * the patched table names are given without the id the rebuild picked for it. Blank lines and
+     * lines starting with # are left out.
+     */
+    private static Map<String, Set<String>> readAllowlist(File file) throws IOException {
+        Map<String, Set<String>> sections = new LinkedHashMap<>();
+        Set<String> current = null;
+        int number = 0;
+        for (String raw : Files.readAllLines(file.toPath(), StandardCharsets.UTF_8)) {
+            number++;
+            String line = (number == 1 && raw.startsWith("﻿") ? raw.substring(1) : raw).stripTrailing();
+            if (line.isEmpty() || line.startsWith("#")) continue;
+            if (line.startsWith("[") && line.endsWith("]")) {
+                String name = line.substring(1, line.length() - 1);
+                if (name.isBlank() || !name.equals(name.strip()) || sections.containsKey(name)) {
+                    throw new IllegalArgumentException(file.getName() + " line " + number + ": a section with no name or one named twice: " + line);
+                }
+                current = new LinkedHashSet<>();
+                sections.put(name, current);
+                continue;
+            }
+            int space = line.indexOf(' ');
+            if (current == null || space < 0 || !KINDS.contains(line.substring(0, space)) || line.substring(space + 1).isBlank()) {
+                throw new IllegalArgumentException(file.getName() + " line " + number
+                        + ": not a kind (" + String.join(", ", new java.util.TreeSet<>(KINDS)) + ") and an item under a section: " + line);
+            }
+            current.add(line);
+        }
+        if (!sections.containsKey("rebuild")) throw new IllegalArgumentException(file.getName() + " has no [rebuild] section.");
+        return sections;
+    }
+
+    /** Every change this run reports has to be one [rebuild] or a selected patch's section allows. */
+    private void holdToAllowlist(String name, Map<String, Set<String>> allowlist, Set<String> selected) {
+        allowlistName = name;
+        Set<String> allowed = new LinkedHashSet<>();
+        for (Map.Entry<String, Set<String>> section : allowlist.entrySet()) {
+            if (!section.getKey().equals("rebuild") && !selected.contains(section.getKey())) continue;
+            sectionsUsed.add(section.getKey());
+            allowed.addAll(section.getValue());
+        }
+        Set<String> seen = new HashSet<>();
+        for (String change : delta()) {
+            deltaChecked++;
+            if (allowed.contains(change)) {
+                seen.add(change);
+            } else {
+                failures.add("resource delta " + change + ": allowed neither by [rebuild] nor by a selected patch in " + name);
+            }
+        }
+        for (String line : allowed) if (!seen.contains(line)) unseen.add(line);
+    }
+
+    /** What this run changed, each as an allowlist line names it. */
+    private List<String> delta() {
+        List<String> changes = new ArrayList<>();
+        for (String item : rewritten) changes.add("rewritten " + item);
+        for (String item : renamed) changes.add("renamed " + item);
+        for (String item : droppedWithSplits) changes.add("dropped " + item);
+        for (String item : added) changes.add("added " + item.substring(item.indexOf(' ') + 1));
+        for (String item : moved) changes.add("moved " + item);
+        for (String item : addedFiles) changes.add("file " + item);
+        return changes;
+    }
+
+    /** Each entry is read once, though the table and the archive check can both ask for it. */
+    private final Map<String, byte[]> digests = new HashMap<>();
+
+    private byte[] digest(ZipFile zip, ZipEntry entry) throws IOException {
+        String key = zip.getName() + '\u0000' + entry.getName();
+        byte[] known = digests.get(key);
+        if (known == null) {
+            known = sha256(zip, entry);
+            digests.put(key, known);
+        }
+        return known;
+    }
+
+    private static byte[] sha256(ZipFile zip, ZipEntry entry) throws IOException {
         MessageDigest sha;
         try {
             sha = MessageDigest.getInstance("SHA-256");
@@ -343,7 +463,7 @@ public final class ResourceTableCheck {
     }
 
     /** Every file a patched value names is in the patched archive, unless the stock one lacked it too. */
-    private void checkFiles(TableBlock stock, ZipFile stockZip, TableBlock patched, ZipFile patchedZip) {
+    private void checkFiles(TableBlock stock, ZipFile stockZip, TableBlock patched, ZipFile patchedZip) throws IOException {
         for (PackageBlock block : patched.listPackages()) {
             for (ResourceEntry resource : resources(block)) {
                 ResourceEntry original = stockById.get(resource.getResourceId());
@@ -371,8 +491,10 @@ public final class ResourceTableCheck {
                         continue;
                     }
                     if (stockPath == null || stockFile == null) {
-                        // A file only the patched table names: one a patch added.
+                        // A file only the patched table names: one a patch added. Named without
+                        // the id, which the rebuild picks for a resource a patch adds.
                         namedByPatches.add(path);
+                        addedFiles.add(label(resource) + " [" + config(entry.getResConfig()) + "] " + path);
                         continue;
                     }
                     if (!stockPath.equals(path)) {
@@ -382,7 +504,8 @@ public final class ResourceTableCheck {
                     }
                     // No patch writes a resource file, so a file whose bytes changed is one the
                     // rebuild swapped or damaged (a path clash loses content as well as paths).
-                    if (stockFile.getCrc() != file.getCrc() || stockFile.getSize() != file.getSize()) {
+                    // Hashed, not taken from the CRC field: two files can share a CRC and a size.
+                    if (!MessageDigest.isEqual(digest(stockZip, stockFile), digest(patchedZip, file))) {
                         failures.add(where + ": " + path + " is not the file the stock archive holds for it");
                     }
                 }
@@ -518,8 +641,14 @@ public final class ResourceTableCheck {
                 files, moved.size(), absentInStock.size()));
         for (String line : moved) lines.add("  moved " + line);
         for (String line : absentInStock) lines.add("  absent in both " + line);
+        section(lines, "files only the patched table names", addedFiles);
         lines.add(String.format(Locale.ROOT, "[resources] archive: %d entries patching doesn't write hold the stock bytes, %d stock signature files left to the signer",
                 entriesCompared, signatureEntries));
+        if (allowlistName != null) {
+            lines.add(String.format(Locale.ROOT, "[resources] resource delta: %d changes held to %s, sections %s",
+                    deltaChecked, allowlistName, String.join(", ", sectionsUsed)));
+            section(lines, "allowed in those sections and not seen in this run", unseen);
+        }
         if (failures.isEmpty()) {
             lines.add(String.format(Locale.ROOT, "[resources] every one of the stock table's %d resources resolves in the patched table, with its type and a value in each of its configurations, and every file and reference the patched values name is there",
                     stockResources));

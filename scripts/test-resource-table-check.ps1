@@ -264,8 +264,8 @@ function Copy-ApkWith {
 }
 
 function Edit-Table {
-    param([string]$Name, [byte[]]$Find, [byte[]]$Replace, [string]$What)
-    return Copy-ApkWith -From $stockApk -Name $Name -Change {
+    param([string]$Name, [byte[]]$Find, [byte[]]$Replace, [string]$What, [string]$From = $stockApk)
+    return Copy-ApkWith -From $From -Name $Name -Change {
         param($archive)
         $entry = $archive.GetEntry('resources.arsc')
         $stream = $entry.Open()
@@ -285,13 +285,23 @@ function Edit-Table {
     }
 }
 
+<#
+    Runs the check on one pair. With -Allowlist the changes are held to it, for the patches
+    -Selection names (HUSHTUMBLR_PATCH_SELECTION, left unset when -Selection isn't given).
+#>
 function Invoke-Check {
-    param([string]$Patched, [string]$Name, [string]$Stock = $stockApk)
+    param([string]$Patched, [string]$Name, [string]$Stock = $stockApk, [string]$Allowlist, [string[]]$Selection)
     $report = Join-Path $caseRoot "$Name-report.txt"
+    $arguments = @($Stock, $Patched, $report)
+    if ($Allowlist) { $arguments += $Allowlist }
     $ErrorActionPreference = 'Continue'
     $global:LASTEXITCODE = 0
-    $output = @(& $Java '-Xmx1g' '-cp' $DesktopJar (Join-Path $PSScriptRoot 'ResourceTableCheck.java') `
-        $Stock $Patched $report 2>&1 | ForEach-Object { "$_" })
+    $selectionBefore = $env:HUSHTUMBLR_PATCH_SELECTION
+    try {
+        $env:HUSHTUMBLR_PATCH_SELECTION = if ($Selection) { $Selection -join "`n" } else { $null }
+        $output = @(& $Java '-Xmx1g' '-cp' $DesktopJar (Join-Path $PSScriptRoot 'ResourceTableCheck.java') `
+            @arguments 2>&1 | ForEach-Object { "$_" })
+    } finally { $env:HUSHTUMBLR_PATCH_SELECTION = $selectionBefore }
     [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = ($output -join "`n"); Report = $report }
 }
 
@@ -452,6 +462,169 @@ try {
     Assert-True ($changed.ExitCode -eq 1) "A layout file with other bytes passed.`n$($changed.Output)"
     Assert-True ($changed.Output -match [regex]::Escape("FAIL $($idOf['layout/feed_story']) layout/feed_story [default]: res/layout/feed_story.xml is not the file the stock archive holds for it")) `
         "The changed file's failure did not name the id and the path.`n$($changed.Output)"
+
+    # A moved file is held to the stock one by its bytes, not its CRC and size: "plumless" and
+    # "buckeroo" share both. The table's path to a raw file is changed in place to another of the
+    # same length, and the archive's entry moved with it, once with the stock bytes and once with
+    # the other word's.
+    function Get-TestCrc32([byte[]]$Bytes) {
+        $crc = [long]4294967295
+        foreach ($byte in $Bytes) {
+            $crc = $crc -bxor $byte
+            for ($bit = 0; $bit -lt 8; $bit++) { $crc = if ($crc -band 1) { ($crc -shr 1) -bxor [long]3988292384 } else { $crc -shr 1 } }
+        }
+        return $crc -bxor [long]4294967295
+    }
+    $plumless = [System.Text.Encoding]::ASCII.GetBytes('plumless')
+    $buckeroo = [System.Text.Encoding]::ASCII.GetBytes('buckeroo')
+    Assert-True ((Get-TestCrc32 $plumless) -eq (Get-TestCrc32 $buckeroo) -and $plumless.Length -eq $buckeroo.Length) `
+        'The two words for the moved-file case do not share a CRC and a size, so the case would show nothing.'
+    $rawIds = Join-Path $caseRoot 'raw-ids.txt'
+    $rawFiles = [ordered]@{}
+    foreach ($entry in $stockFiles.GetEnumerator()) { $rawFiles[$entry.Key] = $entry.Value }
+    $rawFiles['res/raw/word.txt'] = 'plumless'
+    $rawStock = New-ResourceApk -Name 'raw-stock' -Files $rawFiles -EmitIds $rawIds
+    $rawId = @(Get-Content -LiteralPath $rawIds | Where-Object { $_ -match ':raw/word = (0x[0-9a-f]{8})$' } | ForEach-Object { $Matches[1] })
+    Assert-True ($rawId.Count -eq 1) "aapt2 gave raw/word no id: $(Get-Content -LiteralPath $rawIds -Raw)"
+    function New-MovedApk([string]$Name, [byte[]]$Bytes) {
+        try {
+            $edited = Edit-Table -From $rawStock -Name "$Name-table" -What 'UTF-8 path res/raw/word.txt' `
+                -Find ([System.Text.Encoding]::UTF8.GetBytes('res/raw/word.txt')) -Replace ([System.Text.Encoding]::UTF8.GetBytes('res/raw/wora.txt'))
+        } catch {
+            $edited = Edit-Table -From $rawStock -Name "$Name-table16" -What 'UTF-16 path res/raw/word.txt' `
+                -Find ([System.Text.Encoding]::Unicode.GetBytes('res/raw/word.txt')) -Replace ([System.Text.Encoding]::Unicode.GetBytes('res/raw/wora.txt'))
+        }
+        return Copy-ApkWith -From $edited -Name $Name -Change {
+            param($archive)
+            $archive.GetEntry('res/raw/word.txt').Delete()
+            $out = $archive.CreateEntry('res/raw/wora.txt').Open()
+            try { $out.Write($Bytes, 0, $Bytes.Length) } finally { $out.Dispose() }
+        }
+    }
+    $movedLine = "$($rawId[0]) raw/word [default] res/raw/word.txt -> res/raw/wora.txt"
+    $movedSame = Invoke-Check -Stock $rawStock -Patched (New-MovedApk -Name 'moved-same' -Bytes $plumless) -Name 'moved-same'
+    Assert-True ($movedSame.ExitCode -eq 0 -and $movedSame.Output -match [regex]::Escape("moved $movedLine")) `
+        "A raw file moved with its stock bytes was not passed and reported as moved.`n$($movedSame.Output)"
+    $movedOther = Invoke-Check -Stock $rawStock -Patched (New-MovedApk -Name 'moved-other' -Bytes $buckeroo) -Name 'moved-other'
+    Assert-True ($movedOther.ExitCode -eq 1 -and
+        $movedOther.Output -match [regex]::Escape("FAIL $($rawId[0]) raw/word [default]: res/raw/wora.txt is not the file the stock archive holds for it")) `
+        "A raw file moved with other bytes of the same CRC and size passed.`n$($movedOther.Output)"
+
+    # Every archive entry patching doesn't write keeps the stock bytes (checkArchive). Signature files
+    # are the signer's: an unsigned output leaves them out and a signed one adds its own, both at
+    # the top of META-INF with ASCII names. Anything else is held to the stock archive: an entry
+    # with other bytes, one that's gone, one that's added, one that's there twice, and a name only
+    # a Unicode case fold makes a signature file.
+    function Add-TestEntry($Archive, [string]$Name, [string]$Text) {
+        $out = $Archive.CreateEntry($Name).Open()
+        try { $bytes = [System.Text.Encoding]::UTF8.GetBytes($Text); $out.Write($bytes, 0, $bytes.Length) } finally { $out.Dispose() }
+    }
+    $archiveStock = Copy-ApkWith -From $stockApk -Name 'archive-stock' -Change {
+        param($archive)
+        Add-TestEntry $archive 'assets/feed.json' '{"feed":"stock"}'
+        Add-TestEntry $archive 'META-INF/com/android/build/gradle/app-metadata.properties' 'appMetadataVersion=1.1'
+        foreach ($name in 'META-INF/MANIFEST.MF', 'META-INF/BNDLTOOL.SF', 'META-INF/BNDLTOOL.RSA') { Add-TestEntry $archive $name "stock $name" }
+    }
+    $archiveSame = Invoke-Check -Stock $archiveStock -Patched $archiveStock -Name 'archive-same'
+    Assert-True ($archiveSame.ExitCode -eq 0 -and $archiveSame.Output -match "archive: \d+ entries patching doesn't write hold the stock bytes, 3 stock signature files left to the signer") `
+        "An archive held to itself did not pass with its three signature files left to the signer.`n$($archiveSame.Output)"
+    $resigned = Copy-ApkWith -From $archiveStock -Name 'archive-resigned' -Change {
+        param($archive)
+        foreach ($name in 'META-INF/MANIFEST.MF', 'META-INF/BNDLTOOL.SF', 'META-INF/BNDLTOOL.RSA') { $archive.GetEntry($name).Delete() }
+        foreach ($name in 'META-INF/MANIFEST.MF', 'META-INF/MORPHE.SF', 'META-INF/MORPHE.RSA') { Add-TestEntry $archive $name "signed $name" }
+    }
+    $signedOver = Invoke-Check -Stock $archiveStock -Patched $resigned -Name 'archive-resigned'
+    Assert-True ($signedOver.ExitCode -eq 0) "An archive signed again by another signer failed.`n$($signedOver.Output)"
+    foreach ($case in @(
+            @{ Name = 'archive-changed'; Says = 'archive entry assets/feed.json: not the bytes the stock archive holds'
+                Change = { param($archive) $archive.GetEntry('assets/feed.json').Delete(); Add-TestEntry $archive 'assets/feed.json' '{"feed":"other"}' } },
+            @{ Name = 'archive-gone'; Says = 'archive entry assets/feed.json: not in the patched archive'
+                Change = { param($archive) $archive.GetEntry('assets/feed.json').Delete() } },
+            @{ Name = 'archive-gone-metadata'; Says = 'archive entry META-INF/com/android/build/gradle/app-metadata.properties: not in the patched archive'
+                Change = { param($archive) $archive.GetEntry('META-INF/com/android/build/gradle/app-metadata.properties').Delete() } },
+            @{ Name = 'archive-added'; Says = 'archive entry assets/extra.bin: added, and patching writes no such file'
+                Change = { param($archive) Add-TestEntry $archive 'assets/extra.bin' 'extra' } },
+            @{ Name = 'archive-twice'; Says = 'archive entry assets/feed.json: appears more than once in the patched archive'
+                Change = { param($archive) Add-TestEntry $archive 'assets/feed.json' '{"feed":"stock"}' } },
+            @{ Name = 'archive-long-s'; Says = "archive entry META-INF/PAYLOAD.$([char]0x17F)F: added, and patching writes no such file"
+                Change = { param($archive) Add-TestEntry $archive "META-INF/PAYLOAD.$([char]0x17F)F" 'payload' } },
+            @{ Name = 'archive-dotless-i'; Says = "archive entry META-INF/MAN$([char]0x131)FEST.MF: added, and patching writes no such file"
+                Change = { param($archive) Add-TestEntry $archive "META-INF/MAN$([char]0x131)FEST.MF" 'payload' } },
+            @{ Name = 'archive-nested'; Says = 'archive entry META-INF/sub/OTHER.SF: added, and patching writes no such file'
+                Change = { param($archive) Add-TestEntry $archive 'META-INF/sub/OTHER.SF' 'payload' } })) {
+        $said = Invoke-Check -Stock $archiveStock -Patched (Copy-ApkWith -From $archiveStock -Name $case.Name -Change $case.Change) -Name $case.Name
+        # The report, which is UTF-8 whatever the console's code page is, for the names that aren't ASCII.
+        $reported = if (Test-Path -LiteralPath $said.Report) { [System.IO.File]::ReadAllText($said.Report, [System.Text.Encoding]::UTF8) } else { '' }
+        Assert-True ($said.ExitCode -eq 1 -and $reported -match [regex]::Escape("FAIL $($case.Says)")) `
+            "$($case.Name) passed, or failed for another reason than '$($case.Says)'.`n$($said.Output)"
+    }
+
+    # With an allowlist, every change has to be one it allows: under [rebuild], or under a patch the
+    # run selected. A rewritten value, an added resource, an added file and a moved one, each
+    # passed where its section applies and refused where none does.
+    function New-TestAllowlist([string]$Name, [string[]]$Lines) {
+        $path = Join-Path $caseRoot "$Name-allowlist.txt"
+        [System.IO.File]::WriteAllText($path, (($Lines -join "`n") + "`n"), [System.Text.UTF8Encoding]::new($false))
+        return $path
+    }
+    $blackApk = Join-Path $caseRoot 'rewritten.apk'
+    $accentLine = "rewritten $($idOf['color/accent']) color/accent [default] #ffff3b5c -> #ff000000"
+    $byPatch = New-TestAllowlist 'by-patch' @('# The accent a patch paints black.', '[rebuild]', '', '[Black accent]', $accentLine, 'rewritten 0x7f000000 color/none [default] #00000000 -> #ff000000')
+    $allowed = Invoke-Check -Patched $blackApk -Name 'delta-allowed' -Allowlist $byPatch -Selection @('Other patch', 'Black accent')
+    Assert-True ($allowed.ExitCode -eq 0 -and $allowed.Output -match [regex]::Escape('resource delta: 1 changes held to by-patch-allowlist.txt, sections rebuild, Black accent') -and
+        $allowed.Output -match [regex]::Escape('allowed in those sections and not seen in this run: 1')) `
+        "A rewritten value the selected patch's section allows was not passed, or its unused line not reported.`n$($allowed.Output)"
+    $unselected = Invoke-Check -Patched $blackApk -Name 'delta-unselected' -Allowlist $byPatch -Selection @('Other patch')
+    Assert-True ($unselected.ExitCode -eq 1 -and
+        $unselected.Output -match [regex]::Escape("FAIL resource delta $($accentLine): allowed neither by [rebuild] nor by a selected patch in by-patch-allowlist.txt")) `
+        "A rewritten value only an unselected patch's section allows passed.`n$($unselected.Output)"
+    $byRebuild = Invoke-Check -Patched $blackApk -Name 'delta-rebuild' -Allowlist (New-TestAllowlist 'by-rebuild' @('[rebuild]', $accentLine)) -Selection @('Other patch')
+    Assert-True ($byRebuild.ExitCode -eq 0) "A rewritten value [rebuild] allows failed.`n$($byRebuild.Output)"
+    $unchangedHeld = Invoke-Check -Patched $stockApk -Name 'delta-none' -Allowlist (New-TestAllowlist 'empty' @('[rebuild]')) -Selection @('Other patch')
+    Assert-True ($unchangedHeld.ExitCode -eq 0 -and $unchangedHeld.Output -match [regex]::Escape('resource delta: 0 changes held to empty-allowlist.txt, sections rebuild')) `
+        "An unchanged table failed an allowlist that allows nothing.`n$($unchangedHeld.Output)"
+    $realAllowlist = Join-Path $PSScriptRoot 'resource-delta-allowlist.txt'
+    $real = Invoke-Check -Patched $stockApk -Name 'delta-real' -Allowlist $realAllowlist -Selection @('HushTumblr settings')
+    Assert-True ($real.ExitCode -eq 0 -and $real.Output -match [regex]::Escape('resource delta: 0 changes held to resource-delta-allowlist.txt, sections rebuild, HushTumblr settings')) `
+        "The checked-in allowlist could not be read, or its sections were not picked by the selection.`n$($real.Output)"
+
+    $addedFiles = [ordered]@{}
+    foreach ($entry in $stockFiles.GetEnumerator()) { $addedFiles[$entry.Key] = $entry.Value }
+    $addedFiles['res/values/strings.xml'] = '<resources><string name="hush_row">Hush</string></resources>'
+    $addedFiles['res/raw/hush_extra.txt'] = 'extra'
+    $addedApk = New-ResourceApk -Name 'delta-added' -Files $addedFiles -StableIds $ids
+    $addedLines = @('added raw/hush_extra', 'added string/hush_row', 'file raw/hush_extra [default] res/raw/hush_extra.txt')
+    $addedAllowed = Invoke-Check -Patched $addedApk -Name 'delta-added' -Allowlist (New-TestAllowlist 'added' (@('[rebuild]', '[Hush row]') + $addedLines)) -Selection @('Hush row')
+    Assert-True ($addedAllowed.ExitCode -eq 0 -and $addedAllowed.Output -match [regex]::Escape('raw/hush_extra [default] res/raw/hush_extra.txt')) `
+        "Added resources and the file one names, allowed without the ids the rebuild picked, failed or went unreported.`n$($addedAllowed.Output)"
+    $fileRefused = Invoke-Check -Patched $addedApk -Name 'delta-file' -Allowlist (New-TestAllowlist 'no-file' (@('[rebuild]', '[Hush row]') + $addedLines[0..1])) -Selection @('Hush row')
+    Assert-True ($fileRefused.ExitCode -eq 1 -and
+        $fileRefused.Output -match [regex]::Escape('FAIL resource delta file raw/hush_extra [default] res/raw/hush_extra.txt: allowed neither')) `
+        "A file only the patched table names passed an allowlist that doesn't name it.`n$($fileRefused.Output)"
+    $movedHeld = Invoke-Check -Stock $rawStock -Patched (Join-Path $caseRoot 'moved-same.apk') -Name 'delta-moved' `
+        -Allowlist (New-TestAllowlist 'moved' @('[rebuild]')) -Selection @('Hush row')
+    Assert-True ($movedHeld.ExitCode -eq 1 -and $movedHeld.Output -match [regex]::Escape("FAIL resource delta moved $($movedLine): allowed neither")) `
+        "A moved file passed an allowlist that doesn't name it.`n$($movedHeld.Output)"
+    $movedAllowed = Invoke-Check -Stock $rawStock -Patched (Join-Path $caseRoot 'moved-same.apk') -Name 'delta-moved-allowed' `
+        -Allowlist (New-TestAllowlist 'moved-allowed' @('[rebuild]', "moved $movedLine")) -Selection @('Hush row')
+    Assert-True ($movedAllowed.ExitCode -eq 0) "A moved file [rebuild] allows failed.`n$($movedAllowed.Output)"
+
+    # An allowlist that can't be read as one stops the check before it reads an APK, and so does
+    # one given with no selection.
+    $noSelection = Invoke-Check -Patched $blackApk -Name 'delta-no-selection' -Allowlist $byPatch
+    Assert-True ($noSelection.ExitCode -eq 2 -and $noSelection.Output -match 'no patch selection in HUSHTUMBLR_PATCH_SELECTION') `
+        "An allowlist given with no selection did not stop the check.`n$($noSelection.Output)"
+    foreach ($bad in @(
+            @{ Name = 'bad-kind'; Lines = @('[rebuild]', 'recolored color/accent'); Says = 'line 2: not a kind' },
+            @{ Name = 'bad-outside'; Lines = @($accentLine, '[rebuild]'); Says = 'line 1: not a kind' },
+            @{ Name = 'bad-empty-item'; Lines = @('[rebuild]', 'added '); Says = 'line 2: not a kind' },
+            @{ Name = 'bad-twice'; Lines = @('[rebuild]', '[rebuild]'); Says = 'line 2: a section with no name or one named twice' },
+            @{ Name = 'bad-unnamed'; Lines = @('[rebuild]', '[ ]'); Says = 'line 2: a section with no name or one named twice' },
+            @{ Name = 'bad-no-rebuild'; Lines = @('[Black accent]', $accentLine); Says = 'has no [rebuild] section' })) {
+        $said = Invoke-Check -Patched $blackApk -Name "delta-$($bad.Name)" -Allowlist (New-TestAllowlist $bad.Name $bad.Lines) -Selection @('Black accent')
+        Assert-True ($said.ExitCode -eq 2 -and $said.Output -match [regex]::Escape("$($bad.Name)-allowlist.txt") -and $said.Output -match [regex]::Escape($bad.Says)) `
+            "The malformed allowlist $($bad.Name) did not stop the check with '$($bad.Says)'.`n$($said.Output)"
+    }
 
     # A type renamed in the table's own type pool: every color resolves to a type called colox.
     # The pool is UTF-16 as aapt2 writes type names (length 5, then the characters); UTF-8 is the

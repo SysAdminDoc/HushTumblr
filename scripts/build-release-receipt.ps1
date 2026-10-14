@@ -429,15 +429,20 @@ foreach ($apk in $Fixture) {
         $resourceReport = Resolve-WithinRoot -Path (Join-Path $workRoot "receipt-resources-$runId.txt") -Root $workRoot
         # Continue for the call alone, as for the CLI: a JDK note on stderr would otherwise end the
         # run under Windows PowerShell 5.1 before the exit code is read.
+        # What the table and its files changed is held to resource-delta-allowlist.txt, for the
+        # patches the release ships and those they pull in.
         $preference = $ErrorActionPreference
+        $selectionBefore = $env:HUSHTUMBLR_PATCH_SELECTION
         $queued = Enter-HushTumblrQueue -Job 'receipt resources'
         try {
             $ErrorActionPreference = 'Continue'
+            $env:HUSHTUMBLR_PATCH_SELECTION = (@($patchNames) + @($dependencyNames)) -join "`n"
             $global:LASTEXITCODE = -1
             $resourceOutput = @(& $Java '-Xmx4g' '-cp' $DesktopJar (Join-Path $PSScriptRoot 'ResourceTableCheck.java') `
-                $patchInput $out $resourceReport 2>&1)
+                $patchInput $out $resourceReport (Join-Path $PSScriptRoot 'resource-delta-allowlist.txt') 2>&1)
             $resourceExitCode = $LASTEXITCODE
         } finally {
+            $env:HUSHTUMBLR_PATCH_SELECTION = $selectionBefore
             $ErrorActionPreference = $preference
             Exit-HushTumblrQueue $queued
         }

@@ -1,0 +1,23 @@
+# What a run of HushTumblr's patches may change in Tumblr's resource table and the files it names,
+# read by ResourceTableCheck.java. Each line is a kind and an item, the way the resource report lists
+# it. An added resource and a file only the patched table names leave out the id, since the rebuild
+# picks that. Anything a run changes that isn't here fails the run.
+#
+# [rebuild] is what decoding and rebuilding the table does on its own, whichever resource patch
+# asked for it. Every other section is a patch, and applies only when the run selects that patch or
+# a patch that depends on it. Retargeting Tumblr means reading a fresh report and redoing the
+# [rebuild] lines.
+
+[rebuild]
+rewritten 0x7f150581 style/TimelineView [default] item 0x0101007f hex 0x02000000 -> dec 0x02000000
+rewritten 0x7f140c65 string/sign_up_tos_description [default] "By tapping <b>"Next"</b>:" -> "By tapping <b>Next</b>:"
+renamed 0x7f0b0b2f id/scrollView is id/id_0x7f0b0b2f
+renamed 0x7f0b0b34 id/scrollview is id/id_0x7f0b0b34
+renamed 0x7f0b0b62 id/seekBar is id/id_0x7f0b0b62
+renamed 0x7f0b0b63 id/seekbar is id/id_0x7f0b0b63
+
+[Dark background color]
+added style/HushTumblrDarkBackground
+
+[HushTumblr settings]
+added string/hushtumblr_settings_row

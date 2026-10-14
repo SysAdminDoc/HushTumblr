@@ -644,6 +644,7 @@ try {
         'scripts/common.ps1',
         'scripts/MergeSplits.java',
         'scripts/ResourceTableCheck.java',
+        'scripts/resource-delta-allowlist.txt',
         'scripts/test-resource-table-check.ps1',
         'scripts/verify-all-patches.ps1'
     )
