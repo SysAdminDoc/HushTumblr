@@ -3614,6 +3614,20 @@ try {
         $env:GITHUB_TOKEN = $savedToken
     }
 } finally {
+    # Pushed-commit cases give the hook a gate worktree of $hookRoot, made in the temp directory
+    # beside it. Removing the fixture alone left that worktree behind on every run. This runs
+    # before Git's hook variables come back, so they can't point these commands elsewhere.
+    if (Test-Path -LiteralPath (Join-Path $hookRoot '.git') -PathType Container) {
+        foreach ($line in @(& git -C $hookRoot worktree list --porcelain)) {
+            if ($line -notlike 'worktree *') { continue }
+            $listed = [IO.Path]::GetFullPath($line.Substring('worktree '.Length)).TrimEnd('\', '/')
+            if ($listed -ieq [IO.Path]::GetFullPath($hookRoot).TrimEnd('\', '/')) { continue }
+            if ([IO.Path]::GetFileName($listed) -notmatch '^hushtumblr-pre-push-[a-f0-9]{12}$') {
+                throw "Refusing to remove unexpected fixture worktree $listed."
+            }
+            & git -C $hookRoot worktree remove --force $listed
+        }
+    }
     $env:HUSHTUMBLR_SKIP_PRE_PUSH = $savedSkip
     $env:HUSHTUMBLR_BUILD_WRAPPER = $savedRoutingWrapper
     $env:HUSHTUMBLR_FIXTURE_DIR = $savedRoutingFixtures

@@ -27,7 +27,8 @@ if (-not $AndroidJar) {
 if (-not $AndroidJar -or -not (Test-Path -LiteralPath $AndroidJar -PathType Leaf)) { throw 'Pass -AndroidJar for an Android SDK public stub JAR.' }
 if (-not $ApiVersions) { $ApiVersions = Join-Path (Split-Path -Parent $AndroidJar) 'data/api-versions.xml' }
 if (-not (Test-Path -LiteralPath $ApiVersions -PathType Leaf)) { throw "SDK API history is missing: $ApiVersions" }
-if (-not $WorkDir) { $WorkDir = Join-Path ([IO.Path]::GetTempPath()) ('host-references-' + [Guid]::NewGuid().ToString('N')) }
+$madeWorkDir = -not $WorkDir
+if ($madeWorkDir) { $WorkDir = Join-Path ([IO.Path]::GetTempPath()) ('host-references-' + [Guid]::NewGuid().ToString('N')) }
 if (Test-Path -LiteralPath $WorkDir) { throw "Fixture output must be a new directory: $WorkDir" }
 New-Item -ItemType Directory -Path $WorkDir | Out-Null
 $classes = Join-Path $WorkDir 'classes'
@@ -128,5 +129,13 @@ foreach ($case in @('good-handle-register', 'bad-handle-register')) {
         throw "DEX 039 handle destination escaped structural verification.`n$($checked.Text)"
     }
 }
-Write-Host "[scripts] host reference contracts passed ($($pass.Count) valid, $($fail.Count + 1) rejected). Reports: $WorkDir"
+$summary = "[scripts] host reference contracts passed ($($pass.Count) valid, $($fail.Count + 1) rejected)"
+# A failing case throws above and leaves its reports to read. A passing run in a folder of its own
+# making has nothing worth keeping, and one was left in the temp directory on every run.
+if ($madeWorkDir) {
+    Remove-Item -LiteralPath $WorkDir -Recurse -Force -ErrorAction SilentlyContinue
+    Write-Host $summary
+} else {
+    Write-Host "$summary. Reports: $WorkDir"
+}
 $global:LASTEXITCODE = 0
