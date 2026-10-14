@@ -16,6 +16,7 @@ import app.morphe.patches.tumblr.lookup.fieldRef
 import app.morphe.patches.tumblr.lookup.instructionList
 import app.morphe.patches.tumblr.lookup.isStatic
 import app.morphe.patches.tumblr.lookup.methodRef
+import app.morphe.patches.tumblr.lookup.stringRef
 import app.morphe.patches.tumblr.lookup.strings
 import app.morphe.patches.tumblr.misc.extension.SETTINGS_STATUS
 import app.morphe.patches.tumblr.misc.extension.localRegisterCount
@@ -25,6 +26,7 @@ import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.OffsetInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -35,7 +37,8 @@ import java.io.File
  * The footer's count formatter and each of its five buttons in each declared build. The formatter
  * gets the extension's count in place of its own first thing, the community comment text and the
  * notes title go to the extension as they're written, and a community reaction's text goes to it
- * with its count before it's shown; each button gets the question in front
+ * with its count before it's shown, and a notes tab's count is asked for first and answers a blank
+ * on true; each button gets the question in front
  * of its first instruction and returns at once on true, and the like, comment and share buttons'
  * community controls go to the extension at the end of the community footer's bind. Tumblr's code
  * is otherwise unchanged, and each patch turns its switch and its target on.
@@ -104,6 +107,34 @@ class PostFooterFixtureTest {
                 reaction[reactions.at + 2].call())
             assertEquals("$where: Tumblr's own code around it", reactionsBefore,
                 reaction.filterIndexed { at, _ -> at !in reactions.at until reactions.at + 2 }.map { it.opcode })
+            assertSwitchedOn(context, build.name, "hideNoteCounts", "noteCounts")
+        }
+    }
+
+    @Test
+    fun `each declared build answers a blank notes tab count first thing when asked to`() {
+        for (build in Fixtures.declaredBuilds()) {
+            val context = footerContext(build)
+            val tab = context.resolveNotesTabCount()
+            val identity = "${tab.definingClass}->${tab.name}"
+            val before = tab.instructionList().map { it.opcode }
+
+            hideNoteCountsPatch.execute(context)
+
+            val body = context.bodyOf(tab)
+            assertEquals("$identity: five instructions added", before.size + 5, body.size)
+            assertEquals("$identity: the extension is asked", NOTES_TAB_COUNTS_HOOK, body[0].call())
+            assertEquals(identity, Opcode.MOVE_RESULT, body[1].opcode)
+            assertEquals(identity, Opcode.IF_EQZ, body[2].opcode)
+            assertEquals("$identity: the answer is what's tested",
+                (body[1] as OneRegisterInstruction).registerA, (body[2] as OneRegisterInstruction).registerA)
+            assertEquals("$identity: false goes on to Tumblr's first instruction",
+                body.take(5).sumOf { it.codeUnits }, body.take(2).sumOf { it.codeUnits } + (body[2] as OffsetInstruction).codeOffset)
+            assertEquals("$identity: true answers a blank", "", body[3].stringRef())
+            assertEquals(identity, Opcode.RETURN_OBJECT, body[4].opcode)
+            assertEquals("$identity: the blank is what's answered",
+                (body[3] as OneRegisterInstruction).registerA, (body[4] as OneRegisterInstruction).registerA)
+            assertEquals("$identity: what follows is Tumblr's own code", before, body.drop(5).map { it.opcode })
             assertSwitchedOn(context, build.name, "hideNoteCounts", "noteCounts")
         }
     }
@@ -205,8 +236,8 @@ class PostFooterFixtureTest {
     /**
      * The footer's controls, found by their source notes, and every class with a static method
      * turning an int into a String, which takes in the class that builds the buttons' states. Also
-     * the community footer and its controls, the community comment text, and every reader of the
-     * notes count plural, the notes title among them.
+     * the community footer and its controls, the community comment text, every reader of the notes
+     * count plural, the notes title among them, and the adapter that makes the notes tabs.
      */
     private fun footerContext(build: File): BytecodePatchContext {
         val classes = FixtureDex.classesWhere(build, { true }) { method ->
@@ -214,7 +245,7 @@ class PostFooterFixtureTest {
                 (method.isStatic() && method.returnType == "Ljava/lang/String;" &&
                     method.parameterTypes.map { it.toString() } == listOf("I")) ||
                 method.definingClass == COMMUNITY_FOOTER || method.definingClass.startsWith(COMMUNITY_CONTROLS) ||
-                method.instructionList().any { it.fieldRef()?.name == "note_count_show" }
+                method.instructionList().any { it.fieldRef()?.name == "note_count_show" } || method.makesNotesTabs()
         }
         return PatchContexts.of(ExtensionDex.classes() + classes)
     }

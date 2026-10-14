@@ -268,7 +268,7 @@ the Premium diamond	berlian Premium
 TumblrMart buttons	tombol TumblrMart
 # context: the footer under a post, with its like, reblog, comment, share and Save buttons and their counts. Use the words Tumblr shows in your language for notes and for each button.
 Hide note counts	Sembunyikan jumlah nota
-Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.	Menghapus jumlah suka, reblog, dan komentar dari bagian bawah postingan, tapi tombolnya tetap ada.
+Takes the like, reblog and comment counts off the footer under posts and off a post's notes, and keeps the buttons.	Menghapus jumlah suka, reblog, dan komentar dari bagian bawah postingan dan dari nota postingan, tapi tombolnya tetap ada.
 Hide the like button	Sembunyikan tombol suka
 Takes the like button out of the footer under posts, and the reactions off community posts.	Menghapus tombol suka dari bagian bawah postingan, dan reaksi dari postingan komunitas.
 Hide the reblog button	Sembunyikan tombol reblog

@@ -498,7 +498,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                         + "posts from blogs you don't follow yet."), SettingsIcons.BLOCK);
             patchToggle(posts, context, build, PatchFamily.HIDE_NOTE_COUNTS, Settings.HIDE_NOTE_COUNTS,
                     L10n.t("Hide note counts"), L10n.t("Takes the like, reblog and comment counts off the footer "
-                        + "under posts, and keeps the buttons."), SettingsIcons.BLOCK);
+                        + "under posts and off a post's notes, and keeps the buttons."), SettingsIcons.BLOCK);
             patchToggle(posts, context, build, PatchFamily.HIDE_LIKE_BUTTON, Settings.HIDE_LIKE_BUTTON,
                     L10n.t("Hide the like button"), L10n.t("Takes the like button out of the footer under posts, "
                         + "and the reactions off community posts."),

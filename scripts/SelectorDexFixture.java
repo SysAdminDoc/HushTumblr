@@ -262,9 +262,23 @@ public final class SelectorDexFixture {
         if (patched) reactions.addAll(9, body(staticCall(hooks, "communityReactionsText", STRING, new String[]{STRING, "I"}, 2,
                 fault.equals("notes-wrong-reactions") ? 4 : 1), moved(2, true)));
         put(classes, REACTIONS, List.of(method(REACTIONS, "bind", "V", false, 7, reactions, LIST)), member(REACTIONS, "text", TEXT));
+        String tabs = FIXTURE + "NotesTabs;", fragment = "Landroidx/fragment/app/Fragment;";
+        List<Instruction> make = new ArrayList<>();
+        for (String made : List.of("replies/PostNotesRepliesFragment;", "reblogs/PostNotesReblogsFragment;", "likes/PostNotesLikesFragment;")) {
+            String type = "Lcom/tumblr/notes/view/" + made;
+            make.addAll(body(typed(Opcode.NEW_INSTANCE, 0, type), invoke(Opcode.INVOKE_DIRECT, ref(type, "<init>", "V"), 0)));
+        }
+        make.add(returned(0, true));
+        List<Instruction> count = body(staticCall("Ljava/text/NumberFormat;", "getIntegerInstance", "Ljava/text/NumberFormat;", new String[0]),
+                moved(0, true), literal(0, ""), returned(0, true));
+        if (patched) count.addAll(0, guard(hooks, "hideNotesTabCounts", new String[0], 0,
+                body(literal(0, fault.equals("notes-tab-not-blank") ? "12" : ""), returned(0, true))));
+        put(classes, tabs, List.of(method(tabs, "make", fragment, false, 3, make, "I"),
+                method(tabs, "count", "Ljava/lang/CharSequence;", false, 3, count, "I")));
         if (patched) put(classes, hooks, List.of(hook(hooks, "noteCount", "I", 0, "I"),
                 hook(hooks, "communityCommentsText", STRING, 0, STRING), hook(hooks, "textCount", STRING, 0, STRING),
-                hook(hooks, "notesTitle", STRING, 0, STRING), hook(hooks, "communityReactionsText", STRING, 0, STRING, "I")));
+                hook(hooks, "notesTitle", STRING, 0, STRING), hook(hooks, "communityReactionsText", STRING, 0, STRING, "I"),
+                hook(hooks, "hideNotesTabCounts", "Z", -1)));
     }
 
     private static void bottomBarTabs(Map<String, ClassDef> classes, boolean patched, String fault) {
@@ -456,6 +470,7 @@ public final class SelectorDexFixture {
         fixture(root, "notes-wrong-comment-count", "communityCommentsText(Ljava/lang/String;)Ljava/lang/String; doesn't take the community comment text, then its count", "hideNoteCounts");
         fixture(root, "notes-late-title", "notesTitle(Ljava/lang/String;)Ljava/lang/String; is not where its rule puts it", "hideNoteCounts");
         fixture(root, "notes-wrong-reactions", "communityReactionsText(Ljava/lang/String;I)Ljava/lang/String; doesn't take what its rule hands it", "hideNoteCounts");
+        fixture(root, "notes-tab-not-blank", "hideNotesTabCounts()Z isn't asked first thing", "hideNoteCounts");
         String[] tabs = {"hideExploreTab", "hideNotificationsTab", "reorderTabs"};
         fixture(root, "tabs-good", "", tabs);
         fixture(root, "tabs-late-freeze", "arrangeTabs(Ljava/util/List;)V is not where its rule puts it", tabs);

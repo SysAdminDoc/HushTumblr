@@ -24,6 +24,7 @@ import app.morphe.patches.tumblr.misc.extension.enableCapability
 import app.morphe.patches.tumblr.misc.extension.enableStatus
 import app.morphe.patches.tumblr.misc.extension.parameterRegister
 import app.morphe.patches.tumblr.misc.extension.requireStatusMethod
+import app.morphe.patches.tumblr.misc.extension.returnEarlyWhen
 import app.morphe.patches.tumblr.misc.extension.tumblrExtensionPatch
 import app.morphe.patches.tumblr.misc.settings.EXTENSION_ROOT
 import app.morphe.patches.tumblr.misc.settings.settingsPatch
@@ -34,6 +35,8 @@ import com.android.tools.smali.dexlib2.iface.ClassDef
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 
 private const val PATCH = "Hide note counts"
 internal const val NOTE_COUNT_HOOK = "$POST_FOOTER->noteCount(I)I"
@@ -42,6 +45,14 @@ internal const val NOTES_TITLE_HOOK = "$POST_FOOTER->notesTitle(Ljava/lang/Strin
 internal const val TEXT_COUNT_HOOK = "$POST_FOOTER->textCount(Ljava/lang/String;)Ljava/lang/String;"
 internal const val COMMUNITY_REACTIONS_TEXT_HOOK =
     "$POST_FOOTER->communityReactionsText(Ljava/lang/String;I)Ljava/lang/String;"
+internal const val NOTES_TAB_COUNTS_HOOK = "$POST_FOOTER->hideNotesTabCounts()Z"
+
+/** The three tabs of a post's notes screen, by the fragments Tumblr makes for them, kept by name in 46.5.0.109. */
+internal val NOTES_TAB_FRAGMENTS = listOf(
+    "Lcom/tumblr/notes/view/replies/PostNotesRepliesFragment;",
+    "Lcom/tumblr/notes/view/reblogs/PostNotesReblogsFragment;",
+    "Lcom/tumblr/notes/view/likes/PostNotesLikesFragment;",
+)
 
 /** A community post's reaction button, a View Tumblr names in its layouts, so R8 keeps the name. */
 internal const val REACTION_CONTROL = "${COMMUNITY_CONTROLS}CommunitiesReactionControl;"
@@ -85,6 +96,9 @@ internal class ReactionTextSite(val method: MutableMethod, val at: Int, val text
  * Two more counts are words rather than numbers, so they get Tumblr's own word in their place:
  * a community post's comment button writes "3 comments" ([resolveCommunityCommentsText]), and a
  * post's notes screen is titled "12 notes" ([resolveNotesTitle]). Each is read as it's written.
+ * The notes screen's comment, reblog and like tabs each show a count too, which go blank the way
+ * Tumblr leaves a count it doesn't have yet ([resolveNotesTabCount]), read each time the tabs are
+ * drawn.
  *
  * A community post's reactions stand in for likes there, and each reaction button writes its emoji,
  * a space and how many reacted ([resolveCommunityReactionsText]); the extension hands back just the
@@ -94,7 +108,7 @@ internal class ReactionTextSite(val method: MutableMethod, val at: Int, val text
 val hideNoteCountsPatch = bytecodePatch(
     name = PATCH,
     description = "Takes the like, reblog and comment counts off the footer under posts, community posts" +
-        " included, and the count off the top of a post's notes. The buttons stay and still work. Starts off." +
+        " included, and the counts off the top of a post's notes and its tabs. The buttons stay and still work. Starts off." +
         " Turn it on in Tumblr settings > HushTumblr > Posts.",
     default = true,
 ) {
@@ -112,6 +126,7 @@ val hideNoteCountsPatch = bytecodePatch(
             resolveNotesTitle() to NOTES_TITLE_HOOK,
         )
         val reactions = resolveCommunityReactionsText()
+        val tabCount = resolveNotesTabCount()
         val count = formatter.parameterRegister(0)
         formatter.addInstructions(
             0,
@@ -143,6 +158,7 @@ val hideNoteCountsPatch = bytecodePatch(
                 move-result-object v${reactions.text}
             """,
         )
+        tabCount.returnEarlyWhen(PATCH, NOTES_TAB_COUNTS_HOOK, "const-string v0, \"\"\nreturn-object v0")
         enableCapability("noteCounts")
         enableStatus("hideNoteCounts")
     }
@@ -295,6 +311,54 @@ internal fun BytecodePatchContext.resolveCommunityReactionsText(): ReactionTextS
     requireShape(PATCH, text <= 15 && count!! <= 15,
         "the community reaction text or count is past what the added call can name")
     return ReactionTextSite(mutableOf(writer), at, text, count!!)
+}
+
+/**
+ * The method that writes the count on one of a post's notes screen tabs, throwing when this build
+ * has no such adapter, several, or one that writes its counts another way.
+ *
+ * The adapter is the one class that makes the three tabs' fragments ([NOTES_TAB_FRAGMENTS]) from
+ * their position (`pke.X`, in 46.5.0.109), and the method is its one instance method taking the
+ * position and answering a CharSequence (`pke.q0`). It writes the tab's count with
+ * `NumberFormat.getIntegerInstance()` and answers "" for a count it doesn't have yet.
+ * `PostNotesFragment` hands that answer to each tab when it sets the tabs up (`X4`) and each time
+ * the counts change (`R5`), so the hook goes first thing and answers "" itself while the switch is
+ * on. Found by reading Tumblr 46.5.0.109 (2026-10-14).
+ */
+internal fun BytecodePatchContext.resolveNotesTabCount(): MutableMethod {
+    requireExtensionHook(PATCH, NOTES_TAB_COUNTS_HOOK)
+    val adapters = mutableListOf<ClassDef>()
+    classDefForEach { owner ->
+        if (owner.type.startsWith(EXTENSION_ROOT)) return@classDefForEach
+        if (owner.methods.any { it.makesNotesTabs() }) adapters += owner
+    }
+    val adapter = adapters.distinctBy { it.type }.only(PATCH, "the adapter behind a post's notes tabs")
+    val count = adapter.methods
+        .filter { method ->
+            !method.isStatic() && method.returnType == CHAR_SEQUENCE &&
+                method.parameterTypes.map(CharSequence::toString) == listOf("I")
+        }
+        .only(PATCH, "the method that writes a notes tab's count")
+    requireShape(
+        PATCH,
+        "" in count.strings() && count.instructionList().any { instruction ->
+            instruction.methodRef()?.let { it.definingClass == "Ljava/text/NumberFormat;" && it.name == "getIntegerInstance" } == true
+        },
+        "the notes tab count isn't written as a number, blank when it's unknown",
+    )
+    return mutableOf(count)
+}
+
+/** A method answering the Fragment for a position that makes each of [NOTES_TAB_FRAGMENTS]. */
+internal fun Method.makesNotesTabs(): Boolean {
+    if (returnType != "Landroidx/fragment/app/Fragment;" || parameterTypes.map(CharSequence::toString) != listOf("I")) {
+        return false
+    }
+    val made = instructionList()
+        .filter { it.opcode == Opcode.NEW_INSTANCE }
+        .mapNotNull { ((it as? ReferenceInstruction)?.reference as? TypeReference)?.type }
+        .toSet()
+    return made.containsAll(NOTES_TAB_FRAGMENTS)
 }
 
 /**

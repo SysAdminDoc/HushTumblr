@@ -447,7 +447,7 @@
     },
     {
       "name": "Hide note counts",
-      "description": "Takes the like, reblog and comment counts off the footer under posts, community posts included, and the count off the top of a post's notes. The buttons stay and still work. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts.",
+      "description": "Takes the like, reblog and comment counts off the footer under posts, community posts included, and the counts off the top of a post's notes and its tabs. The buttons stay and still work. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts.",
       "category": "Posts",
       "use": true,
       "dependencies": [

@@ -175,6 +175,21 @@ public class PostFooterTest {
     }
 
     @Test
+    public void theCountsSwitchBlanksTheNotesTabsAndIsReadEachTime() {
+        assertFalse(PostFooter.hideNotesTabCounts());
+
+        Settings.HIDE_NOTE_COUNTS.save(true);
+        assertTrue(PostFooter.hideNotesTabCounts());
+        assertTrue("every tab asks", PostFooter.hideNotesTabCounts());
+
+        Settings.HIDE_NOTE_COUNTS.save(false);
+        assertFalse("read each time the tabs are drawn", PostFooter.hideNotesTabCounts());
+
+        String report = String.join("\n", HookStatus.report());
+        assertTrue(report, report.contains("notes tab count hidden 2"));
+    }
+
+    @Test
     public void theBoldedCountGoesBlankOnlyWhenItsTextWentToTheWord() {
         PostFooter.communityCommentsText("3 comments");
         assertEquals("the text is Tumblr's, so is its count", "3", PostFooter.textCount("3"));
@@ -263,6 +278,21 @@ public class PostFooterTest {
         assertFalse(PostFooter.hideCommentButton());
         assertFalse(PostFooter.hideShareButton());
         assertFalse(PostFooter.hideSaveButton());
+        assertFalse(PostFooter.hideNotesTabCounts());
+    }
+
+    @Test
+    public void pauseABuildWithoutTheHookOrAColdStartLeavesTheNotesTabsAlone() {
+        Settings.HIDE_NOTE_COUNTS.save(true);
+
+        PauseForTests.pause(HushTumblrPause.Reason.SWITCH);
+        assertFalse(PostFooter.hideNotesTabCounts());
+        PauseForTests.resume();
+        SettingsContextRule.withoutContext(() -> assertFalse(PostFooter.hideNotesTabCounts()));
+        PatchFamilyForTests.capabilities(EnumSet.of(PatchFamily.Capability.LIKE_BUTTON));
+        assertFalse("its hook isn't in this build", PostFooter.hideNotesTabCounts());
+        PatchFamilyForTests.capabilities(EnumSet.of(PatchFamily.Capability.NOTE_COUNTS));
+        assertTrue(PostFooter.hideNotesTabCounts());
     }
 
     @Test

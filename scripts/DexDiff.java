@@ -277,7 +277,7 @@ public class DexDiff {
             Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 4), Map.entry("timelinePaging", 5),
             Map.entry("timelineCarousel", 3), Map.entry("postBridge", 3), Map.entry("paidPostBridge", 6), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
             Map.entry("followButton", 3), Map.entry("footerButton", 3), Map.entry("postTags", 5),
-            Map.entry("noteCounts", 5), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
+            Map.entry("noteCounts", 6), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 5), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
             Map.entry("matureContent", 12), Map.entry("rootPostMutes", 10), Map.entry("mutualMarkers", 13));
 
@@ -4990,13 +4990,51 @@ public class DexDiff {
             return false;
         }
 
-        /** The footer's count formatter, a community post's comment count text, the notes title and a community reaction's text. */
+        /** The footer's count formatter, a community post's comment count text, the notes title, a community reaction's text and the notes tabs' count. */
         void noteCounts(Contract c) {
             boolean found = countFormatter(c.strings.get(0));
             found &= communityComments(c.strings.get(1), c.strings.get(2));
             found &= notesTitle(c.strings.get(3));
             found &= reactionText(c.strings.get(4));
+            found &= notesTabs(c.strings.get(5));
             capability(c.callee, found);
+        }
+
+        /** The three fragments a post's notes tabs are made of, kept by name. */
+        static final List<String> NOTES_TAB_FRAGMENTS = List.of("Lcom/tumblr/notes/view/replies/PostNotesRepliesFragment;",
+                "Lcom/tumblr/notes/view/reblogs/PostNotesReblogsFragment;", "Lcom/tumblr/notes/view/likes/PostNotesLikesFragment;");
+
+        /** A method answering the Fragment for a position that makes each notes tab's fragment. */
+        static boolean makesNotesTabs(Method m) {
+            if (m.getImplementation() == null || !descriptor(m).equals("(I)Landroidx/fragment/app/Fragment;")) return false;
+            Set<String> made = new HashSet<>();
+            for (Instruction i : instructions(m)) if (i.getOpcode() == Opcode.NEW_INSTANCE) made.add(String.valueOf(reference(i)));
+            return made.containsAll(NOTES_TAB_FRAGMENTS);
+        }
+
+        /** A notes tab's count, asked first thing in the one (I)CharSequence of the tabs' adapter and answered "" on true. */
+        boolean notesTabs(String hook) {
+            List<ClassDef> adapters = new ArrayList<>();
+            for (ClassDef cd : clean.classes.values()) {
+                if (cd.getType().startsWith(OWN)) continue;
+                for (Method m : cd.getMethods()) if (makesNotesTabs(m)) { adapters.add(cd); break; }
+            }
+            ClassDef adapter = uniqueClass(adapters, "the adapter behind a post's notes tabs");
+            if (adapter == null) return false;
+            List<Method> counts = new ArrayList<>();
+            for (Method m : adapter.getMethods()) if (!isStatic(m) && m.getImplementation() != null
+                    && descriptor(m).equals("(I)Ljava/lang/CharSequence;")) counts.add(m);
+            Method old = unique(counts, "the method that writes a notes tab's count");
+            if (old == null) return false;
+            if (!clean.texts.get(old.toString()).contains("") || instructions(old).stream().noneMatch(i ->
+                    isCall(i, "Ljava/text/NumberFormat;", "getIntegerInstance", "()Ljava/text/NumberFormat;"))) {
+                fail("the notes tab count isn't written as a number, blank when it's unknown");
+                return false;
+            }
+            Tail blank = (body, from) -> (body.get(from).getOpcode() == Opcode.CONST_STRING || body.get(from).getOpcode() == Opcode.CONST_STRING_JUMBO)
+                    && reference(body.get(from)) instanceof StringReference s && s.getString().isEmpty()
+                    && body.get(from + 1).getOpcode() == Opcode.RETURN_OBJECT && firstRegister(body.get(from + 1)) == firstRegister(body.get(from));
+            return guardFirst(old, hook, List.of(), 2, blank);
         }
 
         /** The one static (int)String of the class building the comment, like and reblog buttons' states, given the count first. */

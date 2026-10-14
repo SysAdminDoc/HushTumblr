@@ -268,7 +268,7 @@ the Premium diamond	Premium elması
 TumblrMart buttons	TumblrMart düğmeleri
 # context: the footer under a post, with its like, reblog, comment, share and Save buttons and their counts. Use the words Tumblr shows in your language for notes and for each button.
 Hide note counts	Not sayılarını gizle
-Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.	Gönderilerin altındaki beğeni, RB ve yorum sayılarını kaldırır, düğmeler kalır.
+Takes the like, reblog and comment counts off the footer under posts and off a post's notes, and keeps the buttons.	Gönderilerin altındaki ve notlarındaki beğeni, RB ve yorum sayılarını kaldırır, düğmeler kalır.
 Hide the like button	Beğen düğmesini gizle
 Takes the like button out of the footer under posts, and the reactions off community posts.	Gönderilerin altındaki beğen düğmesini ve topluluk gönderilerindeki tepkileri kaldırır.
 Hide the reblog button	RB düğmesini gizle

@@ -265,7 +265,7 @@ the Premium diamond	o diamante do Premium
 TumblrMart buttons	os botões da TumblrMart
 # context: the footer under a post, with its like, reblog, comment, share and Save buttons and their counts. Use the words Tumblr shows in your language for notes and for each button.
 Hide note counts	Ocultar a contagem de notas
-Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.	Tira os números de curtidas, reblogues e comentários do rodapé dos posts e mantém os botões.
+Takes the like, reblog and comment counts off the footer under posts and off a post's notes, and keeps the buttons.	Tira os números de curtidas, reblogues e comentários do rodapé dos posts e das notas de um post, e mantém os botões.
 Hide the like button	Ocultar o botão de curtir
 Takes the like button out of the footer under posts, and the reactions off community posts.	Tira o botão de curtir do rodapé dos posts e as reações dos posts de comunidades.
 Hide the reblog button	Ocultar o botão de reblogue

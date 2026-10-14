@@ -699,8 +699,8 @@ public final class L10nTranslations {
                 "Entfernt die Communitys, denen du laut Tumblr beitreten sollst, samt ihren \u00dcberschriften aus deinem Dashboard und anderen Feeds.");
         table.put("Takes the like button out of the footer under posts, and the reactions off community posts.",
                 "Nimmt den Like-Button aus der Leiste unter Beitr\u00e4gen und die Reaktionen von Community-Beitr\u00e4gen.");
-        table.put("Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.",
-                "Nimmt die Zahlen f\u00fcr Likes, Reblogs und Kommentare aus der Leiste unter Beitr\u00e4gen. Die Buttons bleiben.");
+        table.put("Takes the like, reblog and comment counts off the footer under posts and off a post's notes, and keeps the buttons.",
+                "Nimmt die Zahlen f\u00fcr Likes, Reblogs und Kommentare aus der Leiste unter Beitr\u00e4gen und aus den Anmerkungen eines Beitrags. Die Buttons bleiben.");
         table.put("Takes the reblog button out of the footer under posts.",
                 "Nimmt den Reblog-Button aus der Leiste unter Beitr\u00e4gen.");
         table.put("Takes the share button out of the footer under posts.",
@@ -1534,8 +1534,8 @@ public final class L10nTranslations {
                 "Quita las comunidades a las que Tumblr te sugiere unirte, y sus encabezados, de tu panel y otros feeds.");
         table.put("Takes the like button out of the footer under posts, and the reactions off community posts.",
                 "Quita el bot\u00f3n Me gusta del pie de las publicaciones y las reacciones de las publicaciones de comunidades.");
-        table.put("Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.",
-                "Quita los n\u00fameros de Me gusta, reblogueos y comentarios del pie de las publicaciones, y deja los botones.");
+        table.put("Takes the like, reblog and comment counts off the footer under posts and off a post's notes, and keeps the buttons.",
+                "Quita los n\u00fameros de Me gusta, reblogueos y comentarios del pie de las publicaciones y de sus notas, y deja los botones.");
         table.put("Takes the reblog button out of the footer under posts.",
                 "Quita el bot\u00f3n de reblogueo del pie de las publicaciones.");
         table.put("Takes the share button out of the footer under posts.",
@@ -2369,8 +2369,8 @@ public final class L10nTranslations {
                 "Menghapus komunitas yang disarankan Tumblr untuk kamu ikuti, beserta judulnya, dari dasbor dan feed lainnya.");
         table.put("Takes the like button out of the footer under posts, and the reactions off community posts.",
                 "Menghapus tombol suka dari bagian bawah postingan, dan reaksi dari postingan komunitas.");
-        table.put("Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.",
-                "Menghapus jumlah suka, reblog, dan komentar dari bagian bawah postingan, tapi tombolnya tetap ada.");
+        table.put("Takes the like, reblog and comment counts off the footer under posts and off a post's notes, and keeps the buttons.",
+                "Menghapus jumlah suka, reblog, dan komentar dari bagian bawah postingan dan dari nota postingan, tapi tombolnya tetap ada.");
         table.put("Takes the reblog button out of the footer under posts.",
                 "Menghapus tombol reblog dari bagian bawah postingan.");
         table.put("Takes the share button out of the footer under posts.",
@@ -3204,8 +3204,8 @@ public final class L10nTranslations {
                 "Tira do seu painel e de outros feeds as comunidades em que o Tumblr sugere que voc\u00ea entre, junto com os t\u00edtulos delas.");
         table.put("Takes the like button out of the footer under posts, and the reactions off community posts.",
                 "Tira o bot\u00e3o de curtir do rodap\u00e9 dos posts e as rea\u00e7\u00f5es dos posts de comunidades.");
-        table.put("Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.",
-                "Tira os n\u00fameros de curtidas, reblogues e coment\u00e1rios do rodap\u00e9 dos posts e mant\u00e9m os bot\u00f5es.");
+        table.put("Takes the like, reblog and comment counts off the footer under posts and off a post's notes, and keeps the buttons.",
+                "Tira os n\u00fameros de curtidas, reblogues e coment\u00e1rios do rodap\u00e9 dos posts e das notas de um post, e mant\u00e9m os bot\u00f5es.");
         table.put("Takes the reblog button out of the footer under posts.",
                 "Tira o bot\u00e3o de reblogue do rodap\u00e9 dos posts.");
         table.put("Takes the share button out of the footer under posts.",
@@ -4039,8 +4039,8 @@ public final class L10nTranslations {
                 "Tumblr'\u0131n kat\u0131lman\u0131 \u00f6nerdi\u011fi topluluklar\u0131 ve ba\u015fl\u0131klar\u0131n\u0131 panondan ve di\u011fer ak\u0131\u015flardan kald\u0131r\u0131r.");
         table.put("Takes the like button out of the footer under posts, and the reactions off community posts.",
                 "G\u00f6nderilerin alt\u0131ndaki be\u011fen d\u00fc\u011fmesini ve topluluk g\u00f6nderilerindeki tepkileri kald\u0131r\u0131r.");
-        table.put("Takes the like, reblog and comment counts off the footer under posts, and keeps the buttons.",
-                "G\u00f6nderilerin alt\u0131ndaki be\u011feni, RB ve yorum say\u0131lar\u0131n\u0131 kald\u0131r\u0131r, d\u00fc\u011fmeler kal\u0131r.");
+        table.put("Takes the like, reblog and comment counts off the footer under posts and off a post's notes, and keeps the buttons.",
+                "G\u00f6nderilerin alt\u0131ndaki ve notlar\u0131ndaki be\u011feni, RB ve yorum say\u0131lar\u0131n\u0131 kald\u0131r\u0131r, d\u00fc\u011fmeler kal\u0131r.");
         table.put("Takes the reblog button out of the footer under posts.",
                 "G\u00f6nderilerin alt\u0131ndaki RB d\u00fc\u011fmesini kald\u0131r\u0131r.");
         table.put("Takes the share button out of the footer under posts.",

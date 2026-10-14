@@ -50,7 +50,8 @@ import app.hushtumblr.extension.tumblr.settings.Settings;
  * {@link #communityCommentsText} swaps that text for Tumblr's own "Comments" ({@link #textCount}
  * blanks the count Tumblr bolds in it along with it), and {@link #notesTitle} does the same for the
  * count at the top of a post's notes. Each reaction button writes its emoji and how many reacted,
- * and {@link #communityReactionsText} leaves just the emoji.
+ * and {@link #communityReactionsText} leaves just the emoji. The comment, reblog and like tabs on a
+ * post's notes each show a count as well, which {@link #hideNotesTabCounts} leaves blank.
  */
 public final class PostFooter {
     private PostFooter() {}
@@ -146,6 +147,26 @@ public final class PostFooter {
      */
     public static String notesTitle(String title) {
         return countFree(title, NOTES_LABEL, () -> L10n.t("Notes"), "notes count hidden");
+    }
+
+    /**
+     * Injected first thing in the method that writes the count on one of a post's notes tabs. True
+     * while Hide note counts is on, and the tab gets no number, the way Tumblr shows a count it
+     * doesn't have yet. Read each time the tabs are drawn. False with the switch off, paused, before
+     * HushTumblr has its settings, or when anything here fails.
+     */
+    public static boolean hideNotesTabCounts() {
+        if (!Utils.settingsReady()) return false;
+        try {
+            if (!PatchFamily.Capability.NOTE_COUNTS.installed()) return false;
+            HookStatus.invoked(FamilyNames.HIDE_NOTE_COUNTS);
+            if (!Settings.HIDE_NOTE_COUNTS.get()) return false;
+            HookStatus.counted(FamilyNames.HIDE_NOTE_COUNTS, "notes tab count hidden");
+            return true;
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.HIDE_NOTE_COUNTS, "notes tab count", failure);
+            return false;
+        }
     }
 
     /**
