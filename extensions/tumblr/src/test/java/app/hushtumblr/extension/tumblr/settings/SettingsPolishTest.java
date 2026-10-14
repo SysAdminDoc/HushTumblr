@@ -138,7 +138,7 @@ public class SettingsPolishTest {
         assertTrue("Clear should leave search ready for replacement text", search.hasFocus());
         assertTrue(shadowOf(keyboard).isSoftInputVisible());
         assertEquals(View.INVISIBLE, clear().getVisibility());
-        assertNotNull(visibleText(settings.getView(), L10n.t("Feed")));
+        assertNotNull(homeRowShown(L10n.t("Feed")));
 
         focusSearch("privacy");
         search.onEditorAction(EditorInfo.IME_ACTION_SEARCH);
@@ -177,7 +177,7 @@ public class SettingsPolishTest {
         SettingsL10nTest.backOf(settings).performClick();
         settle();
         assertEquals("", search().getText().toString());
-        assertNotNull(visibleText(settings.getView(), L10n.t("Feed")));
+        assertNotNull(homeRowShown(L10n.t("Feed")));
     }
 
     @Test public void theLightHostKeepsItsThemeWhileSettingsAndItsEditorUseTheirOwnColors() {
@@ -603,6 +603,27 @@ public class SettingsPolishTest {
 
     private EditText search() {
         return (EditText) described(settings.getView(), L10n.t("Search settings"));
+    }
+
+    /**
+     * The home page's row titled [title], brought into view first. Home is taller than the 600dp
+     * test screen since Quick setups gained its press-and-hold line, and a list lays out only the
+     * rows on screen, so a row low on it is looked up among the list's items, scrolled to and
+     * then found among the views shown.
+     */
+    private TextView homeRowShown(String title) {
+        ListView list = page.getView().findViewById(android.R.id.list);
+        int position = -1;
+        for (int i = 0; i < list.getCount(); i++) {
+            Object item = list.getItemAtPosition(i);
+            // A heading of the same name is a search result's, not home's row.
+            if (item instanceof Preference && !(item instanceof PreferenceGroup)
+                    && title.contentEquals(((Preference) item).getTitle())) position = i;
+        }
+        if (position < 0) return null;
+        list.setSelection(position);
+        layout(settings.getView());
+        return visibleText(settings.getView(), title);
     }
 
     private ImageButton clear() {
