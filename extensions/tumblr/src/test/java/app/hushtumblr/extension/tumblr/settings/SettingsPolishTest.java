@@ -505,6 +505,49 @@ public class SettingsPolishTest {
         }
     }
 
+    /**
+     * Android sides a full-width line of text by its first letter. With Tumblr's language set to
+     * Arabic, the English header, section headings, search field and dialog labels sat at the left
+     * while the rows sat at the right (seen on the API 36 emulator). Short lines follow the
+     * screen's side now. A button, a switch and a line centred on purpose keep theirs.
+     */
+    @Test
+    @Config(qualifiers = "ar-rXB-ldrtl-w390dp-h600dp-notnight-xhdpi")
+    public void shortLinesFollowTheScreensSideInARightToLeftLanguage() {
+        open();
+        TextView heading = first(settings.getView(), TextView.class);
+        assertNotNull("the header shows no text", heading);
+        assertFalse(heading instanceof Button);
+        assertEquals("the header's first line", View.TEXT_ALIGNMENT_VIEW_START, heading.getTextAlignment());
+        assertEquals("the search field", View.TEXT_ALIGNMENT_VIEW_START, search().getTextAlignment());
+
+        android.content.Context context = controller.get();
+        android.widget.LinearLayout group = new android.widget.LinearLayout(context);
+        TextView line = new TextView(context);
+        TextView centred = new TextView(context);
+        centred.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
+        TextView ended = new TextView(context);
+        ended.setGravity(android.view.Gravity.END);
+        Button button = new Button(context);
+        android.widget.Switch toggle = new android.widget.Switch(context);
+        EditText field = new EditText(context);
+        android.widget.LinearLayout inner = new android.widget.LinearLayout(context);
+        TextView nested = new TextView(context);
+        inner.addView(nested);
+        for (View child : new View[]{line, centred, ended, button, toggle, field, inner}) group.addView(child);
+        int untouched = centred.getTextAlignment();
+
+        ScreenColors.startSide(group);
+
+        assertEquals(View.TEXT_ALIGNMENT_VIEW_START, line.getTextAlignment());
+        assertEquals(View.TEXT_ALIGNMENT_VIEW_START, field.getTextAlignment());
+        assertEquals("a line inside a nested group", View.TEXT_ALIGNMENT_VIEW_START, nested.getTextAlignment());
+        assertEquals("a centred line moved", untouched, centred.getTextAlignment());
+        assertEquals("a line sided on purpose moved", untouched, ended.getTextAlignment());
+        assertEquals("a button's label moved", untouched, button.getTextAlignment());
+        assertEquals("a switch's label moved", untouched, toggle.getTextAlignment());
+    }
+
     private void reviewPage(String name) throws Exception {
         layout(settings.getView());
         ImageButton back = SettingsL10nTest.backOf(settings);

@@ -184,6 +184,7 @@ final class RootPostMuteUi {
                     row.setContentDescription(L10n.f("Unmute post %1$s", L10n.isolate(root)));
                     row.setTextSize(16);
                     row.setTextColor(ScreenColors.DEFAULT.title);
+                    ScreenColors.startSide(row);
                     row.setSingleLine(false);
                     row.setMaxLines(Integer.MAX_VALUE);
                     row.setGravity(Gravity.CENTER_VERTICAL);

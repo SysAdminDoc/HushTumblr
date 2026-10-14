@@ -86,6 +86,7 @@ final class DialogChoices extends BaseAdapter {
             choice.setPaddingRelative(Math.round(32 * density), verticalPadding,
                     Math.round(32 * density), verticalPadding);
         }
+        ScreenColors.startSide(row);
         return row;
     }
 }

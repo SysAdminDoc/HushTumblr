@@ -37,6 +37,7 @@ import android.preference.PreferenceCategory;
 import android.preference.PreferenceGroup;
 import android.preference.TwoStatePreference;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -336,6 +337,7 @@ public final class ScreenColors {
             title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
             title.setLetterSpacing(0.07f);
             title.setAllCaps(true);
+            startSide(title);
         }
         row.setPaddingRelative(dp(row, 20), dp(row, 20), dp(row, 20), dp(row, 8));
     }
@@ -734,6 +736,26 @@ public final class ScreenColors {
     /** Paints a dialog in the screen's colours. */
     public static void dialog(@Nullable AlertDialog dialog) {
         DEFAULT.paint(dialog);
+    }
+
+    /**
+     * Puts each short line of text under [view] on the side the screen starts from. Android sides
+     * a full-width line by its first letter, so English shown in a right-to-left language stayed
+     * at the left of the header, a heading or a dialog's label while the rows, which are only as
+     * wide as their words, sat at the right. A button, a switch and anything centred or sided on
+     * purpose keep their place. A long message isn't passed here: it fills its lines either way.
+     */
+    public static void startSide(View view) {
+        if (view instanceof TextView && !(view instanceof Button)) {
+            TextView text = (TextView) view;
+            if ((text.getGravity() & Gravity.RELATIVE_HORIZONTAL_GRAVITY_MASK) == Gravity.START) {
+                text.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+            }
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int index = 0; index < group.getChildCount(); index++) startSide(group.getChildAt(index));
+        }
     }
 
     private static void startMargin(View view, int margin) {

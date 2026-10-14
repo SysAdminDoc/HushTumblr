@@ -118,6 +118,7 @@ final class ChoiceCards extends BaseAdapter {
             LayoutParams under = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
             under.topMargin = dp(context, 2);
             text.addView(detail, under);
+            ScreenColors.startSide(text);
             android.widget.ImageView arrow = new android.widget.ImageView(context);
             arrow.setImageDrawable(chevron);
             arrow.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* **Tumblr:** With Tumblr set to a right-to-left language, the settings' page titles, section headings, search field and dialog labels now sit on the same side as the rows. They used to stay at the left.
 * **Tumblr:** The Support HushTumblr row at the bottom of the settings is now just its title. The line under it is gone, and a tap still opens the Ko-fi page.
 * **Tumblr:** The Hide Blaze prompts switch now says that the Blaze item in a post's menu stays. It hides the buttons, banners and after-post nudge, as before.
 * **Tumblr:** The HushTumblr settings shortcut on Tumblr's icon now opens the settings every time. If Tumblr was still open from the last time you used the shortcut, tapping it again only brought Tumblr back up.

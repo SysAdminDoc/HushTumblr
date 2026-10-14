@@ -1036,6 +1036,9 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         feedback.setPaddingRelative(0, Math.round(8 * context.getResources().getDisplayMetrics().density), 0, 0);
         feedback.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         editor.addView(feedback);
+        ScreenColors.startSide(label);
+        ScreenColors.startSide(field);
+        ScreenColors.startSide(feedback);
         field.addTextChangedListener(new android.text.TextWatcher() {
             @Override public void beforeTextChanged(CharSequence text, int start, int count, int after) { }
             @Override public void onTextChanged(CharSequence text, int start, int before, int count) {

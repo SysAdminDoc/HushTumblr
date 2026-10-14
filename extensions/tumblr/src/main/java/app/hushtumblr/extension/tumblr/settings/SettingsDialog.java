@@ -292,6 +292,8 @@ public final class SettingsDialog extends DialogFragment {
         root.addView(bar);
 
         buildSearch(root);
+        // The header, the search field and its count, before the page's own rows are added.
+        ScreenColors.startSide(root);
 
         container = new FrameLayout(context);
         container.setId(CONTAINER_ID);
