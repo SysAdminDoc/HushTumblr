@@ -8,6 +8,7 @@
 * **Tooling:** `patch-for-device.ps1 -Option 'Patch name:key=value'` gives a patch an option value for a test build, such as a custom Dark background color. A run with an option always patches in full instead of reusing a kept run.
 * **Tooling:** A kept patch run is now looked up by what the held merge was made from, not by the fixture's path, and the kept patched APK and its result report are held to the digests they were kept with while they're reused. A fixture changed between runs no longer finds the run kept for its old bytes, and neither does a bundle whose APKs were renamed or swapped. A kept APK or report that changed after it was kept isn't reused. Reusing a kept run in `verify-all-patches.ps1` now costs a merge.
 * **Tooling:** The patch report check no longer stops with an error on a report that lists no patching steps. It fails that report with the missing-step reason instead. A report that leaves out its failed patch list isn't counted as having one failure any more.
+* **Tooling:** The release receipt now names each fixture by the digest taken as it was read for the merge, not by hashing the file again once the run is over. Each APK unpacked or copied for a merge is also held to the bytes written for it, so one changed before it's checked is refused.
 * **Tooling:** A bundle APK whose name passes the name check only when case is ignored (the Kelvin sign reads as a k) is now refused before anything is unpacked, instead of stopping the run after the merge.
 
 ## 0.0.7 (2026-10-14)

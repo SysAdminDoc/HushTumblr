@@ -487,13 +487,16 @@ foreach ($apk in $Fixture) {
             "$($patchNames.Count) applied, binary minSdk $($baseline.minSdk) -> $($patched.minSdk), $($changes.Count) manifest changes")
         foreach ($change in $changes) { Write-Host "[receipt]   $change" }
 
+        # The fixture by the digest Get-MergedApk took through the handle it unpacked or copied it
+        # from, while the merge made of those bytes is still held, not by a hash of whatever is at its
+        # path now. Upper case, as the receipt writes every digest.
         $targets.Add([ordered]@{
             source        = [ordered]@{
                 file        = $label
                 package     = $stock.package
                 versionName = $stock.versionName
                 versionCode = $stock.versionCode
-                sha256      = Get-Sha256Hex -Path $apk
+                sha256      = (Get-HeldSourceSha256 -Merged $patchInput).ToUpperInvariant()
                 forced      = $forced
             }
             patches       = $verdicts
