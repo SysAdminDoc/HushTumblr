@@ -2360,6 +2360,14 @@ function Save-AppliedRecord {
     if ($key -cnotmatch '^[0-9a-f]{64}\z') { throw "Not an applied record key: $key" }
     foreach ($required in @($PatchedApk, $Result)) {
         if (-not $required.CanRead -or $required.CanWrite) { throw "Nothing to keep: $($required.Name) isn't held open for reading alone." }
+        # Held as Open-HeldFile holds it: while the handle shares reading alone, no writer opens.
+        $writer = $null
+        try {
+            $writer = [System.IO.File]::Open($required.Name, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Write,
+                [System.IO.FileShare]::ReadWrite)
+        } catch [System.IO.IOException] {
+        } finally { if ($null -ne $writer) { $writer.Dispose() } }
+        if ($null -ne $writer) { throw "Nothing to keep: $($required.Name) is open in a way that lets another program write to it." }
     }
     New-Item -ItemType Directory -Force -Path $Store | Out-Null
     $storeRoot = (Resolve-Path -LiteralPath $Store).Path

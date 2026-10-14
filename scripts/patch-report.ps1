@@ -15,7 +15,8 @@
 
 function Test-ApkFile {
     param([string]$Path)
-    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $false }
+    # No path is no APK: a script hands an empty one for an output it couldn't hold.
+    if (-not $Path -or -not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $false }
     # ZipFile reads a relative path against the process directory, not the location Test-Path used.
     $Path = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Path)
     try {

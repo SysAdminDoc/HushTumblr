@@ -407,8 +407,9 @@ foreach ($apk in $Fixture) {
             $out = Get-HeldPath -Stream $outHandle
         }
         $report = Get-Content -LiteralPath $resultPath -Raw | ConvertFrom-Json
+        # An APK that wasn't there to hold is no APK, whatever is at the path now.
         $validation = Test-PatchingReport -Report $report -ExpectedNames $patchNames `
-            -AllowedDependencyNames $dependencyNames -OutputPath $out `
+            -AllowedDependencyNames $dependencyNames -OutputPath $(if ($null -ne $outHandle) { $out } else { '' }) `
             -ExpectedPackageName $expectedTarget.PackageName `
             -ExpectedPackageVersion $stock.versionName
         if (-not $validation.Valid) { throw "$label did not patch cleanly: $($validation.Reason)" }

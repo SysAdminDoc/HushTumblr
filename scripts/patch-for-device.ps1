@@ -322,12 +322,13 @@ try {
     }
     Remove-Item -LiteralPath $argumentFile -Force -ErrorAction SilentlyContinue
 }
-# The CLI's report is held from the moment it exits and read by the path its handle is at.
+# The CLI's report is held from the moment it exits and read by the path its handle is at. One
+# that wasn't there to hold is no report, whatever is at the path later.
 if (Test-Path -LiteralPath $result -PathType Leaf) {
     $resultHandle = Open-HeldFile -Path $result -What 'The result report'
     $reportPath = Get-HeldPath -Stream $resultHandle
 } else {
-    $reportPath = $result
+    $reportPath = $null
 }
 }
 # The signed APK is held from here to the install, the copy to -OutputApk included, and every
@@ -336,12 +337,24 @@ if (Test-Path -LiteralPath $out -PathType Leaf) {
     $outHandle = Open-HeldFile -Path $out -What 'The signed APK'
     $out = Get-HeldPath -Stream $outHandle
 }
+if ($recorded -and $null -ne $outHandle) {
+    # Signing adds signature files and changes nothing else, so the signed APK has to hold the kept
+    # one's entries, byte for byte, and nothing more: apksigner wrote it to a path nothing held.
+    $keptEntries = Get-ApkEntryDigests -File ([pscustomobject]@{ Member = 'The kept APK'; Handle = $recorded.Handle }) -Pattern '.'
+    $signedEntries = Get-ApkEntryDigests -File ([pscustomobject]@{ Member = 'The signed APK'; Handle = $outHandle }) -Pattern '.'
+    $isSignature = { param([string]$Name) $Name -cmatch '^META-INF/(MANIFEST\.MF|[A-Za-z0-9._-]+\.(SF|RSA|DSA|EC))\z' }
+    $unsigned = { param($Entries) @(foreach ($pair in $Entries.GetEnumerator()) { if (-not (& $isSignature $pair.Key)) { "$($pair.Key)=$($pair.Value)" } }) -join "`n" }
+    if ((& $unsigned $signedEntries) -cne (& $unsigned $keptEntries)) {
+        throw 'The signed APK holds other entries than the kept APK it was signed from, beyond the signature files.'
+    }
+}
 # The same report check the throwaway verification applies: every requested patch, every
-# step, the target, and a real APK. The build that goes onto a phone deserves no less.
+# step, the target, and a real APK. The build that goes onto a phone deserves no less. Only
+# what is held is read: an APK that wasn't there to hold is no APK.
 $report = $null
-if (Test-Path -LiteralPath $reportPath -PathType Leaf) { $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json }
+if ($reportPath) { $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json }
 $validation = Test-PatchingReport -Report $report -ExpectedNames $names `
-    -AllowedDependencyNames $dependencyNames -OutputPath $out `
+    -AllowedDependencyNames $dependencyNames -OutputPath $(if ($null -ne $outHandle) { $out } else { '' }) `
     -ExpectedPackageName $target.PackageName -ExpectedPackageVersion $stock.versionName
 if (-not $validation.Valid) { throw "Patching did not produce a complete APK: $($validation.Reason)" }
 $manifestSelection = @($names) + @($dependencyNames)

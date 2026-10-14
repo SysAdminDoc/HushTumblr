@@ -262,13 +262,15 @@ $result = Resolve-WithinRoot -Path (Join-Path $workRoot "verify-all-result-$runI
         $result = Get-HeldPath -Stream $resultHandle
     }
 
+    # Only what was held is read: a file that wasn't there when the CLI exited and is there now is
+    # no report and no APK, so the report check fails rather than read a path nothing holds.
     $report = $null
-    if (Test-Path -LiteralPath $result -PathType Leaf) {
+    if ($null -ne $resultHandle) {
         try { $report = Get-Content -LiteralPath $result -Raw | ConvertFrom-Json }
         catch { Write-Warning "Could not parse result JSON: $($_.Exception.Message)" }
     }
     $validation = Test-PatchingReport -Report $report -ExpectedNames $names `
-        -AllowedDependencyNames $dependencyNames -OutputPath $out `
+        -AllowedDependencyNames $dependencyNames -OutputPath $(if ($null -ne $outHandle) { $out } else { '' }) `
         -ExpectedPackageName $expectedTarget.PackageName -ExpectedPackageVersion $expectedVersion
     # As the report check counted them, so a field the report leaves out isn't counted as one entry.
     $reportApplied = if ($null -ne $report) { $validation.Applied } else { 0 }

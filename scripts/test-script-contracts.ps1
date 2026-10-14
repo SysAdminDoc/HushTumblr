@@ -4806,8 +4806,9 @@ foreach ($reader in @(@{ Name = 'patch-for-device.ps1'; Reads = '$reportPath' },
         "$($reader.Name) doesn't check a kept run's report through the path Find-AppliedRecord holds: $($reads -join ', ')"
 }
 # In patch-for-device.ps1 the report path is set in the kept-run if alone: the held kept report
-# where a kept run is used, and in the else branch the path the CLI's report is held at, or the
-# bare path where the CLI left none (the report check then fails on it). Nowhere after.
+# where a kept run is used, and in the else branch the path the CLI's report is held at, or none
+# where the CLI left none to hold (the report check then fails, whatever is at the path later).
+# Nowhere after.
 $deviceAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'patch-for-device.ps1'), [ref]$null, [ref]$null)
 $reportSets = @($deviceAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
             $node.Left.Extent.Text -ceq '$reportPath' }, $true))
@@ -4818,7 +4819,7 @@ $reportBranches = @($deviceAst.FindAll({ param($node) $node -is [System.Manageme
                 $_.Extent.StartOffset -ge $branch.Clauses[0].Item2.Extent.StartOffset -and $_.Extent.EndOffset -le $branch.Clauses[0].Item2.Extent.EndOffset })
         $own = @($reportSets | Where-Object { $_.Extent.StartOffset -ge $branch.ElseClause.Extent.StartOffset -and
                 $_.Extent.EndOffset -le $branch.ElseClause.Extent.EndOffset } | ForEach-Object { $_.Right.Extent.Text })
-        $kept.Count -eq 1 -and ($own -join '; ') -ceq 'Get-HeldPath -Stream $resultHandle; $result' })
+        $kept.Count -eq 1 -and ($own -join '; ') -ceq 'Get-HeldPath -Stream $resultHandle; $null' })
 Assert-True ($reportSets.Count -eq 3 -and $reportBranches.Count -eq 1) `
     "patch-for-device.ps1 sets the report path outside the branches of the kept-run if: $(@($reportSets | ForEach-Object { $_.Extent.Text }) -join '; ')"
 # What the CLI wrote is held from the moment it exits: the patched APK and the report are opened
@@ -4858,6 +4859,39 @@ foreach ($writer in @(
     Assert-True ($unheld.Count -eq 0 -and $disposed.Count -eq 1) `
         "$($writer.Name) reads what the CLI wrote before it holds it, or never lets it go: $($unheld -join ', ') ($($disposed.Count) finally disposing the handles)"
 }
+# An output the CLI didn't leave to hold is none: the report check after the CLI gets the APK's
+# path only when $outHandle holds it, and verify-all reads the report only when $resultHandle
+# holds it. Neither handle is let go or set to anything else before the finally checked above,
+# since from then on its path is one anything can put a file at.
+foreach ($name in 'verify-all-patches.ps1', 'build-release-receipt.ps1', 'patch-for-device.ps1') {
+    $writerAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot $name), [ref]$null, [ref]$null)
+    $cliEnd = @($writerAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] -and (& $isCliPatch $node) }, $true) |
+        ForEach-Object { $_.Extent.EndOffset })
+    $outputPaths = @(Get-NamedCommands $writerAst 'Test-PatchingReport' | Where-Object { $cliEnd.Count -eq 1 -and $_.Extent.StartOffset -gt $cliEnd[0] } |
+        ForEach-Object {
+            $elements = @($_.CommandElements)
+            $given = @(for ($i = 0; $i -lt $elements.Count - 1; $i++) {
+                    if ($elements[$i] -is [System.Management.Automation.Language.CommandParameterAst] -and $elements[$i].ParameterName -eq 'OutputPath') {
+                        $elements[$i + 1].Extent.Text } })
+            if ($given.Count -eq 1) { $given[0] } else { "$($given.Count) -OutputPath" } })
+    Assert-True ($outputPaths.Count -eq 1 -and $outputPaths[0] -ceq '$(if ($null -ne $outHandle) { $out } else { '''' })') `
+        "$name hands the report check an APK path it doesn't hold: $($outputPaths -join '; ')"
+    $handleUses = @($writerAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.MemberExpressionAst] -and
+                $node.Expression.Extent.Text -cin @('$outHandle', '$resultHandle') -and $node.Member.Extent.Text -cnotin @('Position', 'Read') }, $true) |
+        ForEach-Object { $_.Extent.Text })
+    $handleSets = @($writerAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
+                $node.Left.Extent.Text -cin @('$outHandle', '$resultHandle') }, $true) | ForEach-Object { $_.Extent.Text } |
+        Where-Object { $_ -cnotmatch '^\$(outHandle|resultHandle) = (\$null|Open-HeldFile -Path \$\w+ -What .+)\z' })
+    Assert-True ($handleUses.Count -eq 0 -and $handleSets.Count -eq 0) `
+        "$name lets go of a held output, or sets its handle, outside the finally that disposes it: $(@($handleUses) + @($handleSets) -join '; ')"
+}
+$verifyReportReads = @(Get-NamedCommands ([System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'verify-all-patches.ps1'),
+            [ref]$null, [ref]$null)) 'Get-Content' | Where-Object { $_.Extent.Text -clike 'Get-Content -LiteralPath $result *' } | ForEach-Object {
+        $guard = $_
+        while ($null -ne $guard -and $guard -isnot [System.Management.Automation.Language.IfStatementAst]) { $guard = $guard.Parent }
+        if ($guard) { $guard.Clauses[0].Item1.Extent.Text } else { '(no if)' } })
+Assert-True (($verifyReportReads -join '; ') -ceq '$null -ne $resultHandle') `
+    "verify-all-patches.ps1 reads the CLI's report without its handle holding it: $($verifyReportReads -join '; ')"
 # A kept run is copied from the handles the run held, never from a path.
 $verifyAllAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'verify-all-patches.ps1'), [ref]$null, [ref]$null)
 $keepCalls = @(Get-NamedCommands $verifyAllAst 'Save-AppliedRecord' | ForEach-Object { $_.Extent.Text })
@@ -5550,7 +5584,8 @@ try {
     # one beside Tumblr's, and stand-in-stamp carries a Source Stamp beside Tumblr's, which is the
     # store's certificate and doesn't count. Without a marker the answer is Tumblr's signer.
     # It signs too: patch-for-device.ps1 signs a kept gate run with it. "sign ... --out <apk> <in>"
-    # copies the input and the manifest beside it, and notes the call in apksigner.log.
+    # copies the input (or apksigner-swap.apk, when a case leaves one beside it) and the manifest
+    # beside the input, and notes the call in apksigner.log.
     $foreignSigner = '0123456789abcdef' * 4
     Set-Content -LiteralPath (Join-Path $tools 'apksigner.bat') -Encoding ASCII -Value @(
         '@echo off',
@@ -5584,7 +5619,9 @@ try {
         'goto next',
         ':signed',
         '>>"!HERE!apksigner.log" echo sign alias=!ALIAS! in=!LAST! out=!OUT!',
-        'copy /y "!LAST!" "!OUT!" >nul || exit /b 3',
+        'set "FROM=!LAST!"',
+        'if exist "!HERE!apksigner-swap.apk" set "FROM=!HERE!apksigner-swap.apk"',
+        'copy /y "!FROM!" "!OUT!" >nul || exit /b 3',
         'if exist "!LAST!.xmltree" copy /y "!LAST!.xmltree" "!OUT!.xmltree" >nul',
         'exit /b 0')
     # And a zipalign beside them, which every patched APK is held to for devices with 16 KB pages
@@ -6261,6 +6298,34 @@ try {
     Assert-True (-not (Test-Path -LiteralPath $apksignerLog) -and
         @(Get-ChildItem -LiteralPath $keptDevice.OutDir -Directory).Count -eq $keptRunsBefore) `
         'patch-for-device.ps1 signed a kept APK that failed the 16 KB layout check, or left its run folder behind.'
+    # apksigner writes the signed APK to a path nothing held, so it's held to the kept APK entry by
+    # entry: signing may add signature files and changes nothing else. A signed APK with an entry of
+    # its own, an entry that isn't the kept one's bytes or a name only a case fold makes a signature
+    # file is refused before anything reads it.
+    $signSwap = Join-Path $tools 'apksigner-swap.apk'
+    $keptEntries = [ordered]@{ 'AndroidManifest.xml' = 'binary manifest'; 'classes.dex' = "dex`n035" }
+    try {
+        $signedEntries = [ordered]@{}
+        foreach ($name in $keptEntries.Keys) { $signedEntries[$name] = $keptEntries[$name] }
+        foreach ($name in 'META-INF/MANIFEST.MF', 'META-INF/SIDELOAD.SF', 'META-INF/SIDELOAD.RSA') { $signedEntries[$name] = "signature $name" }
+        New-TestBundleArchive -Path $signSwap -Entries $signedEntries
+        $said = @(& (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6>&1 | ForEach-Object { "$_" })
+        Assert-True (Test-Path -LiteralPath ([string]$said[-1]) -PathType Leaf) `
+            "patch-for-device.ps1 refused a kept APK signed with nothing but signature files added: $($said -join ' | ')"
+        foreach ($swapped in @(
+                @{ What = 'an entry of its own'; Name = 'assets/extra.bin'; Value = 'extra' },
+                @{ What = 'other bytes'; Name = 'classes.dex'; Value = "dex`n036" },
+                @{ What = 'a case-folded signature name'; Name = "META-INF/PAYLOAD.$([char]0x17F)F"; Value = 'payload' })) {
+            $entries = [ordered]@{}
+            foreach ($name in $keptEntries.Keys) { $entries[$name] = $keptEntries[$name] }
+            $entries[$swapped.Name] = $swapped.Value
+            Remove-Item -LiteralPath $signSwap -Force
+            New-TestBundleArchive -Path $signSwap -Entries $entries
+            Assert-Throws { & (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6> $null } `
+                '*The signed APK holds other entries than the kept APK it was signed from, beyond the signature files.*' `
+                "patch-for-device.ps1 took a signed APK with $($swapped.What)."
+        }
+    } finally { Remove-Item -LiteralPath $signSwap -Force -ErrorAction SilentlyContinue }
     $keptDevice['NoReuse'] = $true
     Remove-Item -LiteralPath $javaLog, $apksignerLog, $resourceStock -Force -ErrorAction SilentlyContinue
     $said = @(& (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6>&1 | ForEach-Object { "$_" })

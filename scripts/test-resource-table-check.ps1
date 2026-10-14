@@ -1340,6 +1340,37 @@ try {
     Assert-True ((Invoke-Intruder @("write|$kept")) -ceq "write|$kept|done" -and (Get-TestSha256 $kept) -cne $cleanDigest) `
         'A merge that was let go could not be written to either, so the refusals above were not the hold.'
 
+    # What a run keeps (Save-AppliedRecord) is what it held. A handle that reads but lets a second
+    # process write the file meanwhile is refused, and nothing is kept. Handles held as
+    # Open-HeldFile holds them are kept, with the digests of the bytes they read.
+    $saveDir = Join-Path $swapDir 'save'
+    New-Item -ItemType Directory -Force -Path $saveDir | Out-Null
+    $savedApk = Join-Path $saveDir 'patched.bin'
+    $savedResult = Join-Path $saveDir 'result.json'
+    [System.IO.File]::WriteAllText($savedApk, 'patched')
+    [System.IO.File]::WriteAllText($savedResult, '{}')
+    $saveIdentity = [pscustomobject]@{ Key = ('a' * 64); Inputs = [ordered]@{ case = 'save' } }
+    $saveStore = Join-Path $saveDir 'store'
+    $heldSavedResult = Open-HeldFile -Path $savedResult -What 'The result report'
+    try {
+        $loose = [System.IO.File]::Open($savedApk, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
+        $refused = $null
+        try {
+            $swap.Said['loose'] = Invoke-Intruder @("write|$savedApk")
+            Save-AppliedRecord -Store $saveStore -Identity $saveIdentity -PatchedApk $loose -Result $heldSavedResult | Out-Null
+        } catch { $refused = $_.Exception.Message } finally { $loose.Dispose() }
+        Assert-True ($swap.Said['loose'] -ceq "write|$savedApk|done" -and
+            $refused -clike 'Nothing to keep: *patched.bin is open in a way that lets another program write to it.' -and
+            -not (Test-Path -LiteralPath (Join-Path $saveStore $saveIdentity.Key))) `
+            "A patched APK read through a handle that let a second process write to it was kept: $refused $($swap.Said['loose'])"
+        $heldSavedApk = Open-HeldFile -Path $savedApk -What 'The patched APK'
+        try { Save-AppliedRecord -Store $saveStore -Identity $saveIdentity -PatchedApk $heldSavedApk -Result $heldSavedResult | Out-Null }
+        finally { $heldSavedApk.Dispose() }
+    } finally { $heldSavedResult.Dispose() }
+    $savedRecord = Get-Content -LiteralPath (Join-Path $saveStore "$($saveIdentity.Key)/record.json") -Raw | ConvertFrom-Json
+    Assert-True ($savedRecord.patchedSha256 -ceq (Get-TestSha256 $savedApk) -and $savedRecord.resultSha256 -ceq (Get-TestSha256 $savedResult)) `
+        "A run held as the scripts hold it was not kept with the digests of what it held: $($savedRecord | ConvertTo-Json -Compress)"
+
     Close-MergedApk -Merged $pre.Path
     Assert-True ((Get-HeldMerges).Count -eq $heldBefore -and @($intruders | Where-Object { -not $_.HasExited }).Count -eq 0) `
         'A swap case left a merge held or a second process running.'
