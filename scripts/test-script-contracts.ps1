@@ -256,14 +256,13 @@ try {
         Assert-True $faillessOk "A result whose failed patches are $failures was judged wrongly: $($faillessValidation.Reason)"
     }
     # A script hands no path for an output it couldn't hold. That's a result turned down for the
-    # APK alone, not a throw, which Test-ApkFile's Test-Path on an empty path used to be.
-    foreach ($empty in @('', $null)) {
-        $noOutput = Test-PatchingReport -Report $dependencyReport -ExpectedNames $allNames `
-            -AllowedDependencyNames $allDependencies -OutputPath $empty `
-            -ExpectedPackageName $target.PackageName -ExpectedPackageVersion $target.PackageVersion
-        Assert-True (-not $noOutput.Valid -and $noOutput.Reason -ceq 'saved APK is missing or invalid') `
-            "A result handed no output path wasn't turned down for the APK alone: $($noOutput.Reason)"
-    }
+    # APK alone, not a throw, which Test-ApkFile's Test-Path on an empty path used to be. A $null
+    # and a left-out -OutputPath both reach the [string] parameter as '', so this is all three.
+    $noOutput = Test-PatchingReport -Report $dependencyReport -ExpectedNames $allNames `
+        -AllowedDependencyNames $allDependencies -OutputPath '' `
+        -ExpectedPackageName $target.PackageName -ExpectedPackageVersion $target.PackageVersion
+    Assert-True (-not $noOutput.Valid -and $noOutput.Reason -ceq 'saved APK is missing or invalid') `
+        "A result handed no output path wasn't turned down for the APK alone: $($noOutput.Reason)"
 
     # The old replacement expectations contradicted account preservation. Exercise refusal
     # before device mutation, signer checks and ownership instead of expecting uninstalls.
@@ -6850,12 +6849,12 @@ try {
     # refused before the CLI starts. No -Serial, so nothing goes near adb.
     $deviceOut = Join-Path $releaseRoot 'device'
     function Invoke-DeviceBuild([string]$Apk, [string]$OutDir = $deviceOut, [string]$DesktopJar = $stubJar,
-            [string]$OutputApk) {
+            [string]$OutputApk, [string]$Keystore = $standInKeystore) {
         Remove-Item -LiteralPath $javaLog, $mergeLog -Force -ErrorAction SilentlyContinue
         # An empty record store of its own, so no kept run, the machine's included, answers for the CLI.
         $arguments = @{ Root = $releaseRepo; DesktopJar = $DesktopJar; Java = $stubJava; Aapt2 = $stubAapt2; OutDir = $OutDir
             AndroidJar = $stubAndroidJar; ApiVersions = $stubApiVersions; AppliedDir = (Join-Path $releaseRoot 'applied-records-none')
-            Keystore = $standInKeystore }
+            Keystore = $Keystore }
         if ($Apk) { $arguments['Apk'] = $Apk }
         if ($OutputApk) { $arguments['OutputApk'] = $OutputApk }
         $paths = @(& (Join-Path $PSScriptRoot 'patch-for-device.ps1') @arguments 6> $null)
@@ -7194,7 +7193,7 @@ try {
         Assert-True ($LASTEXITCODE -eq 0) "The release check exited $LASTEXITCODE on a relative -ArtifactPath."
         try {
             Invoke-DeviceBuild -Apk (& $inRoot $fixturePaths[$releaseTarget.PackageVersion]) -OutDir 'device-relative' `
-                -DesktopJar (& $inRoot $stubJar)
+                -DesktopJar (& $inRoot $stubJar) -Keystore (& $inRoot $standInKeystore)
         } catch {
             throw "patch-for-device.ps1 refused relative paths: $($_.Exception.Message)"
         }
