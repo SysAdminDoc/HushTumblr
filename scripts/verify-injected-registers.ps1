@@ -210,6 +210,7 @@ $failed = $false
 $completed = $false
 $deviceLease = $null
 # What this run holds of the clean side, let go in the finally before anything is deleted.
+$cleanSourceHeld = $null
 $cleanBaseHeld = $null
 $cleanMergedHeld = $null
 $madeCleanMerge = $false
@@ -278,11 +279,18 @@ $signedBundle = Get-SignedBundleFor -Apk $CleanApk
 $cleanSource = if ($signedBundle) { $signedBundle } else { $CleanApk }
 # Resolve the signed container before extracting the single clean baseline. The static and device
 # checks must keep this same base APK for the rest of the run.
-$cleanBase = Get-BaseApk -Apk $cleanSource -Destination (Join-Path $work 'clean-base.apk')
+# Get-BaseApk hands a signed plain APK back as the path it was given, so it is given the path the
+# held source's handle is at: no junction is left on the way for another process to point
+# elsewhere under the readers below.
+$cleanSourceHeld = Open-HeldFile -Path $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($cleanSource) `
+    -What 'The clean APK'
+$cleanBase = Get-BaseApk -Apk (Get-HeldPath -Stream $cleanSourceHeld) -Destination (Join-Path $work 'clean-base.apk')
 # Held from here to the end of the run, before anything is read from it: the manifest, the signer
 # check, the dex comparison and the device verifier all read a file no other process can write, and
 # Assert-AuthenticMerge below holds those same bytes to the base APK whose signer was checked.
 $cleanBaseHeld = Open-HeldFile -Path $cleanBase -What 'The clean base APK'
+$cleanSourceHeld.Dispose()
+$cleanSourceHeld = $null
 if ($signedBundle) {
     Write-Host "[registers] $(Split-Path -Leaf $CleanApk) is a merge of $(Split-Path -Leaf $signedBundle); its signer is read from that bundle's base.apk, whose dex it carries unchanged"
 }
@@ -393,6 +401,7 @@ $completed = $true
     if ($cleanMergedHeld) { $cleanMergedHeld.Dispose() }
     if ($madeCleanMerge) { Close-MergedApk -Merged $CleanMerged }
     if ($cleanBaseHeld) { $cleanBaseHeld.Dispose() }
+    if ($cleanSourceHeld) { $cleanSourceHeld.Dispose() }
     $workHeld.Anchor.Dispose()
     $keepReport = $reportInWork -and ($failed -or -not $completed) -and
         (Test-Path -LiteralPath $ReportPath -PathType Leaf)
