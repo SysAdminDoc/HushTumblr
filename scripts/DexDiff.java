@@ -5735,8 +5735,9 @@ public class DexDiff {
         final List<String> unseen = new ArrayList<>();
         final List<String> sectionsUsed = new ArrayList<>();
         /**
-         * The bundle's classes the patched APK lacks or holds otherwise than its allowlist lines and
-         * answers account for, and the classes under the extension's package the bundle lacks.
+         * The bundle's classes the patched APK lacks or holds otherwise than the bundle has them,
+         * whether or not the allowlist names the difference (a method answering ahead of the bundle's
+         * body aside), and the classes under the extension's package the bundle lacks.
          */
         int validated, reencoded, answered, matchedClasses, differingClasses;
 
@@ -5761,11 +5762,14 @@ public class DexDiff {
                 if (line.startsWith("[") && line.endsWith("]")) {
                     String name = line.substring(1, line.length() - 1);
                     boolean named = true;
-                    for (String alternative : name.split(" \\| ", -1)) for (String patch : alternative.split(" \\+ ", -1))
-                        if (patch.isBlank() || !patch.equals(patch.strip())) named = false;
+                    for (String alternative : name.split(" \\| ", -1)) {
+                        Set<String> together = new HashSet<>();
+                        for (String patch : alternative.split(" \\+ ", -1))
+                            if (patch.isBlank() || !patch.equals(patch.strip()) || !together.add(patch)) named = false;
+                    }
                     if (!named || sections.containsKey(name))
                         throw new IllegalArgumentException(file.getName() + " line " + number
-                                + ": a section with no name, a patch missing on either side of \" | \" or \" + \", or one named twice: " + line);
+                                + ": a section with no name, a patch missing on either side of \" | \" or \" + \" or joined to itself, or one named twice: " + line);
                     current = new java.util.LinkedHashSet<>();
                     sections.put(name, current);
                     continue;
@@ -5825,7 +5829,9 @@ public class DexDiff {
          * A line in effect is stale when this run didn't need it, a hash that's out of date included.
          * A method two patches write, or a class one reshapes while another adds to it, hashes
          * differently for each selection, and each variant goes under a header that names that
-         * selection, so only one is in effect. A class that needed a whole-class line takes its
+         * selection, which stands in for the variants of the sections it takes in (covers). Variants
+         * under sections that only overlap are all in effect, and the ones the run didn't need are
+         * stale. A class that needed a whole-class line takes its
          * implements and field lines with it, and a method or class refused for being defined more
          * than once takes all of its lines.
          */
@@ -5838,19 +5844,31 @@ public class DexDiff {
         }
 
         /**
-         * How many patches the alternative of [header] the run satisfies names, the most when it
-         * satisfies more than one: 0 when the section doesn't apply. Every section applies to a run
-         * that names no selection.
+         * The alternatives of [header] the run satisfies, each the set of patches it names: none when
+         * the section doesn't apply. A run that names no selection satisfies every alternative.
          */
-        static int applies(String header, Set<String> selected) {
-            int most = 0;
+        static List<Set<String>> applies(String header, Set<String> selected) {
+            List<Set<String>> out = new ArrayList<>();
             for (String alternative : header.split(" \\| ", -1)) {
-                String[] patches = alternative.split(" \\+ ", -1);
-                boolean all = true;
-                for (String patch : patches) if (selected != null && !selected.contains(patch)) all = false;
-                if (all) most = Math.max(most, patches.length);
+                Set<String> patches = new HashSet<>(Arrays.asList(alternative.split(" \\+ ", -1)));
+                if (selected == null || selected.containsAll(patches)) out.add(patches);
             }
-            return most;
+            return out;
+        }
+
+        /**
+         * Whether a section the run satisfies with the alternatives [wider] stands in for one it
+         * satisfies with [narrower]: each of [narrower] has one of [wider] that names every patch of
+         * it, and more. So [A + C | B + C] stands in for [A | B] when A, B and C run, while [B + C]
+         * doesn't stand in for [A].
+         */
+        static boolean covers(List<Set<String>> wider, List<Set<String>> narrower) {
+            for (Set<String> part : narrower) {
+                boolean held = false;
+                for (Set<String> patches : wider) if (patches.containsAll(part) && patches.size() > part.size()) held = true;
+                if (!held) return false;
+            }
+            return true;
         }
 
         /**
@@ -5867,22 +5885,28 @@ public class DexDiff {
 
         void run(Set<String> changed, Set<String> added, FeatureIndex clean, FeatureIndex patched, FeatureCheck check,
                 Map<String, ClassDef> extension, String version, Map<String, Set<String>> allowlist, Set<String> selected) {
-            // A member listed in several sections the run applies takes the lines of the one whose
-            // header names the most patches the run selected together: a variant listed for two
-            // patches stands in for the line one of them has alone. A run that names no selection
+            // A member listed in several sections the run applies takes the lines of each section no
+            // other one stands in for: a variant listed for patches the run selected together stands
+            // in for the line a part of them has alone. Sections that only overlap both stay in
+            // effect, so the line this run didn't need is stale. A run that names no selection
             // applies every line, since it can't tell which variant to expect.
-            Map<String, Integer> narrowest = new HashMap<>();
+            Map<String, List<Set<String>>> fits = new LinkedHashMap<>();
+            Map<String, List<String>> listedUnder = new HashMap<>();
             for (Map.Entry<String, Set<String>> section : allowlist.entrySet()) {
-                int fit = applies(section.getKey(), selected);
-                if (fit > 0) for (String line : section.getValue()) narrowest.merge(member(line), fit, Math::max);
+                List<Set<String>> fit = applies(section.getKey(), selected);
+                if (fit.isEmpty()) continue;
+                fits.put(section.getKey(), fit);
+                for (String line : section.getValue()) listedUnder.computeIfAbsent(member(line), k -> new ArrayList<>()).add(section.getKey());
             }
             Map<String, String> allowed = new LinkedHashMap<>();
-            for (Map.Entry<String, Set<String>> section : allowlist.entrySet()) {
-                int fit = applies(section.getKey(), selected);
-                if (fit == 0) continue;
+            for (Map.Entry<String, List<Set<String>>> section : fits.entrySet()) {
                 sectionsUsed.add(section.getKey());
-                for (String line : section.getValue())
-                    if (selected == null || fit == narrowest.get(member(line))) allowed.putIfAbsent(line, section.getKey());
+                for (String line : allowlist.get(section.getKey())) {
+                    boolean covered = false;
+                    if (selected != null) for (String other : listedUnder.get(member(line)))
+                        if (!other.equals(section.getKey()) && covers(fits.get(other), section.getValue())) covered = true;
+                    if (!covered) allowed.putIfAbsent(line, section.getKey());
+                }
             }
             // The classes the patch added: each one of the bundle's, or listed with all it has.
             Set<String> addedClasses = new TreeSet<>(patched.classes.keySet());

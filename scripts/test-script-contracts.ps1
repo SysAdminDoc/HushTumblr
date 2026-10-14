@@ -4943,10 +4943,21 @@ $catalogNames = @($catalog.patches | ForEach-Object { [string]$_.name })
 $strangeSections = @($resourceSections | Where-Object { $_ -cne 'rebuild' -and $catalogNames -cnotcontains $_ })
 Assert-True ($resourceSections -ccontains 'rebuild' -and $strangeSections.Count -eq 0) `
     "resource-delta-allowlist.txt has sections for no patch the catalog lists: $($strangeSections -join ', ')"
-# The dex delta allowlist's sections are patches the catalog lists, one or several joined by " | ".
+# The dex delta allowlist's sections are patches the catalog lists: alternatives joined by " | ",
+# each one patch or several that write the code together joined by " + ". The check is tried on
+# made-up headers too, so a header DexDiff reads can't fail it and a misspelled one can't pass.
 $dexSections = @(Get-Content -LiteralPath (Join-Path $PSScriptRoot 'dex-delta-allowlist.txt') |
     Where-Object { $_ -match '^\[(.+)\]$' } | ForEach-Object { $Matches[1] })
-$strangeDexSections = @($dexSections | Where-Object { @($_ -split ' \| ' | Where-Object { $catalogNames -cnotcontains $_ }).Count -gt 0 })
+$isStrangeDexSection = { param([string]$Header)
+    @($Header -split ' \| ' | ForEach-Object { $_ -split ' \+ ' } | Where-Object { $catalogNames -cnotcontains $_ }).Count -gt 0
+}
+$firstName, $secondName = $catalogNames[0], $catalogNames[1]
+foreach ($case in @(@("$firstName + $secondName", $false), @("$firstName | $firstName + $secondName", $false),
+        @("$firstName+$secondName", $true), @("$firstName + Not a patch", $true), @("Not a patch | $secondName", $true))) {
+    Assert-True ((& $isStrangeDexSection $case[0]) -eq $case[1]) `
+        "The dex allowlist header check read [$($case[0])] as $(if ($case[1]) { 'naming only catalog patches' } else { 'naming a patch the catalog lacks' })."
+}
+$strangeDexSections = @($dexSections | Where-Object { & $isStrangeDexSection $_ })
 Assert-True ($dexSections.Count -gt 0 -and $strangeDexSections.Count -eq 0) `
     "dex-delta-allowlist.txt has sections naming a patch the catalog doesn't list: $($strangeDexSections -join ', ')"
 # Each script that patches hands the verifier the bundle it patched with by the path of a handle it

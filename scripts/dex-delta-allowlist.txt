@@ -16,8 +16,10 @@
 # add up, so any selection of them passes. A method two patches write, or a class one reshapes while
 # another adds to it, hashes differently for each selection: list the variant for both under a
 # header that joins them with " + ", which applies only when the run selects both. For a run that
-# does, its lines stand in for the lines that member has under a section naming fewer of them. A run
-# that names its selection fails on a line in effect it didn't need, an out-of-date hash included.
+# does, its lines stand in for the lines that member has under a section it takes in: [A + B] for
+# [A], and [A + C | B + C] for the bridge [A | B]. Lines under sections that only overlap stay in
+# effect together. A run that names its selection fails on a line in effect it didn't need, an
+# out-of-date hash included.
 # Changing a patch's bytecode, or retargeting Tumblr, means reading a fresh register report and
 # redoing that patch's lines.
 

@@ -1140,6 +1140,48 @@ try {
         $mixedFails -ccontains "$unlisted$($variantLines[1])" -and
         $mixedFails -ccontains "[diff] FAIL: dex delta: the selected section [Fixture patch | Fourth patch] lists what this run didn't change: $($variantLines[0])") `
         "A run of Fixture patch alone passed with Other patch's mark in Model.`n$($mixed.Output -join "`n")"
+    # A section stands in for another's line only when its patches take in all of the other's. Under
+    # a run of three (the settings patch, which every contract set knows, as the third),
+    # [Fixture patch + HushTumblr settings] names more patches than [Other patch | Third patch] but
+    # not Other patch, so both of hushHelper's lines stay in effect: the current one passes and the
+    # out-of-date one is stale, rather than hiding the current one.
+    $threeSelected = New-Selection 'delta-three' @('Fixture patch', 'Other patch', 'HushTumblr settings')
+    $overlapAllowlist = Join-Path $caseRoot 'delta-allowlist-overlap.txt'
+    [IO.File]::WriteAllLines($overlapAllowlist, [string[]]($allowLines + '[Fixture patch + HushTumblr settings]' + $oldHashLine), [Text.UTF8Encoding]::new($false))
+    $overlap = Invoke-DexDiff -Clean $deltaClean -Patched $deltaGood -Allowlist $emptyAllowlist -Name 'delta-overlap' -Contracts $deltaContracts `
+        -Selected $threeSelected -Bundle $deltaBundle -DeltaAllowlist $overlapAllowlist
+    $overlapFails = & $deltaFails $overlap
+    Assert-True ($overlap.ExitCode -ne 0 -and (& $onlyDelta $overlap) -and $overlapFails.Count -eq 1 -and
+        $overlapFails -ccontains "[diff] FAIL: dex delta: the selected section [Fixture patch + HushTumblr settings] lists what this run didn't change: $oldHashLine") `
+        "A section naming more patches, but not all of another's, hid that one's line.`n$($overlap.Output -join "`n")"
+    # A bridge's joined variant written per alternative, [A + C | B + C], stands in for the bridge
+    # [A | B] when all three run, though no one alternative of it takes in both of the bridge's.
+    $bridgeAllowlist = Join-Path $caseRoot 'delta-allowlist-bridge.txt'
+    [IO.File]::WriteAllLines($bridgeAllowlist, [string[]]($allowLines + '[Other patch | Fixture patch]' + $variantLines[0] +
+        '[Other patch + HushTumblr settings | Fixture patch + HushTumblr settings]' + $variantLines[1]), [Text.UTF8Encoding]::new($false))
+    $bridge = Invoke-DexDiff -Clean $deltaClean -Patched (Join-Path $caseRoot 'delta-variant-good.apk') -Allowlist $emptyAllowlist -Name 'delta-bridge' `
+        -Contracts $deltaContracts -Selected $threeSelected -Bundle $deltaBundle -DeltaAllowlist $bridgeAllowlist
+    Assert-True ($bridge.ExitCode -eq 0 -and (& $deltaFails $bridge).Count -eq 0) `
+        "A bridge's joined variant didn't stand in for the bridge's own line.`n$($bridge.Output -join "`n")"
+    # Two that don't stand in, each with Model's good line under one section and its subset line
+    # under the other, so the subset line is stale: [Fixture patch + HushTumblr settings] takes in
+    # one alternative of the bridge [Other patch | Fixture patch] but not the other, and two
+    # spellings of the same bridge take in neither. A rule that let either one stand in would hide
+    # the good line too, and fail on it as unlisted.
+    $notCovering = @(
+        @{ Name = 'delta-part-of-bridge'; Selected = $threeSelected; Good = '[Other patch | Fixture patch]'; Subset = '[Fixture patch + HushTumblr settings]' }
+        @{ Name = 'delta-bridge-respelled'; Selected = $bothSelected; Good = '[Other patch | Fixture patch]'; Subset = '[Fixture patch | Fourth patch | Other patch]' })
+    foreach ($case in $notCovering) {
+        $caseAllowlist = Join-Path $caseRoot "$($case.Name).txt"
+        [IO.File]::WriteAllLines($caseAllowlist, [string[]]($allowLines + $case.Good + $variantLines[1] + $case.Subset + $variantLines[0]),
+            [Text.UTF8Encoding]::new($false))
+        $run = Invoke-DexDiff -Clean $deltaClean -Patched (Join-Path $caseRoot 'delta-variant-good.apk') -Allowlist $emptyAllowlist -Name $case.Name `
+            -Contracts $deltaContracts -Selected $case.Selected -Bundle $deltaBundle -DeltaAllowlist $caseAllowlist
+        $fails = & $deltaFails $run
+        Assert-True ($run.ExitCode -ne 0 -and (& $onlyDelta $run) -and $fails.Count -eq 1 -and
+            $fails -ccontains "[diff] FAIL: dex delta: the selected section $($case.Subset) lists what this run didn't change: $($variantLines[0])") `
+            "$($case.Name): a section that doesn't take in another's stood in for it, or the line it left in effect wasn't stale.`n$($run.Output -join "`n")"
+    }
     # Tumblr classes with copies in another dex entry: held to every copy, methods and all, in any
     # order. The same copies on both sides pass. A copy the patched APK adds fails however the first
     # one reads, with a selection or without, and so do a copy it drops and a copy whose method
@@ -1230,7 +1272,9 @@ try {
         @{ Name = 'method-no-owner'; Lines = @('[Fixture patch]', "method answer()Z $hash"); Line = 2 }
         @{ Name = 'field-no-owner'; Lines = @('[Fixture patch]', "field hushFlag:Z $hash"); Line = 2 }
         @{ Name = 'section-half-joined'; Lines = @('[Fixture patch + ]'); Line = 1 }
-        @{ Name = 'section-empty-alternative'; Lines = @('[Fixture patch |  | Other patch]'); Line = 1 })
+        @{ Name = 'section-empty-alternative'; Lines = @('[Fixture patch |  | Other patch]'); Line = 1 }
+        @{ Name = 'section-empty-joined'; Lines = @('[Fixture patch +  + Other patch]'); Line = 1 }
+        @{ Name = 'section-joined-to-itself'; Lines = @('[Other patch | Fixture patch + Fixture patch]'); Line = 1 })
     foreach ($case in $malformed) {
         $file = Join-Path $caseRoot "delta-malformed-$($case.Name).txt"
         [IO.File]::WriteAllLines($file, [string[]]$case.Lines, [Text.UTF8Encoding]::new($false))
