@@ -34,9 +34,10 @@
     report goes beside the result file too.
 
     -KeepIn names a folder where a run that passes all of that is kept, under a key made of the
-    bundle, the APK, the catalog, the patch selection, the desktop CLI, the SDK stubs and every
-    verifier file (Get-AppliedRecordKey in common.ps1). A later run with -KeepIn and the same key
-    says it's reusing that run and stops before patching. A failed or partial run is never kept.
+    bundle, what the held merge was made from, the catalog, the patch selection, the desktop CLI,
+    the SDK stubs and every verifier file (Get-AppliedRecordKey in common.ps1). A later run with
+    -KeepIn and the same key checks and merges the APK as any run does, says it's reusing the kept
+    run, and stops before patching. A failed or partial run is never kept.
     The release push gate passes it, and build-release-receipt.ps1 and patch-for-device.ps1 read
     what it kept. HUSHTUMBLR_APPLY_RECORDS stands in for -KeepIn when it isn't given, so a
     machine that sets it keeps every passing local run for the gate to find. Without either,
@@ -123,6 +124,7 @@ $runDir = Join-Path $workRoot "verify-$runId"
 New-Item -ItemType Directory -Force -Path $runDir | Out-Null
 $exitCode = 1
 $patchInput = $null
+$recorded = $null
 try {
 
 # A distributor's build of Tumblr can come as a split bundle. aapt2 reads the version facts off
@@ -159,43 +161,7 @@ if ($forced) {
     Write-Host "[verify] $($stock.package) $($stock.versionName) is a declared target, so nothing is forced"
 }
 
-# A run kept under the same key already patched these bytes with this verifier and passed every
-# check below, so it's handed back instead, once its report still reads as complete. Any input
-# that moved gives another key and a full run.
-$appliedIdentity = $null
-if (-not $KeepIn -and $env:HUSHTUMBLR_APPLY_RECORDS) { $KeepIn = $env:HUSHTUMBLR_APPLY_RECORDS }
-if ($KeepIn) {
-    $hostStubs = Resolve-HostReferenceStubs -AndroidJar $AndroidJar -ApiVersions $ApiVersions -Aapt2 $Aapt2
-    $AndroidJar = $hostStubs.AndroidJar
-    $ApiVersions = $hostStubs.ApiVersions
-    $KeepIn = Get-AppliedRecordStore -Path $KeepIn
-    $appliedIdentity = Get-AppliedRecordKey -Bundle $Bundle -Fixture $Apk -PatchList $PatchList -PatchNames $names `
-        -Forced $forced -DesktopJar $DesktopJar -AndroidJar $AndroidJar -ApiVersions $ApiVersions
-    $recorded = if ($NoReuse) { $null } else { Find-AppliedRecord -Store $KeepIn -Key $appliedIdentity.Key }
-    if ($NoReuse) {
-        Write-Host "[verify] -NoReuse: patching in full, and keeping the run as $($appliedIdentity.Key) if it passes"
-    } elseif ($recorded) {
-        $recordedReport = $null
-        try { $recordedReport = Get-Content -LiteralPath $recorded.Result -Raw | ConvertFrom-Json }
-        catch { Write-Warning "Could not parse the kept result JSON: $($_.Exception.Message)" }
-        $recordedCheck = Test-PatchingReport -Report $recordedReport -ExpectedNames $names `
-            -AllowedDependencyNames $dependencyNames -OutputPath $recorded.PatchedApk `
-            -ExpectedPackageName $expectedTarget.PackageName -ExpectedPackageVersion $expectedVersion
-        if ($recordedCheck.Valid) {
-            Write-Host ("[verify] reusing the run kept as $($appliedIdentity.Key) at $($recorded.RecordedAt): the " +
-                'bundle, the APK, the patch selection, the tools and every verifier file are unchanged, and it ' +
-                'passed every check, so nothing is patched again.')
-            Write-Host "[verify] kept run: $($recorded.Directory)"
-            $exitCode = 0
-            exit $exitCode
-        }
-        Write-Warning "[verify] the kept run $($appliedIdentity.Key) doesn't pass the report check ($($recordedCheck.Reason)); patching again."
-    } else {
-        Write-Host "[verify] no run kept as $($appliedIdentity.Key) in $KeepIn, so this one patches in full"
-    }
-}
-
-$out = Resolve-WithinRoot -Path (Join-Path $runDir 'verify-all.apk') -Root $workRoot
+$out =Resolve-WithinRoot -Path (Join-Path $runDir 'verify-all.apk') -Root $workRoot
 $temp = Resolve-WithinRoot -Path (Join-Path $runDir 'verify-all-tmp') -Root $workRoot
 $result = Resolve-WithinRoot -Path (Join-Path $workRoot "verify-all-result-$runId.json") -Root $workRoot
     # What the CLI patches and what the patched table is held to, one file: a bundle's merge, made
@@ -213,6 +179,48 @@ $result = Resolve-WithinRoot -Path (Join-Path $workRoot "verify-all-result-$runI
     # anything was checked. It has to be the build of the APK that is held now (Assert-SameBuild).
     $stockManifest = Get-ApkManifestFacts -Apk $patchInput -Aapt2 $Aapt2
     Assert-SameBuild -Decided $stock -Held $stockManifest -Label (Split-Path -Leaf $Apk)
+
+    # A run kept under the same key already patched these bytes with this verifier and passed every
+    # check below, so it's handed back instead, once its report still reads as complete. The key
+    # names the input by what the merge held above was made from (Get-HeldInputIdentity), so it
+    # describes the bytes this run checked, and the kept APK comes back held to the digest it was
+    # kept with (Find-AppliedRecord). Any input that moved gives another key and a full run.
+    $appliedIdentity = $null
+    if (-not $KeepIn -and $env:HUSHTUMBLR_APPLY_RECORDS) { $KeepIn = $env:HUSHTUMBLR_APPLY_RECORDS }
+    if ($KeepIn) {
+        $hostStubs = Resolve-HostReferenceStubs -AndroidJar $AndroidJar -ApiVersions $ApiVersions -Aapt2 $Aapt2
+        $AndroidJar = $hostStubs.AndroidJar
+        $ApiVersions = $hostStubs.ApiVersions
+        $KeepIn = Get-AppliedRecordStore -Path $KeepIn
+        $appliedIdentity = Get-AppliedRecordKey -Bundle $Bundle -InputIdentity (Get-HeldInputIdentity -Merged $patchInput) `
+            -PatchList $PatchList -PatchNames $names -Forced $forced -DesktopJar $DesktopJar -AndroidJar $AndroidJar `
+            -ApiVersions $ApiVersions
+        $recorded = if ($NoReuse) { $null } else { Find-AppliedRecord -Store $KeepIn -Key $appliedIdentity.Key }
+        if ($NoReuse) {
+            Write-Host "[verify] -NoReuse: patching in full, and keeping the run as $($appliedIdentity.Key) if it passes"
+        } elseif ($recorded) {
+            $recordedReport = $null
+            try { $recordedReport = Get-Content -LiteralPath $recorded.Result -Raw | ConvertFrom-Json }
+            catch { Write-Warning "Could not parse the kept result JSON: $($_.Exception.Message)" }
+            $recordedCheck = Test-PatchingReport -Report $recordedReport -ExpectedNames $names `
+                -AllowedDependencyNames $dependencyNames -OutputPath $recorded.PatchedApk `
+                -ExpectedPackageName $expectedTarget.PackageName -ExpectedPackageVersion $expectedVersion
+            if ($recordedCheck.Valid) {
+                Write-Host ("[verify] reusing the run kept as $($appliedIdentity.Key) at $($recorded.RecordedAt): the " +
+                    'bundle, the APK, the patch selection, the tools and every verifier file are unchanged, and it ' +
+                    'passed every check, so nothing is patched again.')
+                Write-Host "[verify] kept run: $($recorded.Directory)"
+                $exitCode = 0
+                exit $exitCode
+            }
+            Write-Warning "[verify] the kept run $($appliedIdentity.Key) doesn't pass the report check ($($recordedCheck.Reason)); patching again."
+            # Let go of it now: a held file's folder can't be moved, and a run that passes keeps itself in its place.
+            Close-AppliedRecord -Record $recorded
+            $recorded = $null
+        } else {
+            Write-Host "[verify] no run kept as $($appliedIdentity.Key) in $KeepIn, so this one patches in full"
+        }
+    }
     $enable = @()
     foreach ($name in $names) { $enable += '-e'; $enable += $name }
     $arguments = @('patch', '--exclusive', '--continue-on-error', '--unsigned', '-p', $Bundle,
@@ -356,6 +364,7 @@ $result = Resolve-WithinRoot -Path (Join-Path $workRoot "verify-all-result-$runI
     }
 } finally {
     # Held until every reader is done, and a held file can't be deleted.
+    Close-AppliedRecord -Record $recorded
     Close-MergedApk -Merged $patchInput
     Remove-GeneratedPath -Path $runDir -Root $workRoot
 }

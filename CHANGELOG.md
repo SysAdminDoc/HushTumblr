@@ -5,6 +5,7 @@
 * **Tumblr:** Quick setups can be hidden from the settings home with a long press on its row, and its help line now says so. The **Quick setups on the home page** row on Pause, backup and diagnostics brings it back. The choice stays out of settings backups and Quick setups, and Pause leaves it alone.
 * **Tooling:** Patch runs now hold the merged APK from the moment the merger writes it, so another program on the PC can't swap it before the patcher and the checks read it. The package and version a run was let through on are read again off that held file before anything is patched.
 * **Tooling:** `patch-for-device.ps1 -Option 'Patch name:key=value'` gives a patch an option value for a test build, such as a custom Dark background color. A run with an option always patches in full instead of reusing a kept run.
+* **Tooling:** A kept patch run is now looked up by what the held merge was made from, not by the fixture's path, and the kept patched APK is held to the digest it was kept with while it's reused. A fixture or kept APK changed on disk after the check can't stand in for the one that was checked. Reusing a kept run in `verify-all-patches.ps1` now costs a merge.
 
 ## 0.0.7 (2026-10-14)
 

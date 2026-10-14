@@ -355,6 +355,7 @@ foreach ($apk in $Fixture) {
     $runDir = Resolve-WithinRoot -Path (Join-Path $workRoot "receipt-$runId") -Root $workRoot
     New-Item -ItemType Directory -Force -Path $runDir | Out-Null
     $patchInput = $null
+    $recorded = $null
     try {
         $stock = $stockFacts[$apk]
 
@@ -385,10 +386,12 @@ foreach ($apk in $Fixture) {
 
         # This bundle on this fixture, kept by a gate run that passed every check (verify-all-patches.ps1
         # -KeepIn), is read from the record. Anything that moved since gives another key and a patch run.
-        $recorded = $null
+        # The key names the fixture by what the merge held above was made from, and the kept APK comes
+        # back held to the digest it was kept with, through every check below (Find-AppliedRecord).
         if ($AppliedDir) {
-            $identity = Get-AppliedRecordKey -Bundle $Bundle -Fixture $apk -PatchList $PatchList -PatchNames $patchNames `
-                -Forced $forced -DesktopJar $DesktopJar -AndroidJar $AndroidJar -ApiVersions $ApiVersions
+            $identity = Get-AppliedRecordKey -Bundle $Bundle -InputIdentity (Get-HeldInputIdentity -Merged $patchInput) `
+                -PatchList $PatchList -PatchNames $patchNames -Forced $forced -DesktopJar $DesktopJar `
+                -AndroidJar $AndroidJar -ApiVersions $ApiVersions
             $recorded = Find-AppliedRecord -Store $AppliedDir -Key $identity.Key
             if ($recorded) {
                 Write-Host ("[receipt] $label passed every check with this bundle in the run kept as $($identity.Key) " +
@@ -500,6 +503,7 @@ foreach ($apk in $Fixture) {
         })
     } finally {
         # Held until every reader is done, and a held file can't be deleted.
+        Close-AppliedRecord -Record $recorded
         Close-MergedApk -Merged $patchInput
         if ($runDir.StartsWith($workRoot, [System.StringComparison]::OrdinalIgnoreCase) -and
             (Test-Path -LiteralPath $runDir)) {

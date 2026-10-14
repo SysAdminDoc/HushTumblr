@@ -1140,9 +1140,11 @@ function Get-MergedApk {
         junction on the way to it can't be pointed elsewhere under a later reader. It is the path
         to hand on, and the one Close-MergedApk takes.
 
-        What was checked is kept with the handle: the digest, the package, the version code and
-        the hash of the base APK whose signer stands for the merge. Assert-AuthenticMerge holds a
-        -CleanMerged to that, and nothing else counts as evidence of where a merged APK came from.
+        What was checked is kept with the handle: the digest, the package, the version code, the
+        hash of the base APK whose signer stands for the merge, and what the merge was made from
+        (Get-InputIdentity), which a kept run is looked up by (Get-HeldInputIdentity).
+        Assert-AuthenticMerge holds a -CleanMerged to that, and nothing else counts as evidence of
+        where a merged APK came from.
         <Destination>.authentic.json beside it is the same facts written down for whoever reads
         the run afterwards. Nothing reads it back: whoever could swap the APK could write the
         record to match. A merge that fails or writes no APK throws, and so does every refusal,
@@ -1187,6 +1189,10 @@ function Get-MergedApk {
         } else {
             $merge = Invoke-SplitMerge -Splits $opened.Splits -Destination $Destination -Java $Java -DesktopJar $DesktopJar
         }
+        # What the merge was made from, by the digests taken through the handles that were checked.
+        # A plain APK's facts can name the bundle that vouched for it, so it is named by its copy.
+        $inputIdentity = if ($opened.Plain) { Get-InputIdentity -Plain $merge.Sha256 } else {
+            Get-InputIdentity -Apks @($facts.Apks | ForEach-Object { [string]$_.Sha256 }) }
         $recordFacts = [ordered]@{
             input        = $Apk
             package      = $PackageName
@@ -1195,6 +1201,7 @@ function Get-MergedApk {
             signedForm   = if ($opened.SignedForm) { $opened.SignedForm.Bundle } else { $null }
             baseSha256   = [string]$facts.Base.Sha256
             mergedSha256 = $merge.Sha256
+            inputIdentity = $inputIdentity
             apks         = @($facts.Apks | ForEach-Object {
                 [ordered]@{ member = [string]$_.Member; name = [string]$_.Name; sha256 = [string]$_.Sha256; split = [string]$_.Split } })
         }
@@ -1207,6 +1214,7 @@ function Get-MergedApk {
             Package     = $PackageName
             VersionCode = [string]$facts.VersionCode
             BaseSha256  = [string]$facts.Base.Sha256
+            InputIdentity = $inputIdentity
         }
         $writing = $false
         return $Destination
@@ -1259,6 +1267,65 @@ function Close-MergedApk {
         [void]$held.Remove($Merged)
         if ($entry.Handle) { $entry.Handle.Dispose() }
     }
+}
+
+function Get-InputIdentity {
+    <#
+    .SYNOPSIS
+        What a merge was made from, as one SHA-256 in lower-case hex: a plain APK by the digest of
+        its copy, a bundle by the digests of its APKs.
+    .DESCRIPTION
+        A plain APK is what the CLI patches, byte for byte. A bundle's merge is named by the APKs it
+        was made from, in digest order, rather than by the merge's own digest, which nothing has
+        shown the merger keeps from one run to the next; the merger itself is part of the desktop
+        CLI, which the kept-run key names on its own. Give exactly one of -Plain or -Apks.
+    #>
+    param(
+        [string]$Plain,
+        [string[]]$Apks
+    )
+
+    # @($null) holds one item, so the list is counted once the empty ones are out.
+    $listed = @($Apks | Where-Object { $_ })
+    if ([bool]$Plain -eq ($listed.Count -gt 0)) { throw 'Give an input identity -Plain or -Apks, not both or neither.' }
+    $digests = if ($Plain) { @($Plain) } else { $listed }
+    foreach ($digest in @($digests)) {
+        if ($digest -cnotmatch '^[0-9a-f]{64}$') { throw "Not a SHA-256 in lower-case hex: $digest" }
+    }
+    $lines = New-Object System.Collections.Generic.List[string]
+    $lines.Add('hushtumblr input 1')
+    if ($Plain) {
+        $lines.Add("plain $Plain")
+    } else {
+        $sorted = [string[]]@($digests)
+        [System.Array]::Sort($sorted, [System.StringComparer]::Ordinal)
+        foreach ($digest in $sorted) { $lines.Add("apk $digest") }
+    }
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $digest = $sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($lines -join "`n") + "`n"))
+    } finally { $sha.Dispose() }
+    return -join @($digest | ForEach-Object { $_.ToString('x2') })
+}
+
+function Get-HeldInputIdentity {
+    <#
+    .SYNOPSIS
+        What a merge this process holds was made from (Get-InputIdentity), as Get-MergedApk worked
+        it out from the digests it checked. A throw for a path that isn't held.
+    .DESCRIPTION
+        For the kept-run key, which used to hash the input by its path: a hash nothing held, taken
+        after Get-MergedApk had let the input go, so it could describe other bytes than the ones
+        merged and patched.
+    #>
+    param([Parameter(Mandatory = $true)][string]$Merged)
+
+    $Merged = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Merged)
+    $entry = $null
+    if (-not (Get-HeldMerges).TryGetValue($Merged, [ref]$entry) -or -not $entry.InputIdentity) {
+        throw "$Merged isn't a merge this process holds, so nothing checked says what it was made from."
+    }
+    return [string]$entry.InputIdentity
 }
 
 function Assert-SameBuild {
@@ -1928,14 +1995,21 @@ function Get-AppliedRecordKey {
     .SYNOPSIS
         The key a fixture apply is kept under, and the inputs it was made from.
     .DESCRIPTION
-        SHA-256 over one line per input: the bundle, the fixture, the catalog, the selected patch
-        names in ordinal order, whether the run was forced, the desktop CLI, the SDK stubs the host
-        reference check reads, and every file Get-AppliedRecordVerifierFiles names. A change to
-        any one of them gives another key, so nothing kept before it can be found.
+        SHA-256 over one line per input: the bundle, what the patched merge was made from, the
+        catalog, the selected patch names in ordinal order, whether the run was forced, the desktop
+        CLI, the SDK stubs the host reference check reads, and every file
+        Get-AppliedRecordVerifierFiles names. A change to any one of them gives another key, so
+        nothing kept before it can be found.
+
+        The input is named by -InputIdentity, which every caller takes from the merge it holds
+        (Get-HeldInputIdentity), so a kept run is looked up by the bytes this run checked and will
+        patch. It used to hash the fixture by its path once the merge had let it go, which could
+        name other bytes than those.
     #>
     param(
         [Parameter(Mandatory = $true)][string]$Bundle,
-        [Parameter(Mandatory = $true)][string]$Fixture,
+        # ValidatePattern ignores case unless told not to, and Get-InputIdentity writes lower case.
+        [Parameter(Mandatory = $true)][ValidatePattern('^[0-9a-f]{64}$', Options = 'None')][string]$InputIdentity,
         [Parameter(Mandatory = $true)][string]$PatchList,
         [Parameter(Mandatory = $true)][string[]]$PatchNames,
         [Parameter(Mandatory = $true)][bool]$Forced,
@@ -1960,7 +2034,7 @@ function Get-AppliedRecordKey {
     }
     $inputs = [ordered]@{
         bundle      = & $hash $Bundle 'bundle'
-        fixture     = & $hash $Fixture 'fixture'
+        input       = $InputIdentity
         patchList   = & $hash $PatchList 'patch list'
         patches     = $names
         forced      = [bool]$Forced
@@ -1970,8 +2044,8 @@ function Get-AppliedRecordKey {
         files       = $files
     }
     $lines = New-Object System.Collections.Generic.List[string]
-    $lines.Add('hushtumblr applied record 1')
-    foreach ($field in @('bundle', 'fixture', 'patchList')) { $lines.Add("$field $($inputs[$field])") }
+    $lines.Add('hushtumblr applied record 2')
+    foreach ($field in @('bundle', 'input', 'patchList')) { $lines.Add("$field $($inputs[$field])") }
     foreach ($name in $names) { $lines.Add("patch $name") }
     $lines.Add("forced $($inputs.forced.ToString().ToLowerInvariant())")
     foreach ($field in @('desktopCli', 'androidJar', 'apiVersions')) { $lines.Add("$field $($inputs[$field])") }
@@ -2009,6 +2083,14 @@ function Find-AppliedRecord {
         A record counts only when its record.json names this key, and its patched APK and result
         report are there with the APK hashing to what was recorded. Anything less is said and
         passed over, so the caller patches in full.
+
+        The patched APK comes back held (Open-HeldFile): hashed through a handle nothing can write
+        past, and kept open so the signer, the manifest and alignment reads and the install get the
+        bytes that were hashed. PatchedApk is the path that handle is at. The caller lets go of it
+        with Close-AppliedRecord, in a finally. What the hold doesn't do is say who wrote the
+        record: the store is a folder of the user's own, and a process that can write a
+        record.json and a patched.apk to match can as well write the verifier scripts the key
+        hashes. The hold makes the check describe the bytes read; it isn't provenance.
     #>
     param(
         [Parameter(Mandatory = $true)][string]$Store,
@@ -2028,13 +2110,22 @@ function Find-AppliedRecord {
     }
     $patched = Join-Path $directory 'patched.apk'
     $result = Join-Path $directory 'result.json'
+    $held = $null
     if (-not $problem) {
         if ([int]$record.schema -ne 1 -or [string]$record.key -cne $Key) {
             $problem = 'record.json names another key'
         } elseif (-not (Test-Path -LiteralPath $patched -PathType Leaf) -or -not (Test-Path -LiteralPath $result -PathType Leaf)) {
             $problem = 'its patched APK or result report is missing'
-        } elseif ((Get-FileHash -LiteralPath $patched -Algorithm SHA256).Hash.ToLowerInvariant() -cne [string]$record.patchedSha256) {
-            $problem = 'its patched APK changed after it was kept'
+        } elseif ([string]$record.patchedSha256 -cnotmatch '^[0-9a-f]{64}$') {
+            # Open-HeldFile skips the comparison without a digest, so none is never a match.
+            $problem = 'record.json names no patched APK digest'
+        } else {
+            try {
+                $held = Open-HeldFile -Path $patched -Sha256 ([string]$record.patchedSha256) -What 'The kept patched APK'
+            } catch {
+                $problem = if ($_.Exception.Message -like '*hashes to*') { 'its patched APK changed after it was kept' } else {
+                    "its patched APK can't be held: $($_.Exception.Message)" }
+            }
         }
     }
     if ($problem) {
@@ -2045,13 +2136,29 @@ function Find-AppliedRecord {
     $recordedAt = if ($record.recordedAt -is [datetime]) {
         $record.recordedAt.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
     } else { [string]$record.recordedAt }
+    try { $heldPath = Get-HeldPath -Stream $held } catch { $held.Dispose(); throw }
     return [pscustomobject]@{
         Directory  = $directory
         Key        = $Key
-        PatchedApk = $patched
+        PatchedApk = $heldPath
+        Handle     = $held
         Result     = $result
         RecordedAt = $recordedAt
         Record     = $record
+    }
+}
+
+function Close-AppliedRecord {
+    <#
+    .SYNOPSIS
+        Let go of the patched APK Find-AppliedRecord holds, so the store can replace or delete it.
+        No record, or one already let go, is left alone.
+    #>
+    param($Record)
+
+    if ($null -ne $Record -and $null -ne $Record.Handle) {
+        $Record.Handle.Dispose()
+        $Record.Handle = $null
     }
 }
 
@@ -2132,7 +2239,9 @@ function Save-AppliedRecord {
             [System.IO.Directory]::Move($staging, $final)
         } catch [System.IO.IOException] {
             # Another run kept the same key first. Its record is the same result.
-            if (-not (Find-AppliedRecord -Store $storeRoot -Key $key)) { throw }
+            $theirs = Find-AppliedRecord -Store $storeRoot -Key $key
+            if (-not $theirs) { throw }
+            Close-AppliedRecord -Record $theirs
         }
     } finally {
         if (Test-Path -LiteralPath $staging) { Remove-Item -LiteralPath $staging -Recurse -Force -ErrorAction SilentlyContinue }

@@ -129,6 +129,7 @@ $complete = $false
 $outputReservation = $null
 $reservedPath = $null
 $patchInput = $null
+$recorded = $null
 try {
 if ($OutputApk) {
     $reservedPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputApk)
@@ -231,8 +232,11 @@ if (-not $NoReuse) {
         $hostStubs = Resolve-HostReferenceStubs -AndroidJar $AndroidJar -ApiVersions $ApiVersions -Aapt2 $Aapt2
         $AndroidJar = $hostStubs.AndroidJar
         $ApiVersions = $hostStubs.ApiVersions
-        $identity = Get-AppliedRecordKey -Bundle $bundle -Fixture $Apk -PatchList $catalogPath -PatchNames $names `
-            -Forced $false -DesktopJar $DesktopJar -AndroidJar $AndroidJar -ApiVersions $ApiVersions
+        # Keyed on what the merge held above was made from, and the kept APK comes back held to the
+        # digest it was kept with, through the signing below (Find-AppliedRecord).
+        $identity = Get-AppliedRecordKey -Bundle $bundle -InputIdentity (Get-HeldInputIdentity -Merged $patchInput) `
+            -PatchList $catalogPath -PatchNames $names -Forced $false -DesktopJar $DesktopJar -AndroidJar $AndroidJar `
+            -ApiVersions $ApiVersions
         $recorded = Find-AppliedRecord -Store $store -Key $identity.Key
     }
 }
@@ -373,6 +377,7 @@ try {
 } finally {
     if ($outputReservation) { $outputReservation.Dispose() }
     # Held until every reader is done, and a held file can't be deleted.
+    Close-AppliedRecord -Record $recorded
     Close-MergedApk -Merged $patchInput
     # These are this run's paths only. A missing or replaced owner marker fails closed.
     $safeRun = Resolve-WithinRoot -Path $OutDir -Root $runParent

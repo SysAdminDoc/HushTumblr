@@ -4394,15 +4394,17 @@ Assert-True ($unkeyed.Count -eq 0 -and $unreached.Count -eq 0 -and $keyed -conta
 $keyRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("hushtumblr-record-key-" + [guid]::NewGuid().ToString('N'))
 try {
     $keyInputs = @{}
-    foreach ($name in @('Bundle', 'Fixture', 'PatchList', 'DesktopJar', 'AndroidJar', 'ApiVersions')) {
+    foreach ($name in @('Bundle', 'PatchList', 'DesktopJar', 'AndroidJar', 'ApiVersions')) {
         $keyInputs[$name] = Join-Path $keyRoot "$name.bin"
     }
     $keyScripts = Join-Path $keyRoot 'scripts'
     New-Item -ItemType Directory -Path $keyScripts -Force | Out-Null
     foreach ($name in @($keyInputs.Keys)) { [IO.File]::WriteAllText($keyInputs[$name], "stand-in $name") }
     foreach ($name in $keyed) { Copy-Item -LiteralPath (Join-Path $PSScriptRoot $name) -Destination $keyScripts }
-    function Get-TestRecordKey([string[]]$Names = @('Hide ads', 'Download pins'), [bool]$Forced = $false) {
-        return (Get-AppliedRecordKey @keyInputs -PatchNames $Names -Forced $Forced -ScriptRoot $keyScripts).Key
+    # The input is named by what a held merge was made from (Get-HeldInputIdentity), a digest
+    # rather than a path, so a stand-in digest is enough here.
+    function Get-TestRecordKey([string[]]$Names = @('Hide ads', 'Download pins'), [bool]$Forced = $false, [string]$Identity = ('a' * 64)) {
+        return (Get-AppliedRecordKey @keyInputs -InputIdentity $Identity -PatchNames $Names -Forced $Forced -ScriptRoot $keyScripts).Key
     }
     $baseKey = Get-TestRecordKey
     Assert-True ($baseKey -cmatch '^[0-9a-f]{64}$') "The applied record key isn't a SHA-256 in lower-case hex: $baseKey"
@@ -4410,6 +4412,26 @@ try {
         'The applied record key depends on the order the patches are named in.'
     Assert-True ((Get-TestRecordKey -Names @('Hide ads')) -cne $baseKey) 'Leaving a patch out did not change the applied record key.'
     Assert-True ((Get-TestRecordKey -Forced $true) -cne $baseKey) 'A forced run has the key of a declared one.'
+    Assert-True ((Get-TestRecordKey -Identity ('b' * 64)) -cne $baseKey) 'Another input left the applied record key as it was.'
+    Assert-Throws { Get-TestRecordKey -Identity (Join-Path $keyRoot 'Fixture.apk') } '*InputIdentity*' `
+        'The applied record key took a path for the input instead of what a held merge was made from.'
+    # What a merge was made from: a plain APK by its copy, a bundle by its APKs in any order, and
+    # the two never alike.
+    $one = '1' * 64; $two = '2' * 64
+    $plainIdentity = Get-InputIdentity -Plain $one
+    Assert-True ($plainIdentity -cmatch '^[0-9a-f]{64}$' -and $plainIdentity -cne $one -and
+        (Get-InputIdentity -Apks @($one, $two)) -ceq (Get-InputIdentity -Apks @($two, $one)) -and
+        (Get-InputIdentity -Apks @($one)) -cne $plainIdentity -and
+        (Get-InputIdentity -Apks @($one, $two)) -cne (Get-InputIdentity -Apks @($one))) `
+        'Get-InputIdentity does not name a plain APK and a bundle apart, or depends on the order of the APKs.'
+    Assert-Throws { Get-InputIdentity -Plain $one -Apks @($two) } '*not both or neither*' 'Get-InputIdentity took a plain APK and a bundle at once.'
+    Assert-Throws { Get-InputIdentity } '*not both or neither*' 'Get-InputIdentity named nothing.'
+    # Digits have no case, so the upper-case digest needs letters to differ from a lower-case one.
+    $upper = ('ab' * 32).ToUpperInvariant()
+    Assert-Throws { Get-InputIdentity -Apks @($upper) } '*lower-case hex*' 'Get-InputIdentity took a digest in upper case.'
+    Assert-Throws { Get-TestRecordKey -Identity $upper } '*InputIdentity*' 'The applied record key took an input identity in upper case.'
+    Assert-Throws { Get-HeldInputIdentity -Merged (Join-Path $keyRoot 'not-held.apk') } "*isn't a merge this process holds*" `
+        'Get-HeldInputIdentity named a merge nothing holds.'
     $moved = @()
     foreach ($file in @($keyInputs.Values) + @($keyed | ForEach-Object { Join-Path $keyScripts $_ })) {
         $saved = [IO.File]::ReadAllBytes($file)
@@ -4428,6 +4450,40 @@ try {
     Set-Content -LiteralPath (Join-Path $store "$baseKey/record.json") -Encoding ASCII -Value ('{"schema":1,"key":"' + ('0' * 64) + '"}')
     Assert-True ($null -eq (Find-AppliedRecord -Store $store -Key $baseKey 3> $null)) 'A record naming another key was handed back.'
     Assert-True ($null -eq (Find-AppliedRecord -Store $store -Key ('1' * 64))) 'A key with no record found one.'
+    # A record that holds together comes back with its patched APK held to the digest it was kept
+    # with: nothing can write to it until Close-AppliedRecord, and the path handed on is where the
+    # handle is. A record naming no digest, or another one, is passed over.
+    $keptDir = Join-Path $store $baseKey
+    $keptApk = Join-Path $keptDir 'patched.apk'
+    [IO.File]::WriteAllText($keptApk, 'stand-in patched APK')
+    [IO.File]::WriteAllText((Join-Path $keptDir 'result.json'), '{}')
+    $keptDigest = (Get-FileHash -LiteralPath $keptApk -Algorithm SHA256).Hash.ToLowerInvariant()
+    $keptOpenToWrite = { [System.IO.File]::Open($keptApk, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Write,
+            [System.IO.FileShare]'ReadWrite, Delete').Dispose() }
+    foreach ($digestCase in @(@{ Digest = ''; Says = '*names no patched APK digest*' }, @{ Digest = ('0' * 64); Says = '*changed after it was kept*' })) {
+        Set-Content -LiteralPath (Join-Path $keptDir 'record.json') -Encoding ASCII `
+            -Value ('{"schema":1,"key":"' + $baseKey + '","patchedSha256":"' + $digestCase.Digest + '"}')
+        $said = @(Find-AppliedRecord -Store $store -Key $baseKey 3>&1)
+        $warned = @($said | Where-Object { $_ -is [System.Management.Automation.WarningRecord] })
+        $handed = @($said | Where-Object { $null -ne $_ -and $_ -isnot [System.Management.Automation.WarningRecord] })
+        Assert-True ($handed.Count -eq 0 -and $warned.Count -eq 1 -and "$($warned[0])" -like $digestCase.Says) `
+            "A record whose patched APK digest is '$($digestCase.Digest)' was handed back, or not said: $($said -join '; ')"
+    }
+    Set-Content -LiteralPath (Join-Path $keptDir 'record.json') -Encoding ASCII `
+        -Value ('{"schema":1,"key":"' + $baseKey + '","patchedSha256":"' + $keptDigest + '"}')
+    $found = Find-AppliedRecord -Store $store -Key $baseKey
+    try {
+        Assert-True ($null -ne $found -and $null -ne $found.Handle -and
+            [IO.Path]::GetFullPath($found.PatchedApk) -eq [IO.Path]::GetFullPath((Resolve-Path -LiteralPath $keptApk).Path)) `
+            "Find-AppliedRecord did not hand back the kept APK held, by the path its handle is at: $($found.PatchedApk)"
+        $turnedAway = $null
+        try { & $keptOpenToWrite } catch { $turnedAway = $_.Exception.GetBaseException() }
+        Assert-True ($turnedAway -is [System.IO.IOException] -and $turnedAway.HResult -eq -2147024864) `
+            "The kept APK could be opened to write while Find-AppliedRecord held it: $turnedAway"
+    } finally { Close-AppliedRecord -Record $found }
+    Assert-True ($null -eq $found.Handle) 'Close-AppliedRecord left the kept APK held.'
+    & $keptOpenToWrite
+    Close-AppliedRecord -Record $null
 } finally {
     Remove-Item -LiteralPath $keyRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
@@ -4548,7 +4604,8 @@ foreach ($order in @(
             @{ What = 'a kept APK is signed'; Match = $isKeptSign }, @{ What = 'the CLI patches'; Match = $isCliPatch }) },
         @{ Name = 'build-release-receipt.ps1'; After = @(@{ What = 'a kept run is looked up'; Match = $isKeptLookup },
             @{ What = 'the CLI patches'; Match = $isCliPatch }) },
-        @{ Name = 'verify-all-patches.ps1'; After = @(@{ What = 'the CLI patches'; Match = $isCliPatch }) },
+        @{ Name = 'verify-all-patches.ps1'; After = @(@{ What = 'a kept run is looked up'; Match = $isKeptLookup },
+            @{ What = 'the CLI patches'; Match = $isCliPatch }) },
         @{ Name = 'verify-injected-registers.ps1'; After = @(
             @{ What = 'the merge is held to what was checked'; Match = { param($node) $node.GetCommandName() -eq 'Assert-AuthenticMerge' } },
             @{ What = 'DexDiff compares the clean side'; Match = { param($node) $node.GetCommandName() -eq 'Invoke-DexDiff' } }) })) {
@@ -4574,7 +4631,7 @@ foreach ($order in @(
 foreach ($decided in @(
         @{ Name = 'patch-for-device.ps1'; Before = @($isKeptLookup, $isKeptSign, $isCliPatch) },
         @{ Name = 'build-release-receipt.ps1'; Before = @($isKeptLookup, $isCliPatch) },
-        @{ Name = 'verify-all-patches.ps1'; Before = @($isCliPatch) })) {
+        @{ Name = 'verify-all-patches.ps1'; Before = @($isKeptLookup, $isCliPatch) })) {
     $scriptAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot $decided.Name), [ref]$null, [ref]$null)
     $sameBuild = @($scriptAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] -and
             $node.GetCommandName() -eq 'Assert-SameBuild' }, $true))
@@ -4584,6 +4641,51 @@ foreach ($decided in @(
         Assert-True ((Get-FirstCommandOffset $scriptAst $use) -gt $sameBuild[0].Extent.StartOffset) `
             "$($decided.Name) acts on the build it read first before it has held it to the merge (Assert-SameBuild)."
     }
+}
+# A kept run is looked up by what the held merge was made from, never by a path hashed after the
+# merge let the input go: each of the three keys it with -InputIdentity taken from the merge it
+# holds, once. The kept APK comes back held (Find-AppliedRecord), into $recorded, and each lets go
+# of it once, in a finally, before the merge.
+function Get-NamedCommands($ScriptAst, [string]$Name) {
+    @($ScriptAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] -and
+            $node.GetCommandName() -eq $Name }, $true))
+}
+foreach ($keyedScript in @('patch-for-device.ps1', 'build-release-receipt.ps1', 'verify-all-patches.ps1')) {
+    $scriptAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot $keyedScript), [ref]$null, [ref]$null)
+    $keys = Get-NamedCommands $scriptAst 'Get-AppliedRecordKey'
+    $named = @($keys | ForEach-Object { $_.CommandElements } | Where-Object { $_ -is [System.Management.Automation.Language.CommandParameterAst] } |
+        ForEach-Object { $_.ParameterName })
+    $identityArgument = $null
+    if ($keys.Count -eq 1) {
+        $elements = @($keys[0].CommandElements)
+        for ($i = 0; $i -lt $elements.Count - 1; $i++) {
+            if ($elements[$i] -is [System.Management.Automation.Language.CommandParameterAst] -and $elements[$i].ParameterName -eq 'InputIdentity') {
+                $identityArgument = $elements[$i + 1].Extent.Text
+            }
+        }
+    }
+    Assert-True ($keys.Count -eq 1 -and $named -notcontains 'Fixture' -and $identityArgument -ceq '(Get-HeldInputIdentity -Merged $patchInput)') `
+        "$keyedScript doesn't key its kept run once on what the merge it holds was made from: $identityArgument"
+    $lookups = Get-NamedCommands $scriptAst 'Find-AppliedRecord'
+    $assigned = $null
+    if ($lookups.Count -eq 1) {
+        for ($parent = $lookups[0].Parent; $null -ne $parent; $parent = $parent.Parent) {
+            if ($parent -is [System.Management.Automation.Language.AssignmentStatementAst]) { $assigned = $parent.Left.Extent.Text; break }
+        }
+    }
+    Assert-True ($lookups.Count -eq 1 -and $assigned -ceq '$recorded') "$keyedScript doesn't look a kept run up once, into `$recorded."
+    $closes = Get-NamedCommands $scriptAst 'Close-AppliedRecord'
+    $closeInFinally = @($closes | Where-Object {
+            $found = $false
+            for ($parent = $_.Parent; $null -ne $parent; $parent = $parent.Parent) {
+                if ($parent -is [System.Management.Automation.Language.TryStatementAst] -and $null -ne $parent.Finally -and
+                    $_.Extent.StartOffset -ge $parent.Finally.Extent.StartOffset -and $_.Extent.EndOffset -le $parent.Finally.Extent.EndOffset) { $found = $true }
+            }
+            $found -and $_.Extent.Text -ceq 'Close-AppliedRecord -Record $recorded' })
+    $mergeClose = Get-NamedCommands $scriptAst 'Close-MergedApk'
+    Assert-True ($closeInFinally.Count -eq 1 -and $mergeClose.Count -eq 1 -and
+        $closeInFinally[0].Extent.StartOffset -lt $mergeClose[0].Extent.StartOffset) `
+        "$keyedScript does not let go of the kept APK Find-AppliedRecord held, once in a finally before the merge."
 }
 # The receipt builder checks its whole fixture list before it merges any fixture.
 $receiptAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'build-release-receipt.ps1'), [ref]$null, [ref]$null)
@@ -5739,16 +5841,28 @@ try {
         (Test-Path -LiteralPath (Join-Path $keptRecord 'result.json')) -and (Test-Path -LiteralPath $javaLog)) `
         "A passing run with -KeepIn did not patch once and keep exactly one record: $said"
     $keptFacts = Get-Content -LiteralPath (Join-Path $keptRecord 'record.json') -Raw | ConvertFrom-Json
+    # The fixture is named by what its merge was made from: the digests of the APKs in it.
+    $fixtureZip = [System.IO.Compression.ZipFile]::OpenRead($newestFixture)
+    try {
+        $memberDigests = @($fixtureZip.Entries | Where-Object { $_.FullName -like '*.apk' } | ForEach-Object {
+                $memberStream = $_.Open()
+                $memberSha = [System.Security.Cryptography.SHA256]::Create()
+                try { -join @($memberSha.ComputeHash($memberStream) | ForEach-Object { $_.ToString('x2') }) }
+                finally { $memberSha.Dispose(); $memberStream.Dispose() } })
+    } finally { $fixtureZip.Dispose() }
     # Get-Sha256Hex writes upper case and the record lower case.
     Assert-True ($keptFacts.key -ceq $keptKey -and $keptFacts.inputs.bundle -eq (Get-Sha256Hex -Path $releaseBundle) -and
-        $keptFacts.inputs.fixture -eq (Get-Sha256Hex -Path $newestFixture) -and
+        $memberDigests.Count -eq 2 -and $keptFacts.inputs.input -ceq (Get-InputIdentity -Apks $memberDigests) -and
+        $null -eq $keptFacts.inputs.fixture -and
         $keptFacts.inputs.files.'DexDiff.java' -eq (Get-Sha256Hex -Path (Join-Path $PSScriptRoot 'DexDiff.java')) -and
         $keptFacts.patchedSha256 -eq (Get-Sha256Hex -Path (Join-Path $keptRecord 'patched.apk'))) `
         "The kept record doesn't name the bundle, fixture and verifier hashes it was made from: $($keptFacts | ConvertTo-Json -Depth 6 -Compress)"
+    # The second run merges the fixture as any run does, since the key names what the held merge
+    # was made from, and stops there: no patch and no resource check.
     $said = Invoke-VerifyAll -Apk $newestFixture -KeepIn $recordStore
     Assert-True ($said -like "*reusing the run kept as $keptKey*" -and -not (Test-Path -LiteralPath $javaLog) -and
-        -not (Test-Path -LiteralPath $mergeLog) -and -not (Test-Path -LiteralPath $resourceStock)) `
-        "A second run with the same key patched again or didn't say it reused the kept run: $said"
+        (Test-Path -LiteralPath $mergeLog) -and -not (Test-Path -LiteralPath $resourceStock)) `
+        "A second run with the same key patched again, didn't merge to key on what it holds, or didn't say it reused the kept run: $said"
     # The machine-wide store variable stands in for -KeepIn.
     $env:HUSHTUMBLR_APPLY_RECORDS = $recordStore
     try {
