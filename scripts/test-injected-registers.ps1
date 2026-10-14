@@ -997,7 +997,9 @@ try {
     # run selected. The first run, with no sections, has to name exactly what the two fixture
     # patches changed. The allowlist made from those lines then passes the build of both, every
     # section when no selection is given, and the build of one alone, and fails each build that
-    # changes one thing more, naming it.
+    # changes one thing more, naming it. Other patch's lines sit under a header that also names a
+    # patch with no section of its own, since a run with no selection applies every header. A line
+    # a selected section lists that the run didn't need fails it.
     Invoke-Checked -Program $Java -Arguments @('-Xmx256m', '-cp', $classPath, 'DexDeltaFixture', $dexDir) -Description 'DexDeltaFixture'
     function New-PatchBundle {
         param([string]$Name, [System.Collections.IDictionary]$Extensions, [string]$Version = '9.9.9')
@@ -1055,22 +1057,25 @@ try {
     # Written with a byte order mark, which the reader takes off.
     $allowLines = @('# The two fixture patches.', '[Fixture patch]') + (& $pick 'method Lcom/fixture/Host;->answer()Z') +
         (& $pick "method ${own}tumblr/fixture/FixtureBridge;->fill()V") + @('', '[Fixture patch | Other patch]') +
-        (& $pick "implements Lcom/fixture/Model; $face") + @('[Other patch]') + (& $pick 'method Lcom/fixture/Host;->hushHelper()V') +
+        (& $pick "implements Lcom/fixture/Model; $face") + @('[Other patch | Third patch]') + (& $pick 'method Lcom/fixture/Host;->hushHelper()V') +
         (& $pick 'field Lcom/fixture/Host;->hushFlag:Z')
     $deltaAllowlist = Join-Path $caseRoot 'delta-allowlist.txt'
     [IO.File]::WriteAllLines($deltaAllowlist, [string[]]$allowLines, [Text.UTF8Encoding]::new($true))
     $staleLine = 'method Lcom/fixture/Host;->gone()V ' + ('0' * 64)
     $staleAllowlist = Join-Path $caseRoot 'delta-allowlist-stale.txt'
     [IO.File]::WriteAllLines($staleAllowlist, [string[]]($allowLines + $staleLine), [Text.UTF8Encoding]::new($false))
+    $everySection = '  sections Fixture patch, Fixture patch | Other patch, Other patch | Third patch'
+    $deltaSubset = New-DexApk -Name 'delta-subset' -Entries ([ordered]@{ 'classes.dex' = (Get-Dex 'delta-subset') })
     $deltaPasses = @(
-        @{ Name = 'delta-good'; Patched = $deltaGood; Selected = $bothSelected; Allow = $deltaAllowlist; Summary = (& $summaryOf 0 5 3)
-            Sections = '  sections Fixture patch, Fixture patch | Other patch, Other patch' }
-        @{ Name = 'delta-good-every-section'; Patched = $deltaGood; Selected = ''; Allow = $deltaAllowlist; Summary = (& $summaryOf 0 5 3)
-            Sections = '  sections Fixture patch, Fixture patch | Other patch, Other patch' }
-        @{ Name = 'delta-subset'; Patched = (New-DexApk -Name 'delta-subset' -Entries ([ordered]@{ 'classes.dex' = (Get-Dex 'delta-subset') }))
-            Selected = $fixtureSelected; Allow = $deltaAllowlist; Summary = (& $summaryOf 0 3 3); Sections = '  sections Fixture patch, Fixture patch | Other patch' }
-        @{ Name = 'delta-good-stale'; Patched = $deltaGood; Selected = $bothSelected; Allow = $staleAllowlist; Summary = (& $summaryOf 0 5 3)
-            Sections = '  sections Fixture patch, Fixture patch | Other patch, Other patch'; Unseen = "  [Other patch] $staleLine" })
+        @{ Name = 'delta-good'; Patched = $deltaGood; Selected = $bothSelected; Allow = $deltaAllowlist; Summary = (& $summaryOf 0 5 3); Sections = $everySection }
+        @{ Name = 'delta-good-every-section'; Patched = $deltaGood; Selected = ''; Allow = $deltaAllowlist; Summary = (& $summaryOf 0 5 3); Sections = $everySection }
+        @{ Name = 'delta-subset'; Patched = $deltaSubset; Selected = $fixtureSelected; Allow = $deltaAllowlist; Summary = (& $summaryOf 0 3 3)
+            Sections = '  sections Fixture patch, Fixture patch | Other patch' }
+        # A stale line is only reported when no selection is named, and a section the run didn't select doesn't count.
+        @{ Name = 'delta-good-stale-every-section'; Patched = $deltaGood; Selected = ''; Allow = $staleAllowlist; Summary = (& $summaryOf 0 5 3)
+            Sections = $everySection; Unseen = "  [Other patch | Third patch] $staleLine" }
+        @{ Name = 'delta-subset-stale'; Patched = $deltaSubset; Selected = $fixtureSelected; Allow = $staleAllowlist; Summary = (& $summaryOf 0 3 3)
+            Sections = '  sections Fixture patch, Fixture patch | Other patch' })
     foreach ($pass in $deltaPasses) {
         $run = Invoke-DexDiff -Clean $deltaClean -Patched $pass.Patched -Allowlist $emptyAllowlist -Name $pass.Name -Contracts $deltaContracts `
             -Selected $pass.Selected -Bundle $deltaBundle -DeltaAllowlist $pass.Allow
@@ -1082,6 +1087,25 @@ try {
             $report -ccontains "  allowed [Fixture patch | Other patch] implements Lcom/fixture/Model; $face") `
             "The dex delta did not pass $($pass.Name) on the allowlist made for it.`n$($run.Output -join "`n")`n$($report -join "`n")"
     }
+    $stale = Invoke-DexDiff -Clean $deltaClean -Patched $deltaGood -Allowlist $emptyAllowlist -Name 'delta-good-stale' -Contracts $deltaContracts `
+        -Selected $bothSelected -Bundle $deltaBundle -DeltaAllowlist $staleAllowlist
+    Assert-True ($stale.ExitCode -ne 0 -and (& $onlyDelta $stale) -and (& $deltaFails $stale).Count -eq 1 -and
+        ($stale.Output -join "`n").Contains("dex delta: the selected section [Other patch | Third patch] lists what this run didn't change: $staleLine")) `
+        "A stale line in a selected section of the dex delta allowlist passed.`n$($stale.Output -join "`n")"
+    # Tumblr classes with copies in another dex entry: held to every copy, in any order. The same
+    # copies on both sides pass, and a copy the patched APK adds fails however the first one reads.
+    $baseTwice = Invoke-DexDiff -Clean (New-DexApk -Name 'delta-clean-base-twice' -Entries ([ordered]@{
+            'classes.dex' = (Get-Dex 'delta-clean'); 'classes2.dex' = (Get-Dex 'delta-base-copy') })) `
+        -Patched (New-DexApk -Name 'delta-base-twice' -Entries ([ordered]@{ 'classes.dex' = (Get-Dex 'delta-good'); 'classes2.dex' = (Get-Dex 'delta-base-copy') })) `
+        -Allowlist $emptyAllowlist -Name 'delta-base-twice' -Contracts $deltaContracts -Selected $bothSelected -Bundle $deltaBundle -DeltaAllowlist $deltaAllowlist
+    Assert-True ($baseTwice.ExitCode -eq 0 -and (& $deltaFails $baseTwice).Count -eq 0) `
+        "A Tumblr class copied alike on both sides failed the dex delta.`n$($baseTwice.Output -join "`n")"
+    $modelTwice = Invoke-DexDiff -Clean $deltaClean -Patched (New-DexApk -Name 'delta-model-twice' -Entries ([ordered]@{
+            'classes.dex' = (Get-Dex 'delta-good'); 'classes2.dex' = (Get-Dex 'delta-model-copy') })) `
+        -Allowlist $emptyAllowlist -Name 'delta-model-twice' -Contracts $deltaContracts -Selected '' -Bundle $deltaBundle -DeltaAllowlist $deltaAllowlist
+    Assert-True ($modelTwice.ExitCode -ne 0 -and (& $onlyDelta $modelTwice) -and (& $deltaFails $modelTwice).Count -eq 1 -and
+        ($modelTwice.Output -join "`n").Contains("dex delta: Lcom/fixture/Model; is defined more than once, so it can't be held one definition at a time")) `
+        "A Tumblr class the patched APK carries twice, one copy as the clean build has it, passed the dex delta.`n$($modelTwice.Output -join "`n")"
     foreach ($caseLine in Get-Content -LiteralPath (Join-Path $dexDir 'delta-cases.txt')) {
         $values = $caseLine -split '\|', 4
         $selection = if ($values[1] -ceq 'Fixture patch') { $fixtureSelected } else { $bothSelected }

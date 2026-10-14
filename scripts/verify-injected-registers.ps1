@@ -54,7 +54,8 @@
 
     Every changed or added method and class shape is also held to what accounts for it: a mutation
     contract that validated it, the bundle's extension classes (-Bundle, held while DexDiff reads
-    it), or a line of scripts/dex-delta-allowlist.txt under a selected patch, which names the
+    it, and by default the bundle the repo builds now, so an APK patched with another one needs its
+    .mpp passed), or a line of scripts/dex-delta-allowlist.txt under a selected patch, which names the
     SHA-256 of what that patch writes there. A Tumblr method edited in the CLI's working copy, or an
     extension class swapped in, fails even when its code is well formed.
 
@@ -239,8 +240,14 @@ if ($PSBoundParameters.ContainsKey('SelectedPatchNames')) {
 
 # The bundle the patched APK was patched with: DexDiff holds the classes the patch added to its
 # extensions, and what else it changed to dex-delta-allowlist.txt. The scripts that patch hand theirs
-# over, held. Run on its own, this checks against the bundle the repo builds now.
-if (-not $Bundle) { $Bundle = Get-ReleaseBundlePath -Root $root -Version (Get-BundleVersion -Root $root) }
+# over, held. Run on its own, this checks against the bundle the repo builds now, which only fits
+# an APK patched with that build.
+if (-not $Bundle) {
+    $Bundle = Get-ReleaseBundlePath -Root $root -Version (Get-BundleVersion -Root $root)
+    if (-not (Test-Path -LiteralPath $Bundle -PathType Leaf)) {
+        throw "No -Bundle was given, and the bundle this repo builds now isn't at $Bundle. Pass -Bundle with the .mpp the APK was patched with."
+    }
+}
 $bundleHeld = Open-HeldFile -Path $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Bundle) -What 'The bundle'
 $bundlePath = Get-HeldPath -Stream $bundleHeld
 

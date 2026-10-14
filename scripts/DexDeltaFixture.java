@@ -29,7 +29,8 @@ import java.util.Set;
 /**
  * The dex delta's fixtures. A clean host, the two extension dex files of the bundle it was
  * patched with, a build two patches wrote into ("Fixture patch" and "Other patch"), the build of
- * the first alone, and builds that each change one more thing nothing accounts for. The rebuild
+ * the first alone, builds that each change one more thing nothing accounts for, and copies of two
+ * Tumblr classes for a second dex entry. The rebuild
  * re-encodes one host string, and each patched build answers its flags and the bundle's Version
  * ahead of the bundle's bodies, as the patcher does.
  *
@@ -41,7 +42,7 @@ public final class DexDeltaFixture {
     static final String STATUS = OWN + "tumblr/settings/SettingsStatus;", UTILS = OWN + "shared/Utils;";
     static final String BRIDGE = OWN + "tumblr/fixture/FixtureBridge;", FACE = OWN + "tumblr/fixture/FixtureFace;";
     static final String PLAIN = OWN + "tumblr/fixture/Plain;", ROGUE = OWN + "tumblr/fixture/Rogue;";
-    static final String HOST = "Lcom/fixture/Host;", MODEL = "Lcom/fixture/Model;", BASE = "Lcom/fixture/Base;";
+    static final String HOST = "Lcom/fixture/Host;", MODEL = "Lcom/fixture/Model;", BASE = "Lcom/fixture/Base;", STRAY = "Lcom/fixture/Stray;";
     static final String OBJECT = "Ljava/lang/Object;", STRING = "Ljava/lang/String;", VERSION = "9.9.9";
     static final int PUBLIC = AccessFlags.PUBLIC.getValue(), STATIC = AccessFlags.STATIC.getValue(), PRIVATE = AccessFlags.PRIVATE.getValue();
     static final String SELECT_BOTH = "Fixture patch,Other patch", SELECT_FIXTURE = "Fixture patch";
@@ -87,6 +88,7 @@ public final class DexDeltaFixture {
                 code(traits.contains("patched") ? jumbo(0, "fixture") : string(0, "fixture"), returnsObject(0))));
         if (traits.contains("other") || traits.contains("helper-leak")) methods.add(method(HOST, "hushHelper", "V", PUBLIC | STATIC, 0, code(end())));
         List<ClassDef> out = new ArrayList<>();
+        if (traits.contains("stray")) out.add(clazz(STRAY, PUBLIC, OBJECT, List.of(), List.of(), List.of(method(STRAY, "go", "V", PUBLIC | STATIC, 0, code(end())))));
         out.add(clazz(HOST, PUBLIC, OBJECT, List.of(), hostFields, methods));
         int countFlags = PRIVATE | (traits.contains("field-changed") ? AccessFlags.VOLATILE.getValue() : 0);
         out.add(clazz(MODEL, PUBLIC, traits.contains("superclass") ? BASE : OBJECT, traits.contains("fixture") ? List.of(FACE) : List.of(),
@@ -177,6 +179,10 @@ public final class DexDeltaFixture {
         write(root.resolve("delta-conflict.mpe"), List.of(plain(5)));
         // Plain on its own, for a patched APK that carries it in two dex entries.
         write(root.resolve("delta-plain.dex"), List.of(plain(7)));
+        // Copies of Tumblr's classes in a second dex entry, with no methods to be copies of: Model as
+        // the clean build has it, and Base, which no patch touches.
+        write(root.resolve("delta-model-copy.dex"), List.of(clazz(MODEL, PUBLIC, OBJECT, List.of(), List.of(field(MODEL, "count", "I", PRIVATE)), List.of())));
+        write(root.resolve("delta-base-copy.dex"), List.of(clazz(BASE, PUBLIC, OBJECT, List.of(), List.of(), List.of())));
         build(root, "delta-good", Set.of("patched", "fixture", "other"));
         build(root, "delta-subset", Set.of("patched", "fixture"));
         // Each bad build: its name, the selection it runs with, how many findings it raises, and
@@ -186,14 +192,17 @@ public final class DexDeltaFixture {
                 {"helper-leak", Set.of("patched", "fixture", "helper-leak"), SELECT_FIXTURE, 1, UNLISTED + "method " + HOST + "->hushHelper()V "},
                 {"run-body", Set.of("patched", "fixture", "other", "run-body"), SELECT_BOTH, 1, UNLISTED + "method " + HOST + "->run()V "},
                 {"run-flags", Set.of("patched", "fixture", "other", "run-flags"), SELECT_BOTH, 1, UNLISTED + "method " + HOST + "->run()V "},
-                {"superclass", Set.of("patched", "fixture", "other", "superclass"), SELECT_BOTH, 1, UNLISTED + "class " + MODEL + " "},
-                {"field-changed", Set.of("patched", "fixture", "other", "field-changed"), SELECT_BOTH, 1, UNLISTED + "class " + MODEL + " "},
+                // A whole-class line takes the place of Model's implements line, which then goes stale.
+                {"superclass", Set.of("patched", "fixture", "other", "superclass"), SELECT_BOTH, 2, UNLISTED + "class " + MODEL + " "},
+                {"field-changed", Set.of("patched", "fixture", "other", "field-changed"), SELECT_BOTH, 2, UNLISTED + "class " + MODEL + " "},
                 {"plain-edited", Set.of("patched", "fixture", "other", "plain-edited"), SELECT_BOTH, 1, UNLISTED + "method " + PLAIN + "->value()I "},
                 {"plain-missing", Set.of("patched", "fixture", "other", "plain-missing"), SELECT_BOTH, 1,
                         "dex delta: the bundle's class " + PLAIN + " is missing from the patched APK"},
                 {"plain-method-missing", Set.of("patched", "fixture", "other", "plain-method-missing"), SELECT_BOTH, 1,
                         "dex delta: the bundle's " + PLAIN + "->value()I is missing from the patched APK"},
-                {"rogue", Set.of("patched", "fixture", "other", "rogue"), SELECT_BOTH, 2, UNLISTED + "class " + ROGUE + " "},
+                {"rogue", Set.of("patched", "fixture", "other", "rogue"), SELECT_BOTH, 1,
+                        "dex delta: " + ROGUE + " is under " + OWN + " but none of the bundle's extensions carry it"},
+                {"stray", Set.of("patched", "fixture", "other", "stray"), SELECT_BOTH, 2, UNLISTED + "class " + STRAY + " "},
                 {"flag-remainder", Set.of("patched", "fixture", "other", "flag-remainder"), SELECT_BOTH, 1, UNLISTED + "method " + STATUS + "->fixtureFamily()Z "},
                 {"version-wrong", Set.of("patched", "fixture", "other", "version-wrong"), SELECT_BOTH, 1,
                         UNLISTED + "method " + UTILS + "->getPatchesReleaseVersion()Ljava/lang/String; "},

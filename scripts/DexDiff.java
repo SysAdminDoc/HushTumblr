@@ -1977,6 +1977,8 @@ public class DexDiff {
         final Map<String, ClassDef> classes = new LinkedHashMap<>();
         final Map<String, Method> methods = new LinkedHashMap<>();
         final Set<String> duplicates = new HashSet<>();
+        /** Every definition of a class defined more than once, in dex entry order. */
+        final Map<String, List<ClassDef>> copies = new HashMap<>();
         final Map<String, Set<String>> texts = new HashMap<>();
         final Map<String, Set<String>> classTexts = new HashMap<>();
         final Map<String, List<FeatureSite>> ownCalls = new LinkedHashMap<>();
@@ -1984,7 +1986,11 @@ public class DexDiff {
         FeatureIndex(File apk) throws Exception {
             MultiDexContainer<? extends DexFile> container = DexFileFactory.loadDexContainer(apk, null);
             for (String entry : container.getDexEntryNames()) for (ClassDef cd : container.getEntry(entry).getDexFile().getClasses()) {
-                if (classes.putIfAbsent(cd.getType(), cd) != null) duplicates.add(cd.getType());
+                ClassDef first = classes.putIfAbsent(cd.getType(), cd);
+                if (first != null) {
+                    duplicates.add(cd.getType());
+                    copies.computeIfAbsent(cd.getType(), k -> new ArrayList<>(List.of(first))).add(cd);
+                }
                 for (Method m : cd.getMethods()) {
                     String key = m.toString();
                     if (methods.putIfAbsent(key, m) != null) duplicates.add(key);
@@ -5728,7 +5734,7 @@ public class DexDiff {
          * report prints for what a run needed: "method signature sha256", "field reference sha256",
          * "implements type interface" and "class type sha256". Blank lines and lines starting with #
          * are left out. A section only applies when the run selects one of its patches, or a patch
-         * that depends on one.
+         * that depends on one, and each one applies when the run names no selection.
          */
         static Map<String, Set<String>> read(File file) throws Exception {
             if (!file.isFile()) throw new IllegalArgumentException("Dex delta allowlist not found: " + file);
@@ -5791,10 +5797,22 @@ public class DexDiff {
             needed.put(line, allowed.get(line));
         }
 
-        /** A section applies when the run selects any patch its header names, " | " between them. */
+        /**
+         * A section applies when the run selects any patch its header names, " | " between them,
+         * and every section applies to a run that names no selection.
+         */
         static boolean applies(String header, Set<String> selected) {
+            if (selected == null) return true;
             for (String name : header.split(" \\| ", -1)) if (selected.contains(name)) return true;
             return false;
+        }
+
+        /** The class prints of every definition of [type], sorted, so copies compare in any dex entry order. */
+        static List<String> classPrints(FeatureIndex index, String type) {
+            List<String> out = new ArrayList<>();
+            for (ClassDef cd : index.copies.getOrDefault(type, List.of(index.classes.get(type)))) out.add(classPrint(cd));
+            java.util.Collections.sort(out);
+            return out;
         }
 
         void run(Set<String> changed, Set<String> added, FeatureIndex clean, FeatureIndex patched, FeatureCheck check,
@@ -5812,6 +5830,12 @@ public class DexDiff {
                 ClassDef mine = patched.classes.get(type);
                 if (patched.duplicates.contains(type)) { findings.add("dex delta: " + type + " is defined more than once in the patched APK"); continue; }
                 ClassDef theirs = extension.get(type);
+                if (theirs == null && type.startsWith(OWN)) {
+                    // The extension's package is the bundle's to fill: a class there it doesn't carry
+                    // came from somewhere else, so no section can take it.
+                    findings.add("dex delta: " + type + " is under " + OWN + " but none of the bundle's extensions carry it");
+                    continue;
+                }
                 if (theirs == null) {
                     need("class", type, sha256(classPrint(mine)), allowed);
                     for (Method m : mine.getMethods()) need("method", m.toString(), methodPrint(m), allowed);
@@ -5833,9 +5857,17 @@ public class DexDiff {
             for (String type : extension.keySet())
                 if (!patched.classes.containsKey(type)) findings.add("dex delta: the bundle's class " + type + " is missing from the patched APK");
             // Tumblr's own classes: the same shape, or what the patches added to it listed one by one.
+            // A class with copies in other dex entries is held to all of them unchanged, since the
+            // first one found can be any copy.
             for (Map.Entry<String, ClassDef> e : patched.classes.entrySet()) {
                 ClassDef was = clean.classes.get(e.getKey());
-                if (was != null && !classPrint(was).equals(classPrint(e.getValue()))) shape(was, e.getValue(), allowed);
+                if (was == null) continue;
+                if (clean.copies.containsKey(e.getKey()) || patched.copies.containsKey(e.getKey())) {
+                    if (!classPrints(clean, e.getKey()).equals(classPrints(patched, e.getKey())))
+                        findings.add("dex delta: " + e.getKey() + " is defined more than once, so it can't be held one definition at a time");
+                    continue;
+                }
+                if (!classPrint(was).equals(classPrint(e.getValue()))) shape(was, e.getValue(), allowed);
             }
             // Each changed method validated by its contract or only re-encoded, with the flags and
             // annotations it had, or else listed. Each added one listed, and each one whose flags or
@@ -5859,7 +5891,13 @@ public class DexDiff {
                 }
                 need("method", s, methodPrint(after), allowed);
             }
-            for (String line : allowed.keySet()) if (!needed.containsKey(line)) unseen.add("[" + allowed.get(line) + "] " + line);
+            // A run that names its selection has to need every line of the sections it applied, or
+            // the allowlist carries an exception for code that isn't there any more. A run over an
+            // installed build only reports them, since it applies every section.
+            for (String line : allowed.keySet()) if (!needed.containsKey(line)) {
+                unseen.add("[" + allowed.get(line) + "] " + line);
+                if (selected != null) findings.add("dex delta: the selected section [" + allowed.get(line) + "] lists what this run didn't change: " + line);
+            }
             for (Map.Entry<String, String> e : needed.entrySet()) if (e.getValue() == null)
                 findings.add("dex delta: no compiled contract validates this and no selected section of the dex delta allowlist lists it: " + e.getKey());
         }
@@ -6178,11 +6216,10 @@ public class DexDiff {
             Map<String, ClassDef> extension = DexDelta.extensions(bundle, version, delta.findings);
             // A run over an installed build doesn't know which patches it was built with, so every
             // section applies to it. Every script that patches hands its selection over.
-            Set<String> sections = selected != null ? selected : deltaAllowlist.keySet();
             System.out.println("[diff] holding the changed and added code to the contracts, " + bundle.getName() + "'s "
                     + extension.size() + " extension classes and " + args[8].replaceAll(".*[\\\\/]", "")
                     + (selected == null ? " (every section: selection file not supplied)" : ""));
-            delta.run(changed, added, featureClean, featurePatched, check, extension, version[0], deltaAllowlist, sections);
+            delta.run(changed, added, featureClean, featurePatched, check, extension, version[0], deltaAllowlist, selected);
             System.out.println("[diff] dex delta: " + delta.validated + " Tumblr methods validated by their contracts, "
                     + delta.reencoded + " only re-encoded, " + delta.needed.size() + " changes the allowlist has to name, "
                     + delta.matchedClasses + " extension classes as the bundle has them, " + delta.answered + " answering ahead of the bundle's body");
