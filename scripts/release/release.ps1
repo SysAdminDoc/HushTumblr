@@ -22,12 +22,12 @@
                  minutes. It writes how long it took.
       gate       Pushes the prepare commit with HUSHTUMBLR_RELEASE_GATE=1, so the pre-push gate
                  runs in full, builds the bundle and patches every declared fixture with it,
-                 keeping each passing run for the receipt.
+                 keeping each passing run for patch-for-device.ps1.
       build      From the pushed prepare commit: the bundle (timestamp pinned to the commit,
-                 classes.dex present), the receipt over every declared fixture, which reads the
-                 gate's kept runs for this exact bundle (build-release-receipt.ps1 -AppliedDir,
-                 run in this process), and the signed SHA256SUMS.txt, all in
-                 build/release-assets/X.Y.Z.
+                 classes.dex present), the receipt over every declared fixture, each patched and
+                 checked again here rather than read from the gate's kept runs
+                 (build-release-receipt.ps1, run in this process), and the signed
+                 SHA256SUMS.txt, all in build/release-assets/X.Y.Z.
       publish    publish-release.ps1: the notes, gh release create with the five assets, each
                  downloaded back and compared, the index commit, pushed at once, and
                  verify-published-index.ps1 last.
@@ -267,13 +267,13 @@ switch ($Stage) {
         Write-ReleaseStep "bundle $(Split-Path -Leaf $bundle) is pinned to $commit and carries its dex"
 
         $fixtures = Get-DeclaredFixtures -Root $Root
-        $store = Get-AppliedRecordStore
         $work = Join-Path ([IO.Path]::GetTempPath()) ('hushtumblr-receipt-' + [guid]::NewGuid().ToString('N'))
         try {
-            # In this process: the receipt takes the gate's kept run of each fixture for this bundle.
+            # Every fixture is patched again here. A kept gate run is a record and an APK any program
+            # of this user could have written together, so it can't show this bundle made the APK.
             Invoke-ReleaseNative 'The release receipt' {
                 & (Join-Path $Root 'scripts/build-release-receipt.ps1') -Root $Root -Fixture $fixtures -WorkDir $work `
-                    -Bundle $bundle -Sbom $sbom -AppliedDir $store
+                    -Bundle $bundle -Sbom $sbom
             }
         } finally {
             if (Test-Path -LiteralPath $work) { Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue }

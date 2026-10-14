@@ -149,8 +149,8 @@ function Invoke-ReleaseFixtureApply {
         its own push) patches every declared fixture with the bundle this gate just built from the
         pushed commit, through that commit's verify-all-patches.ps1: report, manifest delta,
         resource table, DexDiff and host references. -KeepIn keeps each passing run under its key,
-        so the receipt and patch-for-device.ps1 can take it for that same bundle instead of
-        patching again. A record is accepted only when its key matches, and the key holds this
+        so patch-for-device.ps1 can take it for that same bundle instead of patching again. The
+        release receipt doesn't read it and patches every fixture itself. A record is accepted only when its key matches, and the key holds this
         bundle's hash, so a record from any other build is never read. With none, the fixture is
         patched in full.
     #>

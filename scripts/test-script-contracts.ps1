@@ -4698,8 +4698,7 @@ $isKeptSign = { param($node) $node.Extent.Text -match '^&\s*\$apksigner\s+sign\s
 foreach ($order in @(
         @{ Name = 'patch-for-device.ps1'; After = @(@{ What = 'a kept run is looked up'; Match = $isKeptLookup },
             @{ What = 'a kept APK is signed'; Match = $isKeptSign }, @{ What = 'the CLI patches'; Match = $isCliPatch }) },
-        @{ Name = 'build-release-receipt.ps1'; After = @(@{ What = 'a kept run is looked up'; Match = $isKeptLookup },
-            @{ What = 'the CLI patches'; Match = $isCliPatch }) },
+        @{ Name = 'build-release-receipt.ps1'; After = @(@{ What = 'the CLI patches'; Match = $isCliPatch }) },
         @{ Name = 'verify-all-patches.ps1'; After = @(@{ What = 'a kept run is looked up'; Match = $isKeptLookup },
             @{ What = 'the CLI patches'; Match = $isCliPatch }) },
         @{ Name = 'verify-injected-registers.ps1'; After = @(
@@ -4726,7 +4725,7 @@ foreach ($order in @(
 # Get-MergedApk has handed the merge back and before the build is acted on.
 foreach ($decided in @(
         @{ Name = 'patch-for-device.ps1'; Before = @($isKeptLookup, $isKeptSign, $isCliPatch) },
-        @{ Name = 'build-release-receipt.ps1'; Before = @($isKeptLookup, $isCliPatch) },
+        @{ Name = 'build-release-receipt.ps1'; Before = @($isCliPatch) },
         @{ Name = 'verify-all-patches.ps1'; Before = @($isKeptLookup, $isCliPatch) })) {
     $scriptAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot $decided.Name), [ref]$null, [ref]$null)
     $sameBuild = @($scriptAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] -and
@@ -4739,14 +4738,14 @@ foreach ($decided in @(
     }
 }
 # A kept run is looked up by what the held merge was made from, never by a path hashed after the
-# merge let the input go: each of the three keys it with -InputIdentity taken from the merge it
-# holds, once. The kept APK comes back held (Find-AppliedRecord), into $recorded, and each lets go
-# of it once, in a finally, before the merge.
+# merge let the input go: each of the two that reuse one keys it with -InputIdentity taken from the
+# merge it holds, once. The kept APK comes back held (Find-AppliedRecord), into $recorded, and each
+# lets go of it once, in a finally, before the merge. The receipt reads none (below).
 function Get-NamedCommands($ScriptAst, [string]$Name) {
     @($ScriptAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] -and
             $node.GetCommandName() -eq $Name }, $true))
 }
-foreach ($keyedScript in @('patch-for-device.ps1', 'build-release-receipt.ps1', 'verify-all-patches.ps1')) {
+foreach ($keyedScript in @('patch-for-device.ps1', 'verify-all-patches.ps1')) {
     $scriptAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot $keyedScript), [ref]$null, [ref]$null)
     $keys = Get-NamedCommands $scriptAst 'Get-AppliedRecordKey'
     $named = @($keys | ForEach-Object { $_.CommandElements } | Where-Object { $_ -is [System.Management.Automation.Language.CommandParameterAst] } |
@@ -4785,8 +4784,7 @@ foreach ($keyedScript in @('patch-for-device.ps1', 'build-release-receipt.ps1', 
 }
 # A kept run's report is checked through the path its held handle is at, never a copy of it:
 # patch-for-device.ps1 copied it into its output folder and checked the copy, which nothing held.
-foreach ($reader in @(@{ Name = 'patch-for-device.ps1'; Reads = '$reportPath' }, @{ Name = 'build-release-receipt.ps1'; Reads = '$resultPath' },
-        @{ Name = 'verify-all-patches.ps1'; Reads = '$recorded.Result' })) {
+foreach ($reader in @(@{ Name = 'patch-for-device.ps1'; Reads = '$reportPath' }, @{ Name = 'verify-all-patches.ps1'; Reads = '$recorded.Result' })) {
     $readerAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot $reader.Name), [ref]$null, [ref]$null)
     $reads = @(Get-NamedCommands $readerAst 'Get-Content' | ForEach-Object {
             $elements = @($_.CommandElements)
@@ -4811,6 +4809,25 @@ $sourceDigests = @(Get-NamedCommands $receiptAst 'Get-HeldSourceSha256' | ForEac
 $pathDigests = @(Get-NamedCommands $receiptAst 'Get-Sha256Hex' | ForEach-Object { $_.Extent.Text } | Where-Object { $_ -notmatch '\$Bundle\b' })
 Assert-True ($sourceDigests.Count -eq 1 -and $sourceDigests[0] -ceq 'Get-HeldSourceSha256 -Merged $patchInput' -and $pathDigests.Count -eq 0) `
     "build-release-receipt.ps1 doesn't name its fixtures by the held merge's input alone: $($sourceDigests + $pathDigests -join '; ')"
+# It never reads a kept run: a kept run is a record and an APK any program of the same user can
+# write together, so it can't show which bundle made the APK, and the receipt is what a release is
+# trusted on. Every fixture is patched and checked here, with no condition around any of the three.
+$receiptReuse = @(foreach ($name in 'Get-AppliedRecordStore', 'Get-AppliedRecordKey', 'Find-AppliedRecord', 'Close-AppliedRecord', 'Save-AppliedRecord') {
+        Get-NamedCommands $receiptAst $name | ForEach-Object { $_.Extent.Text } })
+$receiptReuse += @($receiptAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.VariableExpressionAst] -and
+            @('recorded', 'AppliedDir') -contains $node.VariablePath.UserPath }, $true) | ForEach-Object { $_.Extent.Text })
+$receiptRuns = @($receiptAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] -and
+            ((& $isCliPatch $node) -or $node.Extent.Text -match "^&[^\r\n]*ResourceTableCheck\.java" -or
+                $node.Extent.Text -match "^&\s*\(Join-Path \`$PSScriptRoot 'verify-injected-registers\.ps1'\)") }, $true))
+$guardedRuns = @($receiptRuns | Where-Object {
+        $inside = $false
+        for ($parent = $_.Parent; $null -ne $parent; $parent = $parent.Parent) {
+            if ($parent -is [System.Management.Automation.Language.IfStatementAst]) { $inside = $true }
+        }
+        $inside } | ForEach-Object { $_.Extent.Text })
+Assert-True ($receiptReuse.Count -eq 0 -and $receiptRuns.Count -eq 3 -and $guardedRuns.Count -eq 0) `
+    ("build-release-receipt.ps1 reads a kept run, or doesn't patch and check every fixture itself: " +
+        "$($receiptReuse + $guardedRuns -join '; ') ($($receiptRuns.Count) of 3 runs found)")
 # The verifier holds whatever merge it compares to the APKs that were checked, a merge it was
 # handed included, so that check can't sit behind a condition.
 $verifierAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'verify-injected-registers.ps1'),
@@ -5652,8 +5669,7 @@ try {
     # above, and what the builder says is kept in $builderSaid, warnings included.
     $builderSaid = ''
     function Invoke-ReceiptBuilder([string[]]$Fixtures, [string]$Bundle,
-            [string]$WorkDir = (Join-Path $releaseRoot 'work'), [string]$DesktopJar = $stubJar, [switch]$SkipAdvisoryCheck,
-            [string]$AppliedDir) {
+            [string]$WorkDir = (Join-Path $releaseRoot 'work'), [string]$DesktopJar = $stubJar, [switch]$SkipAdvisoryCheck) {
         Remove-Item -LiteralPath $javaLog, $mergeLog -Force -ErrorAction SilentlyContinue
         $saved = @{}
         foreach ($variable in @(Get-ChildItem Env: | Where-Object { $_.Name -like 'GIT_*' })) {
@@ -5667,7 +5683,6 @@ try {
                 Java = $stubJava; Aapt2 = $stubAapt2; AndroidJar = $stubAndroidJar; ApiVersions = $stubApiVersions }
             if ($Bundle) { $arguments['Bundle'] = $Bundle }
             if ($SkipAdvisoryCheck) { $arguments['SkipAdvisoryCheck'] = $true }
-            if ($AppliedDir) { $arguments['AppliedDir'] = $AppliedDir }
             $script:builderSaid = @(& (Join-Path $PSScriptRoot 'build-release-receipt.ps1') @arguments 3>&1 6>&1 |
                 ForEach-Object { "$_" }) -join "`n"
             if ($LASTEXITCODE -ne 0) { throw "build-release-receipt.ps1 exited $LASTEXITCODE." }
@@ -6066,10 +6081,13 @@ try {
         @(Get-Content -LiteralPath $zipalignLog).Count -eq 1) `
         "verify-all-patches.ps1 did not hold the patched APK to zipalign -c -P 16 -v 4 once: $(@(Get-Content -LiteralPath $zipalignLog -ErrorAction SilentlyContinue) -join '; ')"
 
-    # The receipt reads a kept run of each fixture instead of patching it, and still checks the
-    # report, manifests and delta, so the release check takes what it writes. The stand-in aapt2
-    # reads a manifest written beside an APK and a record keeps the APK alone, so the manifest the
-    # CLI stand-in wrote goes beside each kept APK here. A real aapt2 reads the APK itself.
+    # The receipt never reads a kept run, though the release gate keeps one of each fixture: a kept
+    # run is a record and an APK any program of the same user can write together, so it can't show
+    # which bundle made the APK. With a run of every fixture kept in the store
+    # HUSHTUMBLR_APPLY_RECORDS names, the receipt still patches each one, and the release check
+    # takes what it writes. The stand-in aapt2 reads a manifest written beside an APK and a record
+    # keeps the APK alone, so the manifest the CLI stand-in wrote goes beside each kept APK here for
+    # patch-for-device.ps1 below. A real aapt2 reads the APK itself.
     $receiptStore = Join-Path $releaseRoot 'applied-records-receipt'
     foreach ($build in $builtBuilds) {
         $said = Invoke-VerifyAll -Apk $fixturePaths[$build] -KeepIn $receiptStore -Force:($build -eq $newerBuild)
@@ -6080,18 +6098,21 @@ try {
     Assert-True (@(Get-AppliedRecords -Store $receiptStore).Count -eq $builtBuilds.Count) `
         "The store doesn't hold one kept run per fixture: $(@(Get-StoreEntries $receiptStore).Name -join ', ')"
     $receiptBeforeKept = [IO.File]::ReadAllBytes($releaseReceipt)
+    $recordsBefore = $env:HUSHTUMBLR_APPLY_RECORDS
     try {
-        Invoke-ReceiptBuilder -Fixtures $allFixtures -AppliedDir $receiptStore
-        Assert-True (-not (Test-Path -LiteralPath $javaLog)) `
-            "The receipt patched a fixture a kept run covers: $(@(Get-Content -LiteralPath $javaLog -ErrorAction SilentlyContinue) -join '; ')"
-        Assert-True ([regex]::Matches($builderSaid, 'passed every check with this bundle in the run kept as').Count -eq $builtBuilds.Count) `
-            "The receipt did not say it read each fixture's kept run: $builderSaid"
+        $env:HUSHTUMBLR_APPLY_RECORDS = $receiptStore
+        Invoke-ReceiptBuilder -Fixtures $allFixtures
+        $keptPatchRuns = @(Get-Content -LiteralPath $javaLog -ErrorAction SilentlyContinue)
+        Assert-True (($keptPatchRuns -join "`n") -eq ($expectedRuns -join "`n")) `
+            "The receipt didn't patch every fixture while a kept run of each was in the store: $($keptPatchRuns -join '; ')"
+        Assert-True ($builderSaid -notlike '*run kept as*') "The receipt said it read a kept run: $builderSaid"
         $keptReceipt = Get-Content -LiteralPath $releaseReceipt -Raw | ConvertFrom-Json
         Assert-True ((@($keptReceipt.targets | ForEach-Object { [string]$_.source.versionName }) -join ',') -eq ($builtBuilds -join ',')) `
-            "The receipt read from kept runs does not hold one target per fixture: $($keptReceipt.targets.source.versionName -join ', ')"
+            "The receipt written beside kept runs does not hold one target per fixture: $($keptReceipt.targets.source.versionName -join ', ')"
         $said = Invoke-ReleaseCheck
-        Assert-True ($said -like "*$builtProved*") "The release check did not accept a receipt read from kept runs: $said"
+        Assert-True ($said -like "*$builtProved*") "The release check did not accept the receipt written beside kept runs: $said"
     } finally {
+        $env:HUSHTUMBLR_APPLY_RECORDS = $recordsBefore
         [IO.File]::WriteAllBytes($releaseReceipt, $receiptBeforeKept)
     }
 

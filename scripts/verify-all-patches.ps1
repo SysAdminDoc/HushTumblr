@@ -38,8 +38,8 @@
     the SDK stubs and every verifier file (Get-AppliedRecordKey in common.ps1). A later run with
     -KeepIn and the same key checks and merges the APK as any run does, says it's reusing the kept
     run, and stops before patching. A failed or partial run is never kept.
-    The release push gate passes it, and build-release-receipt.ps1 and patch-for-device.ps1 read
-    what it kept. HUSHTUMBLR_APPLY_RECORDS stands in for -KeepIn when it isn't given, so a
+    The release push gate passes it, and patch-for-device.ps1 reads what it kept. The release
+    receipt never does: it patches every fixture itself. HUSHTUMBLR_APPLY_RECORDS stands in for -KeepIn when it isn't given, so a
     machine that sets it keeps every passing local run for the gate to find. Without either,
     nothing is kept or read, and every run patches. -NoReuse patches in full even when a kept run
     matches, and keeps the new run in its place when it passes.
