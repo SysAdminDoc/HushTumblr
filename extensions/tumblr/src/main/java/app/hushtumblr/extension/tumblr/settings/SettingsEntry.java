@@ -77,7 +77,9 @@ public final class SettingsEntry {
      * started keeps the shortcut's intent as its own, so the next tap matched it, Android only
      * brought that task forward, and no activity was created to ask for the screen. Clearing the
      * task starts the launcher activity afresh on every tap, however the task began, which is what
-     * the platform's shortcut guide says a dynamic shortcut should do.
+     * the platform's shortcut guide says a dynamic shortcut should do. Whatever Tumblr had open in
+     * that task closes with it, a post being written included, so only Tumblr's own draft saving
+     * keeps that.
      */
     static final int SHORTCUT_FLAGS = Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK;
 
