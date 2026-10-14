@@ -5071,7 +5071,7 @@ try {
         'if /i "%~nx4"=="ResourceTableCheck.java" goto resources',
         'if /i "%~nx4"=="DexDiff.java" goto dexdiff',
         'if /i "%~nx4"=="HostReferences.java" goto references',
-        'set "OUT=" & set "RESULT=" & set "LAST=" & set "PREV=" & set "FORCED=0"',
+        'set "OUT=" & set "RESULT=" & set "LAST=" & set "PREV=" & set "FORCED=0" & set "ENABLED="',
         'shift',
         'shift',
         'rem patch-for-device.ps1 hands the CLI one argument file, a quoted value a line with',
@@ -5094,6 +5094,9 @@ try {
         ':take',
         'if "!PREV!"=="-o" set "OUT=!V!"',
         'if "!PREV!"=="-r" set "RESULT=!V!"',
+        'rem An option value is logged with the patch enabled before it, the one the CLI gives it to.',
+        'if "!PREV!"=="-e" set "ENABLED=!V!"',
+        'if "!PREV!"=="-O" >>"!HERE!options.log" echo !ENABLED!: !V!',
         'if "!V!"=="-f" set "FORCED=1"',
         'set "PREV=!V!"',
         'set "LAST=!V!"',
@@ -5873,6 +5876,35 @@ try {
     Assert-True ((@(Get-Content -LiteralPath $javaLog) -join '; ') -eq "patch $newestFixture merged forced=0" -and
         -not (Test-Path -LiteralPath $apksignerLog)) `
         "patch-for-device.ps1 -NoReuse did not patch with the CLI: $(@(Get-Content -LiteralPath $javaLog -ErrorAction SilentlyContinue) -join '; ')"
+
+    # -Option hands a named patch an option value: the CLI's -O, right after that patch's -e. The
+    # kept run above was patched with the options as the bundle ships them, so a run with one
+    # patches with the CLI without -NoReuse too. Anything that isn't 'Patch name:key=value', a patch
+    # that isn't in the build and a key the patch doesn't declare stop the run before the CLI starts.
+    $optionsLog = Join-Path $tools 'options.log'
+    $keptDevice.Remove('NoReuse')
+    $keptDevice['Option'] = @('Dark background color:backgroundColor=#121212')
+    Remove-Item -LiteralPath $javaLog, $apksignerLog, $optionsLog -Force -ErrorAction SilentlyContinue
+    $said = @(& (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6>&1 | ForEach-Object { "$_" })
+    Assert-True ((@(Get-Content -LiteralPath $javaLog) -join '; ') -eq "patch $newestFixture merged forced=0" -and
+        -not (Test-Path -LiteralPath $apksignerLog) -and
+        (@(Get-Content -LiteralPath $optionsLog) -join '; ') -ceq 'Dark background color: backgroundColor=#121212' -and
+        ($said -join "`n") -like '*option for Dark background color: backgroundColor=#121212*') `
+        ("patch-for-device.ps1 -Option did not patch with the CLI and hand the value over after its patch's -e: " +
+            "$(@(Get-Content -LiteralPath $optionsLog -ErrorAction SilentlyContinue) -join '; ') | $($said -join ' | ')")
+    foreach ($refused in @(
+            @{ Option = 'backgroundColor=#121212'; Says = "*-Option takes 'Patch name:key=value', not 'backgroundColor=#121212'*" },
+            @{ Option = 'No such patch:backgroundColor=#121212'; Says = "*No patch named 'No such patch' in this build*" },
+            @{ Option = 'Dark background color:foregroundColor=#121212'
+                Says = "*Dark background color has no option 'foregroundColor'. It declares: backgroundColor*" })) {
+        $keptDevice['Option'] = @($refused.Option)
+        Remove-Item -LiteralPath $javaLog, $apksignerLog, $optionsLog -Force -ErrorAction SilentlyContinue
+        Assert-Throws { & (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6> $null } $refused.Says `
+            "patch-for-device.ps1 took -Option '$($refused.Option)'."
+        Assert-True (-not (Test-Path -LiteralPath $javaLog) -and -not (Test-Path -LiteralPath $apksignerLog)) `
+            "patch-for-device.ps1 patched or signed after refusing -Option '$($refused.Option)'."
+    }
+    $keptDevice.Remove('Option')
 
     # The newest build alone, or beside the undeclared one, is not enough for a receipt: the older
     # declared build has no run. The builder says so before it patches anything. It used to patch

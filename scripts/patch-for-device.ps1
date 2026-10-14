@@ -27,6 +27,10 @@
     HUSHTUMBLR_APPLY_RECORDS, else the default one in the temp folder; -NoReuse always patches.
     Nothing this script makes is kept there: it skips the resource table check.
 
+    -Option gives a named patch an option value, written 'Patch name:key=value'. The CLI gets it as
+    -O right after that patch's -e. A kept gate run was patched with the options as the bundle ships
+    them and its key doesn't cover them, so a run with -Option always patches.
+
     The signed APK has to pass zipalign -c -P 16 -v 4, with the zipalign beside aapt2, and its
     64-bit libraries have to be Tumblr's own bytes (Assert-PageAlignment). A kept APK is held to
     that before it's signed as well. A library of Tumblr's that doesn't fit 16 KB pages is printed
@@ -48,6 +52,9 @@ param(
     # that is off by default, so a check of what Tumblr does without one of them needs a build
     # that leaves it out.
     [string[]]$Exclude = @(),
+    # Option values for named patches, each written 'Patch name:key=value', like
+    # 'Dark background color:backgroundColor=#121212'. Without one a patch keeps the bundle's default.
+    [string[]]$Option = @(),
     # Patch with the release bundle even when a source file is newer than it, for replaying
     # an earlier build on purpose. Without it a stale bundle stops the run.
     [switch]$AllowStaleBundle,
@@ -173,6 +180,27 @@ foreach ($excluded in $Exclude) {
     if ($excluded -notin ($catalog.patches | ForEach-Object { $_.name })) { throw "No patch named '$excluded' to exclude." }
 }
 if ($Exclude.Count -gt 0) { Write-Host "[device] leaving out: $($Exclude -join ', ')" }
+# Each -Option is held to the catalog before anything is merged or patched: the patch has to be in
+# this build and has to declare the key. The CLI ignores an option it can't place, and the APK
+# would then read as a verdict on a value it never got.
+$patchOptions = @{}
+foreach ($entry in $Option) {
+    $parsed = [regex]::Match([string]$entry, '^(?<patch>.+?):(?<key>[A-Za-z][A-Za-z0-9_]*)=(?<value>.*)$')
+    if (-not $parsed.Success) { throw "-Option takes 'Patch name:key=value', not '$entry'." }
+    $optionPatch = $parsed.Groups['patch'].Value
+    $optionKey = $parsed.Groups['key'].Value
+    $declaring = @($catalog.patches | Where-Object { $_.name -ceq $optionPatch })
+    if ($declaring.Count -ne 1 -or $optionPatch -notin $names) { throw "No patch named '$optionPatch' in this build to give an option to." }
+    $declaredKeys = @($declaring[0].options | ForEach-Object { [string]$_.key })
+    if ($optionKey -cnotin $declaredKeys) {
+        throw "$optionPatch has no option '$optionKey'. It declares: $(if ($declaredKeys.Count) { $declaredKeys -join ', ' } else { 'none' })."
+    }
+    if (-not $patchOptions.ContainsKey($optionPatch)) { $patchOptions[$optionPatch] = @() }
+    $patchOptions[$optionPatch] += "$optionKey=$($parsed.Groups['value'].Value)"
+    Write-Host "[device] option for ${optionPatch}: $optionKey=$($parsed.Groups['value'].Value)"
+}
+# A kept gate run was patched with every option as the bundle ships it.
+if ($patchOptions.Count -gt 0) { $NoReuse = $true }
 $dependencyNames = @(Get-PatchDependencyNames -PatchList $catalog -RequestedNames $names)
 
 New-Item -ItemType Directory -Force $OutDir | Out-Null
@@ -239,7 +267,11 @@ if ($recorded) {
     Copy-Item -LiteralPath $recorded.Result -Destination $result
 } else {
 $enable = @()
-foreach ($name in $names) { $enable += '-e'; $enable += $name }
+foreach ($name in $names) {
+    $enable += '-e'; $enable += $name
+    # The CLI reads -O as an option of the patch enabled just before it.
+    if ($patchOptions.ContainsKey($name)) { foreach ($pair in $patchOptions[$name]) { $enable += '-O'; $enable += $pair } }
+}
 $arguments = @('patch', '--exclusive', '-p', $bundle, '-o', $out, '-t', $temp, '-r', $result,
     '--keystore', $Keystore, '--keystore-password', $keystorePassword,
     '--keystore-entry-alias', $KeyAlias, '--keystore-entry-password', $keystorePassword) + $enable + @($patchInput)
