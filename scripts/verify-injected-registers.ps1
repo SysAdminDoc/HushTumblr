@@ -52,6 +52,12 @@
     argument), and it fails a clean side that holds any of the bundle's own code. The device half
     runs base.apk, the same app code.
 
+    Every changed or added method and class shape is also held to what accounts for it: a mutation
+    contract that validated it, the bundle's extension classes (-Bundle, held while DexDiff reads
+    it), or a line of scripts/dex-delta-allowlist.txt under a selected patch, which names the
+    SHA-256 of what that patch writes there. A Tumblr method edited in the CLI's working copy, or an
+    extension class swapped in, fails even when its code is well formed.
+
 .EXAMPLE
     scripts/verify-injected-registers.ps1 -PatchedApk C:\work\patched.apk
 
@@ -79,7 +85,8 @@ param(
     [string]$Aapt2,
     [string[]]$SelectedPatchNames,
     [string]$AndroidJar,
-    [string]$ApiVersions
+    [string]$ApiVersions,
+    [string]$Bundle
 )
 
 $ErrorActionPreference = 'Stop'
@@ -171,7 +178,8 @@ function Invoke-DexDiff {
         $output = @(& $Java '-Xmx8g' '-cp' $DesktopJar (Join-Path $PSScriptRoot 'DexDiff.java') `
             $CleanMerged $PatchedApk $ReportPath `
             (Join-Path $PSScriptRoot 'injected-register-removal-allowlist.txt') `
-            (Join-Path $PSScriptRoot 'injected-mutation-contracts.txt') $cleanBase $selectionFile 2>&1 | ForEach-Object { "$_" })
+            (Join-Path $PSScriptRoot 'injected-mutation-contracts.txt') $cleanBase $selectionFile `
+            $bundlePath (Join-Path $PSScriptRoot 'dex-delta-allowlist.txt') 2>&1 | ForEach-Object { "$_" })
         $exitCode = $LASTEXITCODE
     } finally {
         Exit-HushTumblrQueue $queued
@@ -214,6 +222,7 @@ $cleanSourceHeld = $null
 $cleanBaseHeld = $null
 $cleanMergedHeld = $null
 $madeCleanMerge = $false
+$bundleHeld = $null
 try {
 
 $selectionFile = '-'
@@ -227,6 +236,13 @@ if ($PSBoundParameters.ContainsKey('SelectedPatchNames')) {
     $selectionFile = Join-Path $work 'selected-patches.txt'
     [IO.File]::WriteAllLines($selectionFile, $SelectedPatchNames, (New-Object Text.UTF8Encoding($false)))
 }
+
+# The bundle the patched APK was patched with: DexDiff holds the classes the patch added to its
+# extensions, and what else it changed to dex-delta-allowlist.txt. The scripts that patch hand theirs
+# over, held. Run on its own, this checks against the bundle the repo builds now.
+if (-not $Bundle) { $Bundle = Get-ReleaseBundlePath -Root $root -Version (Get-BundleVersion -Root $root) }
+$bundleHeld = Open-HeldFile -Path $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Bundle) -What 'The bundle'
+$bundlePath = Get-HeldPath -Stream $bundleHeld
 
 $adbPath = $null
 if ($FromDevice -or $Serial) { $adbPath = Resolve-Adb -Explicit $Adb }
@@ -402,6 +418,7 @@ $completed = $true
     if ($madeCleanMerge) { Close-MergedApk -Merged $CleanMerged }
     if ($cleanBaseHeld) { $cleanBaseHeld.Dispose() }
     if ($cleanSourceHeld) { $cleanSourceHeld.Dispose() }
+    if ($bundleHeld) { $bundleHeld.Dispose() }
     $workHeld.Anchor.Dispose()
     $keepReport = $reportInWork -and ($failed -or -not $completed) -and
         (Test-Path -LiteralPath $ReportPath -PathType Leaf)

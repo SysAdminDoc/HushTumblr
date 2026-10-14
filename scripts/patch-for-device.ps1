@@ -133,6 +133,7 @@ $recorded = $null
 $outHandle = $null
 $resultHandle = $null
 $reservedHandle = $null
+$bundleHeld = $null
 try {
 if ($OutputApk) {
     $reservedPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputApk)
@@ -169,6 +170,10 @@ if ([string]::IsNullOrEmpty($keystorePassword)) {
 $version = Get-BundleVersion -Root $root
 $bundle = Get-ReleaseBundlePath -Root $root -Version $version
 if (-not (Test-Path $bundle)) { throw "No bundle at $bundle. Build it first: :patches:generatePatchesList then :patches:buildAndroid, through the governor." }
+# Held from here to the end of the run: the applied record's key, the CLI and the register check's
+# comparison with the bundle's extensions all read these bytes, and nothing can write them between.
+$bundleHeld = Open-HeldFile -Path $bundle -What 'The bundle'
+$bundle = Get-HeldPath -Stream $bundleHeld
 # Only buildAndroid writes this bundle; a test run after a patch change leaves it behind, and the
 # phone would get the previous hooks while the result reads as a verdict on the new ones.
 if (-not $AllowStaleBundle) {
@@ -406,7 +411,7 @@ $registerReport = Join-Path $OutDir 'injected-registers.txt'
 $global:LASTEXITCODE = -1
 & (Join-Path $PSScriptRoot 'verify-injected-registers.ps1') -CleanApk $Apk -CleanMerged $patchInput `
     -PatchedApk $out -ReportPath $registerReport -Java $java -DesktopJar $DesktopJar -Aapt2 $Aapt2 `
-    -SelectedPatchNames $manifestSelection -AndroidJar $AndroidJar -ApiVersions $ApiVersions
+    -SelectedPatchNames $manifestSelection -AndroidJar $AndroidJar -ApiVersions $ApiVersions -Bundle $bundle
 if ($LASTEXITCODE -ne 0) { throw 'Patched bytecode failed its compiled mutation or structural checks.' }
 }
 # As the report check counted them, so a list the report leaves out isn't counted as one entry.
@@ -451,7 +456,7 @@ try {
 } finally {
     if ($outputReservation) { $outputReservation.Dispose() }
     # Held until every reader is done, and a held file can't be deleted.
-    foreach ($held in @($outHandle, $resultHandle, $reservedHandle)) { if ($null -ne $held) { $held.Dispose() } }
+    foreach ($held in @($outHandle, $resultHandle, $reservedHandle, $bundleHeld)) { if ($null -ne $held) { $held.Dispose() } }
     Close-AppliedRecord -Record $recorded
     Close-MergedApk -Merged $patchInput
     # These are this run's paths only. A missing or replaced owner marker fails closed.

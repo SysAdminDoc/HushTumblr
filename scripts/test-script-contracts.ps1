@@ -2557,7 +2557,8 @@ try {
     $prePushSource = [System.IO.File]::ReadAllText($prePushScript)
     $deadSuiteCopy = Join-Path $hookRoot 'pre-push-dead-suite.ps1'
     $verifierRoutes = [ordered]@{
-        'scripts/test-injected-registers.ps1' = @('BadDexFixture.java', 'DexDiff.java', 'FeatureDexFixture.java', 'SelectorDexFixture.java',
+        'scripts/test-injected-registers.ps1' = @('BadDexFixture.java', 'DexDiff.java', 'DexDeltaFixture.java', 'dex-delta-allowlist.txt',
+            'FeatureDexFixture.java', 'SelectorDexFixture.java',
             'AccountDexFixture.java', 'MatureDexFixture.java', 'RootMuteDexFixture.java', 'MutualDexFixture.java',
             'HostReferences.java', 'HostReferenceFixture.java', 'host-reference-contracts.txt', 'test-host-references.ps1',
             'patch-for-device.ps1', 'injected-mutation-contracts.txt',
@@ -4924,6 +4925,12 @@ $catalogNames = @($catalog.patches | ForEach-Object { [string]$_.name })
 $strangeSections = @($resourceSections | Where-Object { $_ -cne 'rebuild' -and $catalogNames -cnotcontains $_ })
 Assert-True ($resourceSections -ccontains 'rebuild' -and $strangeSections.Count -eq 0) `
     "resource-delta-allowlist.txt has sections for no patch the catalog lists: $($strangeSections -join ', ')"
+# The dex delta allowlist's sections are patches the catalog lists, one or several joined by " | ".
+$dexSections = @(Get-Content -LiteralPath (Join-Path $PSScriptRoot 'dex-delta-allowlist.txt') |
+    Where-Object { $_ -match '^\[(.+)\]$' } | ForEach-Object { $Matches[1] })
+$strangeDexSections = @($dexSections | Where-Object { @($_ -split ' \| ' | Where-Object { $catalogNames -cnotcontains $_ }).Count -gt 0 })
+Assert-True ($dexSections.Count -gt 0 -and $strangeDexSections.Count -eq 0) `
+    "dex-delta-allowlist.txt has sections naming a patch the catalog doesn't list: $($strangeDexSections -join ', ')"
 # A kept run is copied from the handles the run held, never from a path.
 $verifyAllAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'verify-all-patches.ps1'), [ref]$null, [ref]$null)
 $keepCalls = @(Get-NamedCommands $verifyAllAst 'Save-AppliedRecord' | ForEach-Object { $_.Extent.Text })

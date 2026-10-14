@@ -704,8 +704,10 @@ function Test-RunsDexDiffWithContracts {
     <#
     .SYNOPSIS
         Whether verify-injected-registers.ps1 runs DexDiff.java on the patched APK and holds it
-        to the mutation contracts: a reachable & $Java call whose DexDiff arguments are the clean
-        APK, $PatchedApk, the report, the removal allowlist and injected-mutation-contracts.txt.
+        to the mutation contracts and the dex delta: a reachable & $Java call whose DexDiff
+        arguments are the clean APK, $PatchedApk, the report, the removal allowlist,
+        injected-mutation-contracts.txt, the signed base, the selection, $bundlePath and
+        dex-delta-allowlist.txt.
     #>
     param([string]$Path)
 
@@ -713,9 +715,11 @@ function Test-RunsDexDiffWithContracts {
         if ($call.InvocationOperator -ne [System.Management.Automation.Language.TokenKind]::Ampersand -or
             $call.CommandElements[0].Extent.Text -ne '$Java') { continue }
         $elements = $call.CommandElements
-        for ($k = 1; $k + 5 -lt $elements.Count; $k++) {
+        for ($k = 1; $k + 9 -lt $elements.Count; $k++) {
             if ((Test-NamesFile $elements[$k] 'DexDiff.java') -and $elements[$k + 2].Extent.Text -eq '$PatchedApk' -and
-                (Test-NamesFile $elements[$k + 5] 'injected-mutation-contracts.txt')) { return $true }
+                (Test-NamesFile $elements[$k + 5] 'injected-mutation-contracts.txt') -and
+                $elements[$k + 8].Extent.Text -eq '$bundlePath' -and
+                (Test-NamesFile $elements[$k + 9] 'dex-delta-allowlist.txt')) { return $true }
         }
     }
     return $false

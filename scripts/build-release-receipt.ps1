@@ -110,6 +110,11 @@ if (-not (Test-Path -LiteralPath $Bundle -PathType Leaf)) {
 }
 # Found in PowerShell's location; the ZipFile reads below would look in the process directory.
 $Bundle = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Bundle)
+# Held from here to the end of the run: its digest, its extension payloads, every patch run and the
+# register checks' comparison with its extensions read these bytes, and nothing can write them between.
+$bundleHeld = Open-HeldFile -Path $Bundle -What 'The bundle'
+try {
+$Bundle = Get-HeldPath -Stream $bundleHeld
 if (-not $PatchList) { $PatchList = Join-Path $Root 'patches-list.json' }
 if (-not $OutputPath) { $OutputPath = Join-Path $Root "release-receipt-$releaseVersion.json" }
 
@@ -454,7 +459,7 @@ foreach ($apk in $Fixture) {
         $global:LASTEXITCODE = 0
         & (Join-Path $PSScriptRoot 'verify-injected-registers.ps1') -CleanApk $apk -CleanMerged $patchInput `
             -PatchedApk $out -ReportPath $registerReport -Java $Java -DesktopJar $DesktopJar -Aapt2 $Aapt2 `
-            -SelectedPatchNames $manifestSelection -AndroidJar $AndroidJar -ApiVersions $ApiVersions
+            -SelectedPatchNames $manifestSelection -AndroidJar $AndroidJar -ApiVersions $ApiVersions -Bundle $Bundle
         if ($LASTEXITCODE -ne 0) {
             throw ("${label}: the injected code failed its structural or host reference checks " +
                 "(exit $LASTEXITCODE). Report: $registerReport")
@@ -542,4 +547,5 @@ if (-not $check.Valid) { throw "The receipt this run produced does not pass vali
 
 $receipt | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $OutputPath -Encoding UTF8
 Write-Host "[receipt] wrote $OutputPath"
+} finally { $bundleHeld.Dispose() }
 exit 0

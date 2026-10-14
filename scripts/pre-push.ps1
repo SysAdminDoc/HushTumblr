@@ -618,6 +618,8 @@ try {
         'scripts/BadDexFixture.java',
         'scripts/ControlFlowFixture.java',
         'scripts/DexDiff.java',
+        'scripts/DexDeltaFixture.java',
+        'scripts/dex-delta-allowlist.txt',
         'scripts/FeatureDexFixture.java',
         'scripts/SelectorDexFixture.java',
         'scripts/AccountDexFixture.java',

@@ -1,12 +1,17 @@
 import com.android.tools.smali.dexlib2.AccessFlags;
 import com.android.tools.smali.dexlib2.DexFileFactory;
 import com.android.tools.smali.dexlib2.Opcode;
+import com.android.tools.smali.dexlib2.Opcodes;
+import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile;
+import com.android.tools.smali.dexlib2.iface.Annotation;
+import com.android.tools.smali.dexlib2.iface.AnnotationElement;
 import com.android.tools.smali.dexlib2.iface.ClassDef;
 import com.android.tools.smali.dexlib2.iface.DexFile;
 import com.android.tools.smali.dexlib2.iface.ExceptionHandler;
 import com.android.tools.smali.dexlib2.iface.Field;
 import com.android.tools.smali.dexlib2.iface.Method;
 import com.android.tools.smali.dexlib2.iface.MethodImplementation;
+import com.android.tools.smali.dexlib2.iface.MethodParameter;
 import com.android.tools.smali.dexlib2.iface.MultiDexContainer;
 import com.android.tools.smali.dexlib2.iface.TryBlock;
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction;
@@ -27,7 +32,23 @@ import com.android.tools.smali.dexlib2.iface.reference.FieldReference;
 import com.android.tools.smali.dexlib2.iface.reference.Reference;
 import com.android.tools.smali.dexlib2.iface.reference.StringReference;
 import com.android.tools.smali.dexlib2.iface.reference.TypeReference;
+import com.android.tools.smali.dexlib2.iface.value.AnnotationEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.ArrayEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.BooleanEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.ByteEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.CharEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.DoubleEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.EncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.EnumEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.FieldEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.FloatEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.IntEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.LongEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.MethodEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.NullEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.ShortEncodedValue;
 import com.android.tools.smali.dexlib2.iface.value.StringEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.TypeEncodedValue;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -100,8 +121,13 @@ import java.util.TreeSet;
  * string and counted calls in any method holding it. The device verifier stays the authority;
  * these catch the known shapes without a phone.
  *
+ * <p>Given the bundle and the dex delta allowlist, every changed and added method is also held to
+ * what accounts for it (DexDelta): a contract that validated it, the bundle's extension classes, or
+ * a reviewed line listing the SHA-256 of what a selected patch writes there.
+ *
  *   java -cp &lt;cli jar&gt; DexDiff.java &lt;cleanApk&gt; &lt;patchedApk&gt; &lt;reportFile&gt;
- *       &lt;removalAllowlist&gt; [&lt;contracts&gt;]
+ *       &lt;removalAllowlist&gt; [&lt;contracts&gt; [&lt;signedBase&gt; [&lt;selectedPatches&gt;
+ *       [&lt;bundle&gt; &lt;dexDeltaAllowlist&gt;]]]]
  */
 public class DexDiff {
 
@@ -2006,6 +2032,68 @@ public class DexDiff {
         final Set<Integer> removed = new HashSet<>();
         final Map<Integer, Instruction> replacements = new HashMap<>();
         final Set<Integer> validatedTryBlocks = new HashSet<>();
+    }
+
+    /**
+     * A body as FeatureCheck compares it: each instruction rendered with branch, switch and handler
+     * targets as instruction positions, const-string/jumbo as const-string, a goto of any width as
+     * goto, and no nops, so a body the rebuild only re-encoded reads as the same body. [e] leaves
+     * out what a validated edit removed and reads the call a hook replaced in its place, and
+     * [badRoute] hears of an original branch or handler routed into the middle of an edit.
+     */
+    private static List<String> normalizedBody(Method m, FeatureEdits e, java.util.function.Consumer<String> badRoute) {
+        List<String> out = new ArrayList<>();
+        if (m == null || m.getImplementation() == null) return out;
+        Layout layout = new Layout(m.getImplementation());
+        Map<Integer, Integer> positions = new HashMap<>();
+        int position = 0;
+        for (int at = 0; at < layout.instructions.size(); at++) {
+            positions.put(layout.addresses.get(at), position);
+            if ((e == null || !e.removed.contains(at)) && layout.instructions.get(at).getOpcode() != Opcode.NOP) position++;
+        }
+        positions.put(layout.size, position);
+        Map<Integer, Integer> switches = new HashMap<>();
+        for (int at = 0; at < layout.instructions.size(); at++) {
+            Instruction i = layout.instructions.get(at);
+            if ((i.getOpcode() == Opcode.PACKED_SWITCH || i.getOpcode() == Opcode.SPARSE_SWITCH) && i instanceof OffsetInstruction)
+                switches.put(layout.addresses.get(at) + ((OffsetInstruction) i).getCodeOffset(), layout.addresses.get(at));
+        }
+        for (int at = 0; at < layout.instructions.size(); at++) {
+            if (e != null && e.removed.contains(at)) continue;
+            Instruction i = e == null ? layout.instructions.get(at) : e.replacements.getOrDefault(at, layout.instructions.get(at));
+            if (i.getOpcode() == Opcode.NOP) continue;
+            String text = render(i).replace("const-string/jumbo", "const-string");
+            if (i instanceof OffsetInstruction) {
+                String raw = String.format("%+d", ((OffsetInstruction) i).getCodeOffset());
+                int target = layout.addresses.get(at) + ((OffsetInstruction) i).getCodeOffset();
+                text = text.replace(", " + raw + " |maxreg=", ", target=" + originalTarget(m, layout, e, positions, target, badRoute) + " |maxreg=");
+                if (i.getOpcode().name.startsWith("goto")) text = text.replaceFirst("goto(?:/16|/32)?", "goto");
+            }
+            if (i instanceof SwitchPayload) {
+                text = i.getOpcode().name;
+                Integer owner = switches.get(layout.addresses.get(at));
+                for (SwitchElement element : ((SwitchPayload) i).getSwitchElements()) text += " " + element.getKey() + "->" + (owner == null ? "missing" : originalTarget(m, layout, e, positions, owner + element.getOffset(), badRoute));
+            }
+            out.add(text);
+        }
+        int tryIndex = 0;
+        for (TryBlock<? extends ExceptionHandler> block : m.getImplementation().getTryBlocks()) {
+            if (e != null && e.validatedTryBlocks.contains(tryIndex++)) continue;
+            String text = "try " + positions.get(block.getStartCodeAddress()) + ":" + positions.get(block.getStartCodeAddress() + block.getCodeUnitCount());
+            for (ExceptionHandler handler : block.getExceptionHandlers()) text += " " + handler.getExceptionType() + "->" + originalTarget(m, layout, e, positions, handler.getHandlerCodeAddress(), badRoute);
+            out.add(text);
+        }
+        return out;
+    }
+
+    private static Integer originalTarget(Method m, Layout layout, FeatureEdits e, Map<Integer, Integer> positions, int target,
+            java.util.function.Consumer<String> badRoute) {
+        if (e != null) {
+            int index = layout.addresses.indexOf(target);
+            if (index > 0 && e.removed.contains(index) && e.removed.contains(index - 1))
+                badRoute.accept(m + " routes an original branch or handler into the middle of an injected block");
+        }
+        return positions.get(target);
     }
 
     /** Executable successors, including switch cases and only the handlers an instruction can reach. */
@@ -5501,57 +5589,7 @@ public class DexDiff {
         }
 
         List<String> normalized(Method m, FeatureEdits e) {
-            List<String> out = new ArrayList<>();
-            if (m == null || m.getImplementation() == null) return out;
-            Layout layout = new Layout(m.getImplementation());
-            Map<Integer, Integer> positions = new HashMap<>();
-            int position = 0;
-            for (int at = 0; at < layout.instructions.size(); at++) {
-                positions.put(layout.addresses.get(at), position);
-                if ((e == null || !e.removed.contains(at)) && layout.instructions.get(at).getOpcode() != Opcode.NOP) position++;
-            }
-            positions.put(layout.size, position);
-            Map<Integer, Integer> switches = new HashMap<>();
-            for (int at = 0; at < layout.instructions.size(); at++) {
-                Instruction i = layout.instructions.get(at);
-                if ((i.getOpcode() == Opcode.PACKED_SWITCH || i.getOpcode() == Opcode.SPARSE_SWITCH) && i instanceof OffsetInstruction)
-                    switches.put(layout.addresses.get(at) + ((OffsetInstruction) i).getCodeOffset(), layout.addresses.get(at));
-            }
-            for (int at = 0; at < layout.instructions.size(); at++) {
-                if (e != null && e.removed.contains(at)) continue;
-                Instruction i = e == null ? layout.instructions.get(at) : e.replacements.getOrDefault(at, layout.instructions.get(at));
-                if (i.getOpcode() == Opcode.NOP) continue;
-                String text = render(i).replace("const-string/jumbo", "const-string");
-                if (i instanceof OffsetInstruction) {
-                    String raw = String.format("%+d", ((OffsetInstruction) i).getCodeOffset());
-                    int target = layout.addresses.get(at) + ((OffsetInstruction) i).getCodeOffset();
-                    text = text.replace(", " + raw + " |maxreg=", ", target=" + originalTarget(m, layout, e, positions, target) + " |maxreg=");
-                    if (i.getOpcode().name.startsWith("goto")) text = text.replaceFirst("goto(?:/16|/32)?", "goto");
-                }
-                if (i instanceof SwitchPayload) {
-                    text = i.getOpcode().name;
-                    Integer owner = switches.get(layout.addresses.get(at));
-                    for (SwitchElement element : ((SwitchPayload) i).getSwitchElements()) text += " " + element.getKey() + "->" + (owner == null ? "missing" : originalTarget(m, layout, e, positions, owner + element.getOffset()));
-                }
-                out.add(text);
-            }
-            int tryIndex = 0;
-            for (TryBlock<? extends ExceptionHandler> block : m.getImplementation().getTryBlocks()) {
-                if (e != null && e.validatedTryBlocks.contains(tryIndex++)) continue;
-                String text = "try " + positions.get(block.getStartCodeAddress()) + ":" + positions.get(block.getStartCodeAddress() + block.getCodeUnitCount());
-                for (ExceptionHandler handler : block.getExceptionHandlers()) text += " " + handler.getExceptionType() + "->" + originalTarget(m, layout, e, positions, handler.getHandlerCodeAddress());
-                out.add(text);
-            }
-            return out;
-        }
-
-        Integer originalTarget(Method m, Layout layout, FeatureEdits e, Map<Integer, Integer> positions, int target) {
-            if (e != null) {
-                int index = layout.addresses.indexOf(target);
-                if (index > 0 && e.removed.contains(index) && e.removed.contains(index - 1))
-                    fail(m + " routes an original branch or handler into the middle of an injected block");
-            }
-            return positions.get(target);
+            return normalizedBody(m, e, this::fail);
         }
 
         void run(List<Contract> rules) {
@@ -5653,11 +5691,339 @@ public class DexDiff {
         }
     }
 
+    /**
+     * Holds the patched APK's code to what the bundle and the reviewed patches account for.
+     * FeatureCheck holds each method a mutation contract claims to its validated edits, and every
+     * call into the extension to a contract, but nothing said which other Tumblr methods may change
+     * at all, or that the classes the patch adds are the bundle's. A same-user process that edited
+     * a Tumblr method in the CLI's working copy, or an extension class, passed as long as the code
+     * was well formed and made no call into the extension.
+     *
+     * <p>Each changed Tumblr method has to be one FeatureCheck validated, or one the rebuild only
+     * re-encoded (the same register count and normalized body), with the flags and annotations it
+     * had, or be listed in the dex delta allowlist with the SHA-256 of its patched form under a
+     * patch the run selected. Each method a patch added to a Tumblr class is listed the same way,
+     * and so is each interface or field one added to a Tumblr class, while any other change to a
+     * class's shape lists the whole class. Each class the patched APK has and
+     * Tumblr's build doesn't has to be one of the bundle's extensions/*.mpe classes, held to it
+     * member for member: flags, superclass, interfaces, annotations and fields, and per method its
+     * flags, annotations, register count and normalized body. The patcher writes into some of them,
+     * and those are held to what it writes. A SettingsStatus flag answers a 0 or 1 literal ahead of
+     * the bundle's own body (FeatureCheck reads which), getPatchesReleaseVersion answers the bundle's
+     * Version ahead of its own, and anything else, a bridge a patch fills or an interface a patch
+     * adds, is listed by its SHA-256 the way a Tumblr method is.
+     */
+    private static final class DexDelta {
+        static final String UTILS_VERSION = "Lapp/hushtumblr/extension/shared/Utils;->getPatchesReleaseVersion()Ljava/lang/String;";
+        static final java.util.regex.Pattern LINE = java.util.regex.Pattern.compile("(method|field|class) \\S+ [0-9a-f]{64}|implements \\S+ L\\S+;");
+        final List<String> findings = new ArrayList<>();
+        /** Each allowlist line the run needed, and the selected section that lists it, or null. */
+        final Map<String, String> needed = new TreeMap<>();
+        final List<String> unseen = new ArrayList<>();
+        final List<String> sectionsUsed = new ArrayList<>();
+        int validated, reencoded, answered, matchedClasses;
+
+        /**
+         * Sections named in brackets for patches, " | " between several, each holding the lines the
+         * report prints for what a run needed: "method signature sha256", "field reference sha256",
+         * "implements type interface" and "class type sha256". Blank lines and lines starting with #
+         * are left out. A section only applies when the run selects one of its patches, or a patch
+         * that depends on one.
+         */
+        static Map<String, Set<String>> read(File file) throws Exception {
+            if (!file.isFile()) throw new IllegalArgumentException("Dex delta allowlist not found: " + file);
+            Map<String, Set<String>> sections = new LinkedHashMap<>();
+            Set<String> current = null;
+            int number = 0;
+            for (String raw : Files.readAllLines(file.toPath(), StandardCharsets.UTF_8)) {
+                number++;
+                String line = (number == 1 && raw.startsWith("\uFEFF") ? raw.substring(1) : raw).stripTrailing();
+                if (line.isEmpty() || line.startsWith("#")) continue;
+                if (line.startsWith("[") && line.endsWith("]")) {
+                    String name = line.substring(1, line.length() - 1);
+                    if (name.isBlank() || !name.equals(name.strip()) || sections.containsKey(name))
+                        throw new IllegalArgumentException(file.getName() + " line " + number + ": a section with no name or one named twice: " + line);
+                    current = new java.util.LinkedHashSet<>();
+                    sections.put(name, current);
+                    continue;
+                }
+                if (current == null || !LINE.matcher(line).matches() || !current.add(line))
+                    throw new IllegalArgumentException(file.getName() + " line " + number
+                            + ": not a method, field, class or implements line, as the report prints it, under a section, or one listed twice: " + line);
+            }
+            return sections;
+        }
+
+        /** The bundle's Version and every class of its extensions, the patcher's extendWith inputs. */
+        static Map<String, ClassDef> extensions(File bundle, String[] version, List<String> findings) throws Exception {
+            Map<String, ClassDef> out = new TreeMap<>();
+            try (java.util.jar.JarFile jar = new java.util.jar.JarFile(bundle)) {
+                version[0] = jar.getManifest() == null ? null : jar.getManifest().getMainAttributes().getValue("Version");
+                List<String> names = new ArrayList<>();
+                for (java.util.jar.JarEntry entry : java.util.Collections.list(jar.entries()))
+                    if (entry.getName().matches("extensions/[^/]+\\.mpe")) names.add(entry.getName());
+                java.util.Collections.sort(names);
+                if (names.isEmpty()) findings.add("dex delta: the bundle " + bundle.getName() + " carries no extensions/*.mpe");
+                for (String name : names) {
+                    byte[] bytes;
+                    try (java.io.InputStream in = jar.getInputStream(jar.getJarEntry(name))) { bytes = in.readAllBytes(); }
+                    DexFile dex = DexBackedDexFile.fromInputStream(Opcodes.getDefault(),
+                            new java.io.BufferedInputStream(new java.io.ByteArrayInputStream(bytes)));
+                    for (ClassDef cd : dex.getClasses()) {
+                        ClassDef other = out.putIfAbsent(cd.getType(), cd);
+                        if (other != null && !(classPrint(other).equals(classPrint(cd)) && methodPrints(other).equals(methodPrints(cd))))
+                            findings.add("dex delta: the bundle's extensions define " + cd.getType() + " twice, differently");
+                    }
+                }
+            }
+            if (version[0] == null || version[0].isBlank()) findings.add("dex delta: the bundle " + bundle.getName() + " names no Version");
+            return out;
+        }
+
+        static Map<String, String> methodPrints(ClassDef cd) {
+            Map<String, String> out = new TreeMap<>();
+            for (Method m : cd.getMethods()) out.put(m.toString(), methodPrint(m));
+            return out;
+        }
+
+        void need(String kind, String key, String value, Map<String, String> allowed) {
+            String line = kind + " " + key + " " + value;
+            needed.put(line, allowed.get(line));
+        }
+
+        /** A section applies when the run selects any patch its header names, " | " between them. */
+        static boolean applies(String header, Set<String> selected) {
+            for (String name : header.split(" \\| ", -1)) if (selected.contains(name)) return true;
+            return false;
+        }
+
+        void run(Set<String> changed, Set<String> added, FeatureIndex clean, FeatureIndex patched, FeatureCheck check,
+                Map<String, ClassDef> extension, String version, Map<String, Set<String>> allowlist, Set<String> selected) {
+            Map<String, String> allowed = new LinkedHashMap<>();
+            for (Map.Entry<String, Set<String>> section : allowlist.entrySet()) {
+                if (!applies(section.getKey(), selected)) continue;
+                sectionsUsed.add(section.getKey());
+                for (String line : section.getValue()) allowed.putIfAbsent(line, section.getKey());
+            }
+            // The classes the patch added: each one of the bundle's, or listed with all it has.
+            Set<String> addedClasses = new TreeSet<>(patched.classes.keySet());
+            addedClasses.removeAll(clean.classes.keySet());
+            for (String type : addedClasses) {
+                ClassDef mine = patched.classes.get(type);
+                if (patched.duplicates.contains(type)) { findings.add("dex delta: " + type + " is defined more than once in the patched APK"); continue; }
+                ClassDef theirs = extension.get(type);
+                if (theirs == null) {
+                    need("class", type, sha256(classPrint(mine)), allowed);
+                    for (Method m : mine.getMethods()) need("method", m.toString(), methodPrint(m), allowed);
+                    continue;
+                }
+                boolean same = shape(theirs, mine, allowed);
+                Map<String, Method> bundled = new TreeMap<>();
+                for (Method m : theirs.getMethods()) bundled.put(m.toString(), m);
+                for (Method m : mine.getMethods()) {
+                    Method was = bundled.remove(m.toString());
+                    if (was != null && methodPrint(was).equals(methodPrint(m))) continue;
+                    same = false;
+                    if (was != null && answersAhead(was, m, version)) { answered++; continue; }
+                    need("method", m.toString(), methodPrint(m), allowed);
+                }
+                for (String gone : bundled.keySet()) findings.add("dex delta: the bundle's " + gone + " is missing from the patched APK");
+                if (same && bundled.isEmpty()) matchedClasses++;
+            }
+            for (String type : extension.keySet())
+                if (!patched.classes.containsKey(type)) findings.add("dex delta: the bundle's class " + type + " is missing from the patched APK");
+            // Tumblr's own classes: the same shape, or what the patches added to it listed one by one.
+            for (Map.Entry<String, ClassDef> e : patched.classes.entrySet()) {
+                ClassDef was = clean.classes.get(e.getKey());
+                if (was != null && !classPrint(was).equals(classPrint(e.getValue()))) shape(was, e.getValue(), allowed);
+            }
+            // Each changed method validated by its contract or only re-encoded, with the flags and
+            // annotations it had, or else listed. Each added one listed, and each one whose flags or
+            // annotations alone changed.
+            Set<String> host = new TreeSet<>(changed);
+            for (String s : added) if (!addedClasses.contains(s.substring(0, s.indexOf("->")))) host.add(s);
+            for (Map.Entry<String, Method> e : patched.methods.entrySet()) {
+                Method before = clean.methods.get(e.getKey());
+                if (before != null && !sameFace(before, e.getValue())) host.add(e.getKey());
+            }
+            for (String s : host) {
+                Method after = patched.methods.get(s), before = clean.methods.get(s);
+                if (after == null || patched.duplicates.contains(s) || before != null && clean.duplicates.contains(s)) {
+                    findings.add("dex delta: " + s + " is defined more than once, so it can't be held one definition at a time");
+                    continue;
+                }
+                if (before != null && sameFace(before, after)) {
+                    if (check != null && check.edits.containsKey(s)) { validated++; continue; }
+                    if (registers(before) == registers(after)
+                            && normalizedBody(before, null, reason -> {}).equals(normalizedBody(after, null, reason -> {}))) { reencoded++; continue; }
+                }
+                need("method", s, methodPrint(after), allowed);
+            }
+            for (String line : allowed.keySet()) if (!needed.containsKey(line)) unseen.add("[" + allowed.get(line) + "] " + line);
+            for (Map.Entry<String, String> e : needed.entrySet()) if (e.getValue() == null)
+                findings.add("dex delta: no compiled contract validates this and no selected section of the dex delta allowlist lists it: " + e.getKey());
+        }
+
+        /**
+         * Holds [now] to the shape of the class it came from, [was]. What a patch added to it, an
+         * interface after the ones it had or a field it didn't have, needs a line of its own, so the
+         * lines of two patches that wrote into one class add up for any selection of them. Any
+         * other change (flags, superclass, annotations, the interfaces it had in another order, a
+         * field gone or changed) needs a line for the whole class. True when nothing changed.
+         */
+        boolean shape(ClassDef was, ClassDef now, Map<String, String> allowed) {
+            String type = now.getType();
+            List<String> before = new ArrayList<>(was.getInterfaces()), after = new ArrayList<>(now.getInterfaces());
+            List<String> kept = new ArrayList<>(after);
+            kept.retainAll(before);
+            Map<String, String> wasFields = fieldPrints(was), nowFields = fieldPrints(now);
+            boolean whole = was.getAccessFlags() != now.getAccessFlags() || !java.util.Objects.equals(was.getSuperclass(), now.getSuperclass())
+                    || !annotations(was.getAnnotations()).equals(annotations(now.getAnnotations())) || !kept.equals(before)
+                    || new HashSet<>(after).size() != after.size();
+            for (Map.Entry<String, String> field : wasFields.entrySet()) whole |= !field.getValue().equals(nowFields.get(field.getKey()));
+            if (whole) {
+                need("class", type, sha256(classPrint(now)), allowed);
+                return false;
+            }
+            boolean same = true;
+            for (String face : after) if (!before.contains(face)) { need("implements", type, face, allowed); same = false; }
+            for (Map.Entry<String, String> field : nowFields.entrySet())
+                if (!wasFields.containsKey(field.getKey())) { need("field", field.getKey(), field.getValue(), allowed); same = false; }
+            return same;
+        }
+
+        /** Each field of a class, "type->name:fieldType", and the SHA-256 of its flags, initial value and annotations. */
+        static Map<String, String> fieldPrints(ClassDef cd) {
+            Map<String, String> out = new TreeMap<>();
+            for (Field f : cd.getFields()) out.put(cd.getType() + "->" + f.getName() + ":" + f.getType(), sha256("flags " + f.getAccessFlags()
+                    + " value " + value(f.getInitialValue()) + " annotations " + annotations(f.getAnnotations())));
+            return out;
+        }
+
+        /** The same flags, annotations and parameter annotations. */
+        static boolean sameFace(Method a, Method b) {
+            if (a.getAccessFlags() != b.getAccessFlags() || !a.getAnnotations().equals(b.getAnnotations())) return false;
+            List<? extends MethodParameter> x = a.getParameters(), y = b.getParameters();
+            if (x.size() != y.size()) return false;
+            for (int k = 0; k < x.size(); k++) if (!x.get(k).getAnnotations().equals(y.get(k).getAnnotations())) return false;
+            return true;
+        }
+
+        static int registers(Method m) { return m.getImplementation() == null ? -1 : m.getImplementation().getRegisterCount(); }
+
+        /**
+         * A method the patcher made answer first, with the bundle's own body kept after it: a
+         * SettingsStatus flag answering a 0 or 1 literal, or getPatchesReleaseVersion answering the
+         * bundle's Version.
+         */
+        static boolean answersAhead(Method was, Method m, String version) {
+            String key = m.toString();
+            boolean flag = m.getDefiningClass().equals(FeatureCheck.STATUS) && descriptor(m).equals("()Z");
+            if (!flag && !key.equals(UTILS_VERSION) || m.getAccessFlags() != was.getAccessFlags() || registers(m) != registers(was)
+                    || !m.getAnnotations().equals(was.getAnnotations()) || m.getImplementation() == null) return false;
+            List<Instruction> body = instructions(m);
+            if (body.size() < 2) return false;
+            Instruction answer = body.get(0), exit = body.get(1);
+            if (flag) {
+                if (!(answer instanceof NarrowLiteralInstruction) || !answer.getOpcode().name.startsWith("const")
+                        || answer.getOpcode().setsWideRegister() || exit.getOpcode() != Opcode.RETURN) return false;
+                int value = ((NarrowLiteralInstruction) answer).getNarrowLiteral();
+                if (value != 0 && value != 1) return false;
+            } else if (!(reference(answer) instanceof StringReference) || !((StringReference) reference(answer)).getString().equals(version)
+                    || exit.getOpcode() != Opcode.RETURN_OBJECT) return false;
+            if (((OneRegisterInstruction) answer).getRegisterA() != ((OneRegisterInstruction) exit).getRegisterA()) return false;
+            FeatureEdits ahead = new FeatureEdits();
+            ahead.removed.add(0);
+            ahead.removed.add(1);
+            List<String> routed = new ArrayList<>();
+            return normalizedBody(m, ahead, routed::add).equals(normalizedBody(was, null, reason -> {})) && routed.isEmpty();
+        }
+
+        /** What an allowlist line gives a method the SHA-256 of: its flags, annotations, register count and normalized body. */
+        static String methodPrint(Method m) {
+            StringBuilder b = new StringBuilder("flags ").append(m.getAccessFlags()).append('\n');
+            b.append("annotations ").append(annotations(m.getAnnotations())).append('\n');
+            for (MethodParameter parameter : m.getParameters()) b.append("parameter ").append(annotations(parameter.getAnnotations())).append('\n');
+            b.append("registers ").append(registers(m)).append('\n');
+            for (String line : normalizedBody(m, null, reason -> {})) b.append(line).append('\n');
+            return sha256(b.toString());
+        }
+
+        /** A class without its methods: flags, superclass, interfaces, annotations and each field with its flags, value and annotations. */
+        static String classPrint(ClassDef cd) {
+            StringBuilder b = new StringBuilder("class ").append(cd.getType()).append(" flags ").append(cd.getAccessFlags())
+                    .append(" extends ").append(cd.getSuperclass()).append(" implements ").append(cd.getInterfaces()).append('\n');
+            b.append("annotations ").append(annotations(cd.getAnnotations())).append('\n');
+            List<String> fields = new ArrayList<>();
+            for (Field f : cd.getFields()) fields.add("field " + f.getName() + ":" + f.getType() + " flags " + f.getAccessFlags()
+                    + " value " + value(f.getInitialValue()) + " annotations " + annotations(f.getAnnotations()));
+            java.util.Collections.sort(fields);
+            for (String f : fields) b.append(f).append('\n');
+            return b.toString();
+        }
+
+        static String annotations(Set<? extends Annotation> set) {
+            List<String> out = new ArrayList<>();
+            for (Annotation a : set) {
+                List<String> elements = new ArrayList<>();
+                for (AnnotationElement e : a.getElements()) elements.add(e.getName() + "=" + value(e.getValue()));
+                java.util.Collections.sort(elements);
+                out.add(a.getVisibility() + " " + a.getType() + " " + elements);
+            }
+            java.util.Collections.sort(out);
+            return out.toString();
+        }
+
+        static String value(EncodedValue v) {
+            if (v == null) return "none";
+            if (v instanceof StringEncodedValue x) return "string \"" + x.getValue().replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\"";
+            if (v instanceof ArrayEncodedValue x) {
+                List<String> items = new ArrayList<>();
+                for (EncodedValue item : x.getValue()) items.add(value(item));
+                return "array " + items;
+            }
+            if (v instanceof AnnotationEncodedValue x) {
+                List<String> elements = new ArrayList<>();
+                for (AnnotationElement e : x.getElements()) elements.add(e.getName() + "=" + value(e.getValue()));
+                java.util.Collections.sort(elements);
+                return "annotation " + x.getType() + " " + elements;
+            }
+            if (v instanceof FloatEncodedValue x) return "float " + Float.floatToRawIntBits(x.getValue());
+            if (v instanceof DoubleEncodedValue x) return "double " + Double.doubleToRawLongBits(x.getValue());
+            if (v instanceof CharEncodedValue x) return "char " + (int) x.getValue();
+            if (v instanceof IntEncodedValue x) return "int " + x.getValue();
+            if (v instanceof LongEncodedValue x) return "long " + x.getValue();
+            if (v instanceof ShortEncodedValue x) return "short " + x.getValue();
+            if (v instanceof ByteEncodedValue x) return "byte " + x.getValue();
+            if (v instanceof BooleanEncodedValue x) return "boolean " + x.getValue();
+            if (v instanceof TypeEncodedValue x) return "type " + x.getValue();
+            if (v instanceof FieldEncodedValue x) return "field " + x.getValue();
+            if (v instanceof EnumEncodedValue x) return "enum " + x.getValue();
+            if (v instanceof MethodEncodedValue x) return "method " + x.getValue();
+            if (v instanceof NullEncodedValue) return "null";
+            // An unrendered kind gets no stable text, so a line listing it can't match and the run fails.
+            return "unrendered " + v.getValueType() + " " + System.identityHashCode(v);
+        }
+
+        static String sha256(String text) {
+            try {
+                return java.util.HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(text.getBytes(StandardCharsets.UTF_8)));
+            } catch (java.security.NoSuchAlgorithmException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
-        if (args.length < 4 || args.length > 7) {
-            System.err.println("usage: DexDiff <cleanApk> <patchedApk> <reportFile> <removalAllowlist> [<contracts> [<signedBase> [<selectedPatches>]]]");
+        if (args.length < 4 || args.length > 9 || args.length == 8) {
+            System.err.println("usage: DexDiff <cleanApk> <patchedApk> <reportFile> <removalAllowlist> [<contracts> [<signedBase> [<selectedPatches> [<bundle> <dexDeltaAllowlist>]]]]");
             System.exit(2);
         }
+        // The bundle the patched APK was patched with, whose extensions the classes it added have to
+        // be, and what its patches may change beyond what the contracts validate (DexDelta).
+        File bundle = args.length > 7 ? new File(args[7]) : null;
+        Map<String, Set<String>> deltaAllowlist = args.length > 8 ? DexDelta.read(new File(args[8])) : null;
+        if (bundle != null && !bundle.isFile()) throw new IllegalArgumentException("Bundle not found: " + bundle);
         File clean = new File(args[0]);
         File patched = new File(args[1]);
         File allowlistFile = new File(args[3]);
@@ -5790,15 +6156,37 @@ public class DexDiff {
         Map<String, List<String>> fresh = new HashMap<>();
         for (String s : structuralWanted) fresh.put(s, without(prints(after.get(s)), prints(before.get(s))));
         Map<String, List<String>> structural = structuralPass(patched, clean, structuralWanted, fresh, contracts);
+        FeatureIndex featureClean = null, featurePatched = null;
+        FeatureCheck check = null;
         if (contracts.stream().anyMatch(c -> c.kind.equals("family"))) {
-            FeatureIndex featurePatched = new FeatureIndex(patched);
+            featurePatched = new FeatureIndex(patched);
+            featureClean = new FeatureIndex(clean);
             System.out.println("[diff] checking compiled family flags, capabilities and original fallbacks"
                     + (selected == null ? " (selection file not supplied)" : " against " + selected.size() + " selected patches"));
-            FeatureCheck check = new FeatureCheck(new FeatureIndex(clean), featurePatched, selected);
+            check = new FeatureCheck(featureClean, featurePatched, selected);
             check.run(contracts);
             structural.computeIfAbsent("contract", k -> new ArrayList<>()).addAll(check.findings);
         } else if (selected != null) {
             structural.computeIfAbsent("contract", k -> new ArrayList<>()).add("contract: selected patches supplied without family contracts");
+        }
+        DexDelta delta = null;
+        if (bundle != null) {
+            if (featureClean == null) featureClean = new FeatureIndex(clean);
+            if (featurePatched == null) featurePatched = new FeatureIndex(patched);
+            delta = new DexDelta();
+            String[] version = new String[1];
+            Map<String, ClassDef> extension = DexDelta.extensions(bundle, version, delta.findings);
+            // A run over an installed build doesn't know which patches it was built with, so every
+            // section applies to it. Every script that patches hands its selection over.
+            Set<String> sections = selected != null ? selected : deltaAllowlist.keySet();
+            System.out.println("[diff] holding the changed and added code to the contracts, " + bundle.getName() + "'s "
+                    + extension.size() + " extension classes and " + args[8].replaceAll(".*[\\\\/]", "")
+                    + (selected == null ? " (every section: selection file not supplied)" : ""));
+            delta.run(changed, added, featureClean, featurePatched, check, extension, version[0], deltaAllowlist, sections);
+            System.out.println("[diff] dex delta: " + delta.validated + " Tumblr methods validated by their contracts, "
+                    + delta.reencoded + " only re-encoded, " + delta.needed.size() + " changes the allowlist has to name, "
+                    + delta.matchedClasses + " extension classes as the bundle has them, " + delta.answered + " answering ahead of the bundle's body");
+            structural.computeIfAbsent("contract", k -> new ArrayList<>()).addAll(delta.findings);
         }
         int structuralCount = 0;
         for (Map.Entry<String, List<String>> e : structural.entrySet()) {
@@ -5842,6 +6230,19 @@ public class DexDiff {
             for (String method : staleAllowedMethods) report.println("  FAIL    method " + method);
             for (String entry : staleAllowedDexEntries) report.println("  FAIL    dex " + entry);
             report.println();
+
+            if (delta != null) {
+                // Each line as the allowlist takes it, so a reviewed change is copied under its patch.
+                report.println("Dex delta: changed and added code no contract validates, against " + args[8]);
+                report.println("  sections " + String.join(", ", delta.sectionsUsed));
+                report.println("  validated " + delta.validated + ", re-encoded " + delta.reencoded + ", extension classes as bundled "
+                        + delta.matchedClasses + ", answering ahead " + delta.answered);
+                for (Map.Entry<String, String> e : delta.needed.entrySet())
+                    report.println((e.getValue() == null ? "  FAIL    " : "  allowed [" + e.getValue() + "] ") + e.getKey());
+                report.println("Listed in the selected sections and not seen in this run:");
+                for (String line : delta.unseen) report.println("  " + line);
+                report.println();
+            }
 
             int overRegister = 0;
             int unreadable = 0;

@@ -127,7 +127,13 @@ $patchInput = $null
 $recorded = $null
 $outHandle = $null
 $resultHandle = $null
+$bundleHeld = $null
 try {
+
+# Held from here to the end of the run: the applied record's key, the CLI and the register check's
+# comparison with the bundle's extensions all read these bytes, and nothing can write them between.
+$bundleHeld = Open-HeldFile -Path $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Bundle) -What 'The bundle'
+$Bundle = Get-HeldPath -Stream $bundleHeld
 
 # A distributor's build of Tumblr can come as a split bundle. aapt2 reads the version facts off
 # one APK, the base, which holds the manifest, and the register check's clean side is the base
@@ -356,7 +362,7 @@ $result = Resolve-WithinRoot -Path (Join-Path $workRoot "verify-all-result-$runI
             $global:LASTEXITCODE = 0
             & (Join-Path $PSScriptRoot 'verify-injected-registers.ps1') -CleanApk $stockApk -CleanMerged $patchInput `
                 -PatchedApk $out -ReportPath $registerReport -Java $Java -DesktopJar $DesktopJar -Aapt2 $Aapt2 `
-                -SelectedPatchNames $manifestSelection -AndroidJar $AndroidJar -ApiVersions $ApiVersions
+                -SelectedPatchNames $manifestSelection -AndroidJar $AndroidJar -ApiVersions $ApiVersions -Bundle $Bundle
             $registerExitCode = $LASTEXITCODE
             Write-Host "[verify] register report: $registerReport"
             if ($registerExitCode -eq 0) {
@@ -387,7 +393,7 @@ $result = Resolve-WithinRoot -Path (Join-Path $workRoot "verify-all-result-$runI
     }
 } finally {
     # Held until every reader is done, and a held file can't be deleted.
-    foreach ($held in @($outHandle, $resultHandle)) { if ($null -ne $held) { $held.Dispose() } }
+    foreach ($held in @($outHandle, $resultHandle, $bundleHeld)) { if ($null -ne $held) { $held.Dispose() } }
     Close-AppliedRecord -Record $recorded
     Close-MergedApk -Merged $patchInput
     Remove-GeneratedPath -Path $runDir -Root $workRoot
