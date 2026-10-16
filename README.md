@@ -39,13 +39,11 @@ Sign in with your email and Tumblr password. Google's sign-in checks the app's s
 
 Long-press the Tumblr logo at the top of your dashboard. You can also tap **HushTumblr** at the bottom of Tumblr's Settings, or long-press the Tumblr icon. Switches apply without patching again, though a few, like Disable analytics, finish after Tumblr restarts, and a Restart row at the top of the page does that for you. **Pause** keeps your saved choices and makes the switches act as off, apart from Debug logging. Changes made while patching stay in the app. The same page backs up your settings.
 
-Development source 0.0.6 includes redesigned settings pages and worker-based saves. Local tests and both Android lints pass. The preview below shows the current settings pages.
-
 ![HushTumblr settings overview, Feed and Privacy pages](assets/settings-preview.png)
 
 ## Patches
 
-The source has 42 patches. Six came after v0.0.1 and aren't in a release yet: Filter activity notifications, Mute posts locally, Reveal allowed mature content, Show mutual markers, Show post timestamps and Visible image descriptions.
+The latest release includes every patch listed below.
 
 | Patch | What it does |
 |---|---|

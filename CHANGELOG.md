@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* **Tooling:** The README now reflects the published patches and drops an outdated development-version note.
 * **Tooling:** Future patch-source updates include the release's full changelog in Morphe Manager's description. Historical details in those notes stay separate from the current release's validation facts.
 * **Tumblr:** Quick setups can be hidden from the settings home with a long press on its row, and its help line now says so. The **Quick setups on the home page** row on Pause, backup and diagnostics brings it back. The choice stays out of settings backups and Quick setups, and Pause leaves it alone.
 * **Tumblr:** Hide note counts now takes the numbers off the Comments, Reblogs and Likes tabs on a post's notes too. The tabs still switch, and the numbers come back once the switch is off and the notes are opened again.
