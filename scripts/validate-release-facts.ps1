@@ -116,10 +116,13 @@ function Get-DescriptionFacts {
         or it says two things and this throws. The lag check used to read the first of each and the
         equality check any of them, so a description quoting the catalog's count in one sentence and
         a stale one in another passed the equality check, whichever the lag check had read. Answers
-        @{ PatchCount; TargetVersion }, each $null when the description names none.
+        @{ PatchCount; TargetVersion; Summary }, with null facts when the summary names none.
+        Only prose before the first ### heading supplies facts. Scoped changelog bullets follow
+        it and may describe older versions, test counts or Manager requirements.
     #>
     param([string]$Text, [string]$Source)
 
+    $Text = ($Text -split '(?m)^###[ \t]+', 2)[0]
     $counts = @([regex]::Matches($Text, '(?<![\d.])(\d+) patches\b') | ForEach-Object { $_.Groups[1].Value } |
         Select-Object -Unique)
     $builds = @([regex]::Matches($Text, 'Tumblr\s+(\d+(?:\.\d+)+)(?!\d)') | ForEach-Object { $_.Groups[1].Value } |
@@ -131,6 +134,7 @@ function Get-DescriptionFacts {
         throw "$Source names Tumblr $($builds -join ' and Tumblr '), and it has to name one build as its target."
     }
     return [pscustomobject]@{
+        Summary       = $Text
         PatchCount    = if ($counts.Count -eq 1) { [int]$counts[0] } else { $null }
         TargetVersion = if ($builds.Count -eq 1) { [string]$builds[0] } else { $null }
     }
@@ -274,7 +278,7 @@ if ($indexLagsSource) {
     if ($null -eq $publishedFacts.PatchCount -or $null -eq $publishedFacts.TargetVersion) {
         throw 'The published bundle description does not name its patch count and Tumblr target.'
     }
-    Require-Match -Text ([string]$bundle.description) -Pattern "\bv$([regex]::Escape($publishedVersion))\b" -Description 'published bundle description version'
+    Require-Match -Text $publishedFacts.Summary -Pattern "\bv$([regex]::Escape($publishedVersion))\b" -Description 'published bundle description version'
     $descriptionVersion = "v$publishedVersion"
     $descriptionPatchCount = $publishedFacts.PatchCount
     $descriptionTargetVersion = $publishedFacts.TargetVersion
@@ -464,7 +468,7 @@ if ($SkipDescriptionTestCount) {
     Write-Host ("[release] patches-bundle.json did not change, so its description is left " +
         "against the release it describes" + $ranHere)
 } else {
-    Require-Match -Text ([string]$bundle.description) -Pattern "\b$testCount runtime tests passed\b" -Description 'bundle description test count'
+    Require-Match -Text $publishedFacts.Summary -Pattern "\b$testCount runtime tests passed\b" -Description 'bundle description test count'
 }
 
 # The patch module's tests, which the description quotes as "All N patch tests passed". Until
@@ -548,7 +552,7 @@ if (-not $SkipDescriptionTestCount) {
         }
         $patchTestCount += @($results.testsuite.testcase).Count
     }
-    Require-Match -Text ([string]$bundle.description) -Pattern "\b$patchTestCount patch tests passed\b" `
+    Require-Match -Text $publishedFacts.Summary -Pattern "\b$patchTestCount patch tests passed\b" `
         -Description 'bundle description patch test count'
     $testFacts += ", $patchTestCount patch tests"
 }
@@ -835,7 +839,7 @@ Write-Host "[release] README requires Morphe Manager $managerFloor or newer for 
 # The index description names a floor too, and it's what Manager users read before they install.
 # It describes the published release, which needs the floor that release's own commit pinned, not
 # the one pinned since, so it's held to the catalog at the release tag. Nothing read it before.
-$descriptionFloorMatch = [regex]::Match([string]$bundle.description, '\bMorphe Manager\s+(\d+(?:\.\d+)+)\s+or newer\b')
+$descriptionFloorMatch = [regex]::Match($publishedFacts.Summary, '\bMorphe Manager\s+(\d+(?:\.\d+)+)\s+or newer\b')
 if (-not $descriptionFloorMatch.Success) {
     throw 'The bundle description does not say which Morphe Manager it needs ("Morphe Manager X or newer").'
 }

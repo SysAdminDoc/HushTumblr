@@ -14,7 +14,8 @@ A release section of the CHANGELOG may only hold "* **Tumblr:** " and "* **Tooli
 bullets, one line each: Morphe Manager's reader shows Tumblr lines as the update, skips
 Tooling lines, and refuses anything else. The notes carry every bullet of the section, Tumblr
 ones under "What's new" and Tooling ones under "Behind the scenes", between the intro and the
-tail written by hand for that release.
+tail written by hand for that release. The index description carries the same scoped bullets
+under level-three headings, so Manager can show the current release's changes too.
 """
 
 import argparse
@@ -256,7 +257,7 @@ def index(args) -> None:
         fail(f"--created {args.created} isn't YYYY-MM-DDTHH:MM:SS (the release's publishedAt, in UTC).")
     if args.runtime <= 0 or args.patch <= 0:
         fail("The runtime and patch test counts come from the release gate's results and can't be zero.")
-    released_section(root, args.version)
+    bullets = released_section(root, args.version)
     count, target, code = catalog_facts(root, args.version)
     floor = manager_floor(root)
     readme_path = root / "README.md"
@@ -282,6 +283,12 @@ def index(args) -> None:
     )
     if any(dash in description for dash in DASHES):
         fail("The summary has an em or en dash.")
+    # Manager reads the current release from its description rather than CHANGELOG.md.
+    # Keep the facts above the first heading: release bullets may name older builds or counts.
+    for scope, heading in (("Tumblr", "What's new"), ("Tooling", "Behind the scenes")):
+        lines = [bullet.line for bullet in bullets if bullet.scope == scope]
+        if lines:
+            description += f"\n\n### {heading}\n\n" + "\n".join(lines)
     bundle_path = root / "patches-bundle.json"
     if bundle_path.exists():
         if args.first:

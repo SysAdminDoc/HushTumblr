@@ -36,6 +36,43 @@ function Assert-Throws {
     throw "$Message No error was raised."
 }
 
+function Test-DescriptionChangelogFacts {
+    param([string]$ValidatorPath)
+    $parseErrors = $null
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile($ValidatorPath, [ref]$null, [ref]$parseErrors)
+    Assert-True (@($parseErrors).Count -eq 0) 'The release facts script does not parse.'
+    $reader = $ast.Find({ param($node)
+        $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Get-DescriptionFacts'
+    }, $true)
+    Assert-True ($null -ne $reader) 'The release facts reader is missing.'
+    Invoke-Expression $reader.Extent.Text
+
+    $summary = 'HushTumblr v0.0.7: 42 patches for Tumblr 46.5.0.109. Validation: 900 runtime tests passed. All 200 patch tests passed. Needs Morphe Manager 1.34.0 or newer.'
+    $history = '* **Tumblr:** Earlier releases had 36 patches for Tumblr 46.4.0.110, with 700 runtime tests passed and 180 patch tests passed. Needs Morphe Manager 1.33.0 or newer.'
+    foreach ($newline in @("`n", "`r`n")) {
+        foreach ($heading in @('### Changed', "###`tChanged")) {
+            $facts = Get-DescriptionFacts -Text ($summary + $newline + $newline + $heading + $newline + $history) -Source 'fixture'
+            Assert-True ($facts.PatchCount -eq 42 -and $facts.TargetVersion -eq '46.5.0.109') `
+                'Historical changelog facts replaced the release summary.'
+            Assert-True ($facts.Summary.TrimEnd() -ceq $summary) `
+                'The release summary retained changelog test counts, versions or Manager requirements.'
+        }
+    }
+    $facts = Get-DescriptionFacts -Text $summary -Source 'fixture'
+    Assert-True ($facts.Summary -ceq $summary -and $facts.PatchCount -eq 42) 'A prose-only index stopped working.'
+    $facts = Get-DescriptionFacts -Text ("Summary only.`n`n### Changed`n" + $history) -Source 'fixture'
+    Assert-True ($null -eq $facts.PatchCount -and $null -eq $facts.TargetVersion) `
+        'Changelog bullets supplied facts missing from the summary.'
+    Assert-Throws { Get-DescriptionFacts -Text ($summary + ' It has 41 patches.') -Source 'fixture' } `
+        '*names*patches*' 'Contradictory summary counts were accepted.'
+    Assert-Throws { Get-DescriptionFacts -Text ($summary + ' Also targets Tumblr 46.4.0.110.') -Source 'fixture' } `
+        '*names Tumblr*' 'Contradictory summary builds were accepted.'
+    Assert-Throws { Get-DescriptionFacts -Text ($summary + ' An inline ### marker says 41 patches.') -Source 'fixture' } `
+        '*names*patches*' 'An inline marker hid contradictory summary facts.'
+    Write-Host '[test] Manager description summary and changelog contracts passed'
+}
+Test-DescriptionChangelogFacts -ValidatorPath (Join-Path $PSScriptRoot 'validate-release-facts.ps1')
+
 function New-NotFoundAnswer {
     # What Invoke-WebRequest raises for a 404 in both shells, as far as Assert-UrlReachable reads
     # it: an error whose Response carries the status. A function named Invoke-WebRequest that

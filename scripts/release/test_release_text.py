@@ -316,6 +316,44 @@ class ReleaseTextTest(unittest.TestCase):
         for name, text in before.items():
             self.assertEqual(self.text(name), text, name)
 
+    def test_index_includes_every_released_bullet_in_manager_groups(self):
+        self.cut()
+        self.put("CHANGELOG.md", self.text("CHANGELOG.md").replace(
+            "## 0.0.7", "## Unreleased\n\n* **Tumblr:** Not released yet.\n\n## 0.0.7", 1))
+        code, err = self.index()
+        self.assertEqual(code, 0, err)
+        description = json.loads(self.text("patches-bundle.json"))["description"]
+        self.assertIn("\n\n### What's new\n\n", description)
+        groups = description.split("\n\n### ", 1)[1]
+        self.assertEqual(groups, "What's new\n\n"
+                         "* **Tumblr:** Hide ads now covers the shopping row.\n"
+                         "* **Tumblr:** Download board saves more pins.\n\n"
+                         "### Behind the scenes\n\n"
+                         "* **Tooling:** The gate runs the quick checks first.")
+        self.assertNotIn("Not released yet.", description)
+        self.assertNotIn("Tumblr 46.4.0.110 only.", description)
+
+    def test_index_preserves_historical_facts_as_changelog_not_release_summary(self):
+        historical = "Earlier builds had 26 patches for Tumblr 46.4.0.110."
+        self.put("CHANGELOG.md", CHANGELOG.replace("Download board saves more pins.", historical))
+        self.cut()
+        code, err = self.index()
+        self.assertEqual(code, 0, err)
+        description = json.loads(self.text("patches-bundle.json"))["description"]
+        self.assertIn("* **Tumblr:** " + historical, description)
+        summary = description.split("\n\n### ", 1)[0]
+        self.assertEqual(set(re.findall(r"(?<![\d.])(\d+) patches\b", summary)), {"3"})
+        self.assertEqual(set(re.findall(r"Tumblr\s+(\d+(?:\.\d+)+)(?!\d)", summary)), {"46.5.0.109"})
+
+    def test_index_omits_an_empty_tooling_group(self):
+        self.put("CHANGELOG.md", CHANGELOG.replace("* **Tooling:** The gate runs the quick checks first.\n", ""))
+        self.cut()
+        code, err = self.index()
+        self.assertEqual(code, 0, err)
+        description = json.loads(self.text("patches-bundle.json"))["description"]
+        self.assertIn("### What's new\n\n* **Tumblr:**", description)
+        self.assertNotIn("### Behind the scenes", description)
+
     def test_index_needs_the_released_section(self):
         code, err = self.index()
         self.assertEqual(code, 1)
