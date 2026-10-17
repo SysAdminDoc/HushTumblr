@@ -149,7 +149,10 @@ final class RootPostMuteUi {
             list.setDividerHeight(dp(context, 1));
             LinearLayout header = new LinearLayout(context);
             header.setOrientation(LinearLayout.VERTICAL);
-            feedback = new UndoPanel(context, this::ready, this::setBusy, ignored -> refreshRows(), ignored -> controls());
+            feedback = new UndoPanel(context, this::ready, value -> {
+                setBusy(value);
+                if (!value) refreshRows();
+            }, ignored -> refreshRows(), ignored -> controls());
             feedback.setVisibility(View.GONE);
             header.addView(feedback);
             retry = new Button(context);
@@ -252,8 +255,9 @@ final class RootPostMuteUi {
         void finished(RootPostMutes.Undo undo, String message) {
             if (!ready()) return;
             setBusy(false);
-            if (undo == null) feedback.message(L10n.t("Couldn't update muted posts. Your list is unchanged. Try again."));
-            else { refreshRows(); feedback.offer(message, undo); }
+            refreshRows();
+            if (undo == null) feedback.message(L10n.t("Couldn't update muted posts. Try again."));
+            else feedback.offer(undo.confirmed ? message : L10n.t("Couldn't update muted posts. Try again."), undo);
             list.setSelection(0);
         }
 
@@ -265,8 +269,8 @@ final class RootPostMuteUi {
             RootPostMutes.retry(account, ignored -> {
                 if (!ready()) return;
                 setBusy(false);
-                feedback.setVisibility(View.GONE);
                 refreshRows();
+                if (RootPostMutes.capture() != null && feedback.token == null) feedback.setVisibility(View.GONE);
             });
         }
 
@@ -276,7 +280,9 @@ final class RootPostMuteUi {
             if (!RootPostMutes.current(account)) return;
             // A list that couldn't be read says so and offers another try. It never shows as empty.
             boolean unread = current == null;
-            if (unread) feedback.message(L10n.t("Couldn't read this account's muted posts. Nothing was changed or deleted."));
+            if (unread) feedback.message(feedback.token == null
+                    ? L10n.t("Couldn't read this account's muted posts. Nothing was changed or deleted.")
+                    : L10n.t("Couldn't update muted posts. Try again."));
             retry.setVisibility(unread ? View.VISIBLE : View.GONE);
             help.setVisibility(unread ? View.GONE : View.VISIBLE);
             limits.setVisibility(unread ? View.GONE : View.VISIBLE);
@@ -381,7 +387,7 @@ final class RootPostMuteUi {
                 }
             };
             if (chosenRoot == null) RootPostMutes.undo(chosen, completed);
-            else RootPostMutes.remove(chosen.account, chosenRoot, receipt -> completed.accept(receipt != null));
+            else RootPostMutes.remove(chosen.account, chosenRoot, receipt -> completed.accept(receipt != null && receipt.confirmed));
         }
 
         void scheduleExpiry() { handler.removeCallbacks(expire); handler.postDelayed(expire, undoTimeout(getContext())); }

@@ -712,14 +712,30 @@ public final class LogBufferManager {
 
         synchronized (CRASH_FILE_LOCK) {
             FileOutputStream output = null;
+            boolean finished = false;
             try {
                 output = atomicFile.startWrite();
                 output.write(bytes, 0, length);
                 output.flush();
                 output.getFD().sync();
                 atomicFile.finishWrite(output);
+                finished = true;
+                // Android may only log a failed replacement. Keep Undo until the synchronized
+                // report is also the one the AtomicFile reader actually opens.
+                try (FileInputStream input = atomicFile.openRead()) {
+                    byte[] buffer = new byte[4096];
+                    int offset = 0, count;
+                    while ((count = input.read(buffer)) != -1) {
+                        if (count > length - offset) throw new IOException("Crash report replacement failed");
+                        for (int i = 0; i < count; i++) {
+                            if (buffer[i] != bytes[offset + i]) throw new IOException("Crash report replacement failed");
+                        }
+                        offset += count;
+                    }
+                    if (offset != length) throw new IOException("Crash report replacement failed");
+                }
             } catch (Exception exception) {
-                if (output != null) atomicFile.failWrite(output);
+                if (output != null && !finished) atomicFile.failWrite(output);
                 throw exception;
             }
         }

@@ -388,7 +388,6 @@ Mutual	Saling mengikuti
 Done	Selesai
 No muted posts. Use a post's menu to mute it on this device.	Tidak ada postingan yang dibisukan. Gunakan menu postingan untuk membisukannya di perangkat ini.
 Updating muted posts	Memperbarui postingan yang dibisukan
-Couldn't update muted posts. Your list is unchanged. Try again.	Tidak dapat memperbarui postingan yang dibisukan. Daftar Anda tidak berubah. Coba lagi.
 Couldn't restore muted posts. Try again.	Tidak dapat memulihkan postingan yang dibisukan. Coba lagi.
 Couldn't read this account's muted posts. Nothing was changed or deleted.	Tidak dapat membaca postingan yang dibisukan untuk akun ini. Tidak ada yang diubah atau dihapus.
 Reading muted posts	Membaca postingan yang dibisukan
@@ -432,3 +431,4 @@ Back to defaults	Kembali ke bawaan
 Puts every feature switch back the way it started.	Mengembalikan setiap sakelar fitur seperti semula.
 Changed %1$d setting	%1$d pengaturan diubah
 Changed %1$d settings	%1$d pengaturan diubah
+Couldn't update muted posts. Try again.	Tidak dapat memperbarui postingan yang dibisukan. Coba lagi.

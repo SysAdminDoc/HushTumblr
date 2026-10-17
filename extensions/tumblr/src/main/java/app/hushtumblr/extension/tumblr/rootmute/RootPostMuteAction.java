@@ -32,12 +32,17 @@ public final class RootPostMuteAction implements Runnable {
         if (owner == null || owner.isFinishing() || owner.isDestroyed() || host == null || !RootPostLocalTimeline.contains(host, root)) return;
         RootPostMutes.mute(account, root, undo -> {
             if (!RootPostMutes.current(account)) return;
+            if (undo != null && !undo.confirmed) {
+                RootPostMuteUi.changed(target, L10n.t("Couldn't update muted posts. Try again."), undo);
+                return;
+            }
             Runnable restore = undo == null ? null : RootPostLocalTimeline.remove(host, root, account);
             if (undo != null && restore == null) {
                 RootPostMutes.undo(undo, restored -> {
                     if (!RootPostMutes.current(account)) return;
                     RootPostMutes.Session saved = RootPostMutes.capture();
-                    if (!restored && saved != null && saved.roots.contains(root)) RootPostMuteUi.recoverMute(target, undo, root);
+                    if (!restored && saved == null) RootPostMuteUi.changed(target, L10n.t("Couldn't update muted posts. Try again."), undo);
+                    else if (!restored && saved.roots.contains(root)) RootPostMuteUi.recoverMute(target, undo, root);
                     else RootPostMuteUi.changed(target, L10n.t("Post muted locally"), null);
                 });
             } else RootPostMuteUi.changed(target, L10n.t("Post muted locally"), undo, restore);

@@ -51,6 +51,10 @@ public class RootPostMutesTest {
     private File file;
 
     @Before public void prepare() {
+        app.hushtumblr.extension.shared.ShadowReplacingAtomicFile.refuseCommitFor = null;
+        app.hushtumblr.extension.shared.ShadowReplacingAtomicFile.closeOnFlushFor = null;
+        app.hushtumblr.extension.shared.ShadowReplacingAtomicFile.refuseReadFor = null;
+        app.hushtumblr.extension.shared.ShadowReplacingAtomicFile.refusedReads = 0;
         PatchFamilyForTests.inBuild(EnumSet.of(PatchFamily.MUTE_ROOT_POSTS));
         PatchFamilyForTests.capabilities(EnumSet.of(PatchFamily.Capability.ROOT_POST_MUTES));
         Settings.MUTE_ROOT_POSTS.save(true);
@@ -63,6 +67,10 @@ public class RootPostMutesTest {
     }
 
     @After public void restore() {
+        app.hushtumblr.extension.shared.ShadowReplacingAtomicFile.refuseCommitFor = null;
+        app.hushtumblr.extension.shared.ShadowReplacingAtomicFile.closeOnFlushFor = null;
+        app.hushtumblr.extension.shared.ShadowReplacingAtomicFile.refuseReadFor = null;
+        app.hushtumblr.extension.shared.ShadowReplacingAtomicFile.refusedReads = 0;
         RootPostMutes.resetForTests();
         RootPostMutes.fileForTests = null;
         RootPostMutes.workerForTests = null;
@@ -316,12 +324,79 @@ public class RootPostMutesTest {
         assertTrue(restored.get()); assertEquals(2, RootPostMutes.capture().roots.size());
     }
 
-    @Test public void failedPersistenceDoesNotPublishTheNewMuteOrEraseTheOldOne() throws Exception {
+    @Test public void failedPersistenceRequiresReconciliationBeforeMoreChanges() throws Exception {
         account("account-a"); mute("11");
         RootPostMutes.fileForTests = temporary.newFolder("unwritable-file");
         AtomicReference<RootPostMutes.Undo> result = new AtomicReference<>();
         RootPostMutes.mute(RootPostMutes.capture(), "22", result::set);
-        assertNull(result.get()); assertTrue(RootPostMutes.shouldHide(post("11"))); assertFalse(RootPostMutes.shouldHide(post("22")));
+        assertNotNull(result.get()); assertFalse(result.get().confirmed); assertNull(RootPostMutes.capture());
+        RootPostMutes.fileForTests = file;
+        assertTrue(retry(RootPostMutes.unreadable()));
+        assertTrue(RootPostMutes.shouldHide(post("11"))); assertFalse(RootPostMutes.shouldHide(post("22")));
+    }
+
+    @Test @Config(sdk = {26, 30}) public void aNormalReturnWithoutReplacementNeverAcknowledgesChanges() throws Exception {
+        account("account-a"); mute("11");
+        for (int action = 0; action < 3; action++) {
+            app.hushtumblr.extension.shared.ShadowReplacingAtomicFile.refuseCommitFor = file;
+            AtomicReference<RootPostMutes.Undo> result = new AtomicReference<>();
+            RootPostMutes.Session before = RootPostMutes.capture();
+            if (action == 0) RootPostMutes.mute(before, "22", result::set);
+            else if (action == 1) RootPostMutes.remove(before, "11", result::set);
+            else RootPostMutes.clear(before, result::set);
+            assertNull(result.get()); assertNotNull(RootPostMutes.capture());
+            assertNull(RootPostMutes.unreadable());
+            app.hushtumblr.extension.shared.ShadowReplacingAtomicFile.refuseCommitFor = null;
+            assertTrue(RootPostMutes.shouldHide(post("11")));
+            assertFalse(RootPostMutes.shouldHide(post("22")));
+        }
+        mute("22"); RootPostMutes.resetForTests(); account("account-a");
+        assertTrue(RootPostMutes.shouldHide(post("22")));
+    }
+
+    @Test @Config(sdk = {26, 30}) public void failedUndoCanRetryAfterReconciliation() {
+        account("account-a"); RootPostMutes.Undo saved = mute("11");
+        app.hushtumblr.extension.shared.ShadowReplacingAtomicFile.refuseCommitFor = file;
+        AtomicReference<Boolean> result = new AtomicReference<>();
+        RootPostMutes.undo(saved, result::set);
+        assertEquals(Boolean.FALSE, result.get()); assertNotNull(RootPostMutes.capture());
+        app.hushtumblr.extension.shared.ShadowReplacingAtomicFile.refuseCommitFor = null;
+        RootPostMutes.undo(saved, result::set);
+        assertEquals(Boolean.TRUE, result.get());
+        RootPostMutes.resetForTests(); account("account-a");
+        assertFalse(RootPostMutes.shouldHide(post("11")));
+    }
+
+    @Test @Config(sdk = {26, 30}) public void committedChangesWithUnreadableVerificationRetainUnconfirmedRecovery() {
+        for (int reads : new int[]{1, 2}) {
+            app.hushtumblr.extension.shared.ShadowReplacingAtomicFile.refuseReadFor = null;
+            account("account-a"); mute("11"); mute("22");
+            app.hushtumblr.extension.shared.ShadowReplacingAtomicFile.refuseReadFor = file;
+            app.hushtumblr.extension.shared.ShadowReplacingAtomicFile.refusedReads = reads;
+            AtomicReference<RootPostMutes.Undo> saved = new AtomicReference<>();
+            RootPostMutes.clear(RootPostMutes.capture(), saved::set);
+            assertNotNull(saved.get()); assertFalse(saved.get().confirmed);
+            if (reads == 1) assertTrue(RootPostMutes.capture().roots.isEmpty());
+            else assertNull(RootPostMutes.capture());
+            app.hushtumblr.extension.shared.ShadowReplacingAtomicFile.refuseReadFor = null;
+            AtomicReference<Boolean> restored = new AtomicReference<>();
+            RootPostMutes.undo(saved.get(), restored::set);
+            assertEquals(Boolean.TRUE, restored.get());
+            RootPostMutes.resetForTests(); account("account-a");
+            assertEquals(java.util.Set.of("11", "22"), RootPostMutes.capture().roots);
+        }
+    }
+
+    @Test @Config(sdk = {26, 30}) public void anUnsynchronizableDescriptorCannotPublishAMute() {
+        account("account-a"); mute("11");
+        app.hushtumblr.extension.shared.ShadowReplacingAtomicFile.closeOnFlushFor = file;
+        AtomicReference<RootPostMutes.Undo> result = new AtomicReference<>();
+        RootPostMutes.mute(RootPostMutes.capture(), "22", result::set);
+        assertNull(result.get()); assertNotNull(RootPostMutes.capture());
+        app.hushtumblr.extension.shared.ShadowReplacingAtomicFile.closeOnFlushFor = null;
+        assertFalse(RootPostMutes.shouldHide(post("22")));
+        mute("22"); RootPostMutes.resetForTests(); account("account-a");
+        assertTrue(RootPostMutes.shouldHide(post("22")));
     }
 
     @Test public void malformedAndOversizedPrivateDocumentsStayUnavailable() throws Exception {

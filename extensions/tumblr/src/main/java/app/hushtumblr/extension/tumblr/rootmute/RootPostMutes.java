@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -110,8 +111,9 @@ public final class RootPostMutes {
         final Session account;
         final Set<String> before;
         final long revision;
-        Undo(Session account, Set<String> before, long revision) {
-            this.account = account; this.before = before; this.revision = revision;
+        final boolean confirmed;
+        Undo(Session account, Set<String> before, long revision, boolean confirmed) {
+            this.account = account; this.before = before; this.revision = revision; this.confirmed = confirmed;
         }
     }
 
@@ -209,7 +211,11 @@ public final class RootPostMutes {
      * replaced records nothing, so it can't hide what happened to the one that took its place.
      */
     private static void unread(Session target) {
-        synchronized (ACCOUNT_LOCK) { if (current(target)) unreadGeneration = target.generation; }
+        synchronized (ACCOUNT_LOCK) {
+            if (!current(target)) return;
+            session = new Session(target.generation, target.account, Collections.emptySet(), false, target.nativeAccount);
+            unreadGeneration = target.generation;
+        }
     }
 
     /**
@@ -272,8 +278,9 @@ public final class RootPostMutes {
         if (!submit(() -> {
             Undo undo = null;
             synchronized (FILE_LOCK) {
-                if (current(target)) try {
-                    Set<String> before = store.roots(target.account);
+                Set<String> before = null;
+                if (current(target) && (store != null || load(target))) try {
+                    before = store.roots(target.account);
                     LinkedHashSet<String> roots = new LinkedHashSet<>(before);
                     if (root == null) roots.clear();
                     else if (remove) roots.remove(root);
@@ -282,9 +289,15 @@ public final class RootPostMutes {
                     RootPostMuteStore next = store.withRoots(target.account, roots);
                     write(next);
                     store = next;
-                    undo = new Undo(target, before, ++revision);
+                    undo = new Undo(target, before, ++revision, true);
                     publish(target, roots);
-                } catch (Exception unavailable) { /* The previous document and visible state remain intact. */ }
+                } catch (Exception unavailable) {
+                    // A failed verification may follow a committed change. Preserve what Undo
+                    // needs without presenting that token as a successful write receipt.
+                    if (before != null && (store == null || !before.equals(store.roots(target.account)))) {
+                        undo = new Undo(target, before, ++revision, false);
+                    }
+                }
             }
             finish(done, undo);
         })) finish(done, null);
@@ -295,7 +308,7 @@ public final class RootPostMutes {
         if (!submit(() -> {
             boolean restored = false;
             synchronized (FILE_LOCK) {
-                if (current(undo.account) && revision == undo.revision) try {
+                if (current(undo.account) && revision == undo.revision && (store != null || load(undo.account))) try {
                     RootPostMuteStore next = store.withRoots(undo.account.account, undo.before);
                     write(next); store = next; revision++;
                     publish(undo.account, undo.before); restored = true;
@@ -335,8 +348,42 @@ public final class RootPostMutes {
         if (bytes.length > RootPostMuteStore.MAX_BYTES) throw new IllegalStateException("Private storage unavailable");
         AtomicFile file = file();
         FileOutputStream output = file.startWrite();
-        try { output.write(bytes); file.finishWrite(output); }
-        catch (Exception failure) { file.failWrite(output); throw failure; }
+        boolean finished = false;
+        try {
+            output.write(bytes);
+            output.flush();
+            output.getFD().sync();
+            file.finishWrite(output);
+            finished = true;
+            // finishWrite can log a failed rename and return normally. A read-back checks the
+            // replacement; the explicit sync above is what acknowledges synchronization.
+            try (FileInputStream input = file.openRead()) {
+                byte[] buffer = new byte[4096];
+                int offset = 0, count;
+                while ((count = input.read(buffer)) != -1) {
+                    if (count > bytes.length - offset) throw new IOException("Private storage unavailable");
+                    for (int i = 0; i < count; i++) {
+                        if (buffer[i] != bytes[offset + i]) throw new IOException("Private storage unavailable");
+                    }
+                    offset += count;
+                }
+                if (offset != bytes.length) throw new IOException("Private storage unavailable");
+            }
+        } catch (Exception failure) {
+            try {
+                // Once finishWrite returned, rollback could delete a successfully committed file
+                // on older Android. Its result is uncertain until a fresh read reconciles it.
+                if (!finished) file.failWrite(output);
+            } finally {
+                store = null;
+                Session target = session;
+                unread(target);
+                // Reconcile on this worker before the UI can retry. A readable old or new file
+                // is authoritative; an unreadable file leaves every mutation unavailable.
+                if (target != null) load(target);
+            }
+            throw failure;
+        }
     }
 
     static void resetForTests() {

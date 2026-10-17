@@ -219,8 +219,8 @@ public final class L10nTranslations {
                 "Der Import konnte nicht r\u00fcckg\u00e4ngig gemacht werden. Die importierten Einstellungen sind unver\u00e4ndert.");
         table.put("Couldn't update muted posts",
                 "Stummgeschaltete Posts konnten nicht aktualisiert werden");
-        table.put("Couldn't update muted posts. Your list is unchanged. Try again.",
-                "Stummgeschaltete Posts konnten nicht aktualisiert werden. Deine Liste ist unver\u00e4ndert. Versuche es noch einmal.");
+        table.put("Couldn't update muted posts. Try again.",
+                "Stummgeschaltete Posts konnten nicht aktualisiert werden. Versuch es erneut.");
         table.put("Couldn't update this feed. The post is still muted locally.",
                 "Dieser Feed konnte nicht aktualisiert werden. Der Beitrag bleibt lokal stummgeschaltet.");
         table.put("Dark background color",
@@ -1054,8 +1054,8 @@ public final class L10nTranslations {
                 "No se pudo deshacer la importaci\u00f3n. Tus ajustes importados no cambiaron.");
         table.put("Couldn't update muted posts",
                 "No se pudieron actualizar las publicaciones silenciadas");
-        table.put("Couldn't update muted posts. Your list is unchanged. Try again.",
-                "No se pudieron actualizar las publicaciones silenciadas. Tu lista no ha cambiado. Int\u00e9ntalo de nuevo.");
+        table.put("Couldn't update muted posts. Try again.",
+                "No se pudieron actualizar las publicaciones silenciadas. Int\u00e9ntalo de nuevo.");
         table.put("Couldn't update this feed. The post is still muted locally.",
                 "No se pudo actualizar este feed. La publicaci\u00f3n sigue silenciada localmente.");
         table.put("Dark background color",
@@ -1889,8 +1889,8 @@ public final class L10nTranslations {
                 "Tidak dapat mengurungkan impor. Pengaturan yang diimpor tidak berubah.");
         table.put("Couldn't update muted posts",
                 "Tidak dapat memperbarui postingan yang dibisukan");
-        table.put("Couldn't update muted posts. Your list is unchanged. Try again.",
-                "Tidak dapat memperbarui postingan yang dibisukan. Daftar Anda tidak berubah. Coba lagi.");
+        table.put("Couldn't update muted posts. Try again.",
+                "Tidak dapat memperbarui postingan yang dibisukan. Coba lagi.");
         table.put("Couldn't update this feed. The post is still muted locally.",
                 "Tidak dapat memperbarui feed ini. Postingan masih dibisukan secara lokal.");
         table.put("Dark background color",
@@ -2724,8 +2724,8 @@ public final class L10nTranslations {
                 "N\u00e3o foi poss\u00edvel desfazer a importa\u00e7\u00e3o. Suas configura\u00e7\u00f5es importadas n\u00e3o mudaram.");
         table.put("Couldn't update muted posts",
                 "N\u00e3o foi poss\u00edvel atualizar os posts silenciados");
-        table.put("Couldn't update muted posts. Your list is unchanged. Try again.",
-                "N\u00e3o foi poss\u00edvel atualizar os posts silenciados. Sua lista n\u00e3o mudou. Tente de novo.");
+        table.put("Couldn't update muted posts. Try again.",
+                "N\u00e3o foi poss\u00edvel atualizar os posts silenciados. Tente novamente.");
         table.put("Couldn't update this feed. The post is still muted locally.",
                 "N\u00e3o foi poss\u00edvel atualizar este feed. O post continua silenciado localmente.");
         table.put("Dark background color",
@@ -3559,8 +3559,8 @@ public final class L10nTranslations {
                 "\u0130\u00e7e aktarma geri al\u0131namad\u0131. \u0130\u00e7e aktar\u0131lan ayarlar\u0131n de\u011fi\u015fmedi.");
         table.put("Couldn't update muted posts",
                 "Susturulan g\u00f6nderiler g\u00fcncellenemedi");
-        table.put("Couldn't update muted posts. Your list is unchanged. Try again.",
-                "Susturulan g\u00f6nderiler g\u00fcncellenemedi. Listen de\u011fi\u015fmedi. Tekrar dene.");
+        table.put("Couldn't update muted posts. Try again.",
+                "Susturulan g\u00f6nderiler g\u00fcncellenemedi. Tekrar dene.");
         table.put("Couldn't update this feed. The post is still muted locally.",
                 "Bu ak\u0131\u015f g\u00fcncellenemedi. G\u00f6nderi bu cihazda h\u00e2l\u00e2 susturulmu\u015f durumda.");
         table.put("Dark background color",

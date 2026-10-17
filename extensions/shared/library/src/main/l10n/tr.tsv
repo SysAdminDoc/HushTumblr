@@ -388,7 +388,6 @@ Mutual	Karşılıklı
 Done	Bitti
 No muted posts. Use a post's menu to mute it on this device.	Susturulan gönderi yok. Bir gönderiyi bu cihazda susturmak için gönderinin menüsünü kullan.
 Updating muted posts	Susturulan gönderiler güncelleniyor
-Couldn't update muted posts. Your list is unchanged. Try again.	Susturulan gönderiler güncellenemedi. Listen değişmedi. Tekrar dene.
 Couldn't restore muted posts. Try again.	Susturulan gönderiler geri yüklenemedi. Tekrar dene.
 Couldn't read this account's muted posts. Nothing was changed or deleted.	Bu hesabın susturulan gönderileri okunamadı. Hiçbir şey değiştirilmedi veya silinmedi.
 Reading muted posts	Susturulan gönderiler okunuyor
@@ -432,3 +431,4 @@ Back to defaults	Varsayılanlara dön
 Puts every feature switch back the way it started.	Her özellik anahtarını başlangıçtaki hâline döndürür.
 Changed %1$d setting	%1$d ayar değiştirildi
 Changed %1$d settings	%1$d ayar değiştirildi
+Couldn't update muted posts. Try again.	Susturulan gönderiler güncellenemedi. Tekrar dene.

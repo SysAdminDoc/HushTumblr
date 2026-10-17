@@ -388,7 +388,6 @@ Mutual	Gegenseitig
 Done	Fertig
 No muted posts. Use a post's menu to mute it on this device.	Keine stummgeschalteten Posts. Nutze das Menü eines Posts, um ihn auf diesem Gerät stummzuschalten.
 Updating muted posts	Stummgeschaltete Posts werden aktualisiert
-Couldn't update muted posts. Your list is unchanged. Try again.	Stummgeschaltete Posts konnten nicht aktualisiert werden. Deine Liste ist unverändert. Versuche es noch einmal.
 Couldn't restore muted posts. Try again.	Stummgeschaltete Posts konnten nicht wiederhergestellt werden. Versuche es noch einmal.
 Couldn't read this account's muted posts. Nothing was changed or deleted.	Die stummgeschalteten Posts dieses Kontos konnten nicht gelesen werden. Es wurde nichts geändert oder gelöscht.
 Reading muted posts	Stummgeschaltete Posts werden gelesen
@@ -432,3 +431,4 @@ Back to defaults	Zurück zum Standard
 Puts every feature switch back the way it started.	Setzt jeden Funktionsschalter auf seinen Ausgangszustand zurück.
 Changed %1$d setting	%1$d Einstellung geändert
 Changed %1$d settings	%1$d Einstellungen geändert
+Couldn't update muted posts. Try again.	Stummgeschaltete Posts konnten nicht aktualisiert werden. Versuch es erneut.

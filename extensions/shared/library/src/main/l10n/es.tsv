@@ -388,7 +388,6 @@ Mutual	Mutuos
 Done	Listo
 No muted posts. Use a post's menu to mute it on this device.	No hay publicaciones silenciadas. Usa el menú de una publicación para silenciarla en este dispositivo.
 Updating muted posts	Actualizando publicaciones silenciadas
-Couldn't update muted posts. Your list is unchanged. Try again.	No se pudieron actualizar las publicaciones silenciadas. Tu lista no ha cambiado. Inténtalo de nuevo.
 Couldn't restore muted posts. Try again.	No se pudieron restaurar las publicaciones silenciadas. Inténtalo de nuevo.
 Couldn't read this account's muted posts. Nothing was changed or deleted.	No se pudieron leer las publicaciones silenciadas de esta cuenta. No se cambió ni se eliminó nada.
 Reading muted posts	Leyendo publicaciones silenciadas
@@ -432,3 +431,4 @@ Back to defaults	Volver a los valores predeterminados
 Puts every feature switch back the way it started.	Devuelve cada interruptor de función a como estaba al principio.
 Changed %1$d setting	Se cambió %1$d ajuste
 Changed %1$d settings	Se cambiaron %1$d ajustes
+Couldn't update muted posts. Try again.	No se pudieron actualizar las publicaciones silenciadas. Inténtalo de nuevo.

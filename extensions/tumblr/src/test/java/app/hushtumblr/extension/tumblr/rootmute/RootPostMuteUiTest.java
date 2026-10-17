@@ -50,6 +50,7 @@ import org.robolectric.shadows.ShadowLooper;
 import org.robolectric.shadows.ShadowToast;
 
 import app.hushtumblr.extension.shared.SettingsContextRule;
+import app.hushtumblr.extension.shared.ShadowReplacingAtomicFile;
 import app.hushtumblr.extension.shared.WorkerPoolForTests;
 import app.hushtumblr.extension.shared.settings.PauseForTests;
 import app.hushtumblr.extension.tumblr.settings.PatchFamily;
@@ -64,6 +65,10 @@ public class RootPostMuteUiTest {
     private ActivityController<Activity> controller;
 
     @Before public void prepare() {
+        ShadowReplacingAtomicFile.refuseCommitFor = null;
+        ShadowReplacingAtomicFile.closeOnFlushFor = null;
+        ShadowReplacingAtomicFile.refuseReadFor = null;
+        ShadowReplacingAtomicFile.refusedReads = 0;
         controller = Robolectric.buildActivity(Activity.class).setup().visible();
         PatchFamilyForTests.inBuild(EnumSet.of(PatchFamily.MUTE_ROOT_POSTS));
         PatchFamilyForTests.capabilities(EnumSet.of(PatchFamily.Capability.ROOT_POST_MUTES));
@@ -74,6 +79,10 @@ public class RootPostMuteUiTest {
     }
 
     @After public void restore() {
+        ShadowReplacingAtomicFile.refuseCommitFor = null;
+        ShadowReplacingAtomicFile.closeOnFlushFor = null;
+        ShadowReplacingAtomicFile.refuseReadFor = null;
+        ShadowReplacingAtomicFile.refusedReads = 0;
         controller.close(); RootPostMutes.resetForTests();
         RootPostMutes.fileForTests = null; RootPostMutes.workerForTests = null;
         Settings.MUTE_ROOT_POSTS.resetToDefault(); PatchFamilyForTests.inBuild(null);
@@ -188,8 +197,7 @@ public class RootPostMuteUiTest {
 
     @Test public void aFailedRebindRollbackDisclosesTheSavedMuteAndRetriesOnlyThatRoot() throws Exception {
         File saved = RootPostMutes.fileForTests;
-        File failure = temporary.newFolder("rollback-failure");
-        new RootPostMuteAction("11", controller.get(), refusesRebind(() -> RootPostMutes.fileForTests = failure)).run();
+        new RootPostMuteAction("11", controller.get(), refusesRebind(() -> ShadowReplacingAtomicFile.refuseCommitFor = saved)).run();
         assertEquals(java.util.Set.of("11"), RootPostMutes.capture().roots);
         assertTrue(menuNotice().getText().toString().contains("still muted locally"));
         Button unmute = menuRecovery();
@@ -197,7 +205,7 @@ public class RootPostMuteUiTest {
         assertEquals(java.util.Set.of("11"), RootPostMutes.capture().roots);
         assertTrue(unmute.isEnabled());
         assertTrue(menuNotice().getText().toString().contains("Try again"));
-        RootPostMutes.fileForTests = saved;
+        ShadowReplacingAtomicFile.refuseCommitFor = null;
         mute("22");
         unmute.performClick();
         assertEquals(java.util.Set.of("22"), RootPostMutes.capture().roots);
@@ -260,10 +268,9 @@ public class RootPostMuteUiTest {
 
     @Test public void aRecoveryActionRetainedAcrossAccountChangesCannotUnmuteTheNextAccount() throws Exception {
         File saved = RootPostMutes.fileForTests;
-        File failure = temporary.newFolder("retained-rollback-failure");
-        new RootPostMuteAction("11", controller.get(), refusesRebind(() -> RootPostMutes.fileForTests = failure)).run();
+        new RootPostMuteAction("11", controller.get(), refusesRebind(() -> ShadowReplacingAtomicFile.refuseCommitFor = saved)).run();
         Button unmute = menuRecovery();
-        RootPostMutes.fileForTests = saved;
+        ShadowReplacingAtomicFile.refuseCommitFor = null;
         account("account-b"); mute("11"); mute("22");
         unmute.performClick();
         assertEquals(java.util.Set.of("11", "22"), RootPostMutes.capture().roots);
@@ -275,7 +282,7 @@ public class RootPostMuteUiTest {
         new RootPostMuteAction("11", controller.get(), refusesRebind(() -> { })).run();
         queued.remove(0).run();
         assertEquals(1, queued.size());
-        RootPostMutes.fileForTests = temporary.newFolder("closed-owner-rollback-failure");
+        ShadowReplacingAtomicFile.refuseCommitFor = RootPostMutes.fileForTests;
         controller.get().finish();
         queued.remove(0).run();
         assertEquals(java.util.Set.of("11"), RootPostMutes.capture().roots);
@@ -357,8 +364,7 @@ public class RootPostMuteUiTest {
     @Test public void failedUnmuteKeepsThePrivateRowsAndOffersRetry() throws Exception {
         mute("11");
         AlertDialog dialog = RootPostMuteUi.manage(controller.get());
-        File saved = RootPostMutes.fileForTests;
-        RootPostMutes.fileForTests = temporary.newFolder("unmute-failure");
+        ShadowReplacingAtomicFile.refuseCommitFor = RootPostMutes.fileForTests;
         clickFirstPost(dialog);
         assertTrue(dialog.isShowing());
         assertEquals(java.util.Set.of("11"), RootPostMutes.capture().roots);
@@ -367,7 +373,7 @@ public class RootPostMuteUiTest {
         assertTrue(dialog.getButton(AlertDialog.BUTTON_NEUTRAL).isEnabled());
         assertTrue(notice(dialog).getText().toString().contains("Try again"));
         assertEquals(View.ACCESSIBILITY_LIVE_REGION_POLITE, notice(dialog).getAccessibilityLiveRegion());
-        RootPostMutes.fileForTests = saved;
+        ShadowReplacingAtomicFile.refuseCommitFor = null;
         clickFirstPost(dialog);
         assertTrue(dialog.isShowing());
         assertTrue(RootPostMutes.capture().roots.isEmpty());
@@ -376,18 +382,54 @@ public class RootPostMuteUiTest {
         dialog.dismiss();
     }
 
+    @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    public void uncertainClearRetainsUndoAndRefreshesReconciledOrUnreadRows() throws Exception {
+        for (int reads : new int[]{1, 2}) {
+            mute("11");
+            AlertDialog dialog = RootPostMuteUi.manage(controller.get());
+            ShadowReplacingAtomicFile.refuseReadFor = RootPostMutes.fileForTests;
+            ShadowReplacingAtomicFile.refusedReads = reads;
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).performClick();
+            layoutManager(dialog);
+            assertTrue(inlineUndo(dialog).isShown());
+            assertTrue(notice(dialog).getText().toString().contains("Couldn't update"));
+            assertFalse(notice(dialog).getText().toString().contains("unchanged"));
+            assertFalse(dialog.getButton(AlertDialog.BUTTON_NEUTRAL).isEnabled());
+            Button retry = dialog.getWindow().getDecorView().findViewWithTag("root_mute_retry");
+            if (reads == 1) {
+                assertNotNull(RootPostMutes.capture());
+                assertTrue(RootPostMutes.capture().roots.isEmpty());
+                assertFalse(retry.isShown());
+            } else {
+                assertNull(RootPostMutes.capture());
+                assertTrue(retry.isShown()); assertTrue(retry.isEnabled());
+            }
+            captureManager("root-mutes-write-unconfirmed-" + reads, dialog);
+            ShadowReplacingAtomicFile.refuseReadFor = null;
+            if (reads == 2) {
+                retry.performClick(); layoutManager(dialog);
+                assertTrue(inlineUndo(dialog).isShown());
+                assertFalse(retry.isShown());
+            }
+            inlineUndo(dialog).performClick(); layoutManager(dialog);
+            assertEquals(java.util.Set.of("11"), RootPostMutes.capture().roots);
+            assertFalse(inlineUndo(dialog).isShown());
+            captureManager("root-mutes-write-recovered", dialog);
+            dialog.dismiss();
+        }
+    }
+
     @Test public void failedClearKeepsTheListAndCanBeRetried() throws Exception {
         mute("11"); mute("22");
         AlertDialog dialog = RootPostMuteUi.manage(controller.get());
         Button clear = dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
-        File saved = RootPostMutes.fileForTests;
-        RootPostMutes.fileForTests = temporary.newFolder("clear-failure");
+        ShadowReplacingAtomicFile.refuseCommitFor = RootPostMutes.fileForTests;
         clear.performClick();
         assertTrue(dialog.isShowing());
         assertEquals(java.util.Set.of("11", "22"), RootPostMutes.capture().roots);
         assertTrue(clear.isEnabled());
         assertTrue(notice(dialog).getText().toString().contains("Try again"));
-        RootPostMutes.fileForTests = saved;
+        ShadowReplacingAtomicFile.refuseCommitFor = null;
         clear.performClick();
         assertTrue(dialog.isShowing());
         assertTrue(RootPostMutes.capture().roots.isEmpty());
@@ -406,15 +448,14 @@ public class RootPostMuteUiTest {
         assertNull(find(controller.get().findViewById(android.R.id.content), Button.class));
         Button undo = inlineUndo(dialog);
         assertTrue(undo.isShown());
-        File saved = RootPostMutes.fileForTests;
-        RootPostMutes.fileForTests = temporary.newFolder("undo-failure");
+        ShadowReplacingAtomicFile.refuseCommitFor = RootPostMutes.fileForTests;
         undo.performClick();
         assertTrue(dialog.isShowing());
         assertTrue(RootPostMutes.capture().roots.isEmpty());
         assertTrue(undo.isEnabled());
         assertTrue(undo.isShown());
         assertTrue(notice(dialog).getText().toString().contains("Try again"));
-        RootPostMutes.fileForTests = saved;
+        ShadowReplacingAtomicFile.refuseCommitFor = null;
         undo.performClick();
         assertEquals(java.util.Set.of("11"), RootPostMutes.capture().roots);
         assertFalse(undo.isShown());
@@ -469,12 +510,11 @@ public class RootPostMuteUiTest {
         assertNotNull(undo);
         Shadows.shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(11));
         assertNotNull(undo.getParent());
-        File saved = RootPostMutes.fileForTests;
-        RootPostMutes.fileForTests = temporary.newFolder("menu-undo-failure");
+        ShadowReplacingAtomicFile.refuseCommitFor = RootPostMutes.fileForTests;
         undo.performClick();
         assertNotNull(undo.getParent());
         assertTrue(undo.isEnabled());
-        RootPostMutes.fileForTests = saved;
+        ShadowReplacingAtomicFile.refuseCommitFor = null;
         undo.performClick();
         assertTrue(RootPostMutes.capture().roots.isEmpty());
         assertNull(find(controller.get().findViewById(android.R.id.content), Button.class));
@@ -837,6 +877,11 @@ public class RootPostMuteUiTest {
         AlertDialog dialog = RootPostMuteUi.manage(controller.get());
         assertNotNull(dialog);
         try {
+            captureManager(name, dialog);
+        } finally { dialog.dismiss(); }
+    }
+
+    private void captureManager(String name, AlertDialog dialog) throws Exception {
             ShadowLooper.idleMainLooper();
             View decor = dialog.getWindow().getDecorView();
             int width = dialog.getWindow().getAttributes().width;
@@ -853,7 +898,6 @@ public class RootPostMuteUiTest {
             try (FileOutputStream output = new FileOutputStream(new File(folder, name + ".png"))) {
                 assertTrue(image.compress(Bitmap.CompressFormat.PNG, 100, output));
             } finally { image.recycle(); }
-        } finally { dialog.dismiss(); }
     }
 
     private static void measure(View decor, int width, int height) {

@@ -9,6 +9,7 @@ import android.content.ContextWrapper;
 import android.os.Looper;
 
 import app.hushtumblr.extension.shared.Utils;
+import app.hushtumblr.extension.shared.ShadowReplacingAtomicFile;
 import app.hushtumblr.extension.shared.WorkerPoolForTests;
 import app.hushtumblr.extension.shared.diagnostics.DiagnosticCategory;
 import app.hushtumblr.extension.shared.diagnostics.HookStatus;
@@ -38,6 +39,8 @@ public class ClearLogBufferPreferenceTest {
     private Context context;
 
     @Before public void setUp() throws Exception {
+        ShadowReplacingAtomicFile.refuseCommitFor = null;
+        ShadowReplacingAtomicFile.closeOnFlushFor = null;
         awaitWork();
         context = RuntimeEnvironment.getApplication();
         Utils.setContext(context);
@@ -53,6 +56,8 @@ public class ClearLogBufferPreferenceTest {
     }
 
     @After public void tearDown() throws Exception {
+        ShadowReplacingAtomicFile.refuseCommitFor = null;
+        ShadowReplacingAtomicFile.closeOnFlushFor = null;
         awaitWork();
         Utils.setContext(context);
         emptyEverythingAndDropUndo();
@@ -222,6 +227,32 @@ public class ClearLogBufferPreferenceTest {
         awaitWork();
         assertTrue(preference.isEnabled());
         assertTrue(LogBufferManager.canUndoClear());
+    }
+
+    @Test @Config(sdk = {26, 30}) public void aNormalReturnWithoutReplacementKeepsTheRecoverySnapshot() throws Exception {
+        for (String name : new String[]{"morphe_java_crash_report_v1.txt", "morphe_npth_crash_report_v1.txt"}) {
+            LogBufferManager.persistCrashReport(context, "saved java crash");
+            LogBufferManager.persistNpthCrashReport(context, "saved native crash");
+            LogBufferManager.clearLogBuffer();
+            ShadowReplacingAtomicFile.refuseCommitFor = new File(context.getFilesDir(), name);
+            assertEquals(LogBufferManager.UndoResult.FAILED, LogBufferManager.undoClear());
+            assertTrue(LogBufferManager.canUndoClear());
+            ShadowReplacingAtomicFile.refuseCommitFor = null;
+            assertEquals(LogBufferManager.UndoResult.RESTORED, LogBufferManager.undoClear());
+            assertEquals("saved java crash", LogBufferManager.readCrashReport(context));
+            assertEquals("saved native crash", LogBufferManager.readNpthCrashReport(context));
+        }
+    }
+
+    @Test @Config(sdk = {26, 30}) public void anUnsynchronizableDescriptorKeepsUndoForARetry() throws Exception {
+        LogBufferManager.persistCrashReport(context, "saved crash");
+        LogBufferManager.clearLogBuffer();
+        ShadowReplacingAtomicFile.closeOnFlushFor = new File(context.getFilesDir(), "morphe_java_crash_report_v1.txt");
+        assertEquals(LogBufferManager.UndoResult.FAILED, LogBufferManager.undoClear());
+        assertTrue(LogBufferManager.canUndoClear());
+        ShadowReplacingAtomicFile.closeOnFlushFor = null;
+        assertEquals(LogBufferManager.UndoResult.RESTORED, LogBufferManager.undoClear());
+        assertEquals("saved crash", LogBufferManager.readCrashReport(context));
     }
 
     @Test public void aFailedRestoreKeepsUndoReadyForAnotherTap() throws Exception {
