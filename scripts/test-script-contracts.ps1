@@ -1621,6 +1621,16 @@ try {
 & (Join-Path $PSScriptRoot 'test-advisory-inputs.ps1') -Root $Root
 Write-Host '[scripts] advisory gate contracts passed'
 
+# A GitHub description that names no version, count or build has nothing to go stale, so the
+# facts check and the index step leave it as written. One naming any fact is still held to all.
+$versionFree = 'HushTumblr Morphe patches for Tumblr. Takes ads and clutter out of your dashboard, and much more.'
+Assert-True (-not (Test-RepoDescriptionNamesFacts -Description $versionFree)) 'A version-free description was read as naming facts.'
+Assert-True (-not (Test-RepoDescriptionNamesFacts -Description '')) 'An empty description was read as naming facts.'
+foreach ($named in 'Patches for Tumblr 46.5.0.109.', 'HushTumblr, 44 patches.', 'Patches, v0.0.8.', 'HushTumblr v0.0.7: 42 patches for Tumblr 46.5.0.109.') {
+    Assert-True (Test-RepoDescriptionNamesFacts -Description $named) "A description naming a fact was read as version-free: $named"
+}
+Write-Host '[scripts] repository description fact contracts passed'
+
 # --- validate-release-facts.ps1 -------------------------------------------------------------
 #
 # The gate the pre-push hook runs on every push that touches a published file, and the one a

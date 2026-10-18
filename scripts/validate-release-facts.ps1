@@ -351,20 +351,27 @@ if ($SkipUrlCheck) {
     }
     $description = $description.Trim()
 
-    # Its count and build are read the way the index description's are, all of them at once.
-    $githubFacts = Get-DescriptionFacts -Text $description -Source "The GitHub description of $slug"
-    $missing = @()
-    if ($description -notmatch "\b$([regex]::Escape($descriptionVersion))\b") { $missing += $descriptionVersion }
-    if ($githubFacts.PatchCount -ne $descriptionPatchCount) { $missing += "$descriptionPatchCount patches" }
-    if ($githubFacts.TargetVersion -ne $descriptionTargetVersion) { $missing += "Tumblr $descriptionTargetVersion" }
-    if ($missing.Count -gt 0) {
-        throw ("The GitHub description of $slug does not say " + ($missing -join ', ') + '. It reads: ' +
-            $description + [Environment]::NewLine +
-            'Set it with: gh repo edit ' + $slug + ' --description "HushTumblr ' + $descriptionVersion +
-            ': ... ' + $descriptionPatchCount + ' patches for Tumblr ' + $descriptionTargetVersion + '."')
+    # A description written with no version, count or build in it can't go stale, and the
+    # release's index step leaves it as it is (2026-10-18, ported from HushTelegram ecb03697
+    # after the Hush repos dropped theirs).
+    if (-not (Test-RepoDescriptionNamesFacts -Description $description)) {
+        Write-Host "[release] the GitHub description of $slug names no version, patch count or Tumblr build"
+    } else {
+        # Its count and build are read the way the index description's are, all of them at once.
+        $githubFacts = Get-DescriptionFacts -Text $description -Source "The GitHub description of $slug"
+        $missing = @()
+        if ($description -notmatch "\b$([regex]::Escape($descriptionVersion))\b") { $missing += $descriptionVersion }
+        if ($githubFacts.PatchCount -ne $descriptionPatchCount) { $missing += "$descriptionPatchCount patches" }
+        if ($githubFacts.TargetVersion -ne $descriptionTargetVersion) { $missing += "Tumblr $descriptionTargetVersion" }
+        if ($missing.Count -gt 0) {
+            throw ("The GitHub description of $slug does not say " + ($missing -join ', ') + '. It reads: ' +
+                $description + [Environment]::NewLine +
+                'Set it with: gh repo edit ' + $slug + ' --description "HushTumblr ' + $descriptionVersion +
+                ': ... ' + $descriptionPatchCount + ' patches for Tumblr ' + $descriptionTargetVersion + '."')
+        }
+        Write-Host ("[release] the GitHub description of " + $slug + " names " + $descriptionVersion +
+            ", " + $descriptionPatchCount + " patches and Tumblr " + $descriptionTargetVersion)
     }
-    Write-Host ("[release] the GitHub description of " + $slug + " names " + $descriptionVersion +
-        ", " + $descriptionPatchCount + " patches and Tumblr " + $descriptionTargetVersion)
 }
 
 $testRoot = Join-Path $rootPath 'extensions/tumblr/build/test-results/testDebugUnitTest'

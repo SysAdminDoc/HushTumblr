@@ -2575,3 +2575,15 @@ function Save-AppliedRecord {
     }
     return $final
 }
+
+function Test-RepoDescriptionNamesFacts {
+    <#
+    .SYNOPSIS
+        Whether the GitHub description names a release version, a patch count or a Tumblr build.
+        One that names none of them has nothing a release can leave stale, so a release neither
+        holds it to the catalog nor rewrites it. One that names any is held to all three.
+    #>
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Description)
+    return ($Description -match '\bv\d+\.\d+\.\d+\b' -or $Description -match '(?<![\d.])\d+ patches\b' -or
+        $Description -match 'Tumblr\s+\d+(?:\.\d+)+(?!\d)')
+}

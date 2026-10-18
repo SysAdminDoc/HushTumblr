@@ -150,6 +150,8 @@ if ($indexed) {
         if ($updated -cne $current) {
             Invoke-ReleaseNative 'gh repo edit' { & gh repo edit $Repository --description $updated }
             Write-ReleaseStep "the GitHub description reads: $updated"
+        } elseif (-not (Test-RepoDescriptionNamesFacts -Description $current)) {
+            Write-ReleaseStep 'the GitHub description names no version, count or build, so it stays as written'
         }
         Copy-Item -LiteralPath (Join-Path $assets "release-receipt-$Version.json") -Destination (Join-Path $Root "release-receipt-$Version.json") -Force
         Invoke-ReleaseNative 'The published release check' {
