@@ -43,7 +43,7 @@ Long-press the Tumblr logo at the top of your dashboard. You can also tap **Hush
 
 ## Patches
 
-The table describes the current source. The latest release, v0.0.7, has 42 patches. Hide blog notification reminders and Hide gift purchase popups come with the next release.
+The table describes the current source, which has 44 patches. The latest release, v0.0.7, has 42. Hide blog notification reminders and Hide gift purchase popups come with the next release.
 
 | Patch | What it does |
 |---|---|
