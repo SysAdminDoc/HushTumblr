@@ -18,7 +18,7 @@
 
 [Morphe](https://morphe.software) patches for Tumblr on Android. Patch the Tumblr bundle in Morphe Manager and you get a quieter Tumblr with its own HushTumblr settings page. It can drop ads and paid Blaze posts, hide suggestions, filter posts by type or by your own words, and trim the bottom bar.
 
-The latest release is [v0.0.7](https://github.com/SysAdminDoc/HushTumblr/releases/tag/v0.0.7), with 42 patches. Add this repo to Morphe Manager as a patch source and it'll offer each new release when it comes out. Changes are listed in the [changelog](CHANGELOG.md).
+The latest release is [v0.0.8](https://github.com/SysAdminDoc/HushTumblr/releases/tag/v0.0.8), with 44 patches. Add this repo to Morphe Manager as a patch source and it'll offer each new release when it comes out. Changes are listed in the [changelog](CHANGELOG.md).
 
 **[Add HushTumblr to Morphe Manager](https://morphe.software/add-source?github=SysAdminDoc%2FHushTumblr)**
 
@@ -124,10 +124,10 @@ Every patch is checked against this exact build, and other versions aren't suppo
 
 ## Verify a download
 
-Each release ships `SHA256SUMS.txt`, signed as `SHA256SUMS.txt.asc` with the HushTumblr release key. Its fingerprint is `2143 368A A5CE 6E5D FFEA  79CF BBC1 3768 83CF 3AB4` and the public key is [keys/hushtumblr-release.asc](keys/hushtumblr-release.asc). Morphe Manager doesn't check it, so that's up to you. The v0.0.7 bundle's line:
+Each release ships `SHA256SUMS.txt`, signed as `SHA256SUMS.txt.asc` with the HushTumblr release key. Its fingerprint is `2143 368A A5CE 6E5D FFEA  79CF BBC1 3768 83CF 3AB4` and the public key is [keys/hushtumblr-release.asc](keys/hushtumblr-release.asc). Morphe Manager doesn't check it, so that's up to you. The v0.0.8 bundle's line:
 
 ```text
-7ed0d301ab75a2fb6c7dd5b0aecb6dd541c7bad97d9b5c70d5dfc778219b8c0d  patches-0.0.7.mpp
+fedf2fe2b8360c304bd4d30aba317efbd016031be132cb6baedd4c15f46af347  patches-0.0.8.mpp
 ```
 
 ```text
