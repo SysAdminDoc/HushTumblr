@@ -238,6 +238,13 @@ Hides the Blaze buttons, banners and the nudge to promote a post after you share
 # context: the Skip review prompts switch on the Interface page. It stops Tumblr's rate-this-app pop-up.
 # context: the Skip review prompts switch on the Interface page. It stops Tumblr's "What do you think of the Tumblr app?" pop-up.
 Skip review prompts	Pular pedidos de avaliação
+# context: optional prompts on the Interface page. Subscriptions and deliberate gift purchases keep Tumblr's controls.
+Hide blog notification reminders	Ocultar lembretes de notificações de blogs
+Hides the pop-up suggesting you turn on notifications for a blog. Your subscriptions and notification settings stay as they are.	Oculta o pop-up que sugere ativar as notificações de um blog. Suas assinaturas e configurações de notificações não mudam.
+Hide gift purchase popups	Ocultar pop-ups de compra de presentes
+Hides the pop-up suggesting you buy a gift for a blog. You can still open gifting yourself.	Oculta o pop-up que sugere comprar um presente para um blog. Você ainda pode abrir a opção de presentes por conta própria.
+Blog notification reminder	Lembrete de notificações de um blog
+Gift purchase popup	Pop-up de compra de presentes
 Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.	Impede o pop-up que pergunta o que você acha do app do Tumblr e depois pede uma avaliação ou feedback.
 # context: the Turn off screenshot sharing switch on the Interface page. Tumblr watches for screenshots and offers to save the post as an image.
 Turn off screenshot sharing	Desativar compartilhamento de capturas de tela

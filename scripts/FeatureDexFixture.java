@@ -1071,6 +1071,50 @@ public final class FeatureDexFixture {
                 List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN, 0)))));
     }
 
+    private static void optionalNudges(Map<String, List<Method>> classes, String kind, String variant) {
+        String helper = BASE + "ui/OptionalNudges;", owner = "Lfixture/BlogReminder;", popup = "Lfixture/GiftPopup;";
+        boolean hooked = !variant.equals("clean") && !variant.equals("missing");
+        if (kind.equals("reminder")) {
+            List<Instruction> body = new ArrayList<>();
+            if (hooked) body.addAll(List.of(invoke(Opcode.INVOKE_STATIC, ref(helper, "hideBlogNotificationReminder", "Z")),
+                    new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction21t(Opcode.IF_EQZ, 0, 4),
+                    new ImmutableInstruction11n(Opcode.CONST_4, 0, variant.equals("wrong-return") ? 1 : 0),
+                    new ImmutableInstruction11x(Opcode.RETURN, 0)));
+            body.addAll(List.of(literal("blog_notify_enabled", 0), new ImmutableInstruction11n(Opcode.CONST_4, 1, 1),
+                    invoke(Opcode.INVOKE_STATIC, ref("Lcom/tumblr/Remember;", "c", "Z", STRING, "Z"), 0, 1),
+                    new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN, 0)));
+            classes.put(owner, List.of(method(owner, "enabled", "Z", true, 2, body)));
+        } else {
+            List<Instruction> body = new ArrayList<>();
+            if (hooked) body.addAll(List.of(new ImmutableInstruction3rc(Opcode.INVOKE_VIRTUAL_RANGE, 4, 1,
+                            ref(popup, variant.equals("wrong-key") ? "otherKey" : "key", STRING)),
+                    new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0),
+                    invoke(Opcode.INVOKE_STATIC, ref(helper, "hideGiftMessage", "Z", STRING), variant.equals("wrong-argument") ? 1 : 0),
+                    new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0),
+                    new ImmutableInstruction21t(Opcode.IF_EQZ, 0, variant.equals("wrong-branch") ? 2 : 3), end()));
+            body.addAll(List.of(new ImmutableInstruction21c(Opcode.SGET, 0,
+                            new ImmutableFieldReference("Lcom/tumblr/R$layout;", "popup_gift_message", "I")),
+                    new ImmutableInstruction21c(Opcode.SGET, 0,
+                            new ImmutableFieldReference("Lcom/tumblr/R$layout;", "popup_gift_message_right", "I")),
+                    new ImmutableInstruction21c(Opcode.SGET, 0,
+                            new ImmutableFieldReference("Lcom/tumblr/R$id;", "popup_text_message", "I")),
+                    literal("textMessage", 0), invoke(Opcode.INVOKE_VIRTUAL, ref(popup, "key", STRING), 4),
+                    new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0), end()));
+            classes.put(popup, List.of(method(popup, "render", VOID, false, 9, body,
+                            "Landroid/app/Activity;", "Landroid/view/View;", "F", "Landroid/view/View$OnClickListener;"),
+                    method(popup, "keys", STRING, true, 2, List.of(literal("key_has_seen_summon_crabs_popup", 0),
+                            literal("key_has_seen_ad_free_browsing_gift_popup", 0), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0)), popup),
+                    method(popup, "key", STRING, false, 2, List.of(invoke(Opcode.INVOKE_STATIC, ref(popup, "keys", STRING, popup), 1),
+                            new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0))),
+                    method(popup, "otherKey", STRING, false, 2, List.of(literal("other", 0), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0)))));
+        }
+        if (!variant.equals("clean")) classes.put(helper, List.of(
+                method(helper, "hideBlogNotificationReminder", "Z", true, 1, List.of(readiness(),
+                        new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN, 0))),
+                method(helper, "hideGiftMessage", "Z", true, 2, List.of(readiness(),
+                        new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN, 0)), STRING)));
+    }
+
     private static void activityNotifications(Map<String, List<Method>> classes, String variant) {
         boolean hooked = !variant.equals("clean");
         String pagination = "Lcom/tumblr/rumblr/model/PaginationLink;";
@@ -1113,6 +1157,8 @@ public final class FeatureDexFixture {
         paidPostBridge(clean, "clean");
         postBridge(clean, "clean");
         reviewPrompt(clean, "clean");
+        optionalNudges(clean, "reminder", "clean");
+        optionalNudges(clean, "gift", "clean");
         activityNotifications(clean, "clean");
         carousel(clean, "clean");
         followButton(clean, "clean");
@@ -1200,6 +1246,18 @@ public final class FeatureDexFixture {
             Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
             reviewPrompt(classes, variant);
             write(root, "feature-review-" + variant, classes, true, "skipReviewPrompts");
+        }
+        for (String variant : List.of("good", "missing", "wrong-return")) {
+            reset(); enable("hideBlogNotificationReminders");
+            Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
+            optionalNudges(classes, "reminder", variant);
+            write(root, "feature-blog-reminder-" + variant, classes, true, "hideBlogNotificationReminders");
+        }
+        for (String variant : List.of("good", "missing", "wrong-key", "wrong-argument", "wrong-branch")) {
+            reset(); enable("hideGiftMessagePopups");
+            Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
+            optionalNudges(classes, "gift", variant);
+            write(root, "feature-gift-popup-" + variant, classes, true, "hideGiftMessagePopups");
         }
         if (FAMILIES.containsKey("filterActivityNotifications")) for (String variant : List.of("good", "missing-hook", "wrong-list", "push-hook",
                 "missing-bridge", "wrong-getter", "wrong-null-target")) {

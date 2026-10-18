@@ -479,6 +479,8 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
             case "hushtumblr_hide_communities_tab": return L10n.t("Hide the Communities tab");
             case "hushtumblr_hide_blaze_prompts": return L10n.t("Hide Blaze prompts");
             case "hushtumblr_skip_review_prompts": return L10n.t("Skip review prompts");
+            case "hushtumblr_hide_blog_notification_reminders": return L10n.t("Hide blog notification reminders");
+            case "hushtumblr_hide_gift_message_popups": return L10n.t("Hide gift purchase popups");
             case "hushtumblr_turn_off_screenshot_sharing": return L10n.t("Turn off screenshot sharing");
             case "hushtumblr_disable_update_prompts": return L10n.t("Disable update prompts");
             case "hushtumblr_hide_suggested_blogs": return L10n.t("Hide suggested blogs");

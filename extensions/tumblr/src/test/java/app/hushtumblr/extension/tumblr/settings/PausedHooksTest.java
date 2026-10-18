@@ -93,6 +93,7 @@ import app.hushtumblr.extension.tumblr.ui.PostFooterForTests;
 import app.hushtumblr.extension.tumblr.ui.PostParts;
 import app.hushtumblr.extension.tumblr.ui.PostTimestamps;
 import app.hushtumblr.extension.tumblr.ui.ReviewPrompts;
+import app.hushtumblr.extension.tumblr.ui.OptionalNudges;
 import app.hushtumblr.extension.tumblr.ui.StoreButtons;
 import app.hushtumblr.extension.tumblr.ui.HushImageContainer;
 import app.hushtumblr.extension.tumblr.ui.HushImageDescription;
@@ -189,6 +190,10 @@ public class PausedHooksTest {
                 () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("BLAZE_DASHBOARD_ENTRYPOINT_IN_USER_BLOG_HEADER"), true)));
         // Tumblr's rating prompt is skipped.
         probes.put(Settings.SKIP_REVIEW_PROMPTS, Collections.singletonList(ReviewPrompts::skip));
+        probes.put(Settings.HIDE_BLOG_NOTIFICATION_REMINDERS,
+                Collections.singletonList(OptionalNudges::hideBlogNotificationReminder));
+        probes.put(Settings.HIDE_GIFT_MESSAGE_POPUPS, Collections.singletonList(
+                () -> OptionalNudges.hideGiftMessage("key_has_seen_ad_free_browsing_gift_popup")));
         // Tumblr's screenshot watcher answers off.
         probes.put(Settings.TURN_OFF_SCREENSHOT_SHARING, Collections.singletonList(
                 () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("SCREENSHOT_INTERCEPTION"), true)));

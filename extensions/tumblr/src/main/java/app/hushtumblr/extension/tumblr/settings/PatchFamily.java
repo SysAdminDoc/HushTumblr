@@ -66,6 +66,9 @@ public enum PatchFamily {
     HIDE_COMMUNITIES_TAB(FamilyNames.HIDE_COMMUNITIES_TAB, "hideCommunitiesTab", null, Settings.HIDE_COMMUNITIES_TAB),
     HIDE_BLAZE_PROMPTS(FamilyNames.HIDE_BLAZE_PROMPTS, "hideBlazePrompts", null, Settings.HIDE_BLAZE_PROMPTS),
     SKIP_REVIEW_PROMPTS(FamilyNames.SKIP_REVIEW_PROMPTS, "skipReviewPrompts", null, Settings.SKIP_REVIEW_PROMPTS),
+    HIDE_BLOG_NOTIFICATION_REMINDERS(FamilyNames.HIDE_BLOG_NOTIFICATION_REMINDERS, "hideBlogNotificationReminders", null,
+            Settings.HIDE_BLOG_NOTIFICATION_REMINDERS),
+    HIDE_GIFT_MESSAGE_POPUPS(FamilyNames.HIDE_GIFT_MESSAGE_POPUPS, "hideGiftMessagePopups", null, Settings.HIDE_GIFT_MESSAGE_POPUPS),
     TURN_OFF_SCREENSHOT_SHARING(FamilyNames.TURN_OFF_SCREENSHOT_SHARING, "turnOffScreenshotSharing", null,
             Settings.TURN_OFF_SCREENSHOT_SHARING),
     DISABLE_UPDATE_PROMPTS(FamilyNames.DISABLE_UPDATE_PROMPTS, "disableUpdatePrompts", null, Settings.DISABLE_UPDATE_PROMPTS),
@@ -159,7 +162,8 @@ public enum PatchFamily {
     /** The families the Interface page holds. The page and its home row both read this. */
     static final Set<PatchFamily> INTERFACE_PAGE = Collections.unmodifiableSet(EnumSet.of(REORDER_TABS,
             HIDE_NOTIFICATIONS_TAB, HIDE_EXPLORE_TAB, DARK_BACKGROUND, HIDE_UNREAD_DOTS, HIDE_TUMBLRMART,
-            TURN_OFF_SCREENSHOT_SHARING, SKIP_REVIEW_PROMPTS, HIDE_BLAZE_PROMPTS, HIDE_COMMUNITIES_TAB, HIDE_TUMBLR_TV));
+            TURN_OFF_SCREENSHOT_SHARING, SKIP_REVIEW_PROMPTS, HIDE_BLOG_NOTIFICATION_REMINDERS,
+            HIDE_GIFT_MESSAGE_POPUPS, HIDE_BLAZE_PROMPTS, HIDE_COMMUNITIES_TAB, HIDE_TUMBLR_TV));
 
     /** The families the Posts page holds. The page and its home row both read this. */
     static final Set<PatchFamily> POSTS_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_SAVE_BUTTON,
@@ -189,6 +193,8 @@ public enum PatchFamily {
         COMMUNITIES_TAB_BUTTON(HIDE_COMMUNITIES_TAB, "communitiesTabButton", "Hide the Communities tab"),
         BLAZE_PROMPT_FLAGS(HIDE_BLAZE_PROMPTS, "blazePromptFlags", "Hide Blaze prompts"),
         REVIEW_PROMPT(SKIP_REVIEW_PROMPTS, "reviewPrompt", "Skip review prompts"),
+        BLOG_NOTIFICATION_REMINDER(HIDE_BLOG_NOTIFICATION_REMINDERS, "blogNotificationReminder", "Blog notification reminder"),
+        GIFT_MESSAGE_POPUP(HIDE_GIFT_MESSAGE_POPUPS, "giftMessagePopup", "Gift purchase popup"),
         SCREENSHOT_SHARING_FLAGS(TURN_OFF_SCREENSHOT_SHARING, "screenshotSharingFlags", "Turn off screenshot sharing"),
         UPDATE_PROMPT_FLAGS(DISABLE_UPDATE_PROMPTS, "updatePromptFlags", "Disable update prompts"),
         SUGGESTED_BLOG_CARDS(HIDE_SUGGESTED_BLOGS, "suggestedBlogCards", "Hide suggested blogs"),

@@ -885,6 +885,14 @@ try {
         'feature-switch-missing' = $false
         'feature-switch-wrong-value' = $false
         'feature-review-good' = $true
+        'feature-blog-reminder-good' = $true
+        'feature-blog-reminder-missing' = $false
+        'feature-blog-reminder-wrong-return' = $false
+        'feature-gift-popup-good' = $true
+        'feature-gift-popup-missing' = $false
+        'feature-gift-popup-wrong-key' = $false
+        'feature-gift-popup-wrong-argument' = $false
+        'feature-gift-popup-wrong-branch' = $false
         'feature-review-missing' = $false
         'feature-review-jump-to-injected-return' = $false
         'feature-activity-good' = $true
@@ -973,6 +981,12 @@ try {
             'feature-switch-missing' { 'has 0 calls' }
             'feature-switch-wrong-value' { "doesn't take what its rule hands it" }
             'feature-review-missing' { 'has 0 calls' }
+            'feature-blog-reminder-missing' { 'has 0 calls' }
+            'feature-blog-reminder-wrong-return' { "isn't asked first thing" }
+            'feature-gift-popup-missing' { 'has 0 calls' }
+            'feature-gift-popup-wrong-key' { "doesn't receive the native instance key" }
+            'feature-gift-popup-wrong-argument' { "doesn't receive the native instance key" }
+            'feature-gift-popup-wrong-branch' { "doesn't receive the native instance key" }
             'feature-review-jump-to-injected-return' { 'routes an original branch or handler into the middle of an injected block' }
             'feature-activity-missing-hook' { 'has 0 calls' }
             'feature-activity-wrong-list' { "doesn't take what its rule hands it" }

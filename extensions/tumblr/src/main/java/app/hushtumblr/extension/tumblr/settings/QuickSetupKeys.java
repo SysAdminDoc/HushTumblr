@@ -39,6 +39,8 @@ final class QuickSetupKeys {
             Settings.HIDE_BLAZE_PROMPTS,
             Settings.HIDE_TUMBLRMART,
             Settings.SKIP_REVIEW_PROMPTS,
+            Settings.HIDE_BLOG_NOTIFICATION_REMINDERS,
+            Settings.HIDE_GIFT_MESSAGE_POPUPS,
             Settings.TURN_OFF_SCREENSHOT_SHARING,
             Settings.DISABLE_UPDATE_PROMPTS,
             Settings.HIDE_DASHBOARD_COUNT,

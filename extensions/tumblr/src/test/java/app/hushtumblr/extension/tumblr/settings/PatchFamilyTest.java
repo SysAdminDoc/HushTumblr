@@ -100,6 +100,24 @@ public class PatchFamilyTest {
     }
 
     @Test
+    public void optionalNudgesHaveIndependentLiveSwitchesAndCoverage() {
+        Set<PatchFamily> build = EnumSet.of(PatchFamily.HIDE_BLOG_NOTIFICATION_REMINDERS, PatchFamily.HIDE_GIFT_MESSAGE_POPUPS);
+        PatchFamily.inBuildForTests = build;
+        assertFalse(Settings.HIDE_BLOG_NOTIFICATION_REMINDERS.defaultValue);
+        assertFalse(Settings.HIDE_GIFT_MESSAGE_POPUPS.defaultValue);
+        assertTrue(PatchFamily.INTERFACE_PAGE.containsAll(build));
+        assertEquals(EnumSet.of(PatchFamily.Capability.BLOG_NOTIFICATION_REMINDER),
+                PatchFamily.HIDE_BLOG_NOTIFICATION_REMINDERS.expectedCapabilities());
+        assertEquals(EnumSet.of(PatchFamily.Capability.GIFT_MESSAGE_POPUP),
+                PatchFamily.HIDE_GIFT_MESSAGE_POPUPS.expectedCapabilities());
+        Settings.HIDE_BLOG_NOTIFICATION_REMINDERS.save(true);
+        Settings.HIDE_GIFT_MESSAGE_POPUPS.save(false);
+        List<String> report = PatchFamily.reportLines(build, false);
+        assertTrue(report.toString(), report.contains("Hide blog notification reminders: on (hushtumblr_hide_blog_notification_reminders=on)"));
+        assertTrue(report.toString(), report.contains("Hide gift purchase popups: disabled by its switch (hushtumblr_hide_gift_message_popups=off)"));
+    }
+
+    @Test
     public void everyStatusFlagBelongsToExactlyOneFamily() {
         Set<String> flags = new TreeSet<>();
         for (Method method : SettingsStatus.class.getDeclaredMethods()) {

@@ -302,6 +302,7 @@ public class DexDiff {
             Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1), Map.entry("activityNotifications", 7),
             Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 4), Map.entry("timelinePaging", 5),
             Map.entry("timelineCarousel", 3), Map.entry("postBridge", 3), Map.entry("paidPostBridge", 6), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
+            Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3),
             Map.entry("followButton", 3), Map.entry("footerButton", 3), Map.entry("postTags", 5),
             Map.entry("noteCounts", 6), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 5), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
@@ -4967,6 +4968,53 @@ public class DexDiff {
             capability(c.callee, old != null && guardFirst(old, c.strings.get(0), List.of(), 1, RETURN_NOTHING));
         }
 
+        /** The reminder preference decision may answer false first, without changing its native read or writer. */
+        void blogNotificationReminder(Contract c) {
+            List<Method> found = new ArrayList<>();
+            for (Method m : clean.holding(c.strings.get(1))) if (isStatic(m) && descriptor(m).equals("()Z")
+                    && instructions(m).stream().anyMatch(i -> isCall(i, "Lcom/tumblr/Remember;", "c", "(Ljava/lang/String;Z)Z"))) found.add(m);
+            Method old = unique(found, "the blog notification reminder decision");
+            Tail no = (body, from) -> body.get(from).getOpcode() == Opcode.CONST_4
+                    && ((NarrowLiteralInstruction) body.get(from)).getNarrowLiteral() == 0
+                    && body.get(from + 1).getOpcode() == Opcode.RETURN
+                    && firstRegister(body.get(from + 1)) == firstRegister(body.get(from));
+            capability(c.callee, old != null && guardFirst(old, c.strings.get(0), List.of(), 2, no));
+        }
+
+        /** The shared renderer passes its native instance key, not a hard-coded gift key, to the hook. */
+        void giftMessagePopup(Contract c) {
+            List<ClassDef> owners = new ArrayList<>();
+            for (Method key : clean.holding(c.strings.get(1))) if (isStatic(key)
+                    && descriptor(key).equals("(" + key.getDefiningClass() + ")Ljava/lang/String;")
+                    && clean.texts.get(key.toString()).contains(c.strings.get(2))) owners.add(clean.classes.get(key.getDefiningClass()));
+            ClassDef owner = owners.size() == 1 ? owners.get(0) : null;
+            if (owner == null) { fail("the gift and crab popup class has " + owners.size() + " matches"); capability(c.callee, false); return; }
+            List<Method> renderers = new ArrayList<>();
+            for (Method m : owner.getMethods()) if (!isStatic(m)
+                    && descriptor(m).equals("(Landroid/app/Activity;Landroid/view/View;FLandroid/view/View$OnClickListener;)V")
+                    && clean.texts.get(m.toString()).contains("textMessage")
+                    && instructions(m).stream().anyMatch(i -> names(field(i), "Lcom/tumblr/R$layout;->popup_gift_message"))
+                    && instructions(m).stream().anyMatch(i -> names(field(i), "Lcom/tumblr/R$layout;->popup_gift_message_right"))
+                    && instructions(m).stream().anyMatch(i -> names(field(i), "Lcom/tumblr/R$id;->popup_text_message"))) renderers.add(m);
+            Method old = unique(renderers, "the shared gift and crab popup renderer");
+            if (old == null) { capability(c.callee, false); return; }
+            Set<String> getters = new TreeSet<>();
+            for (Instruction i : instructions(old)) if (called(i) != null && called(i).getDefiningClass().equals(owner.getType())
+                    && descriptor(called(i)).equals("()Ljava/lang/String;")) getters.add(called(i).toString());
+            Method getter = getters.size() == 1 ? clean.methods.get(getters.iterator().next()) : null;
+            Method m = actual(old);
+            List<Integer> sites = calls(m, c.strings.get(0), 1);
+            List<Instruction> body = m == null ? List.of() : instructions(m);
+            int held = firstRegister(get(body, 1));
+            boolean shaped = getter != null && !isStatic(getter) && m != null && sites.equals(List.of(2))
+                    && callIs(get(body, 0), Opcode.INVOKE_VIRTUAL_RANGE, getter.toString(), parameter(m, -1))
+                    && movesTo(get(body, 1), held, Opcode.MOVE_RESULT_OBJECT) && held >= 0 && held < parameter(m, -1)
+                    && guard(m, 2, c.strings.get(0), List.of(held), 1, RETURN_NOTHING) == 6;
+            if (!shaped) fail("the gift popup hook doesn't receive the native instance key before rendering");
+            else { remove(m, 0, 6); vouch(m, 2, List.of(held)); }
+            capability(c.callee, shaped);
+        }
+
         /** The post header's Follow button check, which the header's Follow action test calls, answering yes first when asked. */
         void followButton(Contract c) {
             String header = c.strings.get(1);
@@ -5652,6 +5700,8 @@ public class DexDiff {
                     case "rootPostMutes": rootPostMutes(c); break;
                     case "mutualMarkers": mutualMarkers(c); break;
                     case "reviewPrompt": reviewPrompt(c); break;
+                    case "blogNotificationReminder": blogNotificationReminder(c); break;
+                    case "giftMessagePopup": giftMessagePopup(c); break;
                     case "followButton": followButton(c); break;
                     case "footerButton": footerButton(c); break;
                     case "postTags": postTags(c); break;

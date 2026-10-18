@@ -129,6 +129,14 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting SKIP_REVIEW_PROMPTS =
             new BooleanSetting("hushtumblr_skip_review_prompts", FALSE);
 
+    /** Only optional reminders are hidden. Blog subscriptions and push preferences stay intact. */
+    public static final BooleanSetting HIDE_BLOG_NOTIFICATION_REMINDERS =
+            new BooleanSetting("hushtumblr_hide_blog_notification_reminders", FALSE);
+
+    /** Only the unsolicited gift popup is hidden. Deliberate gifting and crab tips stay intact. */
+    public static final BooleanSetting HIDE_GIFT_MESSAGE_POPUPS =
+            new BooleanSetting("hushtumblr_hide_gift_message_popups", FALSE);
+
     /**
      * Tumblr stops watching for screenshots and offering to save the post as an image
      * ({@link app.hushtumblr.extension.tumblr.flags.FeatureSwitches}). Off to start.

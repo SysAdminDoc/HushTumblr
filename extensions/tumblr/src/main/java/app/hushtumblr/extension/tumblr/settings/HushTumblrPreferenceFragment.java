@@ -565,6 +565,14 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             patchToggle(ui, context, build, PatchFamily.SKIP_REVIEW_PROMPTS, Settings.SKIP_REVIEW_PROMPTS,
                     L10n.t("Skip review prompts"), L10n.t("Stops the pop-up that asks what you think of the Tumblr "
                         + "app and then asks for a rating or feedback."), SettingsIcons.BLOCK);
+            patchToggle(ui, context, build, PatchFamily.HIDE_BLOG_NOTIFICATION_REMINDERS,
+                    Settings.HIDE_BLOG_NOTIFICATION_REMINDERS, L10n.t("Hide blog notification reminders"),
+                    L10n.t("Hides the pop-up suggesting you turn on notifications for a blog. Your subscriptions and notification settings stay as they are."),
+                    SettingsIcons.BELL);
+            patchToggle(ui, context, build, PatchFamily.HIDE_GIFT_MESSAGE_POPUPS,
+                    Settings.HIDE_GIFT_MESSAGE_POPUPS, L10n.t("Hide gift purchase popups"),
+                    L10n.t("Hides the pop-up suggesting you buy a gift for a blog. You can still open gifting yourself."),
+                    SettingsIcons.BLOCK);
             // Read when a screen's theme is made (DarkBackground), so screens already open keep their colors.
             patchToggle(ui, context, build, PatchFamily.DARK_BACKGROUND, Settings.DARK_BACKGROUND,
                     L10n.t("Dark background color"), L10n.t("Makes newly opened Dark Mode screens black, or the dark "

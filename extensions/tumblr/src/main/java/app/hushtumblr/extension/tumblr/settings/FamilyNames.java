@@ -43,6 +43,8 @@ public final class FamilyNames {
     public static final String HIDE_COMMUNITIES_TAB = "Hide the Communities tab";
     public static final String HIDE_BLAZE_PROMPTS = "Hide Blaze prompts";
     public static final String SKIP_REVIEW_PROMPTS = "Skip review prompts";
+    public static final String HIDE_BLOG_NOTIFICATION_REMINDERS = "Hide blog notification reminders";
+    public static final String HIDE_GIFT_MESSAGE_POPUPS = "Hide gift purchase popups";
     public static final String TURN_OFF_SCREENSHOT_SHARING = "Turn off screenshot sharing";
     public static final String DISABLE_UPDATE_PROMPTS = "Disable update prompts";
     public static final String HIDE_SUGGESTED_BLOGS = "Hide suggested blogs";

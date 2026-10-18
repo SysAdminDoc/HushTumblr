@@ -47,6 +47,8 @@ family|hideBlazePrompts|Hide Blaze prompts|blazePromptFlags
 family|turnOffScreenshotSharing|Turn off screenshot sharing|screenshotSharingFlags
 family|disableUpdatePrompts|Disable update prompts|updatePromptFlags
 family|skipReviewPrompts|Skip review prompts|reviewPrompt
+family|hideBlogNotificationReminders|Hide blog notification reminders|blogNotificationReminder
+family|hideGiftMessagePopups|Hide gift purchase popups|giftMessagePopup
 family|hideSuggestedBlogs|Hide suggested blogs|suggestedBlogCards
 family|hideSuggestedCommunities|Hide suggested communities|suggestedCommunityCards
 family|hideWatchItRows|Hide Watch it rows|watchItRows
@@ -109,6 +111,9 @@ mutation|reblogPosts,videoPosts,photoPosts,textPosts,postWords|postBridge|Lcom/t
 # the two account-specific getters protect followed-blog and editable Blaze posts.
 mutation|paidPostHeader|paidPostBridge|Lcom/tumblr/rumblr/model/post/Post;|Lapp/hushtumblr/extension/tumblr/timeline/HushPaidPost;|hushHeaderIcon:header_context:icon|hushFollowed:followed|hushCanEdit:can_edit|hushPaidContextKnown
 mutation|reviewPrompt|reviewPrompt|Lapp/hushtumblr/extension/tumblr/ui/ReviewPrompts;->skip()Z|app_review_prompt_rules_last_shown|Lcom/tumblr/rating/RatingPromptActivity;
+# Optional prompt decisions. The shared gift renderer must hand over its instance key so crab tips stay native.
+mutation|blogNotificationReminder|blogNotificationReminder|Lapp/hushtumblr/extension/tumblr/ui/OptionalNudges;->hideBlogNotificationReminder()Z|blog_notify_enabled
+mutation|giftMessagePopup|giftMessagePopup|Lapp/hushtumblr/extension/tumblr/ui/OptionalNudges;->hideGiftMessage(Ljava/lang/String;)Z|key_has_seen_ad_free_browsing_gift_popup|key_has_seen_summon_crabs_popup
 mutation|followButton|followButton|Lapp/hushtumblr/extension/tumblr/ui/PostParts;->hideFollowButton()Z|Lcom/tumblr/ui/widget/PostCardHeader;|Lcom/tumblr/rumblr/model/post/PostHeaderAction$ActionType;->FOLLOW
 # A footer button's question, the Compose function it guards (by its source note) and the
 # community footer hook the family adds, or none.

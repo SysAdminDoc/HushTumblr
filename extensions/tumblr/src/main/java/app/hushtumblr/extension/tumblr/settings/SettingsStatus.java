@@ -65,6 +65,10 @@ public final class SettingsStatus {
     public static boolean blazePromptFlags() { return false; }
     public static boolean skipReviewPrompts() { return false; }
     public static boolean reviewPrompt() { return false; }
+    public static boolean hideBlogNotificationReminders() { return false; }
+    public static boolean blogNotificationReminder() { return false; }
+    public static boolean hideGiftMessagePopups() { return false; }
+    public static boolean giftMessagePopup() { return false; }
     public static boolean turnOffScreenshotSharing() { return false; }
     public static boolean screenshotSharingFlags() { return false; }
     public static boolean disableUpdatePrompts() { return false; }

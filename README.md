@@ -43,7 +43,7 @@ Long-press the Tumblr logo at the top of your dashboard. You can also tap **Hush
 
 ## Patches
 
-The latest release includes every patch listed below.
+The table describes the current source. The latest release, v0.0.7, has 42 patches. Hide blog notification reminders and Hide gift purchase popups come with the next release.
 
 | Patch | What it does |
 |---|---|
@@ -57,6 +57,8 @@ The latest release includes every patch listed below.
 | `Hide Watch it rows` | Takes Tumblr TV's Watch it rows and video hub cards out of your dashboard and other feeds, along with their headings. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
 | `Hide ads` | Takes ad cards and paid Blaze posts out of your dashboard and other feeds, and stops Tumblr asking its ad networks for more. On by default. Turn it off in Tumblr settings > HushTumblr > Feed. |
 | `Hide advertising ID` | Tumblr and the ad companies inside it see an empty advertising ID with ad tracking limited, as if you'd deleted your ad ID in Android. On by default. Turn it off in Tumblr settings > HushTumblr > Privacy. |
+| `Hide blog notification reminders` | Hides the pop-up suggesting you turn on notifications for a blog. Your subscriptions and notification settings stay as they are. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
+| `Hide gift purchase popups` | Hides the pop-up suggesting you buy a gift for a blog. You can still open gifting yourself. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `Hide hashtags` | Takes the tags off the bottom of posts in your dashboard, other feeds and Tumblr TV, and keeps the source link. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Hide note counts` | Takes the like, reblog and comment counts off the footer under posts, community posts included, and the counts off the top of a post's notes and its tabs. The buttons stay and still work. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Hide photo posts` | Takes photo posts out of your dashboard and other feeds as each page loads. A post with pictures and no video, its reblog trail included, counts as a photo post. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |

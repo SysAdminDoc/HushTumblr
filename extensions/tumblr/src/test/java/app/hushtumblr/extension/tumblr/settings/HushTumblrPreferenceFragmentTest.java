@@ -98,6 +98,8 @@ public class HushTumblrPreferenceFragmentTest {
         ROW_TITLES.put(PatchFamily.HIDE_COMMUNITIES_TAB, "Hide the Communities tab");
         ROW_TITLES.put(PatchFamily.HIDE_BLAZE_PROMPTS, "Hide Blaze prompts");
         ROW_TITLES.put(PatchFamily.SKIP_REVIEW_PROMPTS, "Skip review prompts");
+        ROW_TITLES.put(PatchFamily.HIDE_BLOG_NOTIFICATION_REMINDERS, "Hide blog notification reminders");
+        ROW_TITLES.put(PatchFamily.HIDE_GIFT_MESSAGE_POPUPS, "Hide gift purchase popups");
         ROW_TITLES.put(PatchFamily.TURN_OFF_SCREENSHOT_SHARING, "Turn off screenshot sharing");
         ROW_TITLES.put(PatchFamily.DISABLE_UPDATE_PROMPTS, "Disable update prompts");
         ROW_TITLES.put(PatchFamily.HIDE_SUGGESTED_BLOGS, "Hide suggested blogs");
