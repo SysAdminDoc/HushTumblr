@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.0.8 (2026-10-18)
 
 * **Tumblr:** New **Hide blog notification reminders** switch on the Interface page, off by default. It hides the pop-up on a blog that asks you to turn on notifications for it. Your subscriptions and notification settings don't change.
 * **Tumblr:** New **Hide gift purchase popups** switch on the Interface page, off by default. It hides the pop-up on a blog that suggests buying the blog a gift. Crab tips still show, and the gift button on a blog still opens the gift screen.
