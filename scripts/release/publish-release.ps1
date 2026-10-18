@@ -131,8 +131,10 @@ if ($indexed) {
     $patch = Get-ReleaseTestCount -Root $Root -Folders @('patches/build/test-results/test', 'patches/build/test-results/fixtureTest')
     # No release before this one: there's no patches-bundle.json to update, so the index writes it.
     $firstIndex = Test-FirstRelease -Root $Root -Except $tag
+    # The README's Verify a download example quotes the bundle just matched to the hosted one.
+    $bundleHash = (Get-FileHash -LiteralPath (Join-Path $assets "patches-$Version.mpp") -Algorithm SHA256).Hash.ToLowerInvariant()
     $indexArguments = @('index', '--version', $Version, '--created', $created,
-        '--summary', $Summary, '--runtime', [string]$runtime, '--patch', [string]$patch)
+        '--summary', $Summary, '--runtime', [string]$runtime, '--patch', [string]$patch, '--sha256', $bundleHash)
     if ($firstIndex) {
         Write-ReleaseStep "nothing was released before $tag, so this writes the first patches-bundle.json"
         $indexArguments += '--first'

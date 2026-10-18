@@ -1844,7 +1844,9 @@ try {
             -replace 'alt="Version \d+(?:\.\d+)+"', "alt=`"Version $fixtureVersion`"" `
             -replace '(latest (?:published )?release is (?:still )?\[?v)\d+(?:\.\d+)+', "`${1}$fixtureVersion" `
             -replace '(latest release is \[v[^\]]*\]\([^)\s]*/tag/v)\d+(?:\.\d+)+', "`${1}$fixtureVersion" `
-            -replace '(latest release is \[v[^\]]*\]\([^)\s]*\), with )\d+( patches)', "`${1}$count`${2}"
+            -replace '(latest release is \[v[^\]]*\]\([^)\s]*\), with )\d+( patches)', "`${1}$count`${2}" `
+            -replace "(\bThe v)\d+(?:\.\d+)+( bundle's line:)", "`${1}$fixtureVersion`${2}" `
+            -replace '(?m)^([0-9a-f]{64}  patches-)\d+(?:\.\d+)+(\.mpp)', "`${1}$fixtureVersion`${2}"
         if ($synced -ceq $text) { return }
         Set-FactsFile 'README.md' { param($unused) $synced }
     }
@@ -1953,12 +1955,14 @@ try {
         # the 0.0.7 index push (2026-10-10) was the first tree where it didn't.
         Copy-ReleaseFile 'patches-bundle.json' (Join-Path $factsRoot 'patches-bundle.json')
         Copy-Item -LiteralPath (Join-Path $Root $bugFormRelative) -Destination (Join-Path $factsRoot $bugFormRelative) -Force
-        # And its README sentence naming that published release, which the sync above moved to the
-        # source's version. The two only match when this checkout's source is the published one.
+        # And its README sentence and checksum example naming that published release, which the sync
+        # above moved to the source's version. They only match when this checkout's source is the published one.
         $publishedHere = Get-ReleaseIndexVersion
         Set-FactsFile 'README.md' {
             param($text) $text -replace '(latest (?:published )?release is (?:still )?\[?v)\d+(?:\.\d+)+', "`${1}$publishedHere" `
-                -replace '(latest release is \[v[^\]]*\]\([^)\s]*/tag/v)\d+(?:\.\d+)+', "`${1}$publishedHere"
+                -replace '(latest release is \[v[^\]]*\]\([^)\s]*/tag/v)\d+(?:\.\d+)+', "`${1}$publishedHere" `
+                -replace "(\bThe v)\d+(?:\.\d+)+( bundle's line:)", "`${1}$publishedHere`${2}" `
+                -replace '(?m)^([0-9a-f]{64}  patches-)\d+(?:\.\d+)+(\.mpp)', "`${1}$publishedHere`${2}"
         }
         $global:LASTEXITCODE = 0
         & $factsScript -Root $factsRoot -SkipDescriptionTestCount -AllowPublishedIndexLag -SkipUrlCheck 6> $null
@@ -1974,9 +1978,16 @@ try {
         Set-FactsFile $bugFormRelative { param($unused) $windowForm }
         # Lagging, the README may name the source's version or the published one, and no other.
         $windowReadme = Get-Content -LiteralPath (Join-Path $factsRoot 'README.md') -Raw
-        foreach ($stale in @(
-                @{ Pattern = '*version badge names 0.1.0*'; Edit = { param($text) $text -replace 'badge/version-\d+(?:\.\d+)+-', 'badge/version-0.1.0-' } },
-                @{ Pattern = '*latest release is v0.1.0*'; Edit = { param($text) $text -replace '(latest release is \[v)\d+(?:\.\d+)+', '${1}0.1.0' } })) {
+        $staleReadmes = @(
+            @{ Pattern = '*version badge names 0.1.0*'; Edit = { param($text) $text -replace 'badge/version-\d+(?:\.\d+)+-', 'badge/version-0.1.0-' } },
+            @{ Pattern = '*latest release is v0.1.0*'; Edit = { param($text) $text -replace '(latest release is \[v)\d+(?:\.\d+)+', '${1}0.1.0' } },
+            @{ Pattern = '*checksum example is labeled v0.1.0*'; Edit = { param($text) $text -replace "(\bThe v)\d+(?:\.\d+)+( bundle's line:)", '${1}0.1.0${2}' } })
+        if ($window -eq 'prepared') {
+            # The checksum example quotes a signed bundle, so unlike the badge it never runs ahead to the source.
+            $staleReadmes += @{ Pattern = "*checksum example names patches-$nextVersion.mpp*"
+                Edit = { param($text) $text -replace '(?m)^([0-9a-f]{64}  patches-)\d+(?:\.\d+)+(\.mpp)', "`${1}$nextVersion`${2}" } }
+        }
+        foreach ($stale in $staleReadmes) {
             Set-FactsFile 'README.md' $stale.Edit
             Assert-Throws { & $factsScript -Root $factsRoot -SkipDescriptionTestCount -AllowPublishedIndexLag -SkipUrlCheck 6> $null } `
                 $stale.Pattern "The gate accepted a $window README naming a version that is neither the source's nor the published one."
@@ -2122,7 +2133,14 @@ try {
                 Edit = { param($text) $text -replace '(latest release is \[v[^\]]+\]\([^)\s]*\), with )\d+( patches)',
                     ('${1}' + (@($catalog.patches).Count + 1) + '${2}') } },
             @{ Name = 'no sentence naming the latest release'; Pattern = '*does not say which release is the latest*'
-                Edit = { param($text) $text -replace 'The latest release is \[v[^\]]+\]\([^)\s]*\), with \d+ patches\.', 'Releases are on GitHub.' } })) {
+                Edit = { param($text) $text -replace 'The latest release is \[v[^\]]+\]\([^)\s]*\), with \d+ patches\.', 'Releases are on GitHub.' } },
+            # The checksum example under Verify a download: its label and file name, each on its own, and the pair gone.
+            @{ Name = 'a checksum example labeled for another version'; Pattern = '*checksum example is labeled v0.1.0*'
+                Edit = { param($text) $text -replace "(\bThe v)\d+(?:\.\d+)+( bundle's line:)", '${1}0.1.0${2}' } },
+            @{ Name = 'a checksum example naming another bundle'; Pattern = '*checksum example names patches-0.1.0.mpp*'
+                Edit = { param($text) $text -replace '(?m)^([0-9a-f]{64}  patches-)\d+(?:\.\d+)+(\.mpp)', '${1}0.1.0${2}' } },
+            @{ Name = 'no checksum example'; Pattern = "*Verify a download section needs one*It has 1 and 0.*"
+                Edit = { param($text) $text -replace '(?m)^[0-9a-f]{64}  patches-\d+(?:\.\d+)+\.mpp', 'see SHA256SUMS.txt' } })) {
         $unedited = Get-Content -LiteralPath (Join-Path $factsRoot 'README.md') -Raw
         Set-FactsFile 'README.md' $case.Edit
         try {
@@ -5391,7 +5409,9 @@ try {
         'alt="Version \d+(?:\.\d+)+"', "alt=`"Version $releaseVersionForIndex`"" -replace
         '(latest (?:published )?release is (?:still )?\[?v)\d+(?:\.\d+)+', "`${1}$releaseVersionForIndex" -replace
         '(latest release is \[v[^\]]*\]\([^)\s]*/tag/v)\d+(?:\.\d+)+', "`${1}$releaseVersionForIndex" -replace
-        '(latest release is \[v[^\]]*\]\([^)\s]*\), with )\d+( patches)', "`${1}$releasePatchCountForIndex`${2}"
+        '(latest release is \[v[^\]]*\]\([^)\s]*\), with )\d+( patches)', "`${1}$releasePatchCountForIndex`${2}" -replace
+        "(\bThe v)\d+(?:\.\d+)+( bundle's line:)", "`${1}$releaseVersionForIndex`${2}" -replace
+        '(?m)^([0-9a-f]{64}  patches-)\d+(?:\.\d+)+(\.mpp)', "`${1}$releaseVersionForIndex`${2}"
     Set-Content -LiteralPath $releaseReadmePath -Encoding UTF8 -NoNewline -Value $releaseReadmeText
     # Through Invoke-FixtureGit, with the git directory proved before anything is written, for
     # the reason the toolchain fixture above gives.
@@ -7407,6 +7427,16 @@ try {
     $publishedRun = @{ VerifyPublishedAsset = $true; ArtifactPath = $releaseBundle; SkipDescriptionTestCount = $true
         SkipUrlCheck = $true; DesktopJar = $stubJar; Java = $listJava;
         TrustedPublicKeyPath = $signerPublicKey; TrustedFingerprint = $signerFingerprint }
+    # The index step writes the signed bundle's digest into the README before this check runs and
+    # commits it after, so the README here quotes the stub bundle, uncommitted, until the cases end.
+    $releaseReadmeCommitted = [System.IO.File]::ReadAllBytes($releaseReadmePath)
+    $releaseBundleHash = (Get-FileHash -LiteralPath $releaseBundle -Algorithm SHA256).Hash.ToLowerInvariant()
+    function Set-ReleaseReadmeChecksum([string]$Digest) {
+        $text = [System.Text.Encoding]::UTF8.GetString($releaseReadmeCommitted) -replace
+            '(?m)^[0-9a-f]{64}(  patches-\d+(?:\.\d+)+\.mpp)', "$Digest`${1}"
+        [System.IO.File]::WriteAllText($releaseReadmePath, $text, (New-Object System.Text.UTF8Encoding($false)))
+    }
+    Set-ReleaseReadmeChecksum $releaseBundleHash
     try {
         $missingPin = $publishedRun.Clone()
         $missingPin['TrustedPublicKeyPath'] = ''; $missingPin['TrustedFingerprint'] = ''
@@ -7425,6 +7455,17 @@ try {
         Assert-True ($said -like "*published bundle is pinned to v$indexVersionHere ($releaseCommit)*" -and
             $said -like "*the index asks for Morphe Manager $releaseFloor or newer, as tag v$indexVersionHere pins*") `
             "The index push was not held to the Manager floor its published tag pins: $said"
+        Assert-True ($said -like "*README's checksum example quotes the hosted patches-$indexVersionHere.mpp*") `
+            "The index push did not hold the README's checksum example to the hosted bundle: $said"
+        # A README still quoting the bundle before this one, which is what a hand-edited release left behind.
+        Set-ReleaseReadmeChecksum ('3' * 64)
+        try {
+            Assert-Throws { Invoke-IndexPushCheck $publishedRun } `
+                "*README's checksum example quotes $('3' * 64) for patches-$indexVersionHere.mpp, but the hosted bundle is $releaseBundleHash*" `
+                'An index push went through with a README quoting another bundle''s digest.'
+        } finally {
+            Set-ReleaseReadmeChecksum $releaseBundleHash
+        }
         # The SBOM the receipt names, as the release hosts it, and OSV asked about it again.
         Assert-True ($said -like ("*the hosted patches-$indexVersionHere.cdx.json is the SBOM the receipt names and " +
                 "SHA256SUMS.txt lists, and it describes patches-$indexVersionHere.mpp, payloads and all*") -and
@@ -7719,6 +7760,7 @@ try {
             'An index push was checked against the clone''s tag, or went through with its release floor unread.'
     } finally {
         Set-Content -LiteralPath $releaseIndexPath -Encoding UTF8 -NoNewline -Value $releaseIndexText
+        [System.IO.File]::WriteAllBytes($releaseReadmePath, $releaseReadmeCommitted)
         Invoke-FixtureGit -Root $releaseRepo -Arguments @('tag', '--force', "v$indexVersionHere", $releaseCommit) | Out-Null
         Invoke-FixtureGit -Root $releaseRepo -Arguments @('config', '--unset', "url.$publishedRepo.insteadOf") | Out-Null
     }

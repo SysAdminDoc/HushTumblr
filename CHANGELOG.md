@@ -9,7 +9,7 @@
 * **Tumblr:** The Words to hide and Allowed words editors now shrink to fit above the keyboard. With large text and the Samsung keyboard open, Save and Cancel used to sit behind the keyboard.
 * **Tumblr:** Manage muted posts and Clear diagnostic data now read the file back after saving and only say it worked once the new copy is really there. If that check fails, Manage muted posts reloads the list so it shows what's actually saved, says it couldn't update, and lets you try again.
 * **Tooling:** Patch runs check much more of what they build. Every Tumblr method, field and resource a run changes has to match a reviewed contract or allowlist line, and the bundle, merged APK, patched APK and report stay locked so nothing else on the PC can swap them mid-run. The release receipt patches every fixture itself, and `patch-for-device.ps1` checks the signing key and takes `-Option` for patch options.
-* **Tooling:** Release checks now refuse malformed vulnerability answers, and a low severity label can't hide a score they can't read. A GitHub description that names no version, count or build is left as written. Morphe Manager's description carries the release's full changelog, and the README matches the published patches.
+* **Tooling:** Release checks now refuse malformed vulnerability answers, and a low severity label can't hide a score they can't read. A GitHub description that names no version, count or build is left as written. Morphe Manager's description carries the release's full changelog, and the README matches the published patches. Each release now writes the README's checksum example from the signed bundle, so its label, hash and file name can't fall behind.
 
 ## 0.0.7 (2026-10-14)
 

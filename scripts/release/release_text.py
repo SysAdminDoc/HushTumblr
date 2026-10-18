@@ -4,7 +4,7 @@
   py -3 scripts/release/release_text.py cut --version 0.0.7 [--date 2026-10-11]
   py -3 scripts/release/release_text.py notes --version 0.0.7 --intro FILE --tail FILE --out FILE
   py -3 scripts/release/release_text.py index --version 0.0.7 --created 2026-10-11T03:34:54
-        --summary FILE --runtime N --patch N
+        --summary FILE --runtime N --patch N --sha256 HEX
 
 Every command checks its inputs first and changes nothing when a check fails. --root points any
 of them at another checkout, which is how the unit tests run them. scripts/release/release.ps1
@@ -32,6 +32,7 @@ SCOPES = ("Tumblr", "Tooling")
 VERSION = re.compile(r"^\d+\.\d+\.\d+$")
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 CREATED = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$")
+SHA256 = re.compile(r"^[0-9a-f]{64}$")
 BULLET = re.compile(r"^\* \*\*(?P<scope>[^*\n]+?):\*\* (?P<text>\S.*)$")
 DASHES = ("\u2014", "\u2013")
 REPOSITORY = "SysAdminDoc/HushTumblr"
@@ -257,6 +258,8 @@ def index(args) -> None:
         fail(f"--created {args.created} isn't YYYY-MM-DDTHH:MM:SS (the release's publishedAt, in UTC).")
     if args.runtime <= 0 or args.patch <= 0:
         fail("The runtime and patch test counts come from the release gate's results and can't be zero.")
+    if not SHA256.match(args.sha256):
+        fail(f"--sha256 {args.sha256} isn't the 64 lowercase hex digits of the signed patches-{args.version}.mpp.")
     bullets = released_section(root, args.version)
     count, target, code = catalog_facts(root, args.version)
     floor = manager_floor(root)
@@ -312,6 +315,11 @@ def index(args) -> None:
     readme = swap(readme, r"^The latest release is \[v\d+\.\d+\.\d+\]\([^)\s]*\), with \d+ patches\.",
                   f"The latest release is [v{args.version}](https://github.com/{REPOSITORY}/releases/tag/v{args.version}), "
                   f"with {count} patches.", "README")
+    # The Verify a download example: label, digest and file name all move to the signed asset.
+    readme = swap(readme, r"^(.* )The v\d+\.\d+\.\d+ bundle's line:$", rf"\g<1>The v{args.version} bundle's line:",
+                  "README checksum label")
+    readme = swap(readme, r"^[0-9a-f]{64}  patches-\d+\.\d+\.\d+\.mpp$", f"{args.sha256}  patches-{args.version}.mpp",
+                  "README checksum line")
     form_path = root / ".github/ISSUE_TEMPLATE/bug_report.yml"
     form, form_newline = read(form_path)
     # [ \t] and not \s at the line ends: under MULTILINE \s* runs on through a blank line.
@@ -345,7 +353,7 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument(name, required=True)
     p.set_defaults(run=notes)
     p = sub.add_parser("index", help="point patches-bundle.json, the README and the bug form at the release")
-    for name in ("--version", "--created", "--summary"):
+    for name in ("--version", "--created", "--summary", "--sha256"):
         p.add_argument(name, required=True)
     p.add_argument("--runtime", type=int, required=True)
     p.add_argument("--patch", type=int, required=True)

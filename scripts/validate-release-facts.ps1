@@ -333,6 +333,24 @@ Write-Host ("[release] README's version badge names $($badgeNamed[0]), and it na
     (@($latestSaid | ForEach-Object { $_.Groups['version'].Value } | Select-Object -Unique) -join ' and v') +
     ' as the latest release')
 
+# The Verify a download example: a label and the SHA256SUMS.txt line it introduces. The index step
+# writes all three parts from the signed bundle, so they name the published release, never the
+# source a release is being prepared from. It once named the v0.0.7 digest as v0.0.1's.
+$checksumLabels = @([regex]::Matches($readme, "(?m)\bThe v(\d+\.\d+\.\d+) bundle's line:\r?$"))
+$checksumLines = @([regex]::Matches($readme, '(?m)^([0-9a-f]{64})  patches-(\d+\.\d+\.\d+)\.mpp\r?$'))
+if ($checksumLabels.Count -ne 1 -or $checksumLines.Count -ne 1) {
+    throw ("README's Verify a download section needs one `"The v$publishedVersion bundle's line:`" label and one " +
+        "checksum line for patches-$publishedVersion.mpp. It has $($checksumLabels.Count) and $($checksumLines.Count).")
+}
+if ($checksumLabels[0].Groups[1].Value -ne $publishedVersion) {
+    throw "README's checksum example is labeled v$($checksumLabels[0].Groups[1].Value), but the published release is v$publishedVersion."
+}
+if ($checksumLines[0].Groups[2].Value -ne $publishedVersion) {
+    throw "README's checksum example names patches-$($checksumLines[0].Groups[2].Value).mpp, but the published release is v$publishedVersion."
+}
+$readmeChecksum = $checksumLines[0].Groups[1].Value
+Write-Host "[release] README's checksum example names patches-$publishedVersion.mpp"
+
 # The one line GitHub shows above the README, which is also what search results, the awesome
 # lists and the Manager's community button repeat. Nothing here read it until now, and it had
 # gone two releases and two patches stale before anyone noticed. The repository it reads is the
@@ -1204,6 +1222,12 @@ if ($stampMatch.Groups[1].Value -ne $pinnedPatcher) {
         "Morphe Manager $managerFloor, so the patcher pin or built bundle is now wrong.")
 }
 Write-Host "[release] the bundle stamps patcher $pinnedPatcher, as the catalog pins"
+if ($VerifyPublishedAsset) {
+    if ($readmeChecksum -cne $publishedHash) {
+        throw "README's checksum example quotes $readmeChecksum for $assetName, but the hosted bundle is $publishedHash."
+    }
+    Write-Host "[release] README's checksum example quotes the hosted $assetName"
+}
 
 Test-ReleaseReceiptHere -BundleForComparison $(if ($VerifyPublishedAsset) { $bundlePath } else { $null })
 

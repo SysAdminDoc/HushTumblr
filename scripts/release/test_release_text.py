@@ -39,7 +39,17 @@ README = """# HushTumblr
 The latest release is [v0.0.6](https://github.com/SysAdminDoc/HushTumblr/releases/tag/v0.0.6), with 26 patches. Add this repo to Morphe Manager.
 
 HushTumblr targets Tumblr 46.5.0.109.
+
+## Verify a download
+
+Morphe Manager doesn't check it, so that's up to you. The v0.0.6 bundle's line:
+
+```text
+1111111111111111111111111111111111111111111111111111111111111111  patches-0.0.6.mpp
+```
 """
+
+DIGEST = "7ed0d301ab75a2fb6c7dd5b0aecb6dd541c7bad97d9b5c70d5dfc778219b8c0d"
 
 FORM = """body:
   - type: input
@@ -227,9 +237,10 @@ class ReleaseTextTest(unittest.TestCase):
 
     # --- index -----------------------------------------------------------------------------------
 
-    def index(self, summary="New this time: Hide ads covers the shopping row.", runtime=705, patch=186, first=False):
+    def index(self, summary="New this time: Hide ads covers the shopping row.", runtime=705, patch=186, first=False,
+              sha256=DIGEST):
         return self.run_tool("index", "--version", "0.0.7", "--created", "2026-10-11T04:00:00",
-                             "--summary", self.file("summary.txt", summary),
+                             "--summary", self.file("summary.txt", summary), "--sha256", sha256,
                              "--runtime", str(runtime), "--patch", str(patch), *(["--first"] if first else []))
 
     def test_the_first_index_writes_patches_bundle_json(self):
@@ -290,6 +301,10 @@ class ReleaseTextTest(unittest.TestCase):
         readme = self.text("README.md")
         self.assertIn("The latest release is [v0.0.7](https://github.com/SysAdminDoc/HushTumblr/releases/tag/v0.0.7), "
                       "with 3 patches. Add this repo to Morphe Manager.", readme)
+        # The checksum example's label, digest and name move together, and nothing else names the old bundle.
+        self.assertIn("up to you. The v0.0.7 bundle's line:\n\n```text\n" + DIGEST + "  patches-0.0.7.mpp\n```\n", readme)
+        self.assertNotIn("0.0.6", readme)
+        self.assertNotIn("1111111111", readme)
         form = self.text(".github/ISSUE_TEMPLATE/bug_report.yml")
         self.assertIn("      placeholder: HushTumblr 0.0.7 on Tumblr 46.5.0.109\n\n  - type: input", form)
         self.assertIn("      placeholder: APKMirror bundle, 46.5.0.109 (1460500109)\n", form)
@@ -303,6 +318,8 @@ class ReleaseTextTest(unittest.TestCase):
             (lambda: self.index(summary="Also tested on Tumblr 46.4.0.110."), "names Tumblr 46.4.0.110"),
             (lambda: self.index(summary="Faster \u2014 and smaller."), "em or en dash"),
             (lambda: self.index(runtime=0), "can't be zero"),
+            (lambda: self.index(sha256=DIGEST.upper()), "64 lowercase hex"),
+            (lambda: self.index(sha256=DIGEST[:-1]), "64 lowercase hex"),
         ]
         for action, expected in cases:
             with self.subTest(expected):
@@ -315,6 +332,20 @@ class ReleaseTextTest(unittest.TestCase):
         self.assertIn("exactly one Tumblr build", self.index()[1])
         for name, text in before.items():
             self.assertEqual(self.text(name), text, name)
+
+    def test_index_refuses_a_readme_without_the_checksum_example(self):
+        self.cut()
+        for old, new, expected in (
+                ("The v0.0.6 bundle's line:", "The bundle's line:", "README checksum label"),
+                ("  patches-0.0.6.mpp", "  patches.mpp", "README checksum line")):
+            with self.subTest(expected):
+                self.put("README.md", README.replace(old, new))
+                before = {name: self.text(name) for name in ("patches-bundle.json", "README.md")}
+                code, err = self.index()
+                self.assertEqual(code, 1)
+                self.assertIn(expected, err)
+                for name, text in before.items():
+                    self.assertEqual(self.text(name), text, name)
 
     def test_index_includes_every_released_bullet_in_manager_groups(self):
         self.cut()
