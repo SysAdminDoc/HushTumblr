@@ -16,8 +16,9 @@
 
     High or critical means OSV's own label says so (the GitHub advisory database's, which every
     Maven advisory there carries) or a CVSS 3 vector scores 7.0 or more, whichever is worse. An
-    advisory with neither is held as serious until somebody reads it: "OSV couldn't say" is not
-    "fine". Moderate and low advisories are printed and let through.
+    advisory with neither, or with a supplied vector this check cannot score, is held as serious
+    until somebody reads it. Package-level scores apply only to the package being checked.
+    Moderate and low advisories are printed and let through.
 
     An advisory can be accepted in scripts/advisory-exceptions.txt for one package, until a date
     at most 90 days out, with the reason it doesn't apply to what the bundle does with that
@@ -111,9 +112,18 @@ function Get-Cvss3BaseScore {
 
     if ("$Vector" -notmatch '^CVSS:3\.[01]/') { return $null }
     $metrics = @{}
+    $optional = @{
+        E = 'XUPFH'; RL = 'XOTWU'; RC = 'XURC'; CR = 'XHML'; IR = 'XHML'; AR = 'XHML'
+        MAV = 'XNALP'; MAC = 'XLH'; MPR = 'XNLH'; MUI = 'XNR'; MS = 'XUC'
+        MC = 'XHLN'; MI = 'XHLN'; MA = 'XHLN'
+    }
     foreach ($part in @($Vector -split '/' | Select-Object -Skip 1)) {
         $pair = $part -split ':', 2
-        if ($pair.Count -eq 2) { $metrics[$pair[0]] = $pair[1] }
+        if ($pair.Count -ne 2 -or $pair[0] -cnotmatch '^(AV|AC|PR|UI|S|C|I|A|E|RL|RC|CR|IR|AR|MAV|MAC|MPR|MUI|MS|MC|MI|MA)$' -or
+                $metrics.ContainsKey($pair[0])) { return $null }
+        if ($optional.ContainsKey($pair[0]) -and
+                ($pair[1] -cnotmatch '^[A-Z]$' -or -not $optional[$pair[0]].Contains($pair[1]))) { return $null }
+        $metrics[$pair[0]] = $pair[1]
     }
     # A metric the vector leaves out reads as '', which neither check below lets through.
     $scopeChanged = $metrics['S'] -ceq 'C'
@@ -159,10 +169,11 @@ function Get-AdvisorySeverity {
     .DESCRIPTION
         The worse of OSV's own label (database_specific.severity) and the level each CVSS 3 vector
         scores to: CRITICAL from 9.0, HIGH from 7.0, MODERATE from 4.0, LOW above 0. Serious is
-        HIGH or CRITICAL, or UNRATED, for an advisory with neither a label nor a vector this can
-        score: a CVSS 4 vector alone, say.
+        HIGH or CRITICAL, or UNRATED, when no severity can be read or any supplied vector cannot
+        be scored. A LOW label must not hide a CVSS 4 vector. A library selects its own Maven
+        package's scores from affected[], without borrowing another package's severity.
     #>
-    param([Parameter(Mandatory = $true)]$Advisory)
+    param([Parameter(Mandatory = $true)]$Advisory, $Library)
 
     $rank = @{ NONE = 0; LOW = 1; MODERATE = 2; HIGH = 3; CRITICAL = 4 }
     $level = $null
@@ -173,10 +184,37 @@ function Get-AdvisorySeverity {
         $level = $label
         $why = "OSV rates it $label"
     }
-    foreach ($entry in @($Advisory.severity | Where-Object { $null -ne $_ })) {
-        if ("$($entry.type)" -ne 'CVSS_V3') { continue }
-        $score = Get-Cvss3BaseScore -Vector ([string]$entry.score)
-        if ($null -eq $score) { continue }
+    $vectors = New-Object Collections.Generic.List[object]
+    $unscored = $false
+    if ($Advisory.PSObject.Properties['severity']) {
+        if ($Advisory.severity -isnot [array]) { $unscored = $true }
+        else { foreach ($declared in $Advisory.severity) { $vectors.Add($declared) } }
+    }
+    if ($Advisory.PSObject.Properties['affected']) {
+        if ($Advisory.affected -isnot [array]) { $unscored = $true }
+        else {
+            foreach ($affected in $Advisory.affected) {
+                if ($affected -isnot [System.Management.Automation.PSCustomObject]) { $unscored = $true; continue }
+                if (-not $affected.PSObject.Properties['severity']) { continue }
+                $affectedPackage = $affected.package
+                if ($null -eq $Library -or $affectedPackage -isnot [System.Management.Automation.PSCustomObject] -or
+                        $affectedPackage.ecosystem -isnot [string] -or $affectedPackage.name -isnot [string] -or
+                        [string]::IsNullOrWhiteSpace($affectedPackage.ecosystem) -or [string]::IsNullOrWhiteSpace($affectedPackage.name)) {
+                    $unscored = $true
+                    continue
+                }
+                if ($affectedPackage.ecosystem -cne 'Maven' -or
+                        $affectedPackage.name -cne "$($Library.Group):$($Library.Name)") { continue }
+                if ($affected.severity -isnot [array]) { $unscored = $true }
+                else { foreach ($declared in $affected.severity) { $vectors.Add($declared) } }
+            }
+        }
+    }
+    foreach ($entry in $vectors) {
+        if ($entry -isnot [System.Management.Automation.PSCustomObject] -or $entry.type -isnot [string] -or $entry.type -cne 'CVSS_V3' -or
+                $entry.score -isnot [string]) { $unscored = $true; continue }
+        $score = Get-Cvss3BaseScore -Vector $entry.score
+        if ($null -eq $score) { $unscored = $true; continue }
         $scored = if ($score -ge 9.0) { 'CRITICAL' } elseif ($score -ge 7.0) { 'HIGH' } elseif ($score -ge 4.0) {
             'MODERATE' } elseif ($score -gt 0) { 'LOW' } else { 'NONE' }
         if ($null -eq $level -or $rank[$scored] -gt $rank[$level]) {
@@ -188,7 +226,31 @@ function Get-AdvisorySeverity {
         return [pscustomobject]@{ Level = 'UNRATED'; Serious = $true
             Why = 'OSV gives it no severity this check can read, so it counts as serious until somebody reads it' }
     }
+    if ($unscored -and $rank[$level] -lt 3) {
+        return [pscustomobject]@{ Level = 'UNRATED'; Serious = $true
+            Why = "OSV also supplies a severity this check cannot score, so its $level label cannot establish that it is below high" }
+    }
     return [pscustomobject]@{ Level = $level; Serious = $rank[$level] -ge 3; Why = $why }
+}
+
+function Test-OsvWithdrawalTimestamp {
+    param($Value)
+
+    # PowerShell 7's JSON reader turns a UTC timestamp into DateTime; 5.1 keeps its string.
+    # Other offsets become Local and an absent offset becomes Unspecified, neither the UTC Z
+    # spelling OSV requires. Long fractional seconds remain strings in both readers.
+    if ($Value -is [datetime]) { return $Value.Kind -eq [DateTimeKind]::Utc }
+    if ($Value -isnot [string] -or
+            $Value -cnotmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:(?:[0-5]\d|60)(?:\.\d+)?Z$') { return $false }
+    $wholeSeconds = $Value.Substring(0, 19)
+    # RFC3339 permits a leap second at 23:59 UTC. Fractions don't change calendar validity.
+    if ($wholeSeconds.EndsWith(':60')) {
+        if (-not $wholeSeconds.EndsWith('T23:59:60')) { return $false }
+        $wholeSeconds = $wholeSeconds.Substring(0, 17) + '59'
+    }
+    $parsed = [datetime]::MinValue
+    return [datetime]::TryParseExact($wholeSeconds, "yyyy-MM-dd'T'HH:mm:ss",
+        [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::None, [ref]$parsed)
 }
 
 function Invoke-OsvQuery {
@@ -221,12 +283,33 @@ function Invoke-OsvQuery {
         if ($answer -isnot [System.Management.Automation.PSCustomObject]) {
             throw "OSV answered the query about $Purl with something that isn't a query result: $answer"
         }
-        foreach ($advisory in @($answer.vulns | Where-Object { $null -ne $_ })) {
-            if ([string]::IsNullOrWhiteSpace([string]$advisory.id)) {
+        foreach ($property in $answer.PSObject.Properties) {
+            if ($property.Name -cnotin @('vulns', 'next_page_token')) {
+                throw "OSV answered the query about $Purl with an unknown query result field: $($property.Name)"
+            }
+        }
+        if ($answer.PSObject.Properties['vulns'] -and $answer.vulns -isnot [array]) {
+            throw "OSV answered the query about $Purl with vulns that isn't an array."
+        }
+        if ($answer.PSObject.Properties['next_page_token'] -and
+                ($answer.next_page_token -isnot [string] -or
+                    ($answer.next_page_token -and [string]::IsNullOrWhiteSpace($answer.next_page_token)))) {
+            throw "OSV answered the query about $Purl with an invalid next_page_token."
+        }
+        foreach ($advisory in $answer.vulns) {
+            if ($advisory -isnot [System.Management.Automation.PSCustomObject]) {
+                throw "OSV answered the query about $Purl with a vulnerability that isn't an object."
+            }
+            if ($advisory.id -isnot [string] -or [string]::IsNullOrWhiteSpace($advisory.id)) {
                 throw "OSV answered the query about $Purl with an advisory that has no id."
             }
             # A withdrawn advisory is one its publisher took back.
-            if ($advisory.PSObject.Properties['withdrawn'] -and $advisory.withdrawn) { continue }
+            if ($advisory.PSObject.Properties['withdrawn']) {
+                if (-not (Test-OsvWithdrawalTimestamp $advisory.withdrawn)) {
+                    throw "OSV answered the query about $Purl with an invalid withdrawn timestamp for $($advisory.id)."
+                }
+                continue
+            }
             $found.Add($advisory)
         }
         $token = [string]$answer.next_page_token
@@ -255,7 +338,7 @@ function Get-SbomAdvisories {
                 Advisory = [string]$advisory.id
                 Aliases  = @($advisory.aliases | Where-Object { $_ } | ForEach-Object { [string]$_ })
                 Summary  = "$($advisory.summary)".Trim()
-                Severity = Get-AdvisorySeverity -Advisory $advisory
+                Severity = Get-AdvisorySeverity -Advisory $advisory -Library $library
             })
         }
     }

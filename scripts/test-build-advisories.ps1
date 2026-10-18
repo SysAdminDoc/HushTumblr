@@ -437,4 +437,5 @@ if ($ResolvedReportPath) {
     Assert-True ($resolved.GradleVersion -ceq $wrapper.GradleVersion) 'The real resolved Gradle version does not match the reviewed wrapper.'
     Write-Host '[scripts] resolved Android host/settings dependency remediation graph passed'
 }
+& (Join-Path $PSScriptRoot 'test-advisory-inputs.ps1') -Root $Root
 Write-Host "[scripts] resolved build advisory and push routing contracts passed ($cases cases)"

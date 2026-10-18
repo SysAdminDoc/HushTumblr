@@ -4,6 +4,7 @@
 
 * **Tumblr:** New **Hide blog notification reminders** switch on the Interface page, off by default. It hides the pop-up on a blog that asks you to turn on notifications for it. Your subscriptions and notification settings don't change.
 * **Tumblr:** New **Hide gift purchase popups** switch on the Interface page, off by default. It hides the pop-up on a blog that suggests buying the blog a gift. Crab tips still show, and the gift button on a blog still opens the gift screen.
+* **Tooling:** Release checks now reject malformed vulnerability responses. They also use each library's own severity scores and refuse unreadable scores, so a low label can't hide a serious finding.
 * **Tooling:** The README now reflects the published patches and drops an outdated development-version note.
 * **Tooling:** Future patch-source updates include the release's full changelog in Morphe Manager's description. Historical details in those notes stay separate from the current release's validation facts.
 * **Tumblr:** Quick setups can be hidden from the settings home with a long press on its row, and its help line now says so. The **Quick setups on the home page** row on Pause, backup and diagnostics brings it back. The choice stays out of settings backups and Quick setups, and Pause leaves it alone.

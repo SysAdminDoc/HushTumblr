@@ -1618,6 +1618,7 @@ try {
     Remove-Item -LiteralPath $advisoryRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
 
+& (Join-Path $PSScriptRoot 'test-advisory-inputs.ps1') -Root $Root
 Write-Host '[scripts] advisory gate contracts passed'
 
 # --- validate-release-facts.ps1 -------------------------------------------------------------
