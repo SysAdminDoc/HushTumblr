@@ -28,9 +28,10 @@
                  checked again here rather than read from the gate's kept runs
                  (build-release-receipt.ps1, run in this process), and the signed
                  SHA256SUMS.txt, all in build/release-assets/X.Y.Z.
-      publish    publish-release.ps1: the notes, gh release create with the five assets, each
-                 downloaded back and compared, the index commit, pushed at once, and
-                 verify-published-index.ps1 last.
+      publish    publish-release.ps1: first -Walk, the receipt of a whole-app walk of the
+                 signed bundle on a release phone or an emulator, then the notes, gh release
+                 create with the five assets, each downloaded back and compared, the index
+                 commit, pushed at once, and verify-published-index.ps1 last.
 
     Heavy steps go through HUSHTUMBLR_BUILD_WRAPPER, or the build queue BUILD_QUEUE_SCRIPT
     names, at release priority. The signing inputs are parameters (or the HUSHTUMBLR_RELEASE_*
@@ -41,7 +42,7 @@
     scripts/release/release.ps1 -Stage preflight -Version 0.0.7 -GpgHome <keyring> -SigningFingerprint <hex> -TrustedPublicKeyPath <key.asc>
     scripts/release/release.ps1 -Stage gate -Version 0.0.7
     scripts/release/release.ps1 -Stage build -Version 0.0.7 -GpgHome <keyring> -SigningFingerprint <hex> -TrustedPublicKeyPath <key.asc>
-    scripts/release/release.ps1 -Stage publish -Version 0.0.7 -Intro intro.txt -Tail tail.txt -Summary summary.txt -SigningFingerprint <hex> -TrustedPublicKeyPath <key.asc>
+    scripts/release/release.ps1 -Stage publish -Version 0.0.7 -Intro intro.txt -Tail tail.txt -Summary summary.txt -SigningFingerprint <hex> -TrustedPublicKeyPath <key.asc> -Walk <walk folder>/walk-receipt.json
 #>
 [CmdletBinding()]
 param(
@@ -60,6 +61,8 @@ param(
     [string]$Intro,
     [string]$Tail,
     [string]$Summary,
+    # publish: the walk-receipt.json a whole-app walk of the signed bundle left (walk-receipt.ps1).
+    [string]$Walk,
     [string]$Repository = 'SysAdminDoc/HushTumblr'
 )
 
@@ -304,7 +307,7 @@ switch ($Stage) {
         $publish = @{
             Version = $Version; Root = $Root; Intro = $Intro; Tail = $Tail; Summary = $Summary
             TrustedFingerprint = $SigningFingerprint; TrustedPublicKeyPath = $TrustedPublicKeyPath; Gpg = $Gpg
-            Repository = $Repository
+            Walk = $Walk; Repository = $Repository
         }
         & (Join-Path $PSScriptRoot 'publish-release.ps1') @publish
     }

@@ -8238,5 +8238,7 @@ if ($LASTEXITCODE -ne 0) { throw 'The compiled manifest contracts did not pass.'
 if ($LASTEXITCODE -ne 0) { throw 'The offline release signature contracts did not pass.' }
 & (Join-Path $PSScriptRoot 'test-published-index.ps1')
 if ($LASTEXITCODE -ne 0) { throw 'The offline published index contracts did not pass.' }
+& (Join-Path $PSScriptRoot 'test-walk-receipt.ps1')
+if ($LASTEXITCODE -ne 0) { throw 'The whole-app walk receipt contracts did not pass.' }
 & (Join-Path $PSScriptRoot 'test-app-inventory.ps1')
 if ($LASTEXITCODE -ne 0) { throw 'The app inventory contracts did not pass.' }

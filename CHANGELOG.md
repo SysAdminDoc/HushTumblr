@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+* **Tooling:** A release can't go public until the whole app has been walked with that exact bundle on a release phone or an emulator. The publish stage now takes the walk's receipt as `-Walk` and stops before GitHub or the index if the walk wasn't a full pass, saw a Tumblr crash, ran on some other device, or patched with a different bundle.
+
 ## 0.0.8 (2026-10-18)
 
 * **Tumblr:** New **Hide blog notification reminders** switch on the Interface page, off by default. It hides the pop-up on a blog that asks you to turn on notifications for it. Your subscriptions and notification settings don't change.
