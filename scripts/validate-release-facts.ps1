@@ -268,7 +268,6 @@ if ($SkipUrlCheck) {
     Assert-UrlReachable -Uri ([Uri]$addSourceUrl) -Description 'Morphe add-source page' `
         -FailureHint 'The README sends Android users through that page, so it must be available before release.'
 }
-Require-Match -Text $readme -Pattern "\b$patchCount patches\b" -Description 'README patch count'
 Require-Match -Text $readme -Pattern ([regex]::Escape($targetPackage)) -Description 'README package name'
 Require-Match -Text $readme -Pattern "Tumblr\s+$([regex]::Escape($targetVersion))(?!\d)" -Description 'README target version'
 $descriptionVersion = $sourceVersion
@@ -329,6 +328,9 @@ foreach ($said in $latestSaid) {
             "$($readmeCounts -join ' or ').")
     }
 }
+# After the sentence naming the latest release, which is often the only place the count appears,
+# so a wrong count there is named as that rather than as a missing count.
+Require-Match -Text $readme -Pattern "\b$patchCount patches\b" -Description 'README patch count'
 Write-Host ("[release] README's version badge names $($badgeNamed[0]), and it names v" +
     (@($latestSaid | ForEach-Object { $_.Groups['version'].Value } | Select-Object -Unique) -join ' and v') +
     ' as the latest release')
