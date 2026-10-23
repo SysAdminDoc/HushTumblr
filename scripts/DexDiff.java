@@ -305,7 +305,7 @@ public class DexDiff {
             Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3),
             Map.entry("followButton", 3), Map.entry("footerButton", 3), Map.entry("postTags", 5),
             Map.entry("noteCounts", 6), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
-            Map.entry("darkBackground", 5), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
+            Map.entry("darkBackground", 6), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
             Map.entry("matureContent", 12), Map.entry("rootPostMutes", 10), Map.entry("mutualMarkers", 13));
 
     /**
@@ -5460,7 +5460,7 @@ public class DexDiff {
                 if (answer == null || answer.getOpcode() != Opcode.MOVE_RESULT_OBJECT) fail("the Compose colors' theme isn't asked for once and kept in a register");
                 else themed = hookAt(composer, actual(composer), asked.get(0) + 2, c.strings.get(1), List.of(firstRegister(answer)), -1, List.of(firstRegister(answer)));
             }
-            designColors(c.strings.get(3), c.strings.get(4));
+            designColors(c.strings.get(3), c.strings.get(4), c.strings.get(5));
             capability(c.callee, found && themed);
         }
 
@@ -5479,7 +5479,7 @@ public class DexDiff {
          * colors some other way as it was, so there both hooks go uncalled, and a call to either
          * anywhere else is refused as misrouted.
          */
-        void designColors(String pageHook, String panelHook) {
+        void designColors(String pageHook, String panelHook, String footerHook) {
             List<Method> themes = new ArrayList<>();
             for (Method m : tumblrMethods()) if (clean.texts.get(m.toString()).stream().anyMatch(t -> t.startsWith(DESIGN_THEME_NOTE))) themes.add(m);
             MethodReference holder = themes.size() == 1 ? nightColors(themes.get(0)) : null;
@@ -5522,6 +5522,54 @@ public class DexDiff {
                     vouch(m, at, List.of(register, register + 1));
                 }
             }
+            postFooter(footerHook);
+        }
+
+        static final String POST_FOOTER_NOTE = "com.tumblr.ui.widget.splitnotescount.composable.PostFooterSplitNotesCountContent (";
+
+        /**
+         * The footer under a post handing the color it paints itself with to [hook] right after reading
+         * it, the answer moved back over the color before the background modifier takes it. The place
+         * is found in the clean target the way the patch finds it: the one color read kept and handed
+         * straight to a static (modifier, long, shape) call. Only checked once the design colors are,
+         * as the patch only adds it then, and a build without that one read keeps the footer as it was.
+         */
+        void postFooter(String hook) {
+            List<Method> footers = new ArrayList<>();
+            for (Method m : tumblrMethods()) if (clean.texts.get(m.toString()).stream().anyMatch(t -> t.startsWith(POST_FOOTER_NOTE))) footers.add(m);
+            if (footers.size() != 1 || clean.duplicates.contains(footers.get(0).getDefiningClass())) return;
+            List<Instruction> was = instructions(footers.get(0));
+            List<Integer> places = new ArrayList<>(), registers = new ArrayList<>();
+            for (int at = 0; at + 2 < was.size(); at++) {
+                if (colorGetter(was.get(at)) == null || was.get(at + 1).getOpcode() != Opcode.MOVE_RESULT_WIDE) continue;
+                int register = firstRegister(was.get(at + 1));
+                if (!paintsBackground(was.get(at + 2), register)) continue;
+                places.add(at + 2);
+                registers.add(register);
+            }
+            if (places.size() != 1) return;
+            Method m = actual(footers.get(0));
+            List<Integer> sites = calls(m, hook, 1);
+            if (sites.size() != 1) return;
+            int at = sites.get(0), register = registers.get(0);
+            List<Instruction> body = instructions(m);
+            if (!arguments(body.get(at)).equals(List.of(register, register + 1)) || !movesTo(get(body, at + 1), register, Opcode.MOVE_RESULT_WIDE)) {
+                fail(hook + " doesn't take the post footer's color and put its answer back where it was in " + m);
+                return;
+            }
+            remove(m, at, at + 2);
+            anchor(m, at, places.get(0), hook);
+            vouch(m, at, List.of(register, register + 1));
+        }
+
+        /** A static (modifier, long, shape) call answering the modifier's type, taking the long in [register] and the next. */
+        static boolean paintsBackground(Instruction i, int register) {
+            MethodReference call = i.getOpcode() == Opcode.INVOKE_STATIC ? called(i) : null;
+            if (call == null) return false;
+            List<String> types = call.getParameterTypes().stream().map(Object::toString).toList();
+            List<Integer> handed = arguments(i);
+            return types.size() == 3 && types.get(1).equals("J") && types.get(0).startsWith("L") && types.get(2).startsWith("L")
+                    && call.getReturnType().equals(types.get(0)) && handed.size() == 4 && handed.get(1) == register && handed.get(2) == register + 1;
         }
 
         /**

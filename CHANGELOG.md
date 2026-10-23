@@ -4,6 +4,7 @@
 
 * **Install:** The patches now target Tumblr 46.8.1.100, the newest release, in place of 46.5.0.109. All 44 patches apply to it, so patch that version.
 * **Install:** The patches are now built on Morphe patcher 2.0.0, so you'll need Morphe Manager 2.0.0 or newer to apply them. Older Manager builds can't load the bundle.
+* **Tumblr:** With Dark background color on, the row of buttons under each post now matches the post. In Tumblr's Dark palette it came out a shade lighter.
 * **Tooling:** A release can't go public until the whole app has been walked with that exact bundle on a release phone or an emulator. The publish stage now takes the walk's receipt as `-Walk` and stops before GitHub or the index if the walk wasn't a full pass, saw a Tumblr crash, ran on some other device, or patched with a different bundle.
 
 ## 0.0.8 (2026-10-18)
