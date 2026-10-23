@@ -121,12 +121,14 @@ class TimelineListHookFixtureTest {
      * keeps every item, so this is what says Hide ads can see a paid placement: the display block's
      * sponsored state and the display type, each with the SPONSORED constant the filter compares
      * against. An enum constant's name() is the string its <clinit> hands the constructor, so that's
-     * checked as well as the field.
+     * checked as well as the field. A button counts as a follow prompt by the class of what its tap
+     * follows, so that class is checked by name too.
      */
     @Test
     fun `each declared build keeps the item members the filter reads by name`() {
         for (build in Fixtures.declaredBuilds()) {
-            val classes = FixtureDex.classes(build, FILTER_READS.keys + SPONSORED_ENUMS)
+            val classes = FixtureDex.classes(build, FILTER_READS.keys + SPONSORED_ENUMS + ACTION_LINK)
+            assertTrue("${build.name}: $ACTION_LINK", ACTION_LINK in classes)
             for ((type, getters) in FILTER_READS) {
                 val methods = classes[type]?.methods?.toList().orEmpty()
                 for (getter in getters) {
@@ -148,11 +150,33 @@ class TimelineListHookFixtureTest {
         }
     }
 
+    /**
+     * Each item kind the filter takes out by name, the constant names `TimelineFilter`'s static
+     * initializer holds, is a constant of `TimelineObjectType` in each declared build. A kind Tumblr
+     * renamed or dropped would leave its items on screen without a word.
+     */
+    @Test
+    fun `each declared build has every item kind the filter takes out`() {
+        val filter = ExtensionDex.classes().single { it.type == TIMELINE_FILTER }
+        val kinds = filter.methods.single { it.name == "<clinit>" }.instructionList()
+            .mapNotNull { it.stringRef() }.filter { CONSTANT_NAME.matches(it) }.toSet()
+        assertTrue("the filter's kinds are read: $kinds", "GEMINI_AD" in kinds && "BLOG_SUBSCRIPTION_CTA" in kinds)
+        for (build in Fixtures.declaredBuilds()) {
+            val type = FixtureDex.classes(build, setOf(OBJECT_TYPE)).getValue(OBJECT_TYPE)
+            val names = type.fields.filter { AccessFlags.STATIC.isSet(it.accessFlags) && it.type == OBJECT_TYPE }
+                .map { it.name }.toSet()
+            assertEquals("${build.name}: kinds Tumblr doesn't have", emptySet<String>(), kinds - names)
+        }
+    }
+
     private fun Method.identity() = "$definingClass->$name(${parameterTypes.joinToString("")})$returnType"
 }
 
+private val CONSTANT_NAME = Regex("[A-Z][A-Z0-9_]+")
+
 private const val MODEL = "Lcom/tumblr/rumblr/model"
 private const val SPONSORED = "SPONSORED"
+private const val OBJECT_TYPE = "$MODEL/TimelineObjectType;"
 
 /** Each class `TimelineFilter.Model` reads by name, with its getters as `name()returnType`. */
 private val FILTER_READS = mapOf(
@@ -164,7 +188,13 @@ private val FILTER_READS = mapOf(
     ),
     "$MODEL/Timelineable;" to listOf("getTimelineObjectType()$MODEL/TimelineObjectType;"),
     "$MODEL/Display;" to listOf("getSponsored()$MODEL/SponsoredState;"),
+    "$MODEL/GenericButton;" to listOf("getButton()$MODEL/GenericButton\$Button;"),
+    "$MODEL/GenericButton\$Button;" to listOf("getLinks()$MODEL/GenericButton\$Button\$Links;"),
+    "$MODEL/GenericButton\$Button\$Links;" to listOf("getTap()$MODEL/link/Link;"),
 )
+
+/** What a button's tap follows when it does something in place, which is following a blog. */
+private const val ACTION_LINK = "$MODEL/link/ActionLink;"
 
 /** The enums whose SPONSORED constant marks a paid placement. */
 private val SPONSORED_ENUMS = setOf("$MODEL/SponsoredState;", "$MODEL/post/DisplayType;")

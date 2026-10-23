@@ -7,9 +7,12 @@ package app.hushtumblr.extension.tumblr.timeline;
 
 import com.tumblr.rumblr.model.BlazedPost;
 import com.tumblr.rumblr.model.Display;
+import com.tumblr.rumblr.model.GenericButton;
 import com.tumblr.rumblr.model.RelatedBlogsJsonAdapter;
 import com.tumblr.rumblr.model.SponsoredState;
 import com.tumblr.rumblr.model.TimelineObject;
+import com.tumblr.rumblr.model.link.ActionLink;
+import com.tumblr.rumblr.model.link.WebLink;
 import com.tumblr.rumblr.model.TimelineObjectType;
 import com.tumblr.rumblr.model.Timelineable;
 import com.tumblr.rumblr.model.post.DisplayType;
@@ -51,6 +54,16 @@ public final class TimelineItems {
     public static TimelineObject postServed(SponsoredState sponsored, DisplayType type) {
         return new TimelineObject(new Item(TimelineObjectType.POST), false,
                 sponsored == null ? null : new Display(sponsored), type);
+    }
+
+    /** The "Follow <blog>" button between a blog's posts, whose tap follows the blog. */
+    public static TimelineObject followButton() {
+        return new TimelineObject(new GenericButton(new ActionLink()), false);
+    }
+
+    /** A button the server sends that opens a page. */
+    public static TimelineObject webButton() {
+        return new TimelineObject(new GenericButton(new WebLink()), false);
     }
 
     /** An item whose payload throws when its kind is read. */

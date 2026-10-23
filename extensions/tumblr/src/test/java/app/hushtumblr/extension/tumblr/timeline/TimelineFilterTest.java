@@ -222,6 +222,26 @@ public class TimelineFilterTest {
         assertTrue(report, report.contains("Hide ads: invoked 2,") && report.contains("ad removed 2"));
     }
 
+    /**
+     * Between a blog's own posts, the "Like this? Follow to see more" heading over its "Follow
+     * <blog>" button, a carousel of suggested blogs and the one-item form of the prompt go with Hide
+     * suggested blogs, and stay with it off. A button that opens a page stays either way.
+     */
+    @Test
+    public void aBlogsFollowPromptAndSuggestionsGoWithSuggestedBlogs() {
+        List<Object> page = Arrays.asList(TimelineItems.post(), TimelineItems.of(TimelineObjectType.TITLE),
+                TimelineItems.followButton(), TimelineItems.post(), TimelineItems.carousel(TimelineObjectType.CAROUSEL,
+                        TimelineItems.of(TimelineObjectType.TINY_BLOG_CAROUSEL_CARD)), TimelineItems.post(),
+                TimelineItems.webButton(), TimelineItems.post(), TimelineItems.of(TimelineObjectType.BLOG_FOLLOW_CTA),
+                TimelineItems.of(TimelineObjectType.BLOG_SUBSCRIPTION_CTA), TimelineItems.post());
+        assertSame(page, TimelineItems.onABlog(page));
+        Settings.HIDE_SUGGESTED_BLOGS.save(true);
+        assertEquals(Arrays.asList(page.get(0), page.get(3), page.get(5), page.get(6), page.get(7), page.get(10)),
+                TimelineItems.onABlog(page));
+        String report = String.join("\n", HookStatus.report(""));
+        assertTrue(report, report.contains("heading removed 1") && report.contains("card removed 4"));
+    }
+
     /** A page with nothing to take out comes back as the very list Tumblr built. */
     @Test
     public void postsAndOtherItemsStay() {
@@ -629,8 +649,10 @@ public class TimelineFilterTest {
      */
     private static void checkCards(BooleanSetting setting, Set<String> kinds) {
         for (String kind : kinds) {
-            List<Object> page = Arrays.asList(TimelineItems.post(), TimelineItems.of(TimelineObjectType.valueOf(kind)),
-                    TimelineItems.post());
+            // A button is a card only when it follows a blog.
+            Object card = TimelineFilter.BUTTON.equals(kind) ? TimelineItems.followButton()
+                    : TimelineItems.of(TimelineObjectType.valueOf(kind));
+            List<Object> page = Arrays.asList(TimelineItems.post(), card, TimelineItems.post());
             assertSame(kind + " with the switch off", page, TimelineItems.onTheDashboard(page));
             setting.save(true);
             List<?> shown = TimelineItems.onTheDashboard(page);

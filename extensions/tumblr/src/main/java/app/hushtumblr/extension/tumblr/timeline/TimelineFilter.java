@@ -67,6 +67,12 @@ public final class TimelineFilter {
     /** The kind of a heading item, whose text the server sends. */
     static final String TITLE = "TITLE";
 
+    /** The kind of a lone button the server puts between items, Tumblr's {@code GenericButton}. */
+    static final String BUTTON = "BUTTON";
+
+    /** A link that does something where it's tapped, where a {@code WebLink} opens a page. */
+    static final String ACTION_LINK = "com.tumblr.rumblr.model.link.ActionLink";
+
     /**
      * The constant name Tumblr's {@code SponsoredState} and {@code DisplayType} both give a paid
      * placement.
@@ -83,9 +89,16 @@ public final class TimelineFilter {
             "GEMINI_AD", "FACEBOOK_BIDDAABLE", "NIMBUS_AD", "DISPLAY_IO_INTERSCROLLER_S2S_ADS", "VUNGLE_AD",
             "CLIENT_SIDE_AD", "CLIENT_SIDE_MEDIATION", "DISPLAY_IO_INTERSCROLLER_AD", "GOOGLE_NATIVE")));
 
-    /** Blogs Tumblr suggests you follow, as cards, rows and the small cards of a carousel. */
+    /**
+     * Blogs Tumblr suggests you follow, as cards, rows and the small cards of a carousel, and the
+     * prompts to follow the blog you're reading. Between a blog's own posts that's a "Like this?
+     * Follow to see more" heading over a "Follow <blog>" button, a {@link #BUTTON} that only counts
+     * here when it follows a blog, see {@link #followsABlog}. Tumblr's {@code BlogSubscriptionCta}
+     * is the same prompt in one item, {@code BLOG_FOLLOW_CTA} or {@code BLOG_SUBSCRIPTION_CTA}.
+     */
     static final Set<String> BLOG_TYPES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-            "BLOG_CARD", "COMPACT_BLOG_CARD", "BLOG_ROW", "TINY_BLOG_CAROUSEL_CARD")));
+            "BLOG_CARD", "COMPACT_BLOG_CARD", "BLOG_ROW", "TINY_BLOG_CAROUSEL_CARD", BUTTON,
+            "BLOG_FOLLOW_CTA", "BLOG_SUBSCRIPTION_CTA")));
 
     /**
      * Communities Tumblr suggests you join: the card a feed shows, alone or in a carousel. A
@@ -394,11 +407,29 @@ public final class TimelineFilter {
                 if (modelFor(first, owner) == null) return null;
                 kind = found.typeOf(first);
             }
+            if (BUTTON.equals(kind) && !followsABlog(payload)) return null;
             return rules.family(kind);
         } catch (Throwable failure) {
             HookStatus.threw(owner, "timeline item", failure);
             return null;
         }
+    }
+
+    /**
+     * Whether a button's [payload] follows a blog when tapped: its tap is an {@link #ACTION_LINK}.
+     * The one action Tumblr's button binder carries out is {@code follow_generic_button}, and a
+     * button that opens a page has a {@code WebLink}. The getters are kept by name.
+     */
+    static boolean followsABlog(Object payload) throws ReflectiveOperationException {
+        Object button = read(payload, "getButton");
+        Object links = button == null ? null : read(button, "getLinks");
+        Object tap = links == null ? null : read(links, "getTap");
+        return tap != null && ACTION_LINK.equals(tap.getClass().getName());
+    }
+
+    @Nullable
+    private static Object read(Object target, String getter) throws ReflectiveOperationException {
+        return target.getClass().getMethod(getter).invoke(target);
     }
 
     /**
