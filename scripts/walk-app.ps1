@@ -154,6 +154,30 @@ function Find-WalkRow {
     return $null
 }
 
+function Get-WalkListSwipe {
+    <#
+    .SYNOPSIS
+        The input swipe arguments that drag the settings list a fifth of the screen, slowly.
+    .DESCRIPTION
+        The settings home pins its header, and a quick swipe flings the list well past the drag
+        (a 400 ms, 900 px swipe moved it 1,585 px on the S22), so a row can pass under the header
+        between two dumps. A 1.2 s drag stops where the finger does. -Direction Down brings rows
+        further down the list into view.
+    #>
+    param([int]$Width, [int]$Height, [ValidateSet('Down', 'Up')][string]$Direction)
+    $x = [string][int]($Width / 2)
+    $lower = [string][int]($Height * 0.78)
+    $upper = [string][int]($Height * 0.58)
+    if ($Direction -ceq 'Down') { return @($x, $lower, $x, $upper, '1200') }
+    return @($x, $upper, $x, $lower, '1200')
+}
+
+function Get-WalkScreenKey {
+    <# What a dump shows, as one string: two dumps of a list that didn't move give the same key. #>
+    param($Nodes)
+    return (@($Nodes | ForEach-Object { "$($_.Text)@$($_.Top)" }) -join "`n")
+}
+
 function Invoke-WalkApp {
     param(
         [string]$Serial, [string]$Package, [string[]]$Visit, [string[]]$SettingsPages,
@@ -294,14 +318,21 @@ function Invoke-WalkApp {
                 if ($size -match '(\d+)x(\d+)\s*$') { $width = [int]$Matches[1]; $height = [int]$Matches[2] }
                 foreach ($page in $SettingsPages) {
                     $row = Find-WalkRow $nodes $page $Package
-                    # Pages lower in the list come into view one swipe at a time, each followed by a
-                    # fresh dump. The list is the Hush settings; nothing else is on screen to touch.
-                    for ($swipe = 0; -not $row -and $swipe -lt 6; $swipe++) {
-                        [void](& $walkAdb @('shell', 'input', 'swipe', [string]($width / 2), [string][int]($height * 0.75),
-                            [string]($width / 2), [string][int]($height * 0.35), '400'))
-                        Start-Sleep -Milliseconds 900
-                        $nodes = & $readScreen
-                        $row = Find-WalkRow $nodes $page $Package
+                    # A row that isn't on screen is looked for further down, then back up, one slow
+                    # drag at a time (Get-WalkListSwipe), each followed by a fresh dump. The same
+                    # screen twice means the list's end. The list is the Hush settings; nothing else
+                    # is on screen to touch.
+                    foreach ($direction in 'Down', 'Up') {
+                        for ($swipe = 0; -not $row -and $swipe -lt 15; $swipe++) {
+                            $before = Get-WalkScreenKey $nodes
+                            [void](& $walkAdb (@('shell', 'input', 'swipe') +
+                                (Get-WalkListSwipe -Width $width -Height $height -Direction $direction)))
+                            Start-Sleep -Milliseconds 1200
+                            $nodes = & $readScreen
+                            $row = Find-WalkRow $nodes $page $Package
+                            if (-not $row -and (Get-WalkScreenKey $nodes) -ceq $before) { break }
+                        }
+                        if ($row) { break }
                     }
                     if (-not $row) {
                         $problems.Add("the settings page $page isn't in the list")

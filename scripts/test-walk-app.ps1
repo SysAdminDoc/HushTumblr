@@ -88,6 +88,19 @@ try {
     Assert-True ($null -eq (Find-WalkRow $nodes 'Posts' 'com.tumblr')) 'Two rows with the same text were taken for one.'
     Assert-True (@(ConvertFrom-WalkDump 'ERROR: could not get idle state.').Count -eq 0) 'A failed dump read as a screen.'
 
+    # Get-WalkListSwipe and Get-WalkScreenKey: the settings list moves in slow, short drags, below
+    # the pinned header, and a dump that didn't move reads as the list's end.
+    $down = @(Get-WalkListSwipe -Width 1080 -Height 2316 -Direction Down)
+    $up = @(Get-WalkListSwipe -Width 1080 -Height 2316 -Direction Up)
+    Assert-True ($down.Count -eq 5 -and ($down -join ' ') -ceq '540 1806 540 1343 1200') `
+        "A drag down the list was '$($down -join ' ')', not a slow fifth-of-the-screen drag below the header."
+    Assert-True (($up -join ' ') -ceq '540 1343 540 1806 1200') "A drag back up the list was '$($up -join ' ')'."
+    $moved = @(ConvertFrom-WalkDump ($dump -replace 'bounds="\[32,300\]', 'bounds="[32,200]'))
+    Assert-True ((Get-WalkScreenKey $nodes) -ceq (Get-WalkScreenKey @(ConvertFrom-WalkDump $dump))) `
+        'Two dumps of the same screen gave different keys, so the walk would never see the list end.'
+    Assert-True ((Get-WalkScreenKey $nodes) -cne (Get-WalkScreenKey $moved)) `
+        'A list that moved gave the same key, so the walk would stop looking too soon.'
+
     # The receipts those results produce, held to the publish gate.
     $bundle = Join-Path $scratch 'patches-0.0.0.mpp'
     [IO.File]::WriteAllText($bundle, 'walk-app contract fixture bundle')

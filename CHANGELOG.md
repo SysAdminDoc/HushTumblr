@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+* **Tooling:** `scripts/walk-app.ps1` scrolls the Hush settings list with slow drags now, down first and then back up, and stops once the list stops moving. Quick swipes flung the list past rows that slid under its pinned header, so a walk on a phone could miss settings pages that were there all along.
+
 ## 0.0.9 (2026-10-23)
 
 * **Tumblr:** The patches move from 46.5.0.109 to Tumblr 46.8.1.100, the newest release. Every patch applies to it, so that's the version to patch.
