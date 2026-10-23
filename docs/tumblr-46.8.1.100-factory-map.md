@@ -67,6 +67,7 @@ Turning an ad-request flag off is a second line behind the feed filter, not a re
   - The next page is asked for from a row bind. `Z3()` posts a runnable that ends in `b6()`, which is `x6(PAGINATION, true)`, but only while `W` is null, `l` and `X` are false and two seconds have passed since `y`. `x6(type, flag)` is protected. It reads the link through `K5(type)`, which for `PAGINATION` is `k.d()` (`TimelinePaginationLink.d()`, a `Link` or null), and starts the request. So one empty `PAGINATION` page ends a feed for good, because `W` is never cleared again.
   - The paging hook goes right after `p4` keeps the `isEmpty()` answer (in `v7`, which held the extras), where the local `v1` is about to be written and so is free. `S5` and `x6` are protected, so the next load has to be made from code inside the fragment.
 - `post.Post` is partly renamed. Its Blaze data is `BlazeCampaign` (field `O1`, getter `G()`) and `BlazeControl` (field `a2`, getter `h0()`). A post on your own blog can carry both, so they don't mark a paid placement on their own.
+- **Filtered posts.** A post that matches one of your filtered tags or words arrives with a note, `post.asset.Filtered`, which `PostJsonAdapter` writes under "filtered" through `Post.c0()`. The note's adapter writes "tags" through `Filtered.b()List` and "content" through `Filtered.a()List`. The post's view model copies the two lists (an empty list when the note is null), and `GraywaterFragment` covers the post with "This post contains filtered tags" or "... filtered content" when either has an entry.
 
 ## Settings hub
 

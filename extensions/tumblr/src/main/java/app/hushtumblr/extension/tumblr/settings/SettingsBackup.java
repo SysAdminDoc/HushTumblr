@@ -144,6 +144,7 @@ public final class SettingsBackup {
             Settings.WORDS_REBLOG_TRAIL,
             Settings.WORDS_TAGS,
             Settings.WORDS_SUMMARY,
+            Settings.HIDE_FILTERED_POSTS,
             Settings.SHOW_POST_TIMESTAMPS,
             Settings.SHOW_IMAGE_DESCRIPTIONS,
             Settings.MUTE_ROOT_POSTS,

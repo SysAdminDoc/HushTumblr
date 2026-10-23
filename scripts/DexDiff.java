@@ -301,7 +301,7 @@ public class DexDiff {
     private static final Map<String, Integer> MUTATION_COLUMNS = Map.ofEntries(
             Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1), Map.entry("activityNotifications", 7),
             Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 5), Map.entry("timelinePaging", 5),
-            Map.entry("timelineCarousel", 3), Map.entry("postBridge", 3), Map.entry("paidPostBridge", 6), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
+            Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 6), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
             Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3),
             Map.entry("followButton", 3), Map.entry("footerButton", 3), Map.entry("postTags", 5),
             Map.entry("noteCounts", 6), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
@@ -356,9 +356,10 @@ public class DexDiff {
                 String[] columns = line.split("\\|", -1);
                 boolean family = columns[0].equals("family");
                 int mutationValues = columns.length - 3;
-                boolean validMutation = family || (!columns[2].equals("guard")
-                        ? MUTATION_COLUMNS.getOrDefault(columns[2], -1) == mutationValues
-                        : mutationValues >= 2 && mutationValues % 2 == 0);
+                // A post bridge rule names one bridge or several, a guard pairs of values.
+                boolean validMutation = family || (columns[2].equals("guard") ? mutationValues >= 2 && mutationValues % 2 == 0
+                        : columns[2].equals("postBridge") ? mutationValues >= 1
+                        : MUTATION_COLUMNS.getOrDefault(columns[2], -1) == mutationValues);
                 // A family's capability column may be empty: a manifest-only patch changes no bytecode.
                 if ((family && columns.length != 4) || (!family && columns.length < 4)
                         || Arrays.stream(columns).limit(family ? 3 : columns.length).anyMatch(String::isBlank)
@@ -4682,8 +4683,10 @@ public class DexDiff {
             return true;
         }
 
+        /** The getter may return a Tumblr model the interface hands back as a supertype, an object. */
         boolean directBridge(String type, Method face, MethodReference getter) {
-            if (!publicGetter(getter, face.getReturnType())) return false;
+            if (!publicGetter(getter, getter == null ? face.getReturnType() : getter.getReturnType())) return false;
+            if (!assignable(getter.getReturnType(), face.getReturnType())) { fail(getter + " isn't a getter of " + face.getReturnType()); return false; }
             String added = type + "->" + face.getName() + "()" + face.getReturnType();
             Method call = clean.methods.containsKey(added) ? null : actual(added);
             List<Instruction> body = call == null ? List.of() : instructions(call);

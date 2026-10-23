@@ -304,6 +304,8 @@ Hide text posts	Ocultar posts de texto
 Takes posts with no pictures or video, the reblogged part included, out of your dashboard and other feeds.	Tira do seu painel e de outros feeds os posts sem imagens nem vídeo, incluindo a parte reblogada.
 Hide posts with these words	Ocultar posts com estas palavras
 Takes posts out of your feeds when a hidden word matches one of the selected fields below.	Remove posts dos seus feeds quando uma palavra oculta corresponde a um dos campos selecionados abaixo.
+Hide filtered posts	Ocultar posts filtrados
+Takes the posts Tumblr covers for your filtered tags and words out of your feeds.	Remove dos seus feeds os posts que o Tumblr cobre por causa das suas tags e palavras filtradas.
 Words to hide	Palavras para ocultar
 One word or phrase a line	Uma palavra ou frase por linha
 Changes are saved only when you tap Save.	As alterações só são salvas quando você toca em Salvar.

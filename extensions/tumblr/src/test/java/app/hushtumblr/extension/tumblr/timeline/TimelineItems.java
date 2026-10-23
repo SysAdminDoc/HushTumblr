@@ -173,6 +173,20 @@ public final class TimelineItems {
         return new TimelineObject(new Post(Collections.emptyList(), null, Arrays.asList(tags), summary, null), false);
     }
 
+    /**
+     * A post Tumblr would cover with "This post contains filtered content", its filtered note
+     * naming [tags] and [content] words, with [blocks] as its own content.
+     */
+    public static TimelineObject filteredPost(List<?> tags, List<?> content, Object... blocks) {
+        HushFiltered note = new HushFiltered() {
+            @Override public List<?> hushFilteredTags() { return tags; }
+            @Override public List<?> hushFilteredContent() { return content; }
+        };
+        return new TimelineObject(new Post(Arrays.asList(blocks), null, null, null, null) {
+            @Override public Object hushFiltered() { return note; }
+        }, false);
+    }
+
     /** A plain post whose server header context names [icon], without any timeline Sponsored flag. */
     public static TimelineObject postWithHeader(String icon, boolean followed, boolean editable) {
         return postWithHeader(icon, followed, editable, true);
@@ -227,8 +241,13 @@ public final class TimelineItems {
         return aPageLoses(postWith(new TextBlock("Big Spoilers ahead")));
     }
 
-    /** A post Tumblr's model would carry, as the post bridge patch makes it. */
-    static class Post extends Item implements HushPost, HushPaidPost {
+    /** PausedHooksTest's probe for Hide filtered posts. */
+    public static boolean aPageLosesItsFilteredPost() {
+        return aPageLoses(filteredPost(Collections.singletonList("spoilers"), null, new TextBlock("covered")));
+    }
+
+    /** A post Tumblr's model would carry, as the post bridge patches make it. */
+    static class Post extends Item implements HushPost, HushPaidPost, HushFilteredPost {
         private final List<?> content;
         private final List<?> trail;
         private final List<?> tags;
@@ -253,6 +272,7 @@ public final class TimelineItems {
         @Override public boolean hushFollowed() { return false; }
         @Override public boolean hushCanEdit() { return false; }
         @Override public boolean hushPaidContextKnown() { return true; }
+        @Override public Object hushFiltered() { return null; }
     }
 
     private static final class Carousel extends Item {

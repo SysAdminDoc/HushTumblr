@@ -9,6 +9,7 @@
 * **Tumblr:** Hide suggested blogs now takes out the "Like this? Follow to see more" prompt and the Follow button under it that show up between a blog's posts. Tumblr sends that prompt as a heading and a lone button, so it got past the blog cards check.
 * **Tumblr:** Hide suggested blogs and Hide suggested communities now reach the Posts tab of a search, where Tumblr slips a tag's top blogs and related communities in between the posts. The Blogs and Communities tabs still list everything the search found.
 * **Tumblr:** New **Hide suggested tags** switch on the Feed page, off by default. It takes out the carousels of tags Tumblr wants you to follow, like "Check out these tags" on the dashboard, "Related tags" in a search and "Explore more" on a tag's page, along with their headings. The "Know someone who'd love this tag?" prompt between a tag's posts goes too. Tags you already follow stay put.
+* **Tumblr:** New **Hide filtered posts** switch on the Feed page, off by default. Posts Tumblr would cover with "This post contains filtered content" because of your filtered tags or words leave your dashboard, searches and other feeds instead. With it off, they show up covered as before.
 * **Tooling:** A release can't go public until the whole app has been walked with that exact bundle on a release phone or an emulator. The publish stage now takes the walk's receipt as `-Walk` and stops before GitHub or the index if the walk wasn't a full pass, saw a Tumblr crash, ran on some other device, or patched with a different bundle.
 
 ## 0.0.8 (2026-10-18)

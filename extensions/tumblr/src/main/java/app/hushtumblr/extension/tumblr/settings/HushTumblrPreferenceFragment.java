@@ -473,6 +473,9 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                 patchToggle(feed, context, build, PatchFamily.HIDE_POSTS_WITH_WORDS, Settings.WORDS_SUMMARY,
                         L10n.t("Match post summaries"), scopeSummary, SettingsIcons.SEARCH);
             }
+            patchToggle(feed, context, build, PatchFamily.HIDE_FILTERED_POSTS, Settings.HIDE_FILTERED_POSTS,
+                    L10n.t("Hide filtered posts"), L10n.t("Takes the posts Tumblr covers for your filtered tags "
+                        + "and words out of your feeds."), SettingsIcons.BLOCK);
         }
 
         // Parts of each post card. Tags, the Follow button and the counts are read as each card is drawn,

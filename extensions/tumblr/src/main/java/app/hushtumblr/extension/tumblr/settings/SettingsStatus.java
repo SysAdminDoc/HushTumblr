@@ -112,6 +112,8 @@ public final class SettingsStatus {
     public static boolean textPosts() { return false; }
     public static boolean hidePostsWithWords() { return false; }
     public static boolean postWords() { return false; }
+    public static boolean hideFilteredPosts() { return false; }
+    public static boolean filteredPosts() { return false; }
     public static boolean darkBackground() { return false; }
     public static boolean themeBackground() { return false; }
     public static boolean hideExploreTab() { return false; }

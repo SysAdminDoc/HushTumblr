@@ -307,6 +307,8 @@ Hide text posts	Metin gönderilerini gizle
 Takes posts with no pictures or video, the reblogged part included, out of your dashboard and other feeds.	Yeniden bloglanan kısım dahil, resim ya da video olmayan gönderileri panondan ve diğer akışlardan kaldırır.
 Hide posts with these words	Bu kelimeleri içeren gönderileri gizle
 Takes posts out of your feeds when a hidden word matches one of the selected fields below.	Gizlenen bir sözcük aşağıdaki seçili alanlardan biriyle eşleştiğinde gönderileri akışlarınızdan kaldırır.
+Hide filtered posts	Filtrelenen gönderileri gizle
+Takes the posts Tumblr covers for your filtered tags and words out of your feeds.	Tumblr'ın filtrelediğiniz etiketler ve sözcükler yüzünden örttüğü gönderileri akışlarınızdan kaldırır.
 Words to hide	Gizlenecek kelimeler
 One word or phrase a line	Her satıra bir kelime ya da ifade
 Changes are saved only when you tap Save.	Değişiklikler yalnızca Kaydet düğmesine dokunduğunda kaydedilir.

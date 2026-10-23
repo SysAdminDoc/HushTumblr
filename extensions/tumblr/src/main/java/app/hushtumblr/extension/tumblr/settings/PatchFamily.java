@@ -96,6 +96,7 @@ public enum PatchFamily {
     HIDE_TEXT_POSTS(FamilyNames.HIDE_TEXT_POSTS, "hideTextPosts", null, Settings.HIDE_TEXT_POSTS),
     HIDE_POSTS_WITH_WORDS(FamilyNames.HIDE_POSTS_WITH_WORDS, "hidePostsWithWords", null, Settings.HIDE_POSTS_WITH_WORDS,
             Settings.WORDS_CURRENT_TEXT, Settings.WORDS_REBLOG_TRAIL, Settings.WORDS_TAGS, Settings.WORDS_SUMMARY),
+    HIDE_FILTERED_POSTS(FamilyNames.HIDE_FILTERED_POSTS, "hideFilteredPosts", null, Settings.HIDE_FILTERED_POSTS),
     DARK_BACKGROUND(FamilyNames.DARK_BACKGROUND, "darkBackground", null, Settings.DARK_BACKGROUND),
     HIDE_EXPLORE_TAB(FamilyNames.HIDE_EXPLORE_TAB, "hideExploreTab", null, Settings.HIDE_EXPLORE_TAB),
     HIDE_NOTIFICATIONS_TAB(FamilyNames.HIDE_NOTIFICATIONS_TAB, "hideNotificationsTab", null, Settings.HIDE_NOTIFICATIONS_TAB),
@@ -156,8 +157,8 @@ public enum PatchFamily {
     static volatile Set<Capability> capabilitiesForTests;
 
     /** The families the Feed page holds. The page and its home row both read this. */
-    static final Set<PatchFamily> FEED_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_POSTS_WITH_WORDS,
-            HIDE_TEXT_POSTS, HIDE_PHOTO_POSTS, HIDE_VIDEO_POSTS, HIDE_REBLOGS, HIDE_WATCH_IT_ROWS,
+    static final Set<PatchFamily> FEED_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_FILTERED_POSTS,
+            HIDE_POSTS_WITH_WORDS, HIDE_TEXT_POSTS, HIDE_PHOTO_POSTS, HIDE_VIDEO_POSTS, HIDE_REBLOGS, HIDE_WATCH_IT_ROWS,
             HIDE_SUGGESTED_TAGS, HIDE_SUGGESTED_COMMUNITIES, HIDE_SUGGESTED_BLOGS, HIDE_AD_FREE_BANNER, HIDE_ADS,
             MUTE_ROOT_POSTS));
 
@@ -221,6 +222,7 @@ public enum PatchFamily {
         PHOTO_POSTS(HIDE_PHOTO_POSTS, "photoPosts", "Hide photo posts"),
         TEXT_POSTS(HIDE_TEXT_POSTS, "textPosts", "Hide text posts"),
         POST_WORDS(HIDE_POSTS_WITH_WORDS, "postWords", "Hide posts with these words"),
+        FILTERED_POSTS(HIDE_FILTERED_POSTS, "filteredPosts", "Hide filtered posts"),
         THEME_BACKGROUND(DARK_BACKGROUND, "themeBackground", "Dark background color"),
         EXPLORE_TAB(HIDE_EXPLORE_TAB, "exploreTab", "Hide the Explore tab"),
         NOTIFICATIONS_TAB(HIDE_NOTIFICATIONS_TAB, "notificationsTab", "Hide the Notifications tab"),
