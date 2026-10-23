@@ -67,6 +67,9 @@ public final class TimelineFilter {
     /** The kind of a heading item, whose text the server sends. */
     static final String TITLE = "TITLE";
 
+    /** The kind of a post. Of a search's tabs, only Posts has any. */
+    static final String POST = "POST";
+
     /** The kind of a lone button the server puts between items, Tumblr's {@code GenericButton}. */
     static final String BUTTON = "BUTTON";
 
@@ -169,6 +172,7 @@ public final class TimelineFilter {
         if (!Utils.settingsReady()) return items;
         Rules rules = Rules.now();
         if (rules == null || items == null || items.isEmpty()) return items;
+        rules.page = items;
         try {
             int size = items.size();
             String[] removedBy = new String[size];
@@ -229,6 +233,12 @@ public final class TimelineFilter {
         /** What this page was parsed for, a {@link PageSource} constant, or null until it's asked. */
         @Nullable
         private Integer source;
+        /** The page being filtered. */
+        @Nullable
+        private List<?> page;
+        /** Whether {@link #page} holds a post, or null until it's asked. */
+        @Nullable
+        private Boolean amongPosts;
 
         private Rules(boolean ads, boolean blogs, boolean communities, boolean watchIt, boolean mutes,
                       @Nullable PostRules posts) {
@@ -292,13 +302,13 @@ public final class TimelineFilter {
 
         /**
          * The card switch a heading that ends this page goes with, or null to keep it. Its card may
-         * start the next page, which holds for a blog or community card only in a feed.
+         * start the next page, which holds for a blog or community card only where it's a
+         * suggestion, see {@link #suggests}.
          */
         @Nullable
         String pageEndOwner() {
-            if ((blogs || communities) && source() == PageSource.FEED) {
-                return blogs ? FamilyNames.HIDE_SUGGESTED_BLOGS : FamilyNames.HIDE_SUGGESTED_COMMUNITIES;
-            }
+            String card = blogs ? FamilyNames.HIDE_SUGGESTED_BLOGS : FamilyNames.HIDE_SUGGESTED_COMMUNITIES;
+            if ((blogs || communities) && suggests(card)) return card;
             return watchIt ? FamilyNames.HIDE_WATCH_IT_ROWS : null;
         }
 
@@ -310,16 +320,43 @@ public final class TimelineFilter {
         }
 
         /**
-         * [family] when this page is a feed, where its cards are suggestions. On a page of search
-         * results the cards are the results, and on a page {@link PageSource} doesn't know they
-         * might be, so there the card stays and the report says which it was.
+         * [family] when a card on this page is a suggestion, see {@link #suggests}. Otherwise the
+         * card stays and the report says why.
          */
         @Nullable
         private String suggestion(String family) {
-            int from = source();
-            if (from == PageSource.FEED) return family;
-            HookStatus.counted(family, from == PageSource.RESULTS ? KEPT_RESULT : KEPT_UNKNOWN);
+            if (suggests(family)) return family;
+            HookStatus.counted(family, source() == PageSource.RESULTS ? KEPT_RESULT : KEPT_UNKNOWN);
             return null;
+        }
+
+        /**
+         * Whether a blog or community card on this page is a suggestion: in a feed, and in a page of
+         * search results that holds posts, which is the Posts tab, where a carousel of a tag's top
+         * blogs or related communities sits between the posts found. The Blogs and Communities tabs
+         * hold no posts, and there the cards are the results. On a page {@link PageSource} doesn't
+         * know, they might be results too. A read that fails goes to [owner].
+         */
+        private boolean suggests(String owner) {
+            int from = source();
+            return from == PageSource.FEED || from == PageSource.RESULTS && amongPosts(owner);
+        }
+
+        /** Whether this page holds a post, read once a page. */
+        private boolean amongPosts(String owner) {
+            Boolean known = amongPosts;
+            if (known == null) {
+                known = false;
+                List<?> items = page;
+                if (items != null) for (Object item : items) {
+                    if (isKind(item, POST, owner)) {
+                        known = true;
+                        break;
+                    }
+                }
+                amongPosts = known;
+            }
+            return known;
         }
 
         /** The patch name of the first switch that takes [item] out, or null to keep it. */
@@ -451,10 +488,15 @@ public final class TimelineFilter {
 
     /** True when [item] is a heading. One that can't be read isn't, and the failure goes to [owner]. */
     static boolean isTitle(Object item, String owner) {
+        return isKind(item, TITLE, owner);
+    }
+
+    /** True when [item] is of [kind]. One that can't be read isn't, and the failure goes to [owner]. */
+    private static boolean isKind(Object item, String kind, String owner) {
         Model found = modelFor(item, owner);
         if (found == null) return false;
         try {
-            return TITLE.equals(found.typeOf(item));
+            return kind.equals(found.typeOf(item));
         } catch (Throwable failure) {
             HookStatus.threw(owner, "timeline item", failure);
             return false;

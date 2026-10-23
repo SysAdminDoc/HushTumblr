@@ -309,10 +309,10 @@ public class TimelineFilterTest {
     }
 
     /**
-     * Every tab of a search loads its pages as a search response, and there a blog or community card
-     * is what was searched for. With both switches on the Blogs tab's cards and rows, the Communities
-     * tab's, and a mixed page with headings and a carousel all come back as the very list Tumblr
-     * built, while the same pages in a dashboard lose every card.
+     * Every tab of a search loads its pages as a search response, and on the Blogs and Communities
+     * tabs a blog or community card is what was searched for. With both switches on, their cards and
+     * rows come back as the very list Tumblr built, while the same pages in a dashboard lose every
+     * card.
      */
     @Test
     public void aSearchKeepsTheBlogsAndCommunitiesItFound() {
@@ -322,18 +322,13 @@ public class TimelineFilterTest {
                 TimelineItems.of(TimelineObjectType.BLOG_ROW), TimelineItems.of(TimelineObjectType.COMPACT_BLOG_CARD));
         List<Object> communities = Arrays.asList(TimelineItems.of(TimelineObjectType.COMMUNITY_CARD),
                 TimelineItems.of(TimelineObjectType.COMMUNITY_ROW));
-        List<Object> mixed = Arrays.asList(TimelineItems.of(TimelineObjectType.TITLE),
-                TimelineItems.carousel(TimelineObjectType.CAROUSEL,
-                        TimelineItems.of(TimelineObjectType.TINY_BLOG_CAROUSEL_CARD)),
-                TimelineItems.post(), TimelineItems.of(TimelineObjectType.TITLE),
-                TimelineItems.of(TimelineObjectType.COMMUNITY_CARD), TimelineItems.of(TimelineObjectType.TITLE));
 
-        for (List<Object> page : Arrays.asList(blogs, communities, mixed)) {
+        for (List<Object> page : Arrays.asList(blogs, communities)) {
             assertSame(page, TimelineItems.inSearchResults(page));
         }
         String report = String.join("\n", HookStatus.report(""));
-        assertTrue(report, report.contains(TimelineFilter.KEPT_RESULT + " 4"));
-        assertTrue(report, report.contains(TimelineFilter.KEPT_RESULT + " 2"));
+        assertTrue(report, report.contains(TimelineFilter.KEPT_RESULT + " 3"));
+        assertTrue(report, report.contains(TimelineFilter.KEPT_RESULT + " 1"));
         assertFalse(report, report.contains("card removed"));
         assertFalse(report, report.contains("heading removed"));
 
@@ -341,7 +336,31 @@ public class TimelineFilterTest {
                 TimelineItems.onTheDashboard(blogs));
         assertEquals("a row is a line of a list and stays", Arrays.asList(communities.get(1)),
                 TimelineItems.onTheDashboard(communities));
-        assertEquals(Arrays.asList(mixed.get(2)), TimelineItems.onTheDashboard(mixed));
+    }
+
+    /**
+     * A search's Posts tab is the one whose pages hold posts, and there a carousel of a tag's top
+     * blogs or related communities sits between the posts found, under its heading. Those go with
+     * their switches as in a dashboard, the heading that ends the page with them, and all stay with
+     * the switches off.
+     */
+    @Test
+    public void aSearchsPostsTabLosesTheCardsBetweenItsPosts() {
+        List<Object> posts = Arrays.asList(TimelineItems.post(), TimelineItems.of(TimelineObjectType.TITLE),
+                TimelineItems.carousel(TimelineObjectType.CAROUSEL,
+                        TimelineItems.of(TimelineObjectType.TINY_BLOG_CAROUSEL_CARD)),
+                TimelineItems.post(), TimelineItems.of(TimelineObjectType.TITLE),
+                TimelineItems.carousel(TimelineObjectType.CAROUSEL, TimelineItems.of(TimelineObjectType.COMMUNITY_CARD)),
+                TimelineItems.post(), TimelineItems.of(TimelineObjectType.TITLE));
+        assertSame(posts, TimelineItems.inSearchResults(posts));
+
+        Settings.HIDE_SUGGESTED_BLOGS.save(true);
+        assertEquals(Arrays.asList(posts.get(0), posts.get(3), posts.get(4), posts.get(5), posts.get(6)),
+                TimelineItems.inSearchResults(posts));
+        Settings.HIDE_SUGGESTED_COMMUNITIES.save(true);
+        assertEquals(Arrays.asList(posts.get(0), posts.get(3), posts.get(6)), TimelineItems.inSearchResults(posts));
+        String report = String.join("\n", HookStatus.report(""));
+        assertFalse(report, report.contains(TimelineFilter.KEPT_RESULT));
     }
 
     /**
@@ -389,7 +408,9 @@ public class TimelineFilterTest {
         assertEquals(left, TimelineItems.onABlog(page));
         assertEquals(left, TimelineItems.inLikes(page));
         assertEquals("the blogs beside a dashboard's card", left, TimelineItems.besideABlogCard(page, false));
-        assertSame("the blogs beside a search result", page, TimelineItems.besideABlogCard(page, true));
+        List<Object> related = Arrays.asList(TimelineItems.of(TimelineObjectType.BLOG_CARD),
+                TimelineItems.of(TimelineObjectType.BLOG_CARD));
+        assertSame("the blogs beside a search result", related, TimelineItems.besideABlogCard(related, true));
 
         HookStatus.clear();
         assertSame(page, TimelineFilter.filter(page));
