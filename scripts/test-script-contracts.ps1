@@ -321,6 +321,8 @@ try {
     # The old replacement expectations contradicted account preservation. Exercise refusal
     # before device mutation, signer checks and ownership instead of expecting uninstalls.
     & (Join-Path $PSScriptRoot 'test-device-safety.ps1') -Root $Root
+    # The walk publish holds a release to: the result it earns and the receipts it writes.
+    & (Join-Path $PSScriptRoot 'test-walk-app.ps1') -Root $Root
 
     $emptyJdk = Join-Path $caseRoot 'empty-jdk'
     New-Item -ItemType Directory -Path $emptyJdk | Out-Null

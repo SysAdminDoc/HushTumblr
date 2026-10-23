@@ -11,6 +11,7 @@
 * **Tumblr:** New **Hide suggested tags** switch on the Feed page, off by default. It takes out the carousels of tags Tumblr wants you to follow, like "Check out these tags" on the dashboard, "Related tags" in a search and "Explore more" on a tag's page, along with their headings. The "Know someone who'd love this tag?" prompt between a tag's posts goes too. Tags you already follow stay put.
 * **Tumblr:** New **Hide filtered posts** switch on the Feed page, off by default. Posts Tumblr would cover with "This post contains filtered content" because of your filtered tags or words leave your dashboard, searches and other feeds instead. With it off, they show up covered as before.
 * **Tooling:** A release can't go public until the whole app has been walked with that exact bundle on a release phone or an emulator. The publish stage now takes the walk's receipt as `-Walk` and stops before GitHub or the index if the walk wasn't a full pass, saw a Tumblr crash, ran on some other device, or patched with a different bundle.
+* **Tooling:** New `scripts/walk-app.ps1` patches Tumblr from the release bundle and installs it on a phone or emulator. Then it opens the dashboard, the patched screens and every Hush settings page, and writes the receipt publish asks for. Only a full walk with no Tumblr crash earns a PASS.
 * **Tooling:** `scripts/patch-for-device.ps1` can sign with the key Morphe makes, which has no store password and its own key password. Pass `-NoStorePassword` and put the key password in `HUSHTUMBLR_SIDELOAD_KEY_PASSWORD`.
 
 ## 0.0.8 (2026-10-18)
