@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.0.9 (2026-10-23)
 
 * **Tumblr:** The patches move from 46.5.0.109 to Tumblr 46.8.1.100, the newest release. Every patch applies to it, so that's the version to patch.
 * **Tumblr:** The bundle is built on Morphe patcher 2.0.0 now. You'll need Morphe Manager 2.0.0 or newer, since older Manager builds can't load it.
