@@ -275,6 +275,23 @@ try {
         Assert-True (-not $steplessValidation.Valid -and $steplessValidation.Reason -ceq 'a patching step failed or is missing') `
             "A result whose patching steps are $steps was not turned down for them alone: $($steplessValidation.Reason)"
     }
+    # morphe-desktop 1.19.0 names the list stepResults. Its passing steps count, and a failed one
+    # is still refused, so the 1.19 shape is read and not just tolerated.
+    foreach ($stepOk in @($true, $false)) {
+        $renamed = $dependencyReport.PSObject.Copy()
+        $renamed.PSObject.Properties.Remove('patchingSteps')
+        $renamed | Add-Member -NotePropertyName stepResults -NotePropertyValue @(
+            [pscustomobject]@{ success = $true }, [pscustomobject]@{ success = $stepOk })
+        $renamedValidation = Test-PatchingReport -Report $renamed -ExpectedNames $allNames `
+            -AllowedDependencyNames $allDependencies -OutputPath $reportApk `
+            -ExpectedPackageName $target.PackageName -ExpectedPackageVersion $target.PackageVersion
+        if ($stepOk) {
+            Assert-True $renamedValidation.Valid "A 1.19 result with passing stepResults was rejected: $($renamedValidation.Reason)"
+        } else {
+            Assert-True (-not $renamedValidation.Valid -and $renamedValidation.Reason -ceq 'a patching step failed or is missing') `
+                "A 1.19 result with a failed step in stepResults was not turned down: $($renamedValidation.Reason)"
+        }
+    }
     # failedPatches left out or null is no failed patch, as kotlinx leaves out a field equal to its
     # default; it used to count as one through @($null). A null entry in the list is still one.
     foreach ($failures in @('absent', 'null', 'null entry')) {

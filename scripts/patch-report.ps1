@@ -163,8 +163,11 @@ function Test-PatchingReport {
     # @($null) holds one item, so a report with no steps has none rather than one null step, and
     # a null step in a list is one that didn't report success. A list, since an if statement's
     # output unrolls a one-step array, and Windows PowerShell gives a lone object no Count.
+    # morphe-desktop 1.19.0, the first CLI on patcher 2.0, writes the step list as stepResults and
+    # always writes success; 1.18.1 and older called it patchingSteps.
     $steps = New-Object System.Collections.Generic.List[object]
-    if ($null -ne $Report.patchingSteps) { foreach ($step in @($Report.patchingSteps)) { $steps.Add($step) } }
+    $stepList = if ($null -ne $Report.PSObject.Properties['stepResults']) { $Report.stepResults } else { $Report.patchingSteps }
+    if ($null -ne $stepList) { foreach ($step in @($stepList)) { $steps.Add($step) } }
     $stepsOk = $steps.Count -gt 0
     foreach ($step in $steps) {
         $property = if ($null -eq $step) { $null } else { $step.PSObject.Properties['success'] }

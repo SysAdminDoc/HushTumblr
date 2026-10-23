@@ -86,6 +86,8 @@ internal fun Document.addSettingsRowTitle() {
 /** The row's title, the one resource the settings patch adds. */
 internal val settingsRowTitlePatch = resourcePatch {
     execute {
+        // Patcher 2.0 decodes only the files a patch asks for.
+        decode(SETTINGS_ROW_STRINGS)
         document(SETTINGS_ROW_STRINGS).use { it.addSettingsRowTitle() }
     }
 }

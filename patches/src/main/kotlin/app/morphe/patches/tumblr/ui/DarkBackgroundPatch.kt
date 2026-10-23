@@ -232,6 +232,8 @@ internal fun Document.addDarkBackgroundStyle(color: Int) {
 /** The style the extension puts over a Dark Mode theme, in the color [background] answers. */
 private fun darkBackgroundStylePatch(background: () -> Int) = resourcePatch {
     execute {
+        // Patcher 2.0 decodes only the files a patch asks for: an undecoded file does not exist yet.
+        decode(DARK_BACKGROUND_STYLES)
         if (!get(DARK_BACKGROUND_STYLES, false).exists()) {
             throw PatchException("$PATCH: Tumblr has no $DARK_BACKGROUND_STYLES")
         }
