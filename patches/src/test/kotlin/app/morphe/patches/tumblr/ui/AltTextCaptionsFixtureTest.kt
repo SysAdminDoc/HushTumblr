@@ -36,7 +36,7 @@ import java.util.zip.ZipFile
 @Category(FixtureTests::class)
 class AltTextCaptionsFixtureTest {
     private val types = setOf(IMAGE_BLOCK, IMAGE_BLOCK.removeSuffix(";") + "JsonAdapter;",
-        PHOTO_CONTAINER, PHOTO_HOLDER, GALLERY_ITEM, "Lyn9\$a;", "Lmyd;", "Ljyd;")
+        PHOTO_CONTAINER, PHOTO_HOLDER, GALLERY_ITEM, "Leka\$a;", "Lg0f;", "Ld0f;")
 
     @Test
     fun `the correct images are bound and gallery cleanup runs before every native early return`() {
@@ -45,7 +45,7 @@ class AltTextCaptionsFixtureTest {
             assertEquals(types, classes.keys)
             val context = PatchContexts.of(ExtensionDex.classes() + classes.values)
             val plan = context.resolveAltTextCaptions()
-            assertEquals("Lyn9\$a;->c:$IMAGE_BLOCK", plan.photoBlock.toString())
+            assertEquals("Leka\$a;->c:$IMAGE_BLOCK", plan.photoBlock.toString())
             assertEquals("i", plan.photo.name)
             assertEquals("r", plan.gallery.name)
             assertEquals("n", plan.galleryFull.name)
@@ -70,9 +70,9 @@ class AltTextCaptionsFixtureTest {
             assertEquals(nativeFull, full.drop(1).map(::fingerprint))
 
             val expected = mapOf(
-                IMAGE_BLOCK to Triple(HUSH_IMAGE, "hushAltText", "$IMAGE_BLOCK->j()Ljava/lang/String;"),
+                IMAGE_BLOCK to Triple(HUSH_IMAGE, "hushAltText", "$IMAGE_BLOCK->i()Ljava/lang/String;"),
                 PHOTO_CONTAINER to Triple(HUSH_IMAGE_CONTAINER, "hushImageFrame", "$PHOTO_CONTAINER->j0()Landroid/widget/FrameLayout;"),
-                "Ljyd;" to Triple(HUSH_IMAGE_ROW, "hushImageItems", "Ljyd;->Z()[$GALLERY_ITEM"),
+                "Ld0f;" to Triple(HUSH_IMAGE_ROW, "hushImageItems", "Ld0f;->Z()[$GALLERY_ITEM"),
             )
             for ((type, target) in expected) {
                 val model = context.mutableClassDefBy(type)
@@ -95,7 +95,7 @@ class AltTextCaptionsFixtureTest {
     @Test
     fun `missing gallery cleanup anchor refuses before any caption bridge or status changes`() {
         for (build in Fixtures.declaredBuilds()) {
-            val classes = FixtureDex.classes(build, types - "Ljyd;")
+            val classes = FixtureDex.classes(build, types - "Ld0f;")
             val context = PatchContexts.of(ExtensionDex.classes() + classes.values)
             assertThrows(PatchException::class.java) { visibleAltTextPatch.execute(context) }
             assertFalse(HUSH_IMAGE in context.mutableClassDefBy(IMAGE_BLOCK).interfaces)
@@ -142,7 +142,7 @@ class AltTextCaptionsFixtureTest {
                     assertEquals(-2, parent.searchAttributeByResourceId(0x010100f5).data)
                     val children = parent.elements.asSequence().map { it as ResXmlElement }.toList()
                     assertEquals("com.tumblr.ui.widget.aspect.AspectFrameLayout", children[0].name)
-                    assertEquals(0x7f0b063e, children[0].idAttribute.data)
+                    assertEquals(0x7f0b0668, children[0].idAttribute.data)
                     if (layout.endsWith("row_item")) {
                         assertEquals("include", children[1].name)
                         assertEquals(-2, children[1].searchAttributeByResourceId(0x010100f5).data)

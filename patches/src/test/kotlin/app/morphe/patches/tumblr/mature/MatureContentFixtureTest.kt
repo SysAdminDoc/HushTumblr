@@ -34,9 +34,9 @@ import org.junit.experimental.categories.Category
 @Category(FixtureTests::class)
 class MatureContentFixtureTest {
     private val types = setOf(MATURE_USER, "Lcom/tumblr/rumblr/model/UserInfo;", MATURE_AGE,
-        MATURE_AGE.removeSuffix(";") + "JsonAdapter;", MATURE_GATE, "Lgql;", MATURE_REPOSITORY,
+        MATURE_AGE.removeSuffix(";") + "JsonAdapter;", MATURE_GATE, "Lw5n;", MATURE_REPOSITORY,
         MATURE_NATIVE_SERVICE, MATURE_PERMISSION, MATURE_PERMISSION.removeSuffix(";") + "JsonAdapter;",
-        MATURE_API_RESPONSE, MATURE_METADATA, "Lj45;", "Lma7;", "Lz5a;", "Lb6a;")
+        MATURE_API_RESPONSE, MATURE_METADATA, "Lbx5;", "Ly58;", "Ls2b;", "Lu2b;")
 
     @Test
     fun `only native cover returns change and every branch reaches the account gate`() {
@@ -58,7 +58,7 @@ class MatureContentFixtureTest {
             val ageHooks = plan.ageParser.instructionList().filter { it.methodRef()?.toString() == MATURE_AGE_PARSED }
             assertEquals(listOf(listOf(14, 9), listOf(4, 9)), ageHooks.map { it.namedRegisters() })
             assertOnlyInserted(permissionParser, plan.permissionParser.instructionList(), MATURE_PERMISSION_PARSED, 1)
-            assertEquals(listOf(listOf(14, 13), listOf(5, 13)), plan.permissionParser.instructionList().filter {
+            assertEquals(listOf(listOf(2, 11), listOf(3, 11)), plan.permissionParser.instructionList().filter {
                 it.methodRef()?.toString() == MATURE_PERMISSION_PARSED }.map { it.namedRegisters() })
             val ctor = plan.repository.instructionList()
             assertEquals(repository.dropLast(1), ctor.take(13).map(::fingerprint))
@@ -96,18 +96,18 @@ class MatureContentFixtureTest {
             assertEquals(listOf(Opcode.IGET_OBJECT, Opcode.CHECK_CAST, Opcode.NEW_INSTANCE, Opcode.INVOKE_DIRECT,
                 Opcode.INVOKE_INTERFACE, Opcode.MOVE_RESULT_OBJECT, Opcode.INVOKE_STATIC, Opcode.MOVE_RESULT_OBJECT,
                 Opcode.IF_EQ, Opcode.INVOKE_STATIC, Opcode.RETURN_VOID), body.map { it.opcode })
-            assertEquals("$MATURE_NATIVE_SERVICE->getCommunityLabelUserConfig(Lj45;)Ljava/lang/Object;", body[4].methodRef().toString())
+            assertEquals("$MATURE_NATIVE_SERVICE->getCommunityLabelUserConfig(Lbx5;)Ljava/lang/Object;", body[4].methodRef().toString())
             assertEquals(listOf(0, 1), body[4].namedRegisters())
-            assertEquals("Lz5a;->g()Ljava/lang/Object;", body[6].methodRef().toString())
+            assertEquals("Ls2b;->g()Ljava/lang/Object;", body[6].methodRef().toString())
             assertEquals(10, target(body, 8))
             assertEquals(MATURE_RECEIVED, body[9].methodRef().toString())
             assertEquals(listOf(5, 2), body[9].namedRegisters())
             assertFalse(body.any { it.methodRef()?.name == "setCommunityLabelUserConfig" })
             val continuation = context.mutableClassDefBy(MATURE_CONTINUATION)
-            assertTrue("Lj45;" in continuation.interfaces)
+            assertTrue("Lbx5;" in continuation.interfaces)
             val coroutineContext = continuation.methods.single { it.name == "getContext" }
-            assertEquals("Lue5;", coroutineContext.returnType)
-            assertEquals("Lma7;->a:Lma7;", coroutineContext.instructionList().first().fieldRef().toString())
+            assertEquals("Ly76;", coroutineContext.returnType)
+            assertEquals("Ly58;->a:Ly58;", coroutineContext.instructionList().first().fieldRef().toString())
         }
     }
 
@@ -125,26 +125,26 @@ class MatureContentFixtureTest {
                 },
                 { context -> context.mutableClassDefBy(MATURE_AGE.removeSuffix(";") + "JsonAdapter;").methods.single {
                     it.name == "fromJson"
-                }.replaceInstruction(58, "and-int/lit8 v9, v9, -0x3") },
+                }.replaceInstruction(65, "and-int/lit8 v9, v9, -0x3") },
                 { context ->
                     val owner = context.mutableClassDefBy(MATURE_NATIVE_SERVICE)
                     owner.methods.removeAll { it.name == "getCommunityLabelUserConfig" }
                 },
-                { context -> context.mutableClassDefBy("Lgql;").methods.single { it.name == "b" }
+                { context -> context.mutableClassDefBy("Lw5n;").methods.single { it.name == "b" }
                     .replaceInstruction(5, "const/4 v0, 0x0") },
                 { context -> context.mutableClassDefBy("Lcom/tumblr/rumblr/model/UserInfo;").methods.single {
                     it.name == "<init>" && it.parameterTypes.size == 46
                 }.replaceInstruction(25, "move v15, v4") },
                 { context -> context.mutableClassDefBy(MATURE_PERMISSION.removeSuffix(";") + "JsonAdapter;").methods.single {
                     it.name == "fromJson"
-                }.replaceInstruction(37, "and-int/lit8 v13, v13, -0x21") },
+                }.replaceInstruction(41, "and-int/lit8 v11, v11, -0x21") },
             )
             for (fault in faults) {
                 val context = PatchContexts.of(ExtensionDex.classes() + classes.values)
                 fault(context)
                 assertThrows(PatchException::class.java) { revealAllowedMatureContentPatch.execute(context) }
                 assertFalse("Lapp/hushtumblr/extension/tumblr/mature/HushMatureAccount;" in context.mutableClassDefBy(MATURE_USER).interfaces)
-                assertFalse("Lj45;" in context.mutableClassDefBy(MATURE_CONTINUATION).interfaces)
+                assertFalse("Lbx5;" in context.mutableClassDefBy(MATURE_CONTINUATION).interfaces)
                 assertFalse(context.mutableClassDefBy(MATURE_GATE).methods.single { it.name == "k" }.instructionList()
                     .any { it.methodRef()?.toString() == MATURE_COVER })
                 status(context, 0)

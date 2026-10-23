@@ -15,12 +15,12 @@
 # onto another build fails at the resource step, on the lines its rebuild changes that aren't here.
 
 [rebuild]
-rewritten 0x7f150581 style/TimelineView [default] item 0x0101007f hex 0x02000000 -> dec 0x02000000
-rewritten 0x7f140c65 string/sign_up_tos_description [default] "By tapping \"Next\":" with spans "b" 11-16 -> "By tapping Next:" with spans "b" 11-14
-renamed 0x7f0b0b2f id/scrollView is id/id_0x7f0b0b2f
-renamed 0x7f0b0b34 id/scrollview is id/id_0x7f0b0b34
-renamed 0x7f0b0b62 id/seekBar is id/id_0x7f0b0b62
-renamed 0x7f0b0b63 id/seekbar is id/id_0x7f0b0b63
+rewritten 0x7f15057f style/TimelineView [default] item 0x0101007f hex 0x02000000 -> dec 0x02000000
+rewritten 0x7f140c7d string/sign_up_tos_description [default] "By tapping \"Next\":" with spans "b" 11-16 -> "By tapping Next:" with spans "b" 11-14
+renamed 0x7f0b0b5f id/scrollView is id/id_0x7f0b0b5f
+renamed 0x7f0b0b64 id/scrollview is id/id_0x7f0b0b64
+renamed 0x7f0b0b92 id/seekBar is id/id_0x7f0b0b92
+renamed 0x7f0b0b93 id/seekbar is id/id_0x7f0b0b93
 
 [Dark background color]
 added style/HushTumblrDarkBackground

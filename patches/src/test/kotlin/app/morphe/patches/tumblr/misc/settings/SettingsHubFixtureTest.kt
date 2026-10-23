@@ -42,7 +42,10 @@ class SettingsHubFixtureTest {
                 .instructionList().first { it.opcode == Opcode.NEW_INSTANCE }
                 .let { ((it as ReferenceInstruction).reference as TypeReference).type }
             val extra = FixtureDex.classes(build, setOf(rowType, "Lcom/tumblr/compose/ds/icons/outline/HideKt;")).values
-            val context = PatchContexts.of(ExtensionDex.classes() + hub + extra)
+            // A lambda outside the package can reach the row's key through the screen's accessor.
+            val callers = FixtureDex.classesWhere(build, { true }) { method -> !method.definingClass.startsWith(SETTINGS_HUB) &&
+                method.instructionList().any { it.methodRef()?.definingClass?.startsWith(SETTINGS_HUB) == true } }
+            val context = PatchContexts.of((ExtensionDex.classes() + hub + extra + callers).distinctBy { it.type })
 
             val plan = context.resolveSettingsHub()
             assertEquals("${build.name}: the row class", rowType, plan.rowType)

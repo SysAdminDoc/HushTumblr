@@ -76,7 +76,7 @@ public final class MatureDexFixture {
         String[] rawParameters = {"Ljava/lang/String;", "I", "I", "Ljava/lang/String;", "Ljava/lang/String;", "Z", "Z", "Ljava/lang/String;", "Lcom/tumblr/rumblr/model/Notifications;", "Lcom/tumblr/rumblr/model/Sounds;", "Z", "Z", "Ljava/util/List;", "Z", "Z", "Z", "Z", "Z", "Ljava/lang/String;", "Z", "Z", "Z", "Z", "Z", "Z", "Z", "Z", "Z", "Z", "I", "Ljava/lang/Integer;", "Ljava/lang/String;", "Ljava/lang/String;", "Ljava/lang/String;", "I", "Lcom/tumblr/communitylabel/settings/CommunityLabelVisibility;", "Lcom/tumblr/rumblr/model/communitylabel/CommunityLabelUserSubcategoriesConfig;", "Ljava/lang/Long;", "Ljava/util/List;", "Ljava/util/List;", "Ljava/util/List;", "Z", "Lcom/tumblr/rumblr/model/AgeVerification;"};
         String[] defaultParameters = java.util.Arrays.copyOf(rawParameters, rawParameters.length + 3);
         defaultParameters[rawParameters.length] = "I"; defaultParameters[rawParameters.length + 1] = "I";
-        defaultParameters[rawParameters.length + 2] = "Lz76;";
+        defaultParameters[rawParameters.length + 2] = "Lr17;";
         List<Instruction> defaults = AccountDexFixture.nops(224);
         defaults.set(3, integer(3, 0)); defaults.set(23, new ImmutableInstruction21s(Opcode.CONST_16, 0, 0x400));
         defaults.set(25, new ImmutableInstruction12x(Opcode.MOVE, 15, 3));
@@ -87,13 +87,13 @@ public final class MatureDexFixture {
                 method(MODEL, "<init>", "V", PUBLIC | AccessFlags.CONSTRUCTOR.getValue() | AccessFlags.SYNTHETIC.getValue(), 95, defaults, defaultParameters))));
         List<Instruction> cleanCover = new ArrayList<>(List.of(
                 call(Opcode.INVOKE_VIRTUAL, OBJECT, "getClass", "Ljava/lang/Class;", new int[]{3}),
-                call(Opcode.INVOKE_VIRTUAL, "Lf74;", "l", "Z", new int[]{2, 3}, "Lzve;"), result(0, false), integer(1, 0),
+                call(Opcode.INVOKE_VIRTUAL, "Lkg4;", "l", "Z", new int[]{2, 3}, "Lhyf;"), result(0, false), integer(1, 0),
                 new ImmutableInstruction21t(Opcode.IF_EQZ, 0, 1),
-                call(Opcode.INVOKE_DIRECT, "Lf74;", "f", "Z", new int[]{2, 3}, "Lzve;"), result(0, false),
+                call(Opcode.INVOKE_DIRECT, "Lkg4;", "f", "Z", new int[]{2, 3}, "Lhyf;"), result(0, false),
                 new ImmutableInstruction21t(Opcode.IF_EQZ, 0, 1),
-                call(Opcode.INVOKE_DIRECT, "Lf74;", "j", "Z", new int[]{2, 3}, "Lzve;"), result(2, false),
+                call(Opcode.INVOKE_DIRECT, "Lkg4;", "j", "Z", new int[]{2, 3}, "Lhyf;"), result(2, false),
                 new ImmutableInstruction21t(Opcode.IF_NEZ, 2, 1), integer(2, 1), returns(2, false), returns(1, false),
-                call(Opcode.INVOKE_DIRECT, "Lf74;", "j", "Z", new int[]{2, 3}, "Lzve;"), result(2, false), returns(2, false), returns(1, false)));
+                call(Opcode.INVOKE_DIRECT, "Lkg4;", "j", "Z", new int[]{2, 3}, "Lhyf;"), result(2, false), returns(2, false), returns(1, false)));
         branch(cleanCover, 4, 17); branch(cleanCover, 7, 14); branch(cleanCover, 10, 13);
         List<Instruction> gated = new ArrayList<>(); int[] mapped = new int[18], original = new int[18];
         for (int i = 0; i < cleanCover.size(); i++) {
@@ -106,69 +106,70 @@ public final class MatureDexFixture {
         }
         branch(gated, original[4], mapped[17]); branch(gated, original[7], mapped[14]);
         branch(gated, original[10], variant.equals("bypass-cover") ? original[13] : mapped[13]);
-        classes.put("Lf74;", clazz("Lf74;", List.of(), List.of(), List.of(method("Lf74;", "k", "Z", PUBLIC, 4, gated, "Lzve;"))));
+        classes.put("Lkg4;", clazz("Lkg4;", List.of(), List.of(), List.of(method("Lkg4;", "k", "Z", PUBLIC, 4, gated, "Lhyf;"))));
         List<Instruction> nsfw = AccountDexFixture.nops(26);
-        nsfw.set(5, call(Opcode.INVOKE_VIRTUAL, "Lv81;", "U0", "Z", new int[]{0})); nsfw.set(6, result(0, false));
+        nsfw.set(5, call(Opcode.INVOKE_VIRTUAL, "Lrc1;", "U0", "Z", new int[]{0})); nsfw.set(6, result(0, false));
         nsfw.set(7, new ImmutableInstruction21t(Opcode.IF_EQZ, 0, 1)); nsfw.set(8, integer(3, 0)); nsfw.set(9, returns(3, true));
-        nsfw.set(10, call(Opcode.INVOKE_VIRTUAL, "Lf74;", "k", "Z", new int[]{4, 3}, "Lzve;")); nsfw.set(11, result(0, false));
+        nsfw.set(10, call(Opcode.INVOKE_VIRTUAL, "Lkg4;", "k", "Z", new int[]{4, 3}, "Lhyf;")); nsfw.set(11, result(0, false));
         nsfw.set(24, integer(3, 0)); nsfw.set(25, returns(3, true)); branch(nsfw, 7, 10);
-        if (variant.equals("changed-nsfw")) nsfw.set(5, call(Opcode.INVOKE_VIRTUAL, "Lv81;", "L0", "Z", new int[]{0}));
-        classes.put("Lgql;", clazz("Lgql;", List.of(), List.of(), List.of(method("Lgql;", "b", "Ldtl;", PUBLIC | STATIC, 5, nsfw, "Lzve;", "Lf74;"))));
+        if (variant.equals("changed-nsfw")) nsfw.set(5, call(Opcode.INVOKE_VIRTUAL, "Lrc1;", "L0", "Z", new int[]{0}));
+        classes.put("Lw5n;", clazz("Lw5n;", List.of(), List.of(), List.of(method("Lw5n;", "b", "Ly8n;", PUBLIC | STATIC, 5, nsfw, "Lhyf;", "Lkg4;"))));
         classes.put(AGE, clazz(AGE, List.of(), List.of(immutableField(AGE, "blockApp", "Z")), List.of(getter(AGE, "getBlockApp", "Z", "blockApp", Opcode.IGET_BOOLEAN))));
-        List<Instruction> parser = AccountDexFixture.nops(100);
+        List<Instruction> parser = AccountDexFixture.nops(97);
         parser.set(4, integer(1, 0)); parser.set(5, integer(2, 0)); parser.set(6, integer(3, -1)); parser.set(7, new ImmutableInstruction12x(Opcode.MOVE, 5, 1));
-        parser.set(8, new ImmutableInstruction12x(Opcode.MOVE_OBJECT, 1, 2)); parser.set(9, new ImmutableInstruction12x(Opcode.MOVE_OBJECT, 4, 1));
-        parser.set(10, new ImmutableInstruction12x(Opcode.MOVE_OBJECT, 6, 4)); parser.set(11, new ImmutableInstruction12x(Opcode.MOVE, 9, 3));
-        parser.set(47, literal(8, "block_app")); parser.set(58, new ImmutableInstruction22b(Opcode.AND_INT_LIT8, 9, 9, -2));
-        parser.set(67, new ImmutableInstruction21s(Opcode.CONST_16, 14, -16)); parser.set(68, new ImmutableInstruction22t(Opcode.IF_NE, 9, 14, 1));
-        parser.set(69, type(Opcode.NEW_INSTANCE, 14, AGE));
-        parser.set(73, call(Opcode.INVOKE_DIRECT, AGE, "<init>", "V", new int[]{14, 5, 1, 4, 6}, "Z", STRING, STRING, "Lcom/tumblr/rumblr/model/AgeGroup;"));
-        parser.set(74, returns(14, true)); parser.set(76, type(Opcode.NEW_INSTANCE, 4, AGE)); parser.set(82, integer(10, 0));
-        parser.set(84, new ImmutableInstruction3rc(Opcode.INVOKE_DIRECT_RANGE, 4, 7, AccountDexFixture.ref(AGE, "<init>", "V", "Z", STRING, STRING, "Lcom/tumblr/rumblr/model/AgeGroup;", "I", "Lz76;")));
-        parser.set(85, returns(4, true)); parser.set(99, returns(2, true)); branch(parser, 68, 75);
+        parser.set(8, new ImmutableInstruction12x(Opcode.MOVE_OBJECT, 6, 2)); parser.set(9, new ImmutableInstruction12x(Opcode.MOVE_OBJECT, 7, 6));
+        parser.set(10, new ImmutableInstruction12x(Opcode.MOVE_OBJECT, 8, 7)); parser.set(11, new ImmutableInstruction12x(Opcode.MOVE, 9, 3));
+        parser.set(53, literal(4, "block_app")); parser.set(65, new ImmutableInstruction22b(Opcode.AND_INT_LIT8, 9, 9, -2));
+        parser.set(74, new ImmutableInstruction21s(Opcode.CONST_16, 14, -16)); parser.set(75, new ImmutableInstruction22t(Opcode.IF_NE, 9, 14, 1));
+        parser.set(76, type(Opcode.NEW_INSTANCE, 14, AGE));
+        parser.set(77, call(Opcode.INVOKE_DIRECT, AGE, "<init>", "V", new int[]{14, 5, 6, 7, 8}, "Z", STRING, STRING, "Lcom/tumblr/rumblr/model/AgeGroup;"));
+        parser.set(78, returns(14, true)); parser.set(79, type(Opcode.NEW_INSTANCE, 4, AGE)); parser.set(80, integer(10, 0));
+        parser.set(81, new ImmutableInstruction3rc(Opcode.INVOKE_DIRECT_RANGE, 4, 7, AccountDexFixture.ref(AGE, "<init>", "V", "Z", STRING, STRING, "Lcom/tumblr/rumblr/model/AgeGroup;", "I", "Lr17;")));
+        parser.set(82, returns(4, true)); parser.set(96, returns(2, true)); branch(parser, 75, 79);
         if (patched) {
-            parser.add(85, hook("ageGateParsed", new int[]{4, variant.equals("wrong-age-mask") ? 3 : 9}, OBJECT, "I"));
-            parser.add(74, hook("ageGateParsed", new int[]{14, 9}, OBJECT, "I"));
-            branch(parser, 68, 76);
+            parser.add(82, hook("ageGateParsed", new int[]{4, variant.equals("wrong-age-mask") ? 3 : 9}, OBJECT, "I"));
+            parser.add(78, hook("ageGateParsed", new int[]{14, 9}, OBJECT, "I"));
+            branch(parser, 75, 80);
             if (variant.equals("error-age-hook")) parser.add(parser.size() - 1, hook("ageGateParsed", new int[]{2, 9}, OBJECT, "I"));
         }
         classes.put(AGE.replace(";", "JsonAdapter;"), clazz(AGE.replace(";", "JsonAdapter;"), List.of(), List.of(), List.of(
-                method(AGE.replace(";", "JsonAdapter;"), "fromJson", OBJECT, PUBLIC, 16, parser, "Leba;"),
+                method(AGE.replace(";", "JsonAdapter;"), "fromJson", OBJECT, PUBLIC, 16, parser, "Lc8b;"),
                 method(AGE.replace(";", "JsonAdapter;"), "toJson", "V", PUBLIC, 3,
-                        List.of(literal(0, "block_app"), call(Opcode.INVOKE_VIRTUAL, AGE, "getBlockApp", "Z", new int[]{2}), result(0, false), end()), "Ldca;", OBJECT))));
+                        List.of(literal(0, "block_app"), call(Opcode.INVOKE_VIRTUAL, AGE, "getBlockApp", "Z", new int[]{2}), result(0, false), end()), "Lb9b;", OBJECT))));
         classes.put(PERMISSION, clazz(PERMISSION, List.of(), List.of(immutableField(PERMISSION, "show", BOOLEAN), immutableField(PERMISSION, "edit", BOOLEAN)),
                 List.of(getter(PERMISSION, "f", BOOLEAN, "show", Opcode.IGET_OBJECT), getter(PERMISSION, "b", BOOLEAN, "edit", Opcode.IGET_OBJECT))));
         String writer = PERMISSION.replace(";", "JsonAdapter;");
-        List<Instruction> permissionParser = AccountDexFixture.nops(121);
-        permissionParser.set(3, call(Opcode.INVOKE_STATIC, "Lbmh;", "e", "Ljava/util/Set;", new int[]{}));
-        permissionParser.set(4, result(2, true)); permissionParser.set(6, integer(3, 0));
-        permissionParser.set(7, integer(4, -1)); permissionParser.set(14, new ImmutableInstruction12x(Opcode.MOVE, 13, 4));
-        permissionParser.set(32, new ImmutableInstruction22b(Opcode.AND_INT_LIT8, 13, 13, -33));
-        permissionParser.set(37, new ImmutableInstruction22b(Opcode.AND_INT_LIT8, 13, 13, -17));
+        List<Instruction> permissionParser = AccountDexFixture.nops(110);
+        permissionParser.set(1, call(Opcode.INVOKE_STATIC, "Lksi;", "e", "Ljava/util/Set;", new int[]{}));
+        permissionParser.set(2, result(0, true)); permissionParser.set(4, integer(1, 0));
+        permissionParser.set(5, integer(2, -1)); permissionParser.set(13, new ImmutableInstruction12x(Opcode.MOVE, 11, 2));
+        permissionParser.set(34, new ImmutableInstruction22b(Opcode.AND_INT_LIT8, 11, 11, -33));
+        permissionParser.set(41, new ImmutableInstruction22b(Opcode.AND_INT_LIT8, 11, 11, -17));
         String[] permissionParameters = {"Lcom/tumblr/communitylabel/settings/CommunityLabelVisibility;", "Lcom/tumblr/communitylabel/settings/CommunityLabelVisibility;", "Lcom/tumblr/communitylabel/settings/CommunityLabelVisibility;", "Lcom/tumblr/communitylabel/settings/CommunityLabelVisibility;", BOOLEAN, BOOLEAN, BOOLEAN};
         String[] permissionDefaults = java.util.Arrays.copyOf(permissionParameters, 9);
-        permissionDefaults[7] = "I"; permissionDefaults[8] = "Lz76;";
-        permissionParser.set(63, call(Opcode.INVOKE_INTERFACE, "Ljava/util/Set;", "size", "I", new int[]{2}));
-        permissionParser.set(64, result(0, false)); permissionParser.set(65, new ImmutableInstruction21t(Opcode.IF_NEZ, 0, 1));
-        permissionParser.set(66, new ImmutableInstruction21s(Opcode.CONST_16, 0, -128));
-        permissionParser.set(67, new ImmutableInstruction22t(Opcode.IF_NE, 13, 0, 1));
-        permissionParser.set(68, type(Opcode.NEW_INSTANCE, 14, PERMISSION));
-        permissionParser.set(83, new ImmutableInstruction3rc(Opcode.INVOKE_DIRECT_RANGE, 14, 8, AccountDexFixture.ref(PERMISSION, "<init>", "V", permissionParameters)));
-        permissionParser.set(84, returns(14, true));
-        permissionParser.set(86, type(Opcode.NEW_INSTANCE, 5, PERMISSION));
-        permissionParser.set(103, new ImmutableInstruction3rc(Opcode.INVOKE_DIRECT_RANGE, 5, 10, AccountDexFixture.ref(PERMISSION, "<init>", "V", permissionDefaults)));
-        permissionParser.set(104, returns(5, true)); permissionParser.set(118, returns(3, true));
-        branch(permissionParser, 65, 105); branch(permissionParser, 67, 85);
+        permissionDefaults[7] = "I"; permissionDefaults[8] = "Lr17;";
+        permissionParser.set(75, call(Opcode.INVOKE_INTERFACE, "Ljava/util/Set;", "size", "I", new int[]{0}));
+        permissionParser.set(76, result(13, false)); permissionParser.set(77, new ImmutableInstruction21t(Opcode.IF_NEZ, 13, 1));
+        permissionParser.set(78, new ImmutableInstruction21s(Opcode.CONST_16, 13, -128));
+        permissionParser.set(79, new ImmutableInstruction22t(Opcode.IF_NE, 11, 13, 1));
+        permissionParser.set(80, type(Opcode.NEW_INSTANCE, 2, PERMISSION));
+        permissionParser.set(81, new ImmutableInstruction3rc(Opcode.INVOKE_DIRECT_RANGE, 2, 8, AccountDexFixture.ref(PERMISSION, "<init>", "V", permissionParameters)));
+        permissionParser.set(82, returns(2, true));
+        permissionParser.set(83, type(Opcode.NEW_INSTANCE, 13, PERMISSION)); permissionParser.set(84, integer(12, 0));
+        permissionParser.set(92, new ImmutableInstruction12x(Opcode.MOVE_OBJECT, 3, 13));
+        permissionParser.set(93, new ImmutableInstruction3rc(Opcode.INVOKE_DIRECT_RANGE, 3, 10, AccountDexFixture.ref(PERMISSION, "<init>", "V", permissionDefaults)));
+        permissionParser.set(94, returns(3, true)); permissionParser.set(108, returns(1, true));
+        branch(permissionParser, 77, 95); branch(permissionParser, 79, 83);
         if (patched) {
-            if (variant.equals("error-permission-hook")) permissionParser.add(118, hook("permissionParsed", new int[]{3, 13}, OBJECT, "I"));
-            permissionParser.add(104, hook("permissionParsed", new int[]{5, variant.equals("wrong-permission-mask") ? 4 : 13}, OBJECT, "I"));
-            permissionParser.add(84, hook("permissionParsed", new int[]{14, 13}, OBJECT, "I"));
-            branch(permissionParser, 65, 107); branch(permissionParser, 67, 86);
+            if (variant.equals("error-permission-hook")) permissionParser.add(108, hook("permissionParsed", new int[]{1, 11}, OBJECT, "I"));
+            permissionParser.add(94, hook("permissionParsed", new int[]{3, variant.equals("wrong-permission-mask") ? 2 : 11}, OBJECT, "I"));
+            permissionParser.add(82, hook("permissionParsed", new int[]{2, 11}, OBJECT, "I"));
+            branch(permissionParser, 77, 97); branch(permissionParser, 79, 84);
         }
-        classes.put(writer, clazz(writer, List.of(), List.of(), List.of(method(writer, "fromJson", OBJECT, PUBLIC, 24, permissionParser, "Leba;"),
+        classes.put(writer, clazz(writer, List.of(), List.of(), List.of(method(writer, "fromJson", OBJECT, PUBLIC, 15, permissionParser, "Lc8b;"),
                 method(writer, "toJson", "V", PUBLIC, 3,
                 List.of(literal(0, "can_edit"), call(Opcode.INVOKE_VIRTUAL, PERMISSION, "b", BOOLEAN, new int[]{2}), result(0, true),
-                        literal(0, "show_mature_content"), call(Opcode.INVOKE_VIRTUAL, PERMISSION, "f", BOOLEAN, new int[]{2}), result(0, true), end()), "Ldca;", OBJECT))));
+                        literal(0, "show_mature_content"), call(Opcode.INVOKE_VIRTUAL, PERMISSION, "f", BOOLEAN, new int[]{2}), result(0, true), end()), "Lb9b;", OBJECT))));
         classes.put(API, clazz(API, List.of(), List.of(immutableField(API, "response", OBJECT), immutableField(API, "metaData", META)),
                 List.of(getter(API, "getResponse", OBJECT, "response", Opcode.IGET_OBJECT), getter(API, "getMetaData", META, "metaData", Opcode.IGET_OBJECT))));
         classes.put(META, clazz(META, List.of(), List.of(immutableField(META, "status", "I")), List.of(getter(META, "getStatus", "I", "status", Opcode.IGET))));
@@ -178,18 +179,18 @@ public final class MatureDexFixture {
                 call(Opcode.INVOKE_DIRECT, REQUESTER, "<init>", "V", new int[]{0, variant.equals("wrong-service-param") ? 7 : 8}, OBJECT),
                 hook("service", new int[]{0}, OBJECT)));
         classes.put(REPOSITORY, clazz(REPOSITORY, List.of("Lc84;"), List.of(immutableField(REPOSITORY, "b", SERVICE)),
-                List.of(method(REPOSITORY, "<init>", "V", PUBLIC | AccessFlags.CONSTRUCTOR.getValue(), 9, repo, "Ljn6;", SERVICE))));
-        Method get = method(SERVICE, "getCommunityLabelUserConfig", OBJECT, PUBLIC | AccessFlags.ABSTRACT.getValue(), 0, null, "Lj45;");
+                List.of(method(REPOSITORY, "<init>", "V", PUBLIC | AccessFlags.CONSTRUCTOR.getValue(), 9, repo, "Lsh7;", SERVICE))));
+        Method get = method(SERVICE, "getCommunityLabelUserConfig", OBJECT, PUBLIC | AccessFlags.ABSTRACT.getValue(), 0, null, "Lbx5;");
         get = new ImmutableMethod(SERVICE, get.getName(), get.getParameters(), get.getReturnType(), get.getAccessFlags(),
                 Set.of(new ImmutableAnnotation(AnnotationVisibility.RUNTIME, patched && variant.equals("unsafe-native-request-verb") ? "Lretrofit2/http/POST;" : "Lretrofit2/http/GET;", Set.of(new ImmutableAnnotationElement("value", new ImmutableStringEncodedValue("v2/user/content_filters"))))), Set.of(), null);
         classes.put(SERVICE, new ImmutableClassDef(SERVICE, PUBLIC | AccessFlags.INTERFACE.getValue() | AccessFlags.ABSTRACT.getValue(), OBJECT,
                 List.of(), null, Set.of(), List.of(), List.of(get)));
-        classes.put("Lj45;", AccountDexFixture.contract("Lj45;", new String[]{"getContext", "resumeWith"}, new String[]{"Lue5;", "V"}, new String[][]{new String[0], {OBJECT}}));
-        classes.put("Lma7;", clazz("Lma7;", List.of("Lue5;"), List.of(new ImmutableField("Lma7;", "a", "Lma7;", PUBLIC | STATIC | AccessFlags.FINAL.getValue(), null, Set.of(), Set.of())),
-                List.of(method("Lma7;", "toString", STRING, PUBLIC, 1, List.of(literal(0, "EmptyCoroutineContext"), returns(0, true))))));
-        classes.put("Lz5a;", new ImmutableClassDef("Lz5a;", PUBLIC, "Lb6a;", List.of(), null, Set.of(), List.of(), List.of()));
-        classes.put("Lb6a;", clazz("Lb6a;", List.of(), List.of(), List.of(method("Lb6a;", "g", OBJECT, PUBLIC | STATIC, 1,
-                List.of(new ImmutableInstruction21c(Opcode.SGET_OBJECT, 0, new ImmutableFieldReference("Llf5;", "COROUTINE_SUSPENDED", "Llf5;")), returns(0, true))))));
+        classes.put("Lbx5;", AccountDexFixture.contract("Lbx5;", new String[]{"getContext", "resumeWith"}, new String[]{"Ly76;", "V"}, new String[][]{new String[0], {OBJECT}}));
+        classes.put("Ly58;", clazz("Ly58;", List.of("Ly76;"), List.of(new ImmutableField("Ly58;", "a", "Ly58;", PUBLIC | STATIC | AccessFlags.FINAL.getValue(), null, Set.of(), Set.of())),
+                List.of(method("Ly58;", "toString", STRING, PUBLIC, 1, List.of(literal(0, "EmptyCoroutineContext"), returns(0, true))))));
+        classes.put("Ls2b;", new ImmutableClassDef("Ls2b;", PUBLIC, "Lu2b;", List.of(), null, Set.of(), List.of(), List.of()));
+        classes.put("Lu2b;", clazz("Lu2b;", List.of(), List.of(), List.of(method("Lu2b;", "g", OBJECT, PUBLIC | STATIC, 1,
+                List.of(new ImmutableInstruction21c(Opcode.SGET_OBJECT, 0, new ImmutableFieldReference("Lp86;", "COROUTINE_SUSPENDED", "Lp86;")), returns(0, true))))));
         if (!patched) return;
         contract(classes, "HushMatureAccount", new String[]{"hushAge", "hushCanModifySafeMode", "hushAgeVerification"}, new String[]{"I", "Z", OBJECT});
         contract(classes, "HushAgeVerification", new String[]{"hushBlockApp"}, new String[]{"Z"});
@@ -210,19 +211,19 @@ public final class MatureDexFixture {
         List<Instruction> fetch = new ArrayList<>(List.of(field(Opcode.IGET_OBJECT, 0, 4, REQUESTER, "service", OBJECT), type(Opcode.CHECK_CAST, 0, SERVICE),
                 type(Opcode.NEW_INSTANCE, 1, CONTINUATION), call(Opcode.INVOKE_DIRECT, CONTINUATION, "<init>", "V", new int[]{1, 5}, OBJECT),
                 call(variant.equals("request-virtual") ? Opcode.INVOKE_VIRTUAL : Opcode.INVOKE_INTERFACE, SERVICE,
-                        variant.equals("request-setter") ? "setCommunityLabelUserConfig" : "getCommunityLabelUserConfig", OBJECT, new int[]{0, 1}, "Lj45;"), result(2, true),
-                call(Opcode.INVOKE_STATIC, "Lz5a;", "g", OBJECT, new int[]{}), result(3, true),
+                        variant.equals("request-setter") ? "setCommunityLabelUserConfig" : "getCommunityLabelUserConfig", OBJECT, new int[]{0, 1}, "Lbx5;"), result(2, true),
+                call(Opcode.INVOKE_STATIC, "Ls2b;", "g", OBJECT, new int[]{}), result(3, true),
                 new ImmutableInstruction22t(Opcode.IF_EQ, 2, 3, 1), hook("received", new int[]{5, 2}, OBJECT, OBJECT), end()));
         branch(fetch, 8, variant.equals("bad-suspension") ? 9 : 10);
         classes.put(REQUESTER, clazz(REQUESTER, List.of(BASE + "mature/HushMatureService;"), List.of(immutableField(REQUESTER, "service", OBJECT)), List.of(
                 method(REQUESTER, "<init>", "V", PUBLIC | AccessFlags.CONSTRUCTOR.getValue(), 2,
                         List.of(call(Opcode.INVOKE_DIRECT, OBJECT, "<init>", "V", new int[]{0}), field(Opcode.IPUT_OBJECT, 1, 0, REQUESTER, "service", OBJECT), end()), OBJECT),
                 method(REQUESTER, "hushFetchMaturePermission", "V", PUBLIC, 6, fetch, OBJECT))));
-        classes.put(CONTINUATION, clazz(CONTINUATION, variant.equals("missing-continuation") ? List.of() : List.of("Lj45;"), List.of(immutableField(CONTINUATION, "request", OBJECT)), List.of(
+        classes.put(CONTINUATION, clazz(CONTINUATION, variant.equals("missing-continuation") ? List.of() : List.of("Lbx5;"), List.of(immutableField(CONTINUATION, "request", OBJECT)), List.of(
                 method(CONTINUATION, "<init>", "V", PUBLIC | AccessFlags.CONSTRUCTOR.getValue(), 2,
                         List.of(call(Opcode.INVOKE_DIRECT, OBJECT, "<init>", "V", new int[]{0}), field(Opcode.IPUT_OBJECT, 1, 0, CONTINUATION, "request", OBJECT), end()), OBJECT),
-                method(CONTINUATION, "getContext", "Lue5;", PUBLIC, 2,
-                        List.of(new ImmutableInstruction21c(Opcode.SGET_OBJECT, 0, new ImmutableFieldReference("Lma7;", variant.equals("wrong-context") ? "b" : "a", "Lma7;")), returns(0, true))),
+                method(CONTINUATION, "getContext", "Ly76;", PUBLIC, 2,
+                        List.of(new ImmutableInstruction21c(Opcode.SGET_OBJECT, 0, new ImmutableFieldReference("Ly58;", variant.equals("wrong-context") ? "b" : "a", "Ly58;")), returns(0, true))),
                 method(CONTINUATION, "resumeWith", "V", PUBLIC, 3,
                         List.of(field(Opcode.IGET_OBJECT, 0, 1, CONTINUATION, "request", OBJECT), hook("received", new int[]{0, 2}, OBJECT, OBJECT), end()), OBJECT))));
         classes.put(HELPER, clazz(HELPER, List.of(), List.of(), List.of(

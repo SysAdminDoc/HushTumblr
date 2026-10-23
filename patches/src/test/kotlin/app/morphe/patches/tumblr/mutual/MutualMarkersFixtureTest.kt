@@ -32,7 +32,7 @@ import org.junit.experimental.categories.Category
 class MutualMarkersFixtureTest {
     private val types = setOf(MUTUAL_HEADER, MUTUAL_USER, MUTUAL_PRIMARY, MUTUAL_SHORT, "Lcom/tumblr/rumblr/model/blog/BlogInfo;",
         MUTUAL_BLOG, MUTUAL_FOLLOWER, MUTUAL_PAGE, MUTUAL_PAGINATION, MUTUAL_LINK, MUTUAL_RESPONSE, MUTUAL_METADATA,
-        MUTUAL_SERVICE, "Lcom/tumblr/ui/fragment/FollowerFragment;", "Lcom/tumblr/CoreApp;", "Lretrofit2/Call;", "Lretrofit2/Response;", "Lpck;") +
+        MUTUAL_SERVICE, "Lcom/tumblr/ui/fragment/FollowerFragment;", "Lcom/tumblr/CoreApp;", "Lretrofit2/Call;", "Lretrofit2/Response;", "Lzql;") +
         listOf(MUTUAL_PRIMARY, MUTUAL_SHORT, MUTUAL_FOLLOWER, MUTUAL_PAGE, MUTUAL_PAGINATION).map { it.removeSuffix(";") + "JsonAdapter;" }
 
     @Test fun `native name badges follow actions and accessibility remain intact around three hooks`() {
@@ -74,7 +74,7 @@ class MutualMarkersFixtureTest {
             }
             val execute = source.methods.single { it.name == "execute" }; val body = execute.instructionList()
             assertEquals(8, execute.implementation!!.registerCount); assertEquals(16, body.size)
-            assertEquals("Lpck;->timeout(JLjava/util/concurrent/TimeUnit;)Lpck;", body[5].methodRef().toString())
+            assertEquals("Lzql;->timeout(JLjava/util/concurrent/TimeUnit;)Lzql;", body[5].methodRef().toString())
             assertEquals(listOf(1, 6, 7, 2), body[5].namedRegisters())
             assertEquals("Lretrofit2/Call;->execute()Lretrofit2/Response;", body[6].methodRef().toString())
             assertEquals(14, target(body, 10))
@@ -109,7 +109,7 @@ class MutualMarkersFixtureTest {
                 { c -> c.mutableClassDefBy(MUTUAL_BLOG).methods.single { it.name == "W0" }.replaceInstruction(39,
                     "invoke-virtual { p0 }, $MUTUAL_SHORT->m()Ljava/lang/String;") },
                 { c -> c.mutableClassDefBy(MUTUAL_SERVICE).methods.removeAll { it.name == "followersPagination" } },
-                { c -> c.mutableClassDefBy("Lpck;").methods.removeAll { it.name == "timeout" } },
+                { c -> c.mutableClassDefBy("Lzql;").methods.removeAll { it.name == "timeout" } },
             )
             for (fault in faults) {
                 val context = PatchContexts.of(ExtensionDex.classes() + classes.values); fault(context)

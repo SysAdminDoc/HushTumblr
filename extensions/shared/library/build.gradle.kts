@@ -7,7 +7,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        // Tumblr 46.5.0.109 declares minSdk 26, and this library only ever runs inside it.
+        // Tumblr 46.8.1.100 declares minSdk 26, and this library only ever runs inside it.
         minSdk = 26
     }
 

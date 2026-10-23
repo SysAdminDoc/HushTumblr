@@ -78,7 +78,7 @@ internal class TimelinePagingPlan(
     val scratch: Int,
     /** The register `items.isEmpty()` was kept in. */
     val empty: Int,
-    /** `TimelinePaginationLink.e()`, the link to the next page or null. */
+    /** `TimelinePaginationLink.d()`, the link to the next page or null. */
     val nextLink: String,
     /** `PaginationFragment.l`, true once there are no more pages. */
     val endFlag: String,

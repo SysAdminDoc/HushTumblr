@@ -27,7 +27,6 @@ import com.reandroid.arsc.chunk.xml.ResXmlDocument
 import com.reandroid.arsc.chunk.xml.ResXmlElement
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.experimental.categories.Category
@@ -39,10 +38,10 @@ private const val COMMUNITIES_BUTTON = "communities_button_wrapper"
 /** The flag Tumblr lists the Communities tab by, a constant of its feature enum. */
 private const val COMMUNITIES_TAB_FLAG = "COMMUNITIES_TAB_BAR_ITEM"
 
-/** The bar's layout, and the Communities and Tumblr TV buttons' ids in it (Tumblr 46.5.0.109). */
+/** The bar's layout, and the Communities and Tumblr TV buttons' ids in it (Tumblr 46.8.1.100). */
 private const val BAR_LAYOUT = "res/layout/root_activity_nav_bar.xml"
-private const val COMMUNITIES_BUTTON_ID = 0x7f0b0331
-private const val TUMBLR_TV_BUTTON_ID = 0x7f0b0d5e
+private const val COMMUNITIES_BUTTON_ID = 0x7f0b0334
+private const val TUMBLR_TV_BUTTON_ID = 0x7f0b0d91
 
 /** `android:visibility`, and its value for gone. */
 private const val ANDROID_VISIBILITY = 0x010100dc
@@ -163,13 +162,13 @@ class BottomBarTabsFixtureTest {
     }
 
     /**
-     * The other half. The bar's layout shows the Communities button until code hides it, and keeps
-     * the Tumblr TV button gone until code shows it. A tab Tumblr leaves out of its list never
-     * reaches that code, which costs nothing for Tumblr TV and leaves Communities a button with no
-     * tab behind it.
+     * The other half. The bar's layout keeps the Communities and Tumblr TV buttons gone until code
+     * shows them, so a tab Tumblr leaves out of its list leaves no button behind. Tumblr 46.5.0.109
+     * showed the Communities button until code hid it; hiding it after the controller runs covers
+     * both layouts.
      */
     @Test
-    fun `each declared build's bar layout shows the Communities button until code hides it`() {
+    fun `each declared build's bar layout keeps the Communities and Tumblr TV buttons gone until code shows them`() {
         for (build in Fixtures.declaredBuilds()) {
             ZipFile(build).use { zip ->
                 val document = ResXmlDocument()
@@ -177,8 +176,8 @@ class BottomBarTabsFixtureTest {
                 val buttons = document.documentElement.elements.asSequence().map { it as ResXmlElement }.toList()
                 val communities = buttons.single { it.idAttribute?.data == COMMUNITIES_BUTTON_ID }
                 val tumblrTv = buttons.single { it.idAttribute?.data == TUMBLR_TV_BUTTON_ID }
-                assertNull("${build.name}: the Communities button has no visibility of its own, so it shows",
-                    communities.searchAttributeByResourceId(ANDROID_VISIBILITY))
+                assertEquals("${build.name}: the Communities button starts gone", GONE,
+                    communities.searchAttributeByResourceId(ANDROID_VISIBILITY)?.data)
                 assertEquals("${build.name}: the Tumblr TV button starts gone", GONE,
                     tumblrTv.searchAttributeByResourceId(ANDROID_VISIBILITY).data)
             }

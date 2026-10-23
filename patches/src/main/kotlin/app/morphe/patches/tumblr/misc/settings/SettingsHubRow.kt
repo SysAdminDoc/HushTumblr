@@ -119,7 +119,9 @@ internal class SettingsHubPlan(
  * through a static `(List)List` call. A row is plain data with a kind (an enum), an int title, an
  * icon and a nullable Integer subtitle, and only two methods read its kind: the static key the
  * screen's lazy list tells rows apart by, which a lambda calls, and the tap handler, which reads
- * its row from a field. Found by reading Tumblr 46.5.0.109 (2026-10-11).
+ * its row from a field. Found by reading Tumblr 46.5.0.109 (2026-10-11). In 46.8.1.100 the key
+ * is private and the lambda, outside the screen's package, reaches it through a synthetic
+ * accessor, so the key hook follows that accessor to its one caller (2026-10-22).
  */
 internal fun BytecodePatchContext.resolveSettingsHub(): SettingsHubPlan {
     requireExtensionHook(WHAT, "$SETTINGS_HUB_ROW->titleRes()I")
@@ -197,10 +199,22 @@ internal fun BytecodePatchContext.resolveSettingsHub(): SettingsHubPlan {
         method.isStatic() && method.hasShape(listOf(rowType), OBJECT) &&
             method.instructionList().any { it.methodRef()?.sameAs(kindGetter) == true }
     }.only(WHAT, "the key the Settings screen's list holds a row by")
-    val keyCaller = hub.filter { method -> method.instructionList().any { it.methodRef()?.sameAs(keyFunction) == true } }
+    var keyTarget: Method = keyFunction
+    var keyCaller = hub.filter { method -> method.instructionList().any { it.methodRef()?.sameAs(keyTarget) == true } }
         .only(WHAT, "the call for a row's key")
+    // 46.8.1.100 makes the key private: a one-register synthetic accessor in the screen's package
+    // forwards to it, so the row and its key share v0 there. A lambda outside the package calls
+    // that accessor with them apart, so the hook goes in the accessor's one caller instead.
+    if (keyCaller.forwardsTo(keyFunction)) {
+        keyTarget = keyCaller
+        val callers = mutableListOf<Method>()
+        classDefForEach { owner ->
+            owner.methods.filterTo(callers) { method -> method.instructionList().any { it.methodRef()?.sameAs(keyTarget) == true } }
+        }
+        keyCaller = callers.only(WHAT, "the call for a row's key through its accessor")
+    }
     val keyBody = keyCaller.instructionList()
-    val keyCall = keyBody.indexOfFirst { it.methodRef()?.sameAs(keyFunction) == true }
+    val keyCall = keyBody.indexOfFirst { it.methodRef()?.sameAs(keyTarget) == true }
     val keyResult = keyBody.getOrNull(keyCall + 1)
     val keyReturn = keyBody.getOrNull(keyCall + 2)
     requireShape(WHAT, keyResult?.opcode == Opcode.MOVE_RESULT_OBJECT && keyReturn?.opcode == Opcode.RETURN_OBJECT &&
@@ -293,6 +307,15 @@ internal fun BytecodePatchContext.addSettingsHubRow(plan: SettingsHubPlan) {
         """,
         ExternalLabel("hush_settings_row_tumblr", plan.click.getInstruction(0)),
     )
+}
+
+/** A static synthetic accessor whose whole body hands its one argument to [target] and returns the result. */
+private fun Method.forwardsTo(target: Method): Boolean {
+    val body = instructionList()
+    return isStatic() && AccessFlags.SYNTHETIC.isSet(accessFlags) && body.size == 3 &&
+        body[0].opcode == Opcode.INVOKE_STATIC && body[0].methodRef()?.sameAs(target) == true &&
+        (body[0] as FiveRegisterInstruction).registerCount == 1 &&
+        body[1].opcode == Opcode.MOVE_RESULT_OBJECT && body[2].opcode == Opcode.RETURN_OBJECT
 }
 
 /** `Lclass;->name(params)result`, as smali names a method. */

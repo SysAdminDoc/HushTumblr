@@ -77,21 +77,21 @@ internal data class MutualPlan(val bind: MutableMethod, val fullBind: MutableMet
 
 internal fun BytecodePatchContext.resolveMutualMarkers(): MutualPlan {
     listOf(MUTUAL_BIND, MUTUAL_CLEAR).forEach { requireExtensionHook(PATCH, it) }
-    val bind = mutualMethod(MUTUAL_HEADER, "t2", listOf("Lzve;", "Lo9m;", "Z", MUTUAL_BLOG, "Z"), "V")
+    val bind = mutualMethod(MUTUAL_HEADER, "t2", listOf("Lhyf;", "Lppn;", "Z", MUTUAL_BLOG, "Z"), "V")
     val body = bind.instructionList()
     requireShape(PATCH, bind.implementation!!.registerCount == 21 && body.size == 128 && bind.implementation!!.tryBlocks.isEmpty()
         && body[1].opcode == Opcode.MOVE_OBJECT_FROM16 && body[1].namedRegisters() == listOf(5, 19)
-        && body[14].methodRef()?.toString() == "$MUTUAL_HEADER->Z0(Lzve;$MUTUAL_BLOG)$STRING"
+        && body[14].methodRef()?.toString() == "$MUTUAL_HEADER->Z0(Lhyf;$MUTUAL_BLOG)$STRING"
         && body[14].namedRegisters() == listOf(15, 2, 5) && body[15].opcode == Opcode.MOVE_RESULT_OBJECT && body[15].namedRegisters() == listOf(13)
         && body[104].fieldRef()?.toString() == "$MUTUAL_HEADER->K:Landroid/widget/TextView;" && body[104].namedRegisters() == listOf(0, 15)
         && body[105].methodRef()?.toString() == "Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V"
         && body[105].namedRegisters() == listOf(0, 8) && body.subList(2, 106).none { writesRegister(it, 5) }
         && body.subList(16, 106).none { writesRegister(it, 13) }, "the native displayed blog, name span or holder changed")
-    val name = mutualMethod(MUTUAL_HEADER, "Z0", listOf("Lzve;", MUTUAL_BLOG), STRING).instructionList()
-    requireShape(PATCH, name.size == 17 && name[4].methodRef()?.toString() == "$MUTUAL_BLOG->e0()$STRING",
+    val name = mutualMethod(MUTUAL_HEADER, "Z0", listOf("Lhyf;", MUTUAL_BLOG), STRING).instructionList()
+    requireShape(PATCH, name.size == 17 && name[4].methodRef()?.toString() == "$MUTUAL_BLOG->d0()$STRING",
         "the native displayed-name fallback changed")
     val full = classDefByOrNull(MUTUAL_HEADER)?.methods?.filter { it.name == "S0" && it.returnType == "V" }.orEmpty().only(PATCH, "full post-header bind")
-    requireShape(PATCH, full.implementation?.registerCount == 35 && full.parameterTypes.size == 18 && full.parameterTypes.first() == "Lzve;"
+    requireShape(PATCH, full.implementation?.registerCount == 35 && full.parameterTypes.size == 18 && full.parameterTypes.first() == "Lhyf;"
         && full.instructionList().size == 297 && full.instructionList()[7].methodRef()?.toString() == "$MUTUAL_HEADER->X1()V",
         "the unconditional post-header recycle boundary changed")
     val detach = mutualMethod(MUTUAL_HEADER, "onDetachedFromWindow", emptyList(), "V")
@@ -112,7 +112,7 @@ internal fun BytecodePatchContext.resolveMutualMarkers(): MutualPlan {
     requireShape(PATCH, primaryDefaultMethod.implementation?.registerCount == 129 && primaryDefaults.size == 283
         && primaryConstructor.implementation?.registerCount == 110 && primaryBody.size == 83
         && primaryConstructor.parameterTypes.sumOf { if (it == "J" || it == "D") 2 else 1 } == 60
-        && primaryDefaultMethod.parameterTypes.takeLast(3) == listOf("I", "I", "Lz76;")
+        && primaryDefaultMethod.parameterTypes.takeLast(3) == listOf("I", "I", "Lr17;")
         && primaryBody[11].opcode == Opcode.MOVE_OBJECT_FROM16 && primaryBody[11].namedRegisters() == listOf(0, 49)
         && primaryBody.subList(12, 60).none { writesRegister(it, 0) }
         && primaryBody[58].opcode == Opcode.MOVE_FROM16 && primaryBody[58].namedRegisters() == listOf(1, 94)
@@ -137,7 +137,7 @@ internal fun BytecodePatchContext.resolveMutualMarkers(): MutualPlan {
     requireDirectGetter(shortName, "a", STRING); requireDirectGetter(shortUuid, "g", STRING)
     requireShape(PATCH, classDefByOrNull(MUTUAL_PRIMARY)?.superclass == "Lcom/tumblr/rumblr/model/blog/BlogInfo;"
         && classDefByOrNull("Lcom/tumblr/rumblr/model/blog/BlogInfo;")?.superclass == MUTUAL_SHORT, "primary blog inheritance changed")
-    requireDirectGetter("$MUTUAL_BLOG->e0()$STRING", "a", STRING, immutable = false)
+    requireDirectGetter("$MUTUAL_BLOG->d0()$STRING", "a", STRING, immutable = false)
     requireDirectGetter("$MUTUAL_BLOG->t0()$STRING", "E", STRING, immutable = false)
     val copied = mutualMethod(MUTUAL_BLOG, "W0", listOf(MUTUAL_SHORT), MUTUAL_BLOG).instructionList()
     requireShape(PATCH, copied.size == 116 && copied[39].methodRef()?.toString() == shortUuid
@@ -153,7 +153,7 @@ internal fun BytecodePatchContext.resolveMutualMarkers(): MutualPlan {
     val followerBody = followerConstructor.instructionList()
     requireShape(PATCH, followerDefaultMethod.implementation?.registerCount == 10 && followerDefaults.size == 18
         && followerConstructor.implementation?.registerCount == 7 && followerBody.size == 7
-        && followerDefaultMethod.parameterTypes == followerConstructor.parameterTypes + listOf("I", "Lz76;")
+        && followerDefaultMethod.parameterTypes == followerConstructor.parameterTypes + listOf("I", "Lr17;")
         && followerBody[4].opcode == Opcode.IPUT_BOOLEAN && followerBody[4].namedRegisters() == listOf(5, 0)
         && followerBody[4].fieldRef()?.toString() == "$MUTUAL_FOLLOWER->isFollowing:Z"
         && followerDefaults[10].opcode == Opcode.AND_INT_LIT8 && followerDefaults[10].namedRegisters() == listOf(9, 8)
@@ -191,16 +191,16 @@ internal fun BytecodePatchContext.resolveMutualMarkers(): MutualPlan {
         && listOf(get, getNext).all { method -> method.parameters[1].annotations.any { it.type == "Lretrofit2/http/Query;"
             && it.elements.any { e -> e.name == "value" && (e.value as? StringEncodedValue)?.value == "fields[blogs]" } } },
         "the native follower reads are no longer scoped GET requests")
-    val original = mutualMethod("Lcom/tumblr/ui/fragment/FollowerFragment;", "a5", emptyList(), CALL).instructionList()
+    val original = mutualMethod("Lcom/tumblr/ui/fragment/FollowerFragment;", "c5", emptyList(), CALL).instructionList()
     val fields = original.getOrNull(13)?.stringRef()
     requireShape(PATCH, original.size == 18 && original[9].stringRef() == ".tumblr.com"
         && original[14].methodRef()?.toString() == get.toString() && fields != null && "uuid" in fields.split(','), "the native primary-domain follower request changed")
     requireShape(PATCH, mutualMethod("Lcom/tumblr/CoreApp;", "X", emptyList(), MUTUAL_SERVICE).isStatic(), "the native authenticated service getter changed")
-    listOf("execute" to RESPONSE, "timeout" to "Lpck;", "cancel" to "V").forEach { (method, result) ->
+    listOf("execute" to RESPONSE, "timeout" to "Lzql;", "cancel" to "V").forEach { (method, result) ->
         val declared = mutualMethod(CALL, method, emptyList(), result)
         requireShape(PATCH, AccessFlags.ABSTRACT.isSet(declared.accessFlags), "the native Retrofit call interface changed")
     }
-    mutualMethod("Lpck;", "timeout", listOf("J", "Ljava/util/concurrent/TimeUnit;"), "Lpck;")
+    mutualMethod("Lzql;", "timeout", listOf("J", "Ljava/util/concurrent/TimeUnit;"), "Lzql;")
     mutualMethod(RESPONSE, "isSuccessful", emptyList(), "Z"); mutualMethod(RESPONSE, "body", emptyList(), OBJECT)
 
     val bridges = listOf(
@@ -208,7 +208,7 @@ internal fun BytecodePatchContext.resolveMutualMarkers(): MutualPlan {
         mutualBridge(MUTUAL_USER, "HushMutualAccount", listOf("hushMutualBlogs" to (LIST to "iget-object v0, p0, $MUTUAL_USER->k:$LIST\nreturn-object v0"))),
         mutualBridge(MUTUAL_PRIMARY, "HushPrimaryBlog", listOf("hushMutualPrimary" to ("Z" to getter(primary, "Z")))),
         mutualBridge(MUTUAL_SHORT, "HushMutualBlog", listOf("hushMutualName" to (STRING to getter(shortName, STRING)), "hushMutualUuid" to (STRING to getter(shortUuid, STRING)))),
-        mutualBridge(MUTUAL_BLOG, "HushMutualBlog", listOf("hushMutualName" to (STRING to getter("$MUTUAL_BLOG->e0()$STRING", STRING)), "hushMutualUuid" to (STRING to getter("$MUTUAL_BLOG->t0()$STRING", STRING)))),
+        mutualBridge(MUTUAL_BLOG, "HushMutualBlog", listOf("hushMutualName" to (STRING to getter("$MUTUAL_BLOG->d0()$STRING", STRING)), "hushMutualUuid" to (STRING to getter("$MUTUAL_BLOG->t0()$STRING", STRING)))),
         mutualBridge(MUTUAL_FOLLOWER, "HushMutualFollower", listOf("hushMutualFollowing" to ("Z" to getter(following, "Z")), "hushMutualFollowerBlog" to (OBJECT to getter(followerBlog, OBJECT)))),
         mutualBridge(MUTUAL_PAGE, "HushMutualPage", listOf("hushMutualUsers" to (LIST to getter(users, LIST)), "hushMutualPagination" to (OBJECT to getter(pagination, OBJECT)), "hushMutualLinks" to (OBJECT to getter(links, OBJECT)))),
         mutualBridge(MUTUAL_PAGINATION, "HushMutualPagination", listOf("hushMutualNext" to (OBJECT to getter(next, OBJECT)))),
@@ -230,10 +230,10 @@ internal fun BytecodePatchContext.resolveMutualMarkers(): MutualPlan {
         replacement(mutualMethod(MUTUAL_SOURCE, "execute", listOf(OBJECT, "J"), OBJECT), 8, """
             move-object v0, p1
             check-cast v0, $CALL
-            invoke-interface { v0 }, $CALL->timeout()Lpck;
+            invoke-interface { v0 }, $CALL->timeout()Lzql;
             move-result-object v1
             sget-object v2, Ljava/util/concurrent/TimeUnit;->MILLISECONDS:Ljava/util/concurrent/TimeUnit;
-            invoke-virtual { v1, p2, p3, v2 }, Lpck;->timeout(JLjava/util/concurrent/TimeUnit;)Lpck;
+            invoke-virtual { v1, p2, p3, v2 }, Lzql;->timeout(JLjava/util/concurrent/TimeUnit;)Lzql;
             invoke-interface { v0 }, $CALL->execute()$RESPONSE
             move-result-object v1
             invoke-virtual { v1 }, $RESPONSE->isSuccessful()Z
@@ -282,7 +282,7 @@ private fun BytecodePatchContext.requireDirectGetter(descriptor: String, field: 
         && body[1].namedRegisters() == listOf(0), "$descriptor direct getter changed")
 }
 private fun BytecodePatchContext.mutualJsonGetter(owner: String, key: String, result: String): String {
-    val writer = mutualMethod(owner.removeSuffix(";") + "JsonAdapter;", "toJson", listOf("Ldca;", OBJECT), "V").instructionList()
+    val writer = mutualMethod(owner.removeSuffix(";") + "JsonAdapter;", "toJson", listOf("Lb9b;", OBJECT), "V").instructionList()
     val at = writer.indexOfFirst { it.stringRef() == key }
     requireShape(PATCH, at >= 0, "$owner JSON key $key is missing")
     val getter = writer.drop(at + 1).takeWhile { it.stringRef() == null }.firstNotNullOfOrNull {

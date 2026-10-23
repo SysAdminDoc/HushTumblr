@@ -53,7 +53,7 @@ internal fun BytecodePatchContext.resolvePostJsonPresence(): PostJsonPresencePla
     requireShape(PATCH, model != null && model.fields.none { it.name in setOf("hushRootTrailPresent", "hushPaidContextKnown") }
         && model.methods.none { it.name == "hushSetJsonPresence" }, "the shared presence bridge already exists or Post is missing")
     val reader = classDefByOrNull(ADAPTER)?.methods?.singleOrNull {
-        it.name == "fromJson" && it.hasShape(listOf("Leba;"), "Ljava/lang/Object;") && !it.isStatic()
+        it.name == "fromJson" && it.hasShape(listOf("Lc8b;"), "Ljava/lang/Object;") && !it.isStatic()
     }
     requireShape(PATCH, reader?.implementation?.registerCount == 178, "the erased Post JSON reader changed")
     val method = reader!!
@@ -80,30 +80,30 @@ internal fun BytecodePatchContext.resolvePostJsonPresence(): PostJsonPresencePla
     val allocations = body.indices.filter { body[it].opcode == Opcode.NEW_INSTANCE &&
         (body[it] as? ReferenceInstruction)?.reference.toString() == POST }
     val returns = body.indices.filter { body[it].opcode == Opcode.RETURN_OBJECT }
-    val ctor = body.getOrNull(2094) as? RegisterRangeInstruction
-    val ctorRef = body.getOrNull(2094)?.methodRef()
-    val shape = body.size == 2112 && literal(10, Opcode.CONST_4, 10, -1)
+    val ctor = body.getOrNull(2166) as? RegisterRangeInstruction
+    val ctorRef = body.getOrNull(2166)?.methodRef()
+    val shape = body.size == 2183 && literal(10, Opcode.CONST_4, 10, -1)
         && move(66, Opcode.MOVE, 4, 10) && (67..69).all { move(it, Opcode.MOVE, it - 62, it - 63) }
         && literal(168, Opcode.CONST, 161, 0x80000.inv()) && literal(175, Opcode.CONST, 168, 0x4000000.inv())
-        && and(1599, 168) && and(1732, 161) && move(1580, Opcode.MOVE, 10, 3)
-        && literal(372, Opcode.AND_INT_LIT8, 3, -2) && (body[372] as TwoRegisterInstruction).registerB == 7
-        && move(208, Opcode.MOVE, 7, 3) && move(2027, Opcode.MOVE_FROM16, 154, 10)
-        && move(2067, Opcode.MOVE_FROM16, 158, 7) && untouched(154, 2028, 2095) && untouched(158, 2068, 2095)
-        && allocations == listOf(1908) && one(1908, Opcode.NEW_INSTANCE, 4) && constructors == listOf(2094)
+        && and(1732, 168) && and(1865, 161) && move(1713, Opcode.MOVE, 10, 3)
+        && literal(394, Opcode.AND_INT_LIT8, 3, -2) && (body[394] as TwoRegisterInstruction).registerB == 7
+        && move(211, Opcode.MOVE, 7, 3) && move(2126, Opcode.MOVE_FROM16, 154, 10)
+        && move(2070, Opcode.MOVE_FROM16, 158, 7) && untouched(154, 2127, 2167) && untouched(158, 2071, 2167)
+        && allocations == listOf(2098) && one(2098, Opcode.NEW_INSTANCE, 4) && constructors == listOf(2166)
         && ctor?.opcode == Opcode.INVOKE_DIRECT_RANGE && ctor.startRegister == 4 && ctor.registerCount == 156
-        && ctorRef?.parameterTypes?.takeLast(6)?.map { it.toString() } == listOf("I", "I", "I", "I", "I", "Lz76;")
-        && returns == listOf(2095, 2109) && one(2095, Opcode.RETURN_OBJECT, 4)
-        && literal(1901, Opcode.CONST_16, 157, 0) && one(2109, Opcode.RETURN_OBJECT, 157)
-        && untouched(157, 1902, 1906) && untouched(157, 2096, 2110) && one(1905, Opcode.IF_NEZ, 0)
-        && body[2108].methodRef().toString() == "Lf9a;->a(Ljava/lang/String;)V"
+        && ctorRef?.parameterTypes?.takeLast(6)?.map { it.toString() } == listOf("I", "I", "I", "I", "I", "Lr17;")
+        && returns == listOf(2167, 2181) && one(2167, Opcode.RETURN_OBJECT, 4)
+        && literal(2065, Opcode.CONST_16, 157, 0) && one(2181, Opcode.RETURN_OBJECT, 157)
+        && untouched(157, 2066, 2070) && untouched(157, 2168, 2182) && one(2069, Opcode.IF_NEZ, 0)
+        && body[2180].methodRef().toString() == "Ld6b;->a(Ljava/lang/String;)V"
     requireShape(PATCH, shape, "the explicit followed, can_edit and trail masks or complete Post return paths changed")
     val flow = ControlFlow.of(method)
-    val predecessors = body.indices.filter { 2095 in flow.normal[it] || 2095 in flow.exceptional[it] }
-    requireShape(PATCH, predecessors == listOf(2094), "the successful Post return no longer follows its only constructor")
-    requireShape(PATCH, 2096 in flow.normal[1905] && (2096..2109).all { target ->
-        body.indices.filter { target in flow.normal[it] || target in flow.exceptional[it] } == listOf(if (target == 2096) 1905 else target - 1)
+    val predecessors = body.indices.filter { 2167 in flow.normal[it] || 2167 in flow.exceptional[it] }
+    requireShape(PATCH, predecessors == listOf(2166), "the successful Post return no longer follows its only constructor")
+    requireShape(PATCH, 2168 in flow.normal[2069] && (2168..2181).all { target ->
+        body.indices.filter { target in flow.normal[it] || target in flow.exceptional[it] } == listOf(if (target == 2168) 2069 else target - 1)
     }, "the null error return no longer follows only its missing-fields branch")
-    val scratch = method.freeLocalsAt(PATCH, 2095, 3, reads = listOf(4, 154, 158))
+    val scratch = method.freeLocalsAt(PATCH, 2167, 3, reads = listOf(4, 154, 158))
     return PostJsonPresencePlan(mutableOf(method), scratch)
 }
 
@@ -133,7 +133,7 @@ internal fun BytecodePatchContext.applyPostJsonPresence(plan: PostJsonPresencePl
         """)
     })
     val (post, first, trail) = plan.scratch
-    plan.reader.addInstructionsAtControlFlowLabel(2095, """
+    plan.reader.addInstructionsAtControlFlowLabel(2167, """
         move-object/from16 v$post, v4
         move/from16 v$first, v154
         move/from16 v$trail, v158

@@ -86,7 +86,7 @@ public final class FeatureDexFixture {
     private static final String PAGINATION_FRAGMENT = "Lcom/tumblr/ui/fragment/PaginationFragment;";
     private static final String PAGE_LINKS = "Lcom/tumblr/timeline/model/link/TimelinePaginationLink;";
     private static final String PAGE_LINK = "Lcom/tumblr/timeline/model/link/Link;";
-    private static final String LOAD_TYPE = "Lrbk;";
+    private static final String LOAD_TYPE = "Lbql;";
     private static final String FEATURE = "Lfixture/Feature;";
     private static final String FEATURE_CHECK = "Lfixture/FeatureCheck;";
     private static final String FEATURE_SWITCHES = BASE + "flags/FeatureSwitches;";
@@ -110,9 +110,9 @@ public final class FeatureDexFixture {
     private static final String PHOTO_CONTAINER = "Lcom/tumblr/ui/widget/graywater/viewholder/PhotoContainer;";
     private static final String PHOTO_HOLDER = "Lcom/tumblr/ui/widget/graywater/viewholder/PhotoViewHolder;";
     private static final String PHOTO_ROW_ITEM = "Lcom/tumblr/ui/widget/graywater/viewholder/PhotosetRowItem;";
-    private static final String PHOTO_BINDER = "Lyn9$a;";
-    private static final String GALLERY_BINDER = "Lmyd;";
-    private static final String GALLERY_ROW = "Ljyd;";
+    private static final String PHOTO_BINDER = "Leka$a;";
+    private static final String GALLERY_BINDER = "Lg0f;";
+    private static final String GALLERY_ROW = "Ld0f;";
     private static final String ALT_TEXT = BASE + "ui/AltTextCaptions;";
     private static final String IMAGE_DESCRIPTION = BASE + "ui/HushImageDescription;";
     private static final String IMAGE_CONTAINER = BASE + "ui/HushImageContainer;";
@@ -444,13 +444,13 @@ public final class FeatureDexFixture {
                 invoke(Opcode.INVOKE_VIRTUAL, settle, 3, 4),
                 member(Opcode.IPUT_OBJECT, 6, 3, PAGINATION_FRAGMENT, "k", "Landroid/os/Parcelable;"),
                 member(Opcode.IPUT_BOOLEAN, 7, 3, PAGINATION_FRAGMENT, "l", "Z"),
-                invoke(Opcode.INVOKE_VIRTUAL, ref(PAGE_LINKS, "e", PAGE_LINK), 6), new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 6), end()));
+                invoke(Opcode.INVOKE_VIRTUAL, ref(PAGE_LINKS, "d", PAGE_LINK), 6), new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 6), end()));
         captionBranch(body, 3, 11); captionBranch(body, 5, 8);
         if (!variant.equals("clean") && !variant.equals("missing")) {
             int at = variant.equals("late") ? 3 : 2;
             List<Instruction> hook = new ArrayList<>(List.of(
                     new ImmutableInstruction11n(Opcode.CONST_4, 1, 0), new ImmutableInstruction21t(Opcode.IF_EQZ, 6, 0),
-                    invoke(Opcode.INVOKE_VIRTUAL, ref(PAGE_LINKS, variant.equals("wrong-next") ? "f" : "e", PAGE_LINK), 6),
+                    invoke(Opcode.INVOKE_VIRTUAL, ref(PAGE_LINKS, variant.equals("wrong-next") ? "f" : "d", PAGE_LINK), 6),
                     new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1),
                     invoke(Opcode.INVOKE_STATIC, ref(TIMELINE_PAGING, "onPage", "I", OBJECT, OBJECT, OBJECT, "Z"), 3, 4, 1, 7),
                     new ImmutableInstruction11x(Opcode.MOVE_RESULT, 1), new ImmutableInstruction21t(Opcode.IF_EQZ, 1, 0),
@@ -753,7 +753,7 @@ public final class FeatureDexFixture {
                         new ImmutableFieldReference(PHOTO_BINDER, variant.equals("wrong-photo-field") ? "d" : "c", IMAGE_BLOCK)),
                 invoke(Opcode.INVOKE_STATIC, ref(ALT_TEXT, "photo", VOID, OBJECT, OBJECT), variant.equals("wrong-photo-holder") ? 3 : 2, 0)));
         photo.add(new ImmutableInstruction11n(Opcode.CONST_4, 0, 0)); photo.add(end());
-        classes.put(PHOTO_BINDER, List.of(method(PHOTO_BINDER, "i", VOID, false, 5, photo, PHOTO_HOLDER, "Lvgi;", STRING)));
+        classes.put(PHOTO_BINDER, List.of(method(PHOTO_BINDER, "i", VOID, false, 5, photo, PHOTO_HOLDER, "Lmuj;", STRING)));
         List<Instruction> gallery = new ArrayList<>(), full = new ArrayList<>();
         if (hooked && !variant.equals("missing-gallery")) gallery.add(invoke(Opcode.INVOKE_STATIC, ref(ALT_TEXT, "gallery", VOID, OBJECT, OBJECT),
                 2, variant.equals("wrong-gallery-image") ? 1 : 3));
@@ -761,7 +761,7 @@ public final class FeatureDexFixture {
                 variant.equals("wrong-clear-row") ? 5 : 6));
         gallery.add(end()); full.add(end());
         classes.put(GALLERY_BINDER, List.of(method(GALLERY_BINDER, "r", VOID, false, 4, gallery, CONTEXT, PHOTO_ROW_ITEM, IMAGE_BLOCK),
-                method(GALLERY_BINDER, "n", VOID, false, 9, full, CONTEXT, "Lcom/tumblr/analytics/ScreenType;", "Lo9m;", "Lp07;", "Lx7d;", GALLERY_ROW, "Lvgi;", "Lea2;")));
+                method(GALLERY_BINDER, "n", VOID, false, 9, full, CONTEXT, "Lcom/tumblr/analytics/ScreenType;", "Lppn;", "Lqv7;", "Lq8e;", GALLERY_ROW, "Lmuj;", "Lkh2;")));
     }
 
     private static void smallCase(File root, String name, Map<String, List<Method>> classes, String family, String reason) throws Exception {
@@ -965,7 +965,7 @@ public final class FeatureDexFixture {
 
     private static void postJsonPresence(Map<String, List<Method>> classes, boolean patched, String fault) {
         String adapter = POST.substring(0, POST.length() - 1) + "JsonAdapter;";
-        String[] parameters = new String[155]; Arrays.fill(parameters, "I"); parameters[154] = "Lz76;";
+        String[] parameters = new String[155]; Arrays.fill(parameters, "I"); parameters[154] = "Lr17;";
         List<Method> model = new ArrayList<>(classes.get(POST));
         model.removeIf(m -> m.getName().equals("<init>") && m.getParameterTypes().size() == 155);
         model.add(new ImmutableMethod(POST, "<init>", Arrays.stream(parameters).map(p -> new ImmutableMethodParameter(p, Set.of(), null)).toList(),
@@ -983,39 +983,39 @@ public final class FeatureDexFixture {
                     VOID, AccessFlags.PUBLIC.getValue() | AccessFlags.SYNTHETIC.getValue(), Set.of(), Set.of(), new ImmutableMethodImplementation(4, setter, List.of(), List.of())));
         }
         classes.put(POST, model);
-        List<Instruction> reader = new ArrayList<>(); for (int k = 0; k < 2112; k++) reader.add(new ImmutableInstruction10x(Opcode.NOP));
+        List<Instruction> reader = new ArrayList<>(); for (int k = 0; k < 2183; k++) reader.add(new ImmutableInstruction10x(Opcode.NOP));
         reader.set(0, new ImmutableInstruction11n(Opcode.CONST_4, 0, 0));
         reader.set(10, new ImmutableInstruction11n(Opcode.CONST_4, 10, -1));
         reader.set(66, new ImmutableInstruction12x(Opcode.MOVE, 4, 10));
         for (int k = 67; k <= 69; k++) reader.set(k, new ImmutableInstruction12x(Opcode.MOVE, k - 62, k - 63));
         reader.set(168, new ImmutableInstruction31i(Opcode.CONST, 161, ~0x80000));
         reader.set(175, new ImmutableInstruction31i(Opcode.CONST, 168, ~0x4000000));
-        reader.set(208, new ImmutableInstruction12x(Opcode.MOVE, 7, 3));
-        reader.set(372, new ImmutableInstruction22b(Opcode.AND_INT_LIT8, 3, 7, -2));
-        reader.set(1580, new ImmutableInstruction12x(Opcode.MOVE, 10, 3));
-        reader.set(1599, new ImmutableInstruction23x(Opcode.AND_INT, 3, 10, 168));
-        reader.set(1732, new ImmutableInstruction23x(Opcode.AND_INT, 3, 10, 161));
-        reader.set(1901, new ImmutableInstruction21s(Opcode.CONST_16, 157, 0));
-        reader.set(1905, new ImmutableInstruction21t(Opcode.IF_NEZ, 0, 1));
-        reader.set(1908, new ImmutableInstruction21c(Opcode.NEW_INSTANCE, 4, new ImmutableTypeReference(POST)));
-        reader.set(2027, new ImmutableInstruction22x(Opcode.MOVE_FROM16, 154, 10));
-        reader.set(2067, new ImmutableInstruction22x(Opcode.MOVE_FROM16, 158, 7));
-        reader.set(2094, new ImmutableInstruction3rc(Opcode.INVOKE_DIRECT_RANGE, 4, 156, ref(POST, "<init>", VOID, parameters)));
-        reader.set(2095, new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 4));
-        reader.set(2108, invoke(Opcode.INVOKE_STATIC, ref("Lf9a;", "a", VOID, STRING), 0));
-        reader.set(2109, new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 157));
-        int error = 2096;
+        reader.set(211, new ImmutableInstruction12x(Opcode.MOVE, 7, 3));
+        reader.set(394, new ImmutableInstruction22b(Opcode.AND_INT_LIT8, 3, 7, -2));
+        reader.set(1713, new ImmutableInstruction12x(Opcode.MOVE, 10, 3));
+        reader.set(1732, new ImmutableInstruction23x(Opcode.AND_INT, 3, 10, 168));
+        reader.set(1865, new ImmutableInstruction23x(Opcode.AND_INT, 3, 10, 161));
+        reader.set(2065, new ImmutableInstruction21s(Opcode.CONST_16, 157, 0));
+        reader.set(2069, new ImmutableInstruction21t(Opcode.IF_NEZ, 0, 1));
+        reader.set(2098, new ImmutableInstruction21c(Opcode.NEW_INSTANCE, 4, new ImmutableTypeReference(POST)));
+        reader.set(2126, new ImmutableInstruction22x(Opcode.MOVE_FROM16, 154, 10));
+        reader.set(2070, new ImmutableInstruction22x(Opcode.MOVE_FROM16, 158, 7));
+        reader.set(2166, new ImmutableInstruction3rc(Opcode.INVOKE_DIRECT_RANGE, 4, 156, ref(POST, "<init>", VOID, parameters)));
+        reader.set(2167, new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 4));
+        reader.set(2180, invoke(Opcode.INVOKE_STATIC, ref("Ld6b;", "a", VOID, STRING), 0));
+        reader.set(2181, new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 157));
+        int error = 2168;
         if (patched && !fault.equals("missing-presence-hook")) {
-            reader.addAll(2095, List.of(new ImmutableInstruction22x(Opcode.MOVE_OBJECT_FROM16, 0, 4),
+            reader.addAll(2167, List.of(new ImmutableInstruction22x(Opcode.MOVE_OBJECT_FROM16, 0, 4),
                     new ImmutableInstruction22x(Opcode.MOVE_FROM16, 1, fault.equals("wrong-first-mask") ? 153 : fault.equals("swapped-presence-masks") ? 158 : 154),
                     new ImmutableInstruction22x(Opcode.MOVE_FROM16, 2, fault.equals("wrong-trail-mask") ? 157 : fault.equals("swapped-presence-masks") ? 154 : 158),
                     invoke(Opcode.INVOKE_VIRTUAL, ref(POST, "hushSetJsonPresence", VOID, "I", "I"), 0, 1, 2)));
             error += 4;
         }
-        reader.set(1905, new ImmutableInstruction21t(Opcode.IF_NEZ, 0, codeOffset(reader, 1905, error)));
+        reader.set(2069, new ImmutableInstruction21t(Opcode.IF_NEZ, 0, codeOffset(reader, 2069, error)));
         if (patched && fault.equals("missing-error-return")) reader.set(error + 13, new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0));
         List<Method> adapterMethods = new ArrayList<>(classes.get(adapter)); adapterMethods.removeIf(m -> m.getName().equals("fromJson"));
-        adapterMethods.add(method(adapter, "fromJson", OBJECT, false, 178, reader, "Leba;")); classes.put(adapter, adapterMethods);
+        adapterMethods.add(method(adapter, "fromJson", OBJECT, false, 178, reader, "Lc8b;")); classes.put(adapter, adapterMethods);
     }
 
     private static String postKey(String name) {
