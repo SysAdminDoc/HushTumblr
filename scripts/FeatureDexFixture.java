@@ -62,7 +62,7 @@ public final class FeatureDexFixture {
     private static final String COMPONENT_ACTIVITY = "Lfixture/ComponentActivity;";
     // A blog's posts page is a subclass of the page every blog, likes and search page starts from.
     private static final String TIMELINE_RESPONSE = "Lcom/tumblr/rumblr/response/timeline/TimelineResponse;";
-    private static final String POSTS_RESPONSE = "Lcom/tumblr/rumblr/response/blogs/PostsResponse;";
+    private static final String POSTS_RESPONSE = "Lcom/tumblr/rumblr/response/timeline/PostsResponse;";
     private static final Map<String, String> SUPERCLASSES = Map.of(APP, CORE_APP, ACTIVITY, COMPONENT_ACTIVITY,
             CORE_APP, "Landroid/app/Application;", COMPONENT_ACTIVITY, "Landroid/app/Activity;", POSTS_RESPONSE, TIMELINE_RESPONSE);
     private static final String VOID = "V";

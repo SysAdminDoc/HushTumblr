@@ -201,7 +201,6 @@ public class TimelineFilterTest {
         assertSame(page, TimelineFilter.filter(page));
     }
 
-    /** A page with nothing to take out comes back as the very list Tumblr built. */
     /**
      * A blog's posts keep their own copy of the list they hand the base constructor. That copy is
      * the filtered one, and the base constructor's call, right after, hands the same list back
@@ -223,6 +222,7 @@ public class TimelineFilterTest {
         assertTrue(report, report.contains("Hide ads: invoked 2,") && report.contains("ad removed 2"));
     }
 
+    /** A page with nothing to take out comes back as the very list Tumblr built. */
     @Test
     public void postsAndOtherItemsStay() {
         List<Object> page = Arrays.asList(TimelineItems.post(), TimelineItems.of(TimelineObjectType.TITLE),
