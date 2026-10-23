@@ -5700,6 +5700,10 @@ try {
         'if /i "%~nx4"=="ResourceTableCheck.java" goto resources',
         'if /i "%~nx4"=="DexDiff.java" goto dexdiff',
         'if /i "%~nx4"=="HostReferences.java" goto references',
+        'rem -cp <apksigner.jar;CLI jar> ApkSignerTool sign: patch-for-device.ps1 signing a BKS keystore.',
+        'rem cmd splits an unquoted class path at its ";", so the class can be the fourth argument.',
+        'if "%~3"=="com.android.apksigner.ApkSignerTool" goto bkssign',
+        'if "%~4"=="com.android.apksigner.ApkSignerTool" goto bkssign',
         'set "OUT=" & set "RESULT=" & set "LAST=" & set "PREV=" & set "FORCED=0" & set "ENABLED=" & set "SIGNS=0"',
         'shift',
         'shift',
@@ -5818,6 +5822,28 @@ try {
         ')',
         '>"%~3" echo findings=0',
         'echo [references] findings=0',
+        'exit /b 0',
+        'rem Signs like the stand-in apksigner.bat and logs to its apksigner.log, unless a case leaves',
+        'rem apksigner-java-fails.txt behind.',
+        ':bkssign',
+        'set "OUT=" & set "LAST=" & set "PREV=" & set "ALIAS=" & set "TYPE=" & set "PROVIDER="',
+        ':bksnext',
+        'shift',
+        'if "%~1"=="" goto bkssigned',
+        'if "!PREV!"=="--out" set "OUT=%~1"',
+        'if "!PREV!"=="--ks-key-alias" set "ALIAS=%~1"',
+        'if "!PREV!"=="--ks-type" set "TYPE=%~1"',
+        'if "!PREV!"=="--ks-provider-name" set "PROVIDER=%~1"',
+        'set "PREV=%~1"',
+        'set "LAST=%~1"',
+        'goto bksnext',
+        ':bkssigned',
+        '>>"!HERE!apksigner.log" echo bks-sign type=!TYPE! provider=!PROVIDER! alias=!ALIAS! in=!LAST! out=!OUT!',
+        'if exist "!HERE!apksigner-java-fails.txt" (echo java.security.KeyStoreException: BKS not found& exit /b 5)',
+        'copy /y "!LAST!" "!OUT!" >nul || exit /b 3',
+        'if exist "!LAST!.xmltree" copy /y "!LAST!.xmltree" "!OUT!.xmltree" >nul',
+        'del "!OUT!.signer" >nul 2>&1',
+        '>"!OUT!.signer" echo stand-in alias',
         'exit /b 0') -join "`r`n") + "`r`n"), [System.Text.Encoding]::ASCII)
     [System.IO.File]::WriteAllText($stubAapt2, ((@(
         '@echo off',
@@ -5849,7 +5875,8 @@ try {
     # copies the input (or apksigner-swap.apk, when a case leaves one beside it) and the manifest
     # beside the input, notes the call in apksigner.log and leaves the .signer file, unless a case
     # leaves apksigner-unmarked.txt behind. A case that leaves apksigner-swaps-keystore.txt has it
-    # try to copy that over the keystore it was handed first, and log whether it could.
+    # try to copy that over the keystore it was handed first, and log whether it could. One that
+    # leaves apksigner-bks-only.txt has it refuse the keystore the way apksigner.bat refuses a BKS one.
     $foreignSigner = '0123456789abcdef' * 4
     $aliasSigner = '89abcdef01234567' * 4
     $lateSigner = 'fedcba9876543210' * 4
@@ -5894,6 +5921,7 @@ try {
         'goto next',
         ':signed',
         '>>"!HERE!apksigner.log" echo sign alias=!ALIAS! in=!LAST! out=!OUT!',
+        'if exist "!HERE!apksigner-bks-only.txt" (echo Failed to load signer "signer #1"& echo java.io.IOException: toDerInputStream rejects tag type 0& exit /b 2)',
         'if not exist "!HERE!apksigner-swaps-keystore.txt" goto copied',
         'copy /y "!HERE!apksigner-swaps-keystore.txt" "!KS!" >nul 2>&1 && (>>"!HERE!apksigner.log" echo keystore swapped) || (>>"!HERE!apksigner.log" echo keystore held)',
         ':copied',
@@ -6641,6 +6669,30 @@ try {
     Assert-True (-not (Test-Path -LiteralPath $apksignerLog) -and
         @(Get-ChildItem -LiteralPath $keptDevice.OutDir -Directory).Count -eq $keptRunsBefore) `
         'patch-for-device.ps1 signed a kept APK that failed the 16 KB layout check, or left its run folder behind.'
+    # apksigner.bat can't read the BKS keystore the desktop CLI makes, so the kept APK is then signed
+    # by the same signer from lib/apksigner.jar beside aapt2, with the CLI's BouncyCastle as the
+    # keystore provider. When that fails too, both errors come back.
+    $bksOnly = Join-Path $tools 'apksigner-bks-only.txt'
+    $bksFails = Join-Path $tools 'apksigner-java-fails.txt'
+    $signerJar = Join-Path (Join-Path $tools 'lib') 'apksigner.jar'
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $signerJar) | Out-Null
+    [IO.File]::WriteAllText($signerJar, 'stand-in apksigner jar')
+    Set-Content -LiteralPath $bksOnly -Value 'on' -Encoding ASCII
+    try {
+        Remove-Item -LiteralPath $javaLog, $apksignerLog -Force -ErrorAction SilentlyContinue
+        $said = @(& (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6>&1 | ForEach-Object { "$_" })
+        $signCalls = @(Get-Content -LiteralPath $apksignerLog)
+        Assert-True ((Test-Path -LiteralPath ([string]$said[-1]) -PathType Leaf) -and -not (Test-Path -LiteralPath $javaLog) -and
+            $signCalls.Count -eq 2 -and $signCalls[0] -like 'sign alias=sideload in=*patched.apk out=*' -and
+            $signCalls[1] -like 'bks-sign type=BKS provider=BC alias=sideload in=*patched.apk out=*') `
+            "patch-for-device.ps1 did not sign the kept APK as a BKS keystore after apksigner.bat refused it: $($signCalls -join ' | ') / $($said -join ' | ')"
+        Set-Content -LiteralPath $bksFails -Value 'on' -Encoding ASCII
+        Assert-Throws { & (Join-Path $PSScriptRoot 'patch-for-device.ps1') @keptDevice 6> $null } `
+            '*apksigner could not sign the kept APK (exit 2)*toDerInputStream rejects tag type 0*then as a BKS keystore (exit 5)*BKS not found*' `
+            'patch-for-device.ps1 did not report both signers when neither could sign the kept APK.'
+    } finally {
+        Remove-Item -LiteralPath $bksOnly, $bksFails, $signerJar -Force -ErrorAction SilentlyContinue
+    }
     # apksigner writes the signed APK to a path nothing held, so it's held to the kept APK entry by
     # entry: signing adds signature files, drops the Source Stamp's certificate digest as real
     # apksigner does, and changes nothing else. A signed APK with an entry of its own, an entry

@@ -25,7 +25,8 @@
     When the release push gate has already patched this exact bundle onto this APK with the same
     patch selection, tools and verifier files, and kept the run (verify-all-patches.ps1 -KeepIn),
     that run's patched APK is signed with apksigner beside aapt2 and handed back instead of patching
-    again. The report and manifest checks below still run on it. The store is -AppliedDir, else
+    again. A BKS keystore, which apksigner.bat can't read, is signed through lib/apksigner.jar with
+    the desktop CLI's BouncyCastle as its provider. The report and manifest checks below still run on it. The store is -AppliedDir, else
     HUSHTUMBLR_APPLY_RECORDS, else the default one in the temp folder; -NoReuse always patches.
     Nothing this script makes is kept there: it skips the resource table check.
 
@@ -291,6 +292,10 @@ if ($recorded) {
     if (-not (Test-Path -LiteralPath $apksigner -PathType Leaf)) {
         throw "No apksigner beside aapt2 at $apksigner to sign the kept APK. Pass -NoReuse to patch and sign with the CLI."
     }
+    # apksigner.bat can't read the BKS store the desktop CLI makes (morphe.keystore): it stops at
+    # "toDerInputStream rejects tag type 0". When it fails, the same signer runs from its jar with the
+    # CLI's BouncyCastle as the keystore provider, as Get-KeystoreCertificate reads that store.
+    $apksignerJar = Join-Path (Join-Path (Split-Path -Parent $Aapt2) 'lib') 'apksigner.jar'
     # zipalign can't put an APK right once it's signed, so the kept one is held to the 16 KB layout
     # before the signature goes on. The signed APK is held to it again below.
     Assert-PageAlignment -Apk $recorded.PatchedApk -Stock $patchInput -Aapt2 $Aapt2 | Out-Null
@@ -308,6 +313,20 @@ if ($recorded) {
         $signOutput = @(& $apksigner sign --ks $Keystore --ks-key-alias $KeyAlias --ks-pass $storePass `
             --key-pass $keyPass --out $out $recorded.PatchedApk 2>&1 | ForEach-Object { "$_" })
         $signExitCode = $LASTEXITCODE
+        if ($signExitCode -ne 0 -and (Test-Path -LiteralPath $apksignerJar -PathType Leaf)) {
+            if (Test-Path -LiteralPath $out) { Remove-Item -LiteralPath $out -Force }
+            $global:LASTEXITCODE = -1
+            $bksOutput = @(& $Java -cp ($apksignerJar + [IO.Path]::PathSeparator + $DesktopJar) com.android.apksigner.ApkSignerTool sign `
+                --provider-class org.bouncycastle.jce.provider.BouncyCastleProvider --ks-type BKS --ks-provider-name BC `
+                --ks $Keystore --ks-key-alias $KeyAlias --ks-pass $storePass --key-pass $keyPass --out $out `
+                $recorded.PatchedApk 2>&1 | ForEach-Object { "$_" })
+            $bksExitCode = $LASTEXITCODE
+            if ($bksExitCode -eq 0) {
+                $signExitCode = 0
+            } else {
+                $signOutput += @("then as a BKS keystore (exit $bksExitCode):") + $bksOutput
+            }
+        }
     } finally {
         $ErrorActionPreference = $preference
         # Unset again when it was: PowerShell hands $null over as '', which PowerShell 7 keeps.
