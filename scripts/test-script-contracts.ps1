@@ -2102,20 +2102,25 @@ try {
     # every "Tumblr <build>" one build. The lag check read the first of each and the equality
     # check any, so a description quoting the catalog's count once and a stale one elsewhere, or
     # naming another build beside the target, passed the equality check. On both paths now.
-    $indexCount = [regex]::Match([string](Get-Content -LiteralPath (Join-Path $factsRoot 'patches-bundle.json') -Raw |
-        ConvertFrom-Json).description, '(?<![\d.])(\d+) patches\b').Groups[1].Value
-    $indexCounts = [regex]::Matches((Get-Content -LiteralPath (Join-Path $factsRoot 'patches-bundle.json') -Raw), '(?<!\d)\d+ patches\b').Count
-    Assert-True ($indexCounts -ge 2) "The copied description names its patch count once, so the stale-count case would prove nothing."
+    # Facts come from the summary alone, the prose before the first ### heading (Get-DescriptionFacts),
+    # since the bullets after it can name older builds. So the cases count and edit in that part:
+    # in the raw file it ends at the first escaped newline before ###.
+    $factsIndexText = Get-Content -LiteralPath (Join-Path $factsRoot 'patches-bundle.json') -Raw
+    $summaryEnd = $factsIndexText.IndexOf('\n###')
+    $indexSummary = if ($summaryEnd -ge 0) { $factsIndexText.Substring(0, $summaryEnd) } else { $factsIndexText }
+    $indexCount = [regex]::Match([string]($factsIndexText | ConvertFrom-Json).description, '(?<![\d.])(\d+) patches\b').Groups[1].Value
+    $indexCounts = [regex]::Matches($indexSummary, '(?<!\d)\d+ patches\b').Count
+    Assert-True ($indexCounts -ge 2) "The copied description's summary names its patch count once, so the stale-count case would prove nothing."
     $factsTarget = (Get-PatchTarget -PatchList (Get-Content -LiteralPath (Join-Path $factsRoot 'patches-list.json') -Raw |
         ConvertFrom-Json)).PackageVersion
-    Assert-True ([regex]::Matches((Get-Content -LiteralPath (Join-Path $factsRoot 'patches-bundle.json') -Raw),
-            "Tumblr $([regex]::Escape($factsTarget))(?!\d)").Count -ge 2) `
-        "The copied description names Tumblr $factsTarget once, so the other-build case would prove nothing."
+    Assert-True ([regex]::Matches($indexSummary, "Tumblr $([regex]::Escape($factsTarget))(?!\d)").Count -ge 2) `
+        "The copied description's summary names Tumblr $factsTarget once, so the other-build case would prove nothing."
     foreach ($case in @(
             @{ Name = 'a stale count beside the catalog''s'; Pattern = "*names 97 and $indexCount patches, and it has to name one count*"
                 Edit = { param($text) ([regex]'(?<!\d)\d+ patches\b').Replace($text, '97 patches', 1) } },
             @{ Name = 'another build beside the target'; Pattern = "*names Tumblr $factsTarget and Tumblr 9.9.9.9.9, and it has to name one build*"
-                Edit = { param($text) $at = $text.LastIndexOf("Tumblr $factsTarget")
+                Edit = { param($text) $end = $text.IndexOf('\n###'); if ($end -lt 0) { $end = $text.Length }
+                    $at = $text.LastIndexOf("Tumblr $factsTarget", $end - 1)
                     $text.Substring(0, $at) + 'Tumblr 9.9.9.9.9' + $text.Substring($at + "Tumblr $factsTarget".Length) } })) {
         Set-FactsFile 'patches-bundle.json' $case.Edit
         try {
