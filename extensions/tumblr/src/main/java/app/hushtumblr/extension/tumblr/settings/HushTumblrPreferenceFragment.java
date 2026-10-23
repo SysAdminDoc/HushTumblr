@@ -420,6 +420,9 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                     Settings.HIDE_SUGGESTED_COMMUNITIES, L10n.t("Hide suggested communities"),
                     L10n.t("Takes the communities Tumblr suggests you join, and their headings, out of your "
                         + "dashboard and other feeds."), SettingsIcons.BLOCK);
+            patchToggle(feed, context, build, PatchFamily.HIDE_SUGGESTED_TAGS, Settings.HIDE_SUGGESTED_TAGS,
+                    L10n.t("Hide suggested tags"), L10n.t("Takes the tags Tumblr suggests you follow, and their "
+                        + "headings, out of your dashboard and other feeds."), SettingsIcons.BLOCK);
             patchToggle(feed, context, build, PatchFamily.HIDE_WATCH_IT_ROWS, Settings.HIDE_WATCH_IT_ROWS,
                     L10n.t("Hide Watch it rows"), L10n.t("Takes Tumblr TV's Watch it rows and video hub cards, and "
                         + "their headings, out of your dashboard and other feeds."), SettingsIcons.BLOCK);

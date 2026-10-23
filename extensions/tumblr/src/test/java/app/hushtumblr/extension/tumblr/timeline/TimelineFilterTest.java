@@ -61,6 +61,7 @@ public class TimelineFilterTest {
         Settings.HIDE_ADS.resetToDefault();
         Settings.HIDE_SUGGESTED_BLOGS.resetToDefault();
         Settings.HIDE_SUGGESTED_COMMUNITIES.resetToDefault();
+        Settings.HIDE_SUGGESTED_TAGS.resetToDefault();
         Settings.HIDE_WATCH_IT_ROWS.resetToDefault();
         TimelineFilter.carouselItemsForTests = null;
         TimelinePaging.resetForTests();
@@ -304,7 +305,9 @@ public class TimelineFilterTest {
         List<Object> page = Arrays.asList(TimelineItems.of(TimelineObjectType.TITLE),
                 TimelineItems.of(TimelineObjectType.BLOG_CARD), TimelineItems.of(TimelineObjectType.COMMUNITY_ROW),
                 TimelineItems.of(TimelineObjectType.VIDEO_HUBS_ROW), TimelineItems.post(),
-                TimelineItems.of(TimelineObjectType.TITLE));
+                TimelineItems.carousel(TimelineObjectType.CAROUSEL,
+                        TimelineItems.of(TimelineObjectType.TAG_CAROUSEL_CARD)),
+                TimelineItems.of(TimelineObjectType.SIGNPOST), TimelineItems.of(TimelineObjectType.TITLE));
         assertSame(page, TimelineFilter.filter(page));
     }
 
@@ -361,6 +364,81 @@ public class TimelineFilterTest {
         assertEquals(Arrays.asList(posts.get(0), posts.get(3), posts.get(6)), TimelineItems.inSearchResults(posts));
         String report = String.join("\n", HookStatus.report(""));
         assertFalse(report, report.contains(TimelineFilter.KEPT_RESULT));
+    }
+
+    /**
+     * A carousel of tags Tumblr suggests ("Check out these tags", "Explore more #tag") goes with its
+     * heading, and the one that ends a page takes its heading too. A carousel of the tags you follow
+     * stays, and so does a page of lone tag cards, which is a carousel loading more of itself. The
+     * other card switches leave tags alone, and this one leaves their cards.
+     */
+    @Test
+    public void aCarouselOfSuggestedTagsGoesWithItsHeading() {
+        List<Object> page = Arrays.asList(TimelineItems.post(), TimelineItems.of(TimelineObjectType.TITLE),
+                TimelineItems.carousel(TimelineObjectType.CAROUSEL,
+                        TimelineItems.of(TimelineObjectType.TAG_CAROUSEL_CARD)),
+                TimelineItems.post(), TimelineItems.of(TimelineObjectType.TITLE),
+                TimelineItems.carousel(TimelineObjectType.CAROUSEL,
+                        TimelineItems.of(TimelineObjectType.FOLLOWED_TAG_CAROUSEL_CARD)),
+                TimelineItems.of(TimelineObjectType.BLOG_CARD), TimelineItems.of(TimelineObjectType.TITLE));
+        Settings.HIDE_SUGGESTED_BLOGS.save(true);
+        Settings.HIDE_SUGGESTED_COMMUNITIES.save(true);
+        Settings.HIDE_WATCH_IT_ROWS.save(true);
+        assertEquals("the other switches", Arrays.asList(page.get(0), page.get(1), page.get(2), page.get(3),
+                page.get(4), page.get(5)), TimelineItems.onTheDashboard(page));
+        Settings.HIDE_SUGGESTED_BLOGS.resetToDefault();
+        Settings.HIDE_SUGGESTED_COMMUNITIES.resetToDefault();
+        Settings.HIDE_WATCH_IT_ROWS.resetToDefault();
+
+        Settings.HIDE_SUGGESTED_TAGS.save(true);
+        assertEquals(Arrays.asList(page.get(0), page.get(3), page.get(4), page.get(5), page.get(6)),
+                TimelineItems.onTheDashboard(page));
+        List<Object> more = Arrays.asList(TimelineItems.of(TimelineObjectType.TAG_CAROUSEL_CARD),
+                TimelineItems.of(TimelineObjectType.TAG_CAROUSEL_CARD));
+        assertSame("a carousel's own page", more, TimelineItems.onTheDashboard(more));
+        PauseForTests.pause(HushTumblrPause.Reason.SWITCH);
+        assertSame("paused", page, TimelineItems.onTheDashboard(page));
+        PauseForTests.resume();
+        PatchFamilyForTests.capabilities(EnumSet.of(PatchFamily.Capability.TIMELINE_ADS));
+        assertSame("without the patch", page, TimelineItems.onTheDashboard(page));
+    }
+
+    /**
+     * A search's Posts tab shows "Related tags" between its posts, and those go. Its Tags tab lists
+     * the tags it found under their headings, a page with no posts, and keeps every item.
+     */
+    @Test
+    public void aSearchKeepsTheTagsItFoundAndLosesTheOnesBetweenItsPosts() {
+        Settings.HIDE_SUGGESTED_TAGS.save(true);
+        List<Object> posts = Arrays.asList(TimelineItems.post(), TimelineItems.of(TimelineObjectType.TITLE),
+                TimelineItems.carousel(TimelineObjectType.CAROUSEL,
+                        TimelineItems.of(TimelineObjectType.TAG_CAROUSEL_CARD)),
+                TimelineItems.post());
+        assertEquals(Arrays.asList(posts.get(0), posts.get(3)), TimelineItems.inSearchResults(posts));
+
+        List<Object> tags = Arrays.asList(TimelineItems.of(TimelineObjectType.TITLE),
+                TimelineItems.of(TimelineObjectType.COMMUNITY_HUB_HEADER_CARD),
+                TimelineItems.of(TimelineObjectType.TITLE), TimelineItems.of(TimelineObjectType.TAG_CARDS_COLLECTION));
+        assertSame(tags, TimelineItems.inSearchResults(tags));
+    }
+
+    /**
+     * Between a tag's posts Tumblr asks you to share the tag, and that prompt goes. The same kind of
+     * item is the message of an empty Your tags tab, a page with no posts, and it stays there, so the
+     * page isn't emptied either.
+     */
+    @Test
+    public void thePromptToShareATagGoesOnlyFromBetweenPosts() {
+        Settings.HIDE_SUGGESTED_TAGS.save(true);
+        List<Object> tagPage = Arrays.asList(TimelineItems.post(), TimelineItems.of(TimelineObjectType.SIGNPOST),
+                TimelineItems.post());
+        assertEquals(Arrays.asList(tagPage.get(0), tagPage.get(2)), TimelineItems.onTheDashboard(tagPage));
+
+        HookStatus.clear();
+        List<Object> yourTags = Collections.singletonList(TimelineItems.of(TimelineObjectType.SIGNPOST));
+        assertSame(yourTags, TimelineItems.onTheDashboard(yourTags));
+        String report = String.join("\n", HookStatus.report(""));
+        assertFalse(report, report.contains(TimelinePaging.EMPTIED));
     }
 
     /**

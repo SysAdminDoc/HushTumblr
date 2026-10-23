@@ -100,6 +100,11 @@ public final class TimelineItems {
         return aPageLoses(TimelineObjectType.COMMUNITY_CARD);
     }
 
+    /** PausedHooksTest's probe for Hide suggested tags. */
+    public static boolean aPageLosesItsTagCarousel() {
+        return aPageLoses(carousel(TimelineObjectType.CAROUSEL, of(TimelineObjectType.TAG_CAROUSEL_CARD)));
+    }
+
     /** PausedHooksTest's probe for Hide Watch it rows. */
     public static boolean aPageLosesItsWatchItRow() {
         return aPageLoses(TimelineObjectType.VIDEO_HUBS_ROW);

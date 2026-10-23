@@ -204,6 +204,8 @@ public class PausedHooksTest {
         probes.put(Settings.HIDE_SUGGESTED_BLOGS, Collections.singletonList(TimelineItems::aPageLosesItsBlogCard));
         // A page with a suggested community card comes back without it.
         probes.put(Settings.HIDE_SUGGESTED_COMMUNITIES, Collections.singletonList(TimelineItems::aPageLosesItsCommunityCard));
+        // A page with a carousel of suggested tags comes back without it.
+        probes.put(Settings.HIDE_SUGGESTED_TAGS, Collections.singletonList(TimelineItems::aPageLosesItsTagCarousel));
         // A page with a Watch it row comes back without it.
         probes.put(Settings.HIDE_WATCH_IT_ROWS, Collections.singletonList(TimelineItems::aPageLosesItsWatchItRow));
         // A post's tags are left out.

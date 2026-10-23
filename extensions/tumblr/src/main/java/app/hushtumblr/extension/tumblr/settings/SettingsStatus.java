@@ -77,6 +77,8 @@ public final class SettingsStatus {
     public static boolean suggestedBlogCards() { return false; }
     public static boolean hideSuggestedCommunities() { return false; }
     public static boolean suggestedCommunityCards() { return false; }
+    public static boolean hideSuggestedTags() { return false; }
+    public static boolean suggestedTagCards() { return false; }
     public static boolean hideWatchItRows() { return false; }
     public static boolean watchItRows() { return false; }
     public static boolean hideHashtags() { return false; }

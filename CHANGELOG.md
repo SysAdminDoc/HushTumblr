@@ -2,12 +2,13 @@
 
 ## Unreleased
 
-* **Install:** The patches now target Tumblr 46.8.1.100, the newest release, in place of 46.5.0.109. All 44 patches apply to it, so patch that version.
+* **Install:** The patches now target Tumblr 46.8.1.100, the newest release, in place of 46.5.0.109. Every patch applies to it, so patch that version.
 * **Install:** The patches are now built on Morphe patcher 2.0.0, so you'll need Morphe Manager 2.0.0 or newer to apply them. Older Manager builds can't load the bundle.
 * **Tumblr:** With Dark background color on, the row of buttons under each post now matches the post. In Tumblr's Dark palette it came out a shade lighter.
 * **Tumblr:** Hide ads and the other feed switches now reach a blog's own posts, your likes and blog search. Sponsored posts still showed up between a blog's posts, because those pages kept their own unfiltered copy.
 * **Tumblr:** Hide suggested blogs now takes out the "Like this? Follow to see more" prompt and the Follow button under it that show up between a blog's posts. Tumblr sends that prompt as a heading and a lone button, so it got past the blog cards check.
 * **Tumblr:** Hide suggested blogs and Hide suggested communities now reach the Posts tab of a search, where Tumblr slips a tag's top blogs and related communities in between the posts. The Blogs and Communities tabs still list everything the search found.
+* **Tumblr:** New **Hide suggested tags** switch on the Feed page, off by default. It takes out the carousels of tags Tumblr wants you to follow, like "Check out these tags" on the dashboard, "Related tags" in a search and "Explore more" on a tag's page, along with their headings. The "Know someone who'd love this tag?" prompt between a tag's posts goes too. Tags you already follow stay put.
 * **Tooling:** A release can't go public until the whole app has been walked with that exact bundle on a release phone or an emulator. The publish stage now takes the walk's receipt as `-Walk` and stops before GitHub or the index if the walk wasn't a full pass, saw a Tumblr crash, ran on some other device, or patched with a different bundle.
 
 ## 0.0.8 (2026-10-18)

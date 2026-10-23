@@ -166,6 +166,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_hide_suggested_communities", FALSE);
 
     /**
+     * The carousels of tags Tumblr suggests you follow, and their headings, and the prompts to share
+     * a tag between its posts, come out of each page
+     * ({@link app.hushtumblr.extension.tumblr.timeline.TimelineFilter}). Off to start.
+     */
+    public static final BooleanSetting HIDE_SUGGESTED_TAGS =
+            new BooleanSetting("hushtumblr_hide_suggested_tags", FALSE);
+
+    /**
      * Tumblr TV's "Watch it" rows and video hub cards, and their headings, come out of each page
      * ({@link app.hushtumblr.extension.tumblr.timeline.TimelineFilter}). Off to start.
      */

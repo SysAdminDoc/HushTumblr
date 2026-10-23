@@ -75,6 +75,7 @@ public enum PatchFamily {
     HIDE_SUGGESTED_BLOGS(FamilyNames.HIDE_SUGGESTED_BLOGS, "hideSuggestedBlogs", null, Settings.HIDE_SUGGESTED_BLOGS),
     HIDE_SUGGESTED_COMMUNITIES(FamilyNames.HIDE_SUGGESTED_COMMUNITIES, "hideSuggestedCommunities", null,
             Settings.HIDE_SUGGESTED_COMMUNITIES),
+    HIDE_SUGGESTED_TAGS(FamilyNames.HIDE_SUGGESTED_TAGS, "hideSuggestedTags", null, Settings.HIDE_SUGGESTED_TAGS),
     HIDE_WATCH_IT_ROWS(FamilyNames.HIDE_WATCH_IT_ROWS, "hideWatchItRows", null, Settings.HIDE_WATCH_IT_ROWS),
     HIDE_HASHTAGS(FamilyNames.HIDE_HASHTAGS, "hideHashtags", null, Settings.HIDE_HASHTAGS),
     HIDE_FOLLOW_BUTTON(FamilyNames.HIDE_FOLLOW_BUTTON, "hideFollowButton", null, Settings.HIDE_FOLLOW_BUTTON),
@@ -157,7 +158,8 @@ public enum PatchFamily {
     /** The families the Feed page holds. The page and its home row both read this. */
     static final Set<PatchFamily> FEED_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_POSTS_WITH_WORDS,
             HIDE_TEXT_POSTS, HIDE_PHOTO_POSTS, HIDE_VIDEO_POSTS, HIDE_REBLOGS, HIDE_WATCH_IT_ROWS,
-            HIDE_SUGGESTED_COMMUNITIES, HIDE_SUGGESTED_BLOGS, HIDE_AD_FREE_BANNER, HIDE_ADS, MUTE_ROOT_POSTS));
+            HIDE_SUGGESTED_TAGS, HIDE_SUGGESTED_COMMUNITIES, HIDE_SUGGESTED_BLOGS, HIDE_AD_FREE_BANNER, HIDE_ADS,
+            MUTE_ROOT_POSTS));
 
     /** The families the Interface page holds. The page and its home row both read this. */
     static final Set<PatchFamily> INTERFACE_PAGE = Collections.unmodifiableSet(EnumSet.of(REORDER_TABS,
@@ -200,6 +202,7 @@ public enum PatchFamily {
         SUGGESTED_BLOG_CARDS(HIDE_SUGGESTED_BLOGS, "suggestedBlogCards", "Hide suggested blogs"),
         SUGGESTED_COMMUNITY_CARDS(HIDE_SUGGESTED_COMMUNITIES, "suggestedCommunityCards",
                 "Hide suggested communities"),
+        SUGGESTED_TAG_CARDS(HIDE_SUGGESTED_TAGS, "suggestedTagCards", "Hide suggested tags"),
         WATCH_IT_ROWS(HIDE_WATCH_IT_ROWS, "watchItRows", "Hide Watch it rows"),
         POST_TAGS(HIDE_HASHTAGS, "postTags", "Hide hashtags"),
         FOLLOW_BUTTON(HIDE_FOLLOW_BUTTON, "followButton", "Hide the Follow button"),

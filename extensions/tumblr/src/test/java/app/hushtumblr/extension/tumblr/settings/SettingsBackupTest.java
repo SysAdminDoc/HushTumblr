@@ -254,6 +254,7 @@ public class SettingsBackupTest {
                 Settings.DISABLE_UPDATE_PROMPTS,
                 Settings.HIDE_SUGGESTED_BLOGS,
                 Settings.HIDE_SUGGESTED_COMMUNITIES,
+                Settings.HIDE_SUGGESTED_TAGS,
                 Settings.HIDE_WATCH_IT_ROWS,
                 Settings.HIDE_HASHTAGS,
                 Settings.HIDE_FOLLOW_BUTTON,

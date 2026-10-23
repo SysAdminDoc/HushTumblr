@@ -86,6 +86,7 @@ body:
         - Hide reblogs
         - Hide suggested blogs
         - Hide suggested communities
+        - Hide suggested tags
         - Hide text posts
         - Hide the ad-free banner
         - Hide the comment button

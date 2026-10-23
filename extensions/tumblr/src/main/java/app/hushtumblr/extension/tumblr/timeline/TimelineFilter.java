@@ -48,9 +48,10 @@ import app.hushtumblr.extension.tumblr.rootmute.RootPostMutes;
  * blogs"). A heading goes with the item right after it, and one that ends a page goes too while a
  * card switch is on, since its card may be the first item of the next page.
  *
- * <p>A blog or community card is a suggestion only in a feed. A search lists the same kinds of card
- * as its results, through the same two constructors, so those two switches act only on a page
- * {@link PageSource} knows for a feed and leave a page of search results, cards and headings, alone.
+ * <p>A blog, community or tag card is a suggestion only in a feed or between a search's posts. A
+ * search lists the same kinds of card as its results, through the same two constructors, so those
+ * switches act only on a page {@link PageSource} knows for a feed, or on the Posts tab of a search,
+ * and leave its other tabs, cards and headings, alone.
  *
  * <p>The post switches (reblogs, video, photo and text posts, and the word list) are
  * {@link PostRules}'. A heading never goes with a post they take out.
@@ -112,6 +113,21 @@ public final class TimelineFilter {
      * community's page.
      */
     static final Set<String> COMMUNITY_TYPES = Collections.singleton("COMMUNITY_CARD");
+
+    /**
+     * Tags Tumblr suggests you follow: the cards of a carousel ("Check out these tags", "Related
+     * tags", "Explore more #tag"). They count only as a carousel's first item, since a page of them
+     * alone is the carousel loading more of its own. A {@code FOLLOWED_TAG_CAROUSEL_CARD} isn't one,
+     * it's a tag you follow, and the cards of a search's Tags tab are its results.
+     */
+    static final Set<String> TAG_TYPES = Collections.singleton("TAG_CAROUSEL_CARD");
+
+    /**
+     * The kind of a prompt Tumblr puts in a page, its {@code Signpost}. Between a tag's posts it asks
+     * you to share the tag, so it counts as a suggested tag only on a page that holds a post. The
+     * same kind is the "Follow tags to get updates here" message of an empty Your tags tab.
+     */
+    static final String SIGNPOST = "SIGNPOST";
 
     /** Tumblr TV's "Watch it" rows and the video hub cards in them. */
     static final Set<String> WATCH_IT_TYPES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
@@ -225,6 +241,7 @@ public final class TimelineFilter {
         final boolean ads;
         final boolean blogs;
         final boolean communities;
+        final boolean tags;
         final boolean watchIt;
         final boolean mutes;
         /** The post switches, or null when none is on. */
@@ -240,11 +257,12 @@ public final class TimelineFilter {
         @Nullable
         private Boolean amongPosts;
 
-        private Rules(boolean ads, boolean blogs, boolean communities, boolean watchIt, boolean mutes,
-                      @Nullable PostRules posts) {
+        private Rules(boolean ads, boolean blogs, boolean communities, boolean tags, boolean watchIt,
+                      boolean mutes, @Nullable PostRules posts) {
             this.ads = ads;
             this.blogs = blogs;
             this.communities = communities;
+            this.tags = tags;
             this.watchIt = watchIt;
             this.mutes = mutes;
             this.posts = posts;
@@ -262,14 +280,16 @@ public final class TimelineFilter {
                 reading = FamilyNames.HIDE_SUGGESTED_COMMUNITIES;
                 boolean communities = on(PatchFamily.Capability.SUGGESTED_COMMUNITY_CARDS, reading,
                         Settings.HIDE_SUGGESTED_COMMUNITIES);
+                reading = FamilyNames.HIDE_SUGGESTED_TAGS;
+                boolean tags = on(PatchFamily.Capability.SUGGESTED_TAG_CARDS, reading, Settings.HIDE_SUGGESTED_TAGS);
                 reading = FamilyNames.HIDE_WATCH_IT_ROWS;
                 boolean watchIt = on(PatchFamily.Capability.WATCH_IT_ROWS, reading, Settings.HIDE_WATCH_IT_ROWS);
                 reading = FamilyNames.HIDE_REBLOGS;
                 PostRules posts = PostRules.now();
                 reading = FamilyNames.MUTE_ROOT_POSTS;
                 boolean mutes = RootPostMutes.active();
-                return ads || blogs || communities || watchIt || mutes || posts != null
-                        ? new Rules(ads, blogs, communities, watchIt, mutes, posts) : null;
+                return ads || blogs || communities || tags || watchIt || mutes || posts != null
+                        ? new Rules(ads, blogs, communities, tags, watchIt, mutes, posts) : null;
             } catch (Throwable failure) {
                 HookStatus.threw(reading, "switch read", failure);
                 return null;
@@ -296,19 +316,21 @@ public final class TimelineFilter {
         String cardOwner() {
             if (blogs) return FamilyNames.HIDE_SUGGESTED_BLOGS;
             if (communities) return FamilyNames.HIDE_SUGGESTED_COMMUNITIES;
+            if (tags) return FamilyNames.HIDE_SUGGESTED_TAGS;
             if (watchIt) return FamilyNames.HIDE_WATCH_IT_ROWS;
             return null;
         }
 
         /**
          * The card switch a heading that ends this page goes with, or null to keep it. Its card may
-         * start the next page, which holds for a blog or community card only where it's a
+         * start the next page, which holds for a blog, community or tag card only where it's a
          * suggestion, see {@link #suggests}.
          */
         @Nullable
         String pageEndOwner() {
-            String card = blogs ? FamilyNames.HIDE_SUGGESTED_BLOGS : FamilyNames.HIDE_SUGGESTED_COMMUNITIES;
-            if ((blogs || communities) && suggests(card)) return card;
+            String card = blogs ? FamilyNames.HIDE_SUGGESTED_BLOGS
+                    : communities ? FamilyNames.HIDE_SUGGESTED_COMMUNITIES : FamilyNames.HIDE_SUGGESTED_TAGS;
+            if ((blogs || communities || tags) && suggests(card)) return card;
             return watchIt ? FamilyNames.HIDE_WATCH_IT_ROWS : null;
         }
 
@@ -378,6 +400,10 @@ public final class TimelineFilter {
             if (communities && COMMUNITY_TYPES.contains(kind)) {
                 return suggestion(FamilyNames.HIDE_SUGGESTED_COMMUNITIES);
             }
+            if (tags && TAG_TYPES.contains(kind)) return suggestion(FamilyNames.HIDE_SUGGESTED_TAGS);
+            if (tags && SIGNPOST.equals(kind)) {
+                return amongPosts(FamilyNames.HIDE_SUGGESTED_TAGS) ? suggestion(FamilyNames.HIDE_SUGGESTED_TAGS) : null;
+            }
             if (watchIt && WATCH_IT_TYPES.contains(kind)) return FamilyNames.HIDE_WATCH_IT_ROWS;
             return null;
         }
@@ -443,6 +469,8 @@ public final class TimelineFilter {
                 Object first = children.get(0);
                 if (modelFor(first, owner) == null) return null;
                 kind = found.typeOf(first);
+            } else if (TAG_TYPES.contains(kind)) {
+                return null;
             }
             if (BUTTON.equals(kind) && !followsABlog(payload)) return null;
             return rules.family(kind);

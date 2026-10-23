@@ -260,6 +260,8 @@ Hide suggested blogs	Sembunyikan blog yang disarankan
 Takes the blogs Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.	Menghapus blog yang disarankan Tumblr untuk kamu ikuti, beserta judulnya, dari dasbor dan feed lainnya.
 Hide suggested communities	Sembunyikan komunitas yang disarankan
 Takes the communities Tumblr suggests you join, and their headings, out of your dashboard and other feeds.	Menghapus komunitas yang disarankan Tumblr untuk kamu ikuti, beserta judulnya, dari dasbor dan feed lainnya.
+Hide suggested tags	Sembunyikan tag yang disarankan
+Takes the tags Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.	Menghapus tag yang disarankan Tumblr untuk kamu ikuti, beserta judulnya, dari dasbor dan feed lainnya.
 Hide Watch it rows	Sembunyikan baris Watch it
 Takes Tumblr TV's Watch it rows and video hub cards, and their headings, out of your dashboard and other feeds.	Menghapus baris Watch it dan kartu video hub dari Tumblr TV, beserta judulnya, dari dasbor dan feed lainnya.
 # context: the Posts page and its two switches. Posts is the page's title in HushTumblr settings; Follow is the label on Tumblr's own button, so use the word Tumblr shows in your language.

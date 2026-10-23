@@ -51,6 +51,7 @@ family|hideBlogNotificationReminders|Hide blog notification reminders|blogNotifi
 family|hideGiftMessagePopups|Hide gift purchase popups|giftMessagePopup
 family|hideSuggestedBlogs|Hide suggested blogs|suggestedBlogCards
 family|hideSuggestedCommunities|Hide suggested communities|suggestedCommunityCards
+family|hideSuggestedTags|Hide suggested tags|suggestedTagCards
 family|hideWatchItRows|Hide Watch it rows|watchItRows
 family|hideReblogs|Hide reblogs|reblogPosts
 family|hideVideoPosts|Hide video posts|videoPosts
@@ -104,7 +105,7 @@ mutation|timelineAds|timelineList|Lapp/hushtumblr/extension/tumblr/timeline/Time
 # block around the hook is held to the members Tumblr's own method names.
 mutation|settings|timelinePaging|Lapp/hushtumblr/extension/tumblr/timeline/TimelinePaging;->onPage(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Z)I|Lcom/tumblr/ui/fragment/TimelineFragment;|Lcom/tumblr/timeline/model/link/TimelinePaginationLink;|Lcom/tumblr/timeline/model/link/Link;|hideAds,hideSuggestedBlogs,hideSuggestedCommunities,hideWatchItRows,hideReblogs,hideVideoPosts,hidePhotoPosts,hideTextPosts,hidePostsWithWords,muteRootPosts
 # The carousel stub, the carousel model and the key its Moshi adapter writes the items under.
-mutation|suggestedBlogCards,suggestedCommunityCards,watchItRows|timelineCarousel|Lapp/hushtumblr/extension/tumblr/timeline/TimelineFilter;->carouselItems(Ljava/lang/Object;)Ljava/util/List;|Lcom/tumblr/rumblr/model/carousel/Carousel;|elements
+mutation|suggestedBlogCards,suggestedCommunityCards,suggestedTagCards,watchItRows|timelineCarousel|Lapp/hushtumblr/extension/tumblr/timeline/TimelineFilter;->carouselItems(Ljava/lang/Object;)Ljava/util/List;|Lcom/tumblr/rumblr/model/carousel/Carousel;|elements
 # model>interface>method:key, one per bridge: each interface method calls the getter the model's
 # Moshi adapter writes under that key.
 mutation|reblogPosts,videoPosts,photoPosts,textPosts,postWords|postBridge|Lcom/tumblr/rumblr/model/post/Post;>Lapp/hushtumblr/extension/tumblr/timeline/HushPost;>hushContent:content,hushTrail:trail,hushTags:tags,hushSummary:summary,hushRebloggedFrom:reblogged_from_id|Lcom/tumblr/rumblr/model/post/ReblogTrail;>Lapp/hushtumblr/extension/tumblr/timeline/HushTrail;>hushContent:content|Lcom/tumblr/rumblr/model/post/blocks/TextBlock;>Lapp/hushtumblr/extension/tumblr/timeline/HushText;>hushText:text

@@ -260,6 +260,8 @@ Hide suggested blogs	Ocultar blogs sugeridos
 Takes the blogs Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.	Quita los blogs que Tumblr te sugiere seguir, y sus encabezados, de tu panel y otros feeds.
 Hide suggested communities	Ocultar comunidades sugeridas
 Takes the communities Tumblr suggests you join, and their headings, out of your dashboard and other feeds.	Quita las comunidades a las que Tumblr te sugiere unirte, y sus encabezados, de tu panel y otros feeds.
+Hide suggested tags	Ocultar etiquetas sugeridas
+Takes the tags Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.	Quita las etiquetas que Tumblr te sugiere seguir, y sus encabezados, de tu panel y otros feeds.
 Hide Watch it rows	Ocultar filas de Watch it
 Takes Tumblr TV's Watch it rows and video hub cards, and their headings, out of your dashboard and other feeds.	Quita las filas de Watch it y las tarjetas de video de Tumblr TV, y sus encabezados, de tu panel y otros feeds.
 # context: the Posts page and its two switches. Posts is the page's title in HushTumblr settings; Follow is the label on Tumblr's own button, so use the word Tumblr shows in your language.
