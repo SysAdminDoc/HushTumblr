@@ -160,11 +160,13 @@ public final class DarkBackground {
      * system's panel gray. The footer is the bottom of the post card, which the style gives the
      * picked color itself, so while that gray is the step up {@link #designPanel} answered, this
      * answers the card's color. Any other color, another palette's included, comes back as it was,
-     * and so does every color before the Dark palette's set is built. Never throws.
+     * and so does every color before the Dark palette's set is built or while the switch reads off.
+     * Never throws.
      */
     public static long designFooter(long tumblrs) {
         long[] decided = designColors;
-        return decided != null && decided.length == 2 && tumblrs == decided[1] ? decided[0] : tumblrs;
+        return decided != null && decided.length == 2 && tumblrs == decided[1] && Settings.DARK_BACKGROUND.get()
+                ? decided[0] : tumblrs;
     }
 
     private static long designColor(long tumblrs, int which) {

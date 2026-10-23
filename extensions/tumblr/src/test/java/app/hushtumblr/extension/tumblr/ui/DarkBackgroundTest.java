@@ -142,6 +142,17 @@ public class DarkBackgroundTest {
         assertEquals(blue, DarkBackground.designFooter(blue));
     }
 
+    /** The footer reads its own switch, so a set built while it was on doesn't outlast it. */
+    @Test
+    public void thePostFooterAnswersToTheSwitchItself() {
+        Settings.DARK_BACKGROUND.save(true);
+        long raised = DarkBackground.packed(DarkBackground.raised(standInStyle()));
+        assertEquals(raised, DarkBackground.designPanel(PANEL_GRAY));
+        Settings.DARK_BACKGROUND.save(false);
+
+        assertEquals(raised, DarkBackground.designFooter(raised));
+    }
+
     @Test
     public void withTheSwitchOffThePostFooterStaysTumblrs() {
         standInStyle();
