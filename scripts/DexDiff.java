@@ -300,7 +300,7 @@ public class DexDiff {
 
     private static final Map<String, Integer> MUTATION_COLUMNS = Map.ofEntries(
             Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1), Map.entry("activityNotifications", 7),
-            Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 4), Map.entry("timelinePaging", 5),
+            Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 5), Map.entry("timelinePaging", 5),
             Map.entry("timelineCarousel", 3), Map.entry("postBridge", 3), Map.entry("paidPostBridge", 6), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
             Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3),
             Map.entry("followButton", 3), Map.entry("footerButton", 3), Map.entry("postTags", 5),
@@ -3349,7 +3349,10 @@ public class DexDiff {
             capability(c.callee, found);
         }
 
-        /** Each timeline page constructor hands its items, its first parameter, through the hook first thing. */
+        /**
+         * Each timeline page constructor hands its items, its first parameter, through the hook first
+         * thing, and each subclass keeping its own copy of them filters that copy, see [timelineCopies].
+         */
         void timelineList(Contract c) {
             boolean found = true;
             for (String key : c.strings.subList(1, 3)) {
@@ -3358,7 +3361,41 @@ public class DexDiff {
                 int items = parameter(old, 0);
                 found &= hookAt(old, actual(old), 0, c.strings.get(0), List.of(items), items, List.of());
             }
-            capability(c.callee, found);
+            capability(c.callee, found && timelineCopies(c.strings.get(3), c.strings.get(2)));
+        }
+
+        /**
+         * Each constructor of a subclass of the base page class whose first instruction hands one of
+         * its own list parameters to the base page constructor puts that list through the hook just
+         * before, since the subclass keeps its own copy of it. A subclass answering its own items
+         * with no such constructor is one the filter can't reach. True when every one is so.
+         */
+        boolean timelineCopies(String hook, String base) {
+            String owner = base.substring(0, base.indexOf("->"));
+            boolean found = true;
+            int seen = 0;
+            for (ClassDef cd : clean.classes.values()) {
+                if (!owner.equals(cd.getSuperclass())) continue;
+                boolean hands = false, answers = false;
+                for (Method old : cd.getMethods()) {
+                    answers |= old.getName().equals("getTimelineObjects") && old.getParameterTypes().isEmpty()
+                            && old.getReturnType().equals("Ljava/util/List;");
+                    Instruction first = old.getName().equals("<init>") && old.getImplementation() != null ? get(instructions(old), 0) : null;
+                    if (first == null || first.getOpcode() != Opcode.INVOKE_DIRECT && first.getOpcode() != Opcode.INVOKE_DIRECT_RANGE
+                            || !base.equals(String.valueOf(reference(first)))) continue;
+                    int items = arguments(first).get(1);
+                    boolean list = false;
+                    for (int k = 0; k < old.getParameterTypes().size(); k++)
+                        list |= old.getParameterTypes().get(k).toString().equals("Ljava/util/List;") && parameter(old, k) == items;
+                    if (!list) continue;
+                    hands = true;
+                    seen++;
+                    found &= hookAt(old, actual(old), 0, hook, List.of(items), items, List.of());
+                }
+                if (answers && !hands) { fail(cd.getType() + " keeps its own timeline items and no constructor hands them to " + base); found = false; }
+            }
+            if (seen == 0) { fail("no subclass of " + owner + " hands its items to " + base); found = false; }
+            return found;
         }
 
         /**

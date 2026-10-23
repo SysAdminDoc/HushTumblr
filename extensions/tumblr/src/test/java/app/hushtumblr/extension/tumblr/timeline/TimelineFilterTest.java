@@ -202,6 +202,27 @@ public class TimelineFilterTest {
     }
 
     /** A page with nothing to take out comes back as the very list Tumblr built. */
+    /**
+     * A blog's posts keep their own copy of the list they hand the base constructor. That copy is
+     * the filtered one, and the base constructor's call, right after, hands the same list back
+     * without reading the page again. A page that isn't that list is filtered as usual.
+     */
+    @Test
+    public void aBlogsOwnCopyOfItsPostsIsFilteredOnce() {
+        List<Object> page = Arrays.asList(TimelineItems.post(), TimelineItems.of(TimelineObjectType.GEMINI_AD),
+                TimelineItems.post());
+        List<?> kept = TimelineFilter.filterKept(page);
+        assertEquals(Arrays.asList(page.get(0), page.get(2)), kept);
+        assertSame(kept, TimelineFilter.filter(kept));
+        String report = String.join("\n", HookStatus.report(""));
+        assertTrue(report, report.contains("Hide ads: invoked 1,") && report.contains("ad removed 1"));
+
+        List<Object> next = new ArrayList<>(page);
+        assertEquals(Arrays.asList(page.get(0), page.get(2)), TimelineFilter.filter(next));
+        report = String.join("\n", HookStatus.report(""));
+        assertTrue(report, report.contains("Hide ads: invoked 2,") && report.contains("ad removed 2"));
+    }
+
     @Test
     public void postsAndOtherItemsStay() {
         List<Object> page = Arrays.asList(TimelineItems.post(), TimelineItems.of(TimelineObjectType.TITLE),

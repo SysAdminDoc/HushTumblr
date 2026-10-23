@@ -94,9 +94,10 @@ mutation|photoAltTextCaptions,galleryAltTextCaptions|imageDescriptions|Lapp/hush
 # <clinit> holds, the text only the check's companion holds, and the families that ask the hook
 # without owning one of these capabilities (Hide ads, whose own capability is its timeline rule).
 mutation|analyticsFlags,adFreeBannerFlags,tumblrTvFlags,communitiesTabFlags,blazePromptFlags,screenshotSharingFlags,updatePromptFlags|featureSwitch|Lapp/hushtumblr/extension/tumblr/flags/FeatureSwitches;->isEnabled(Ljava/lang/Enum;Z)Z|Whether or not we should show the Tumblr Blaze landing page banner|You're checking for Feature.isEnabled() with a non-boolean bucket!|hideAds
-# Each timeline page's items, first thing in both constructors, and the card and post families
-# that need the hook for the capability their own bridge backs.
-mutation|timelineAds|timelineList|Lapp/hushtumblr/extension/tumblr/timeline/TimelineFilter;->filter(Ljava/util/List;)Ljava/util/List;|Lcom/tumblr/rumblr/model/Timeline;-><init>(Ljava/util/List;Lcom/tumblr/rumblr/model/PaginationLink;)V|Lcom/tumblr/rumblr/response/timeline/TimelineResponse;-><init>(Ljava/util/List;Lcom/tumblr/rumblr/model/PaginationLink;Ljava/util/Map;)V|hideSuggestedBlogs,hideSuggestedCommunities,hideWatchItRows,hideReblogs,hideVideoPosts,hidePhotoPosts,hideTextPosts,hidePostsWithWords,muteRootPosts
+# Each timeline page's items, first thing in both constructors, the copy the blog posts, likes and
+# blog search subclasses keep, and the card and post families that need the hook for the
+# capability their own bridge backs.
+mutation|timelineAds|timelineList|Lapp/hushtumblr/extension/tumblr/timeline/TimelineFilter;->filter(Ljava/util/List;)Ljava/util/List;|Lcom/tumblr/rumblr/model/Timeline;-><init>(Ljava/util/List;Lcom/tumblr/rumblr/model/PaginationLink;)V|Lcom/tumblr/rumblr/response/timeline/TimelineResponse;-><init>(Ljava/util/List;Lcom/tumblr/rumblr/model/PaginationLink;Ljava/util/Map;)V|Lapp/hushtumblr/extension/tumblr/timeline/TimelineFilter;->filterKept(Ljava/util/List;)Ljava/util/List;|hideSuggestedBlogs,hideSuggestedCommunities,hideWatchItRows,hideReblogs,hideVideoPosts,hidePhotoPosts,hideTextPosts,hidePostsWithWords,muteRootPosts
 # What a timeline fragment does with a page that came back empty: the hook asked right after
 # the fragment's own isEmpty(), the fragment, the page links and the link type their next-page
 # getter answers with, then every family whose filter can empty a page. The switch-and-return

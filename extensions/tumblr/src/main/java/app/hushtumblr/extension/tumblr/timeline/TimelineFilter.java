@@ -34,6 +34,11 @@ import app.hushtumblr.extension.tumblr.rootmute.RootPostMutes;
  * logging. With every switch off, paused, or before HushTumblr has its settings, the list goes
  * through untouched.
  *
+ * <p>A blog's posts, likes and blog search are subclasses that keep their own copy of the list they
+ * hand {@code TimelineResponse}, and read that copy back. Each of their constructors passes its list
+ * through {@link #filterKept} first, so the copy is the filtered one, and the base constructor it
+ * goes on to hands that same list back untouched.
+ *
  * <p>The rumblr model keeps its names, so the item's kind, its Sponsored label and how Tumblr is told
  * to show it are read by name. A carousel's own items are the one renamed getter, read through
  * {@link #carouselItems}. Anything that can't be read is kept: a filter that guesses could take a
@@ -120,11 +125,33 @@ public final class TimelineFilter {
     static volatile Function<Object, List<?>> carouselItemsForTests;
 
     /**
+     * What {@link #filterKept} just answered on this thread, for the base constructor its subclass
+     * calls next. Cleared by that call.
+     */
+    private static final ThreadLocal<List<?>> passedOn = new ThreadLocal<>();
+
+    /**
+     * Injected at the start of each constructor of a {@code TimelineResponse} subclass that keeps
+     * the list it hands the base constructor, on that list. Filters it as {@link #filter} does, and
+     * the base constructor's own call, right after, hands it back without reading it again.
+     */
+    public static List<?> filterKept(List<?> items) {
+        List<?> kept = filter(items);
+        passedOn.set(kept);
+        return kept;
+    }
+
+    /**
      * Injected at the start of both list constructors, on their list parameter. Returns the same list
      * when nothing goes, or a new one without the items that do, in the same order. Null stays
      * null. Never throws.
      */
     public static List<?> filter(List<?> items) {
+        List<?> filtered = passedOn.get();
+        if (filtered != null) {
+            passedOn.remove();
+            if (filtered == items) return items;
+        }
         // Tumblr can load a page while it starts, before HushTumblr may read a switch.
         if (!Utils.settingsReady()) return items;
         Rules rules = Rules.now();

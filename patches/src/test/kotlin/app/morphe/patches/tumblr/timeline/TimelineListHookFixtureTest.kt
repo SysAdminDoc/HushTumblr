@@ -18,10 +18,13 @@ import app.morphe.patches.tumblr.misc.extension.SETTINGS_STATUS
 import app.morphe.patches.tumblr.misc.extension.parameterRegisterNumber
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.iface.ClassDef
 import com.android.tools.smali.dexlib2.iface.Method
+import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
+import com.android.tools.smali.dexlib2.immutable.ImmutableClassDef
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -69,6 +72,46 @@ class TimelineListHookFixtureTest {
                 val first = context.mutableClassDefBy(SETTINGS_STATUS).methods.single { it.name == flag }
                     .implementation!!.instructions.first()
                 assertEquals("${build.name}: $flag", 1, (first as NarrowLiteralInstruction).narrowLiteral)
+            }
+        }
+    }
+
+    /**
+     * A blog's posts, likes and blog search keep their own copy of the items they hand
+     * `TimelineResponse` and read that copy back, so each of their constructors filters the items
+     * before that call, with the call that tells the base constructor not to filter them again.
+     */
+    @Test
+    fun `each declared build filters the items the timeline response subclasses keep`() {
+        for (build in Fixtures.declaredBuilds()) {
+            val subclasses = mutableListOf<ClassDef>()
+            FixtureDex.forEach(build) { dex ->
+                dex.classes.filter { it.superclass == TIMELINE_RESPONSE }.forEach { subclasses += ImmutableClassDef.of(it) }
+            }
+            assertEquals("${build.name}: the subclasses", setOf("PostsResponse", "LikesResponse", "BlogSearchResponse"),
+                subclasses.map { it.type.substringAfterLast('/').removeSuffix(";") }.toSet())
+            val types = TIMELINE_LISTS.map { it.substringBefore("->") }.toSet()
+            val context = PatchContexts.of(ExtensionDex.classes() + FixtureDex.classes(build, types).values + subclasses)
+            timelineListHookPatch.execute(context)
+
+            for (subclass in subclasses) {
+                val originals = subclass.methods.filter { it.name == "<init>" && it.instructionList().firstOrNull()
+                    ?.methodRef()?.let { "${it.definingClass}->${it.name}(${it.parameterTypes.joinToString("")})${it.returnType}" } == TIMELINE_LISTS[1] }
+                assertEquals("${subclass.type}: one constructor hands its items on", 1, originals.size)
+                val original = originals.single()
+                val patched = context.mutableClassDefBy(subclass.type).methods.single { it.identity() == original.identity() }
+                val body = patched.instructionList()
+                val before = original.instructionList()
+                val items = patched.parameterRegisterNumber(original.parameterTypes.indexOfFirst { it.toString() == "Ljava/util/List;" })
+                assertEquals("${subclass.type}: the items are what it hands on", items, (before[0] as FiveRegisterInstruction).registerD)
+                assertEquals("${subclass.type}: the kept filter is called", TIMELINE_KEPT_HOOK, body[0].methodRef()?.let {
+                    "${it.definingClass}->${it.name}(${it.parameterTypes.joinToString("")})${it.returnType}" })
+                val call = body[0] as RegisterRangeInstruction
+                assertEquals("${subclass.type}: on the items", listOf(items, 1), listOf(call.startRegister, call.registerCount))
+                assertEquals(subclass.type, Opcode.MOVE_RESULT_OBJECT, body[1].opcode)
+                assertEquals("${subclass.type}: back into the items", items, (body[1] as OneRegisterInstruction).registerA)
+                assertEquals("${subclass.type}: what follows is Tumblr's own code", before.map { it.opcode },
+                    body.drop(2).map { it.opcode })
             }
         }
     }
