@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/version-0.0.8-92BFFF" alt="Version 0.0.8">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License GPL-3.0"></a>
   <img src="https://img.shields.io/badge/platform-Android%208%2B-3DDC84" alt="Platform Android 8+">
-  <img src="https://img.shields.io/badge/Tumblr-46.5.0.109-001935" alt="Tumblr 46.5.0.109">
+  <img src="https://img.shields.io/badge/Tumblr-46.8.1.100-001935" alt="Tumblr 46.8.1.100">
   <img src="https://img.shields.io/badge/for-Morphe%20Manager%202.0.0%2B-8A2BE2" alt="For Morphe Manager 2.0.0 or newer">
 </p>
 
@@ -29,7 +29,7 @@ The latest release is [v0.0.8](https://github.com/SysAdminDoc/HushTumblr/release
 
 1. Install [Morphe Manager](https://github.com/MorpheApp/morphe-manager) 2.0.0 or newer.
 2. Add HushTumblr as a patch source: https://morphe.software/add-source?github=SysAdminDoc%2FHushTumblr
-3. Download the Tumblr 46.5.0.109 bundle (`.apkm`, version code 1460500109) from [APKMirror](https://www.apkmirror.com/apk/tumblr-inc/tumblr/tumblr-social-media-art-46-5-0-109-release/).
+3. Download the Tumblr 46.8.1.100 bundle (`.apkm`, version code 1460801100) from [APKMirror](https://www.apkmirror.com/apk/tumblr-inc/tumblr/tumblr-social-media-art-46-8-1-100-release/).
 4. Patch it with the default selection. That's every patch except Spoof signature for Google sign-in, which you can pick after turning on **Settings → Advanced → Expert mode** in Morphe Manager.
 5. Uninstall stock Tumblr, then install the patched app. Your blogs and follows come back when you sign in, but drafts kept only on the phone don't.
 
@@ -43,7 +43,7 @@ Long-press the Tumblr logo at the top of your dashboard. You can also tap **Hush
 
 ## Patches
 
-There are 46 patches. The latest release has all of them except `Hide suggested tags` and `Hide filtered posts`, which are new.
+There are 46 patches.
 
 | Patch | What it does |
 |---|---|
@@ -106,7 +106,7 @@ HushTumblr collects nothing and has no server. The release check is off until yo
 ## Help
 
 - **Android won't install it.** Uninstall stock Tumblr first. Updating a patched copy needs the same signing key.
-- **Morphe Manager says the APK isn't supported.** It has to be the Tumblr 46.5.0.109 `.apkm` bundle with version code 1460500109.
+- **Morphe Manager says the APK isn't supported.** It has to be the Tumblr 46.8.1.100 `.apkm` bundle with version code 1460801100.
 - **A switch seems to do nothing.** Feed filters work as pages load, so scroll or refresh. Tracking and ad changes wait for Tumblr to restart.
 - **Anything else.** [Open an issue](https://github.com/SysAdminDoc/HushTumblr/issues/new/choose) with your HushTumblr and Tumblr versions.
 
@@ -116,8 +116,8 @@ HushTumblr collects nothing and has no server. The release check is off until yo
 |---|---|
 | App | Tumblr for Android |
 | Package | `com.tumblr` |
-| Version | **46.5.0.109** |
-| Version code | `1460500109` |
+| Version | **46.8.1.100** |
+| Version code | `1460801100` |
 | Android | 8.0 or newer |
 | Architecture | Any (the bundle carries ARM64, 32-bit ARM and x86 builds) |
 | Input | Tumblr's split APK bundle (`.apkm`) |
