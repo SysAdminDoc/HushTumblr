@@ -5939,6 +5939,12 @@ try {
     Assert-True ($shimCertificate -ceq $aliasSigner -and
         (Get-Content -LiteralPath (Join-Path $shimHome 'bin\keytool.log') -Raw) -like '*-alias sideload -storepass:env HUSHTUMBLR_KEYTOOL_STOREPASS pass=shim-password*') `
         "The alias's certificate wasn't read with the keytool of the runtime a java launcher shim starts: '$shimCertificate'"
+    # A store with no password, like the morphe.keystore Morphe makes: keytool gets an empty line at
+    # its prompt, and no password variable is named or set.
+    $emptyCertificate = Get-KeystoreCertificate -Keystore $standInKeystore -Alias 'sideload' -Password '' -Java (Join-Path $tools 'shim\java.cmd') -DesktopJar $stubJar
+    $emptyCall = @(Get-Content -LiteralPath (Join-Path $shimHome 'bin\keytool.log'))[-1]
+    Assert-True ($emptyCertificate -ceq $aliasSigner -and $emptyCall -clike '*-alias sideload pass=*' -and $emptyCall -notlike '*storepass*') `
+        "A keystore with no password wasn't read without one: '$emptyCertificate' $emptyCall"
     Assert-Throws { Get-KeystoreCertificate -Keystore $standInKeystore -Alias 'sideload' -Password 'p' -Java (Join-Path $tools 'bare\java.cmd') -DesktopJar $stubJar } `
         '*No keytool beside *bare\java.cmd or in the bin folder of the runtime it starts*' 'A java with no keytool beside it or in its runtime found one.'
     # And a zipalign beside them, which every patched APK is held to for devices with 16 KB pages
