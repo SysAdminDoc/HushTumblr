@@ -22,7 +22,8 @@ try {
         $walk = New-WalkReceipt -Result PASS -Full $true -Serial 'TESTPHONE01' -Device 'SM-S908U1' -AppVersion $fixture.Output.versionName `
             -BundleSha256 (Get-FileHash -LiteralPath $bundle -Algorithm SHA256).Hash -InstalledApkSha256 ('4' * 64) `
             -Provenance $fixture.Provenance -InstalledBefore $fixture.Output -InstalledAfter $fixture.Output `
-            -Started '2026-10-21T16:00:00Z' -Finished '2026-10-21T16:30:00Z' -Screens 40 -Crashes 0
+            -Routes $fixture.Routes `
+            -Started '2026-10-21T16:00:00Z' -Finished '2026-10-21T16:30:00Z' -Screens $fixture.Routes.Count -Crashes 0
         foreach ($key in $Change.Keys) { $walk[$key] = $Change[$key] }
         [IO.File]::WriteAllText($walkPath, ($walk | ConvertTo-Json -Depth 8))
     }
@@ -31,7 +32,7 @@ try {
     foreach ($walker in @(@{}, @{ device = 'SM-S938B' }, @{ serial = 'emulator-5554'; device = 'sdk_gphone64_x86_64'; emulator = $true })) {
         Write-Walk $walker
         $good = Test-WalkReceipt -Path $walkPath -BundlePath $bundle @proofArguments
-        Assert-WalkContract ($good.Valid -and $good.Receipt.screens -eq 40) "A full PASS walk of the bundle was refused: $($good.Reason)"
+        Assert-WalkContract ($good.Valid -and $good.Receipt.screens -eq 17) "A full PASS walk of the bundle was refused: $($good.Reason)"
     }
 
     foreach ($badWalk in @(
@@ -41,6 +42,13 @@ try {
             @(@{ full = $false }, '*was not the whole app*'),
             @(@{ screens = 0 }, "*doesn't say it opened any screen*"),
             @(@{ crashes = 1 }, '*recorded a Tumblr crash*'),
+            @(@{ problems = @('a required page did not open') }, '*recorded problems*'),
+            @(@{ problems = $null }, '*recorded problems*'),
+            @(@{ started = 'not a time' }, '*timestamps*'),
+            @(@{ finished = '2026-10-20T16:00:00Z' }, '*timestamps*'),
+            @(@{ finished = '2026-10-21T16:00:00Z' }, '*timestamps*'),
+            @(@{ routes = @() }, '*route plan*'),
+            @(@{ screens = 1 }, '*route plan*'),
             @(@{ installedApkSha256 = '' }, '*identity*'),
             @(@{ device = $null }, "*doesn't say which device walked it*"),
             @(@{ device = 'Pixel 9' }, "*Pixel 9 isn't one of the release walk phones*"),
@@ -55,6 +63,22 @@ try {
         Write-Walk $badWalk[0]
         $bad = Test-WalkReceipt -Path $walkPath -BundlePath $bundle @proofArguments
         Assert-WalkContract (-not $bad.Valid -and $bad.Reason -like $badWalk[1]) "Expected the walk refusal [$($badWalk[1])], got [$($bad.Reason)]."
+    }
+    foreach ($fault in @('omitted', 'duplicate', 'wrong-destination', 'unverified', 'wrong-query', 'blocked', 'unknown')) {
+        Write-Walk
+        $changed = Get-Content -LiteralPath $walkPath -Raw | ConvertFrom-Json
+        switch ($fault) {
+            'omitted' { $changed.routes = @($changed.routes | Select-Object -Skip 1); $changed.screens-- }
+            'duplicate' { $changed.routes = @($changed.routes) + @($changed.routes[0]); $changed.screens++ }
+            'wrong-destination' { $changed.routes[0].observation.activity = 'com.tumblr/.ui.activity.LoginActivity' }
+            'unverified' { $changed.routes[0].status = 'UNVERIFIED' }
+            'wrong-query' { $changed.routes[2].observation.markerMatches = $false }
+            'blocked' { $changed.routes[0].observation.blocked = $true }
+            'unknown' { $changed.routes[0].id = 'claimed.extra.screen' }
+        }
+        [IO.File]::WriteAllText($walkPath, ($changed | ConvertTo-Json -Depth 8))
+        $bad = Test-WalkReceipt -Path $walkPath -BundlePath $bundle @proofArguments
+        Assert-WalkContract (-not $bad.Valid -and $bad.Reason -like '*route plan*') "Accepted $fault route evidence: $($bad.Reason)"
     }
     foreach ($field in @('sha256', 'package', 'versionName', 'versionCode', 'signers')) {
         foreach ($boundary in @('provenance.output', 'installedBefore', 'installedAfter')) {

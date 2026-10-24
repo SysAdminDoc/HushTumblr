@@ -17,6 +17,13 @@ function New-WalkTestData {
         sha256 = $provenance.sourceSha256; package = $output.package; versionName = $output.versionName
         versionCode = $output.versionCode; forced = $false } }) }
     [IO.File]::WriteAllText($releasePath, ($release | ConvertTo-Json -Depth 8))
+    $routes = @(foreach ($route in Get-WalkPlan -PatchNames @($provenance.patches)) {
+        [ordered]@{ id = $route.id; status = 'PASS'; observation = [ordered]@{
+            activity = $route.activity; resourceIds = @($route.ids | ForEach-Object { "com.tumblr:id/$_" })
+            markerMatches = $true; markerValue = $route.value; blocked = $false; settingsHome = $route.id -ceq 'settings.home'
+            pageTitleMatches = [bool]$route.page
+        } }
+    })
     return @{ Provenance = $provenance; Output = $output; BundleHash = $bundleHash
-        Arguments = @{ CatalogPath = $catalogPath; ReleaseReceiptPath = $releasePath } }
+        Routes = $routes; Arguments = @{ CatalogPath = $catalogPath; ReleaseReceiptPath = $releasePath } }
 }

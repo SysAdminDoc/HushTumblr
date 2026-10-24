@@ -40,8 +40,8 @@ try {
         'A walk that skipped the settings pages should earn PARTIAL.'
     Assert-True ((Resolve-WalkOutcome -Screens 0 -Crashes 0 -Problems @() -Full $true) -ceq 'PARTIAL') `
         'A walk that opened no screen should earn PARTIAL.'
-    Assert-True ((Resolve-WalkOutcome -Screens 17 -Crashes 0 -Problems @() -Full $true) -ceq 'PASS') `
-        'A whole clean walk should earn PASS.'
+    Assert-True ((Resolve-WalkOutcome -Screens 1 -Crashes 0 -Problems @() -Full $true) -cne 'PASS') `
+        'A positive screen count without named route evidence passed.'
     Assert-True ((Resolve-WalkOutcome -Screens 6 -Crashes 2 -Problems @() -Full $false) -ceq 'FAIL') `
         'A crash should outrank an incomplete walk.'
 
@@ -88,6 +88,26 @@ try {
     Assert-True ($null -eq (Find-WalkRow $nodes 'Posts' 'com.tumblr')) 'Two rows with the same text were taken for one.'
     Assert-True (@(ConvertFrom-WalkDump 'ERROR: could not get idle state.').Count -eq 0) 'A failed dump read as a screen.'
 
+    # A launch with Tumblr in front is insufficient: check the actual page and query.
+    $searchRoute = @(Get-WalkPlan | Where-Object { $_.id -ceq 'native.search' })[0]
+    $searchXml = @'
+<hierarchy><node package="com.tumblr" resource-id="com.tumblr:id/search_activity_root_container" bounds="[0,0][1080,2000]">
+<node package="com.tumblr" resource-id="com.tumblr:id/post_type_button" bounds="[0,100][200,200]"/>
+<node package="com.tumblr" resource-id="com.tumblr:id/time_range_button" bounds="[200,100][400,200]"/>
+<node package="com.tumblr" resource-id="com.tumblr:id/searchable_action_bar" text="art" bounds="[0,0][800,100]"/>
+</node></hierarchy>
+'@
+    $searchNodes = @(ConvertFrom-WalkDump $searchXml)
+    $observation = Get-WalkObservation $searchRoute $searchNodes 'com.tumblr/.ui.activity.SearchActivity'
+    Assert-True (Test-WalkDestination $searchRoute $observation) 'The verified Posts search destination was refused.'
+    $wrongQuery = Get-WalkObservation $searchRoute @(ConvertFrom-WalkDump ($searchXml.Replace('text="art"', 'text="private draft"'))) $searchRoute.activity
+    Assert-True (-not (Test-WalkDestination $searchRoute $wrongQuery)) 'The wrong search query passed.'
+    Assert-True (($wrongQuery | ConvertTo-Json) -cnotlike '*private draft*') 'A private draft entered route evidence.'
+    $login = Get-WalkObservation $searchRoute $searchNodes 'com.tumblr/.ui.activity.LoginActivity'
+    Assert-True (-not (Test-WalkDestination $searchRoute $login)) 'A login activity passed as search.'
+    $missing = Get-WalkObservation $searchRoute @($searchNodes | Where-Object { $_.ResourceId -cne 'com.tumblr:id/time_range_button' }) $searchRoute.activity
+    Assert-True (-not (Test-WalkDestination $searchRoute $missing)) 'A different search tab passed as Posts.'
+
     # Get-WalkListSwipe and Get-WalkScreenKey: the settings list moves in slow, short drags, below
     # the pinned header, and a dump that didn't move reads as the list's end.
     $down = @(Get-WalkListSwipe -Width 1080 -Height 2316 -Direction Down)
@@ -111,17 +131,23 @@ try {
     . (Join-Path $PSScriptRoot 'test-walk-data.ps1')
     $fixture = New-WalkTestData -Directory $scratch -BundlePath $bundle
     $proofArguments = $fixture.Arguments
+    Assert-True ((Resolve-WalkOutcome -Screens $fixture.Routes.Count -Crashes 0 -Full $true `
+        -Routes $fixture.Routes -PatchNames $fixture.Provenance.patches) -ceq 'PASS') 'A complete declared route plan did not pass.'
+    $subset = @($fixture.Routes | Select-Object -First 2)
+    Assert-True ((Resolve-WalkOutcome -Screens 2 -Crashes 0 -Full $true -Routes $subset `
+        -PatchNames $fixture.Provenance.patches) -ceq 'PARTIAL') 'An intentional subset was not PARTIAL.'
     function New-WalkReceiptFile([string]$Name, [string]$Result, [bool]$Full, [int]$Screens, [int]$Crashes, [string]$Sha, [string[]]$Problems) {
         $receipt = New-WalkReceipt -Result $Result -Full $Full -Serial 'emulator-5554' -Device 'sdk_gphone64_x86_64' `
             -AppVersion $fixture.Output.versionName -BundleSha256 $Sha -InstalledApkSha256 $fixture.Output.sha256 `
             -Provenance $fixture.Provenance -InstalledBefore $fixture.Output -InstalledAfter $fixture.Output `
+            -Routes $fixture.Routes `
             -Started $started -Finished $finished -Screens $Screens -Crashes $Crashes -Problems $Problems
         $path = Join-Path $scratch $Name
         [IO.File]::WriteAllText($path, (ConvertTo-Json -InputObject $receipt -Depth 8) + "`n")
         return $path
     }
 
-    $passWalk = New-WalkReceiptFile 'pass.json' 'PASS' $true 17 0 $bundleSha256 @()
+    $passWalk = New-WalkReceiptFile 'pass.json' 'PASS' $true $fixture.Routes.Count 0 $bundleSha256 @()
     Assert-True (Test-WalkReceipt -Path $passWalk -BundlePath $bundle @proofArguments).Valid `
         'A whole clean walk of this bundle should back a release.'
 

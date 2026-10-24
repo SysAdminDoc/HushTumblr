@@ -13,6 +13,7 @@
     so a walk of any other build can't stand in for this one.
 #>
 . (Join-Path $PSScriptRoot 'apk-provenance.ps1')
+. (Join-Path $PSScriptRoot 'walk-plan.ps1')
 
 # The phones release walks run on, by ro.product.model. An emulator passes by its serial.
 $WalkReceiptPhones = @('SM-S908U1', 'SM-S938B')
@@ -33,6 +34,7 @@ function New-WalkReceipt {
         $Provenance,
         $InstalledBefore,
         $InstalledAfter,
+        [object[]]$Routes = @(),
         [Parameter(Mandatory = $true)][DateTimeOffset]$Started,
         [Parameter(Mandatory = $true)][DateTimeOffset]$Finished,
         [int]$Screens,
@@ -46,6 +48,7 @@ function New-WalkReceipt {
         started = $Started.UtcDateTime.ToString('yyyy-MM-ddTHH:mm:ssZ'); finished = $Finished.UtcDateTime.ToString('yyyy-MM-ddTHH:mm:ssZ')
         screens = $Screens; crashes = $Crashes; problems = @($Problems)
         provenance = $Provenance; installedBefore = $InstalledBefore; installedAfter = $InstalledAfter
+        planVersion = 1; routes = @($Routes)
     }
 }
 
@@ -59,7 +62,11 @@ function Test-WalkReceipt {
         [Parameter(Mandatory)][string]$CatalogPath, [Parameter(Mandatory)][string]$ReleaseReceiptPath)
     function Fail([string]$Reason) { return [pscustomobject]@{ Valid = $false; Reason = $Reason; Receipt = $null } }
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return Fail "there's no walk receipt at $Path" }
-    try { $receipt = Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json }
+    try {
+        $json = Get-Content -LiteralPath $Path -Raw
+        $receipt = if ((Get-Command ConvertFrom-Json).Parameters.ContainsKey('DateKind')) { $json | ConvertFrom-Json -DateKind String }
+            else { $json | ConvertFrom-Json }
+    }
     catch { return Fail "the walk receipt doesn't read as JSON: $($_.Exception.Message)" }
     if ($null -eq $receipt -or ($receipt.schema -isnot [int] -and $receipt.schema -isnot [long]) -or $receipt.schema -ne 2) {
         return Fail 'the walk receipt is not schema 2; historical receipts cannot prove a new release'
@@ -74,6 +81,19 @@ function Test-WalkReceipt {
     if (($receipt.crashes -isnot [int] -and $receipt.crashes -isnot [long]) -or $receipt.crashes -ne 0) {
         return Fail 'the walk recorded a Tumblr crash'
     }
+    if ($receipt.problems -isnot [array] -or $receipt.problems.Count -ne 0) { return Fail 'the walk recorded problems or omitted their result' }
+    $start = [DateTimeOffset]::MinValue
+    $finish = [DateTimeOffset]::MinValue
+    foreach ($field in @('started', 'finished')) {
+        $stamp = if ($receipt.$field -is [datetime]) { $receipt.$field.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') } else { $receipt.$field }
+        $parsed = [DateTimeOffset]::MinValue
+        if ($stamp -isnot [string] -or -not [DateTimeOffset]::TryParseExact($stamp, 'yyyy-MM-ddTHH:mm:ssZ',
+            [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::AssumeUniversal, [ref]$parsed)) {
+            return Fail 'the walk timestamps are missing or invalid'
+        }
+        if ($field -eq 'started') { $start = $parsed } else { $finish = $parsed }
+    }
+    if ($finish -le $start) { return Fail 'the walk timestamps are reversed or empty' }
     if ($receipt.device -isnot [string] -or $receipt.serial -isnot [string] -or $receipt.emulator -isnot [bool]) {
         return Fail "the walk receipt doesn't say which device walked it"
     }
@@ -105,5 +125,10 @@ function Test-WalkReceipt {
             throw 'APK provenance does not match a validated release input.'
         }
     } catch { return Fail "APK identity refused: $($_.Exception.Message)" }
+    $coverage = Test-WalkCoverage -Routes @($receipt.routes) -PatchNames @($receipt.provenance.patches)
+    if (($receipt.planVersion -isnot [int] -and $receipt.planVersion -isnot [long]) -or $receipt.planVersion -ne 1 -or $receipt.routes -isnot [array] -or
+        -not $coverage.Complete -or $coverage.Invalid -or $receipt.screens -ne $receipt.routes.Count) {
+        return Fail "the walk does not prove its required route plan: $($coverage.Reason)"
+    }
     return [pscustomobject]@{ Valid = $true; Reason = $null; Receipt = $receipt }
 }

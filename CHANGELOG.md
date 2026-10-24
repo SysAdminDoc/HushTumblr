@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* **Tooling:** A release walk now checks each required destination instead of trusting its screen count. Login screens, wrong search results, duplicate or missing routes, recorded problems and invalid timestamps can't earn a full PASS. Shorter exploratory walks remain partial.
 * **Tooling:** Release walks now prove which APK was installed. Patch runs keep the input, bundle, patch selection and signing identity beside the signed output. The walker checks the installed bytes before and after its run, and publication rejects missing, changed or historical evidence.
 * **Tooling:** `scripts/walk-app.ps1` scrolls the Hush settings list with slow drags now, down first and then back up, and stops once the list stops moving. Quick swipes flung the list past rows that slid under its pinned header, so a walk on a phone could miss settings pages that were there all along.
 * **Tooling:** `scripts/patch-for-device.ps1` can now sign a gate run it reuses with the BKS key Morphe makes. Plain `apksigner.bat` can't open that keystore, so the script falls back to apksigner's own jar with BouncyCastle loaded. When both fail, the error shows what each one said.
