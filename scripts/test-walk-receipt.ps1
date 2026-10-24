@@ -3,6 +3,7 @@
 param()
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'walk-receipt.ps1')
+. (Join-Path $PSScriptRoot 'test-walk-data.ps1')
 
 function Assert-WalkContract([bool]$Condition, [string]$Message) {
     if (-not $Condition) { throw $Message }
@@ -14,19 +15,22 @@ try {
     $bundle = Join-Path $work 'patches-0.0.9.mpp'
     [IO.File]::WriteAllText($bundle, 'the signed bundle')
     $walkPath = Join-Path $work 'walk-receipt.json'
+    $fixture = New-WalkTestData -Directory $work -BundlePath $bundle
+    $proofArguments = $fixture.Arguments
     # The receipt a walk of that bundle writes. -Change bends one field.
     function Write-Walk([hashtable]$Change = @{}) {
-        $walk = New-WalkReceipt -Result PASS -Full $true -Serial 'TESTPHONE01' -Device 'SM-S908U1' -AppVersion '46.5.0.109' `
+        $walk = New-WalkReceipt -Result PASS -Full $true -Serial 'TESTPHONE01' -Device 'SM-S908U1' -AppVersion $fixture.Output.versionName `
             -BundleSha256 (Get-FileHash -LiteralPath $bundle -Algorithm SHA256).Hash -InstalledApkSha256 ('4' * 64) `
+            -Provenance $fixture.Provenance -InstalledBefore $fixture.Output -InstalledAfter $fixture.Output `
             -Started '2026-10-21T16:00:00Z' -Finished '2026-10-21T16:30:00Z' -Screens 40 -Crashes 0
         foreach ($key in $Change.Keys) { $walk[$key] = $Change[$key] }
-        [IO.File]::WriteAllText($walkPath, ($walk | ConvertTo-Json -Depth 4))
+        [IO.File]::WriteAllText($walkPath, ($walk | ConvertTo-Json -Depth 8))
     }
 
     # Either release phone or an emulator walks for a release.
     foreach ($walker in @(@{}, @{ device = 'SM-S938B' }, @{ serial = 'emulator-5554'; device = 'sdk_gphone64_x86_64'; emulator = $true })) {
         Write-Walk $walker
-        $good = Test-WalkReceipt -Path $walkPath -BundlePath $bundle
+        $good = Test-WalkReceipt -Path $walkPath -BundlePath $bundle @proofArguments
         Assert-WalkContract ($good.Valid -and $good.Receipt.screens -eq 40) "A full PASS walk of the bundle was refused: $($good.Reason)"
     }
 
@@ -37,27 +41,57 @@ try {
             @(@{ full = $false }, '*was not the whole app*'),
             @(@{ screens = 0 }, "*doesn't say it opened any screen*"),
             @(@{ crashes = 1 }, '*recorded a Tumblr crash*'),
+            @(@{ installedApkSha256 = '' }, '*identity*'),
             @(@{ device = $null }, "*doesn't say which device walked it*"),
             @(@{ device = 'Pixel 9' }, "*Pixel 9 isn't one of the release walk phones*"),
             @(@{ device = 'Pixel 9'; emulator = $true }, "*Pixel 9 isn't one of the release walk phones*"),
             @(@{ bundleSha256 = ('5' * 64) }, '*patched with bundle*and this one is*'),
-            @(@{ schema = 2 }, "*isn't schema 1*"))) {
+            @(@{ schema = 1 }, '*historical receipts*'),
+            @(@{ provenance = $null }, '*identity*'),
+            @(@{ installedBefore = $null }, '*identity*'),
+            @(@{ installedAfter = $null }, '*identity*'),
+            @(@{ appVersion = 'wrong-version' }, '*identity*'),
+            @(@{ installedApkSha256 = 'f' * 64 }, '*identity*'))) {
         Write-Walk $badWalk[0]
-        $bad = Test-WalkReceipt -Path $walkPath -BundlePath $bundle
+        $bad = Test-WalkReceipt -Path $walkPath -BundlePath $bundle @proofArguments
         Assert-WalkContract (-not $bad.Valid -and $bad.Reason -like $badWalk[1]) "Expected the walk refusal [$($badWalk[1])], got [$($bad.Reason)]."
     }
+    foreach ($field in @('sha256', 'package', 'versionName', 'versionCode', 'signers')) {
+        foreach ($boundary in @('provenance.output', 'installedBefore', 'installedAfter')) {
+            Write-Walk
+            $changed = Get-Content -LiteralPath $walkPath -Raw | ConvertFrom-Json
+            $identity = if ($boundary -eq 'provenance.output') { $changed.provenance.output } else { $changed.$boundary }
+            $identity.$field = if ($field -eq 'signers') { @('b' * 64) } elseif ($field -eq 'sha256') { 'f' * 64 } else { 'wrong' }
+            [IO.File]::WriteAllText($walkPath, ($changed | ConvertTo-Json -Depth 8))
+            $bad = Test-WalkReceipt -Path $walkPath -BundlePath $bundle @proofArguments
+            Assert-WalkContract (-not $bad.Valid) "Accepted a changed $field at $boundary."
+        }
+    }
+    foreach ($field in @('sourceSha256', 'catalogSha256', 'inputIdentity', 'mergedApkSha256', 'bundleSha256', 'patches', 'options')) {
+        Write-Walk
+        $changed = Get-Content -LiteralPath $walkPath -Raw | ConvertFrom-Json
+        $changed.provenance.$field = switch ($field) {
+            'patches' { @('not a patch') }
+            'options' { @('Dark background color:backgroundColor=#121212') }
+            default { 'f' * 64 }
+        }
+        if ($field -in @('inputIdentity', 'mergedApkSha256')) { $changed.provenance.$field = '' }
+        [IO.File]::WriteAllText($walkPath, ($changed | ConvertTo-Json -Depth 8))
+        $bad = Test-WalkReceipt -Path $walkPath -BundlePath $bundle @proofArguments
+        Assert-WalkContract (-not $bad.Valid) "Accepted changed provenance $field."
+    }
     [IO.File]::WriteAllText($walkPath, 'not json')
-    $bad = Test-WalkReceipt -Path $walkPath -BundlePath $bundle
+    $bad = Test-WalkReceipt -Path $walkPath -BundlePath $bundle @proofArguments
     Assert-WalkContract (-not $bad.Valid -and $bad.Reason -like "*doesn't read as JSON*") "A receipt that isn't JSON read as: $($bad.Reason)"
-    $bad = Test-WalkReceipt -Path (Join-Path $work 'none.json') -BundlePath $bundle
+    $bad = Test-WalkReceipt -Path (Join-Path $work 'none.json') -BundlePath $bundle @proofArguments
     Assert-WalkContract (-not $bad.Valid -and $bad.Reason -like "*there's no walk receipt at*") "A missing receipt read as: $($bad.Reason)"
 
     # A walk of one bundle never backs another, even a rebuild of the same commit.
     Write-Walk
     [IO.File]::WriteAllText($bundle, 'the signed bundle, rebuilt')
-    $bad = Test-WalkReceipt -Path $walkPath -BundlePath $bundle
+    $bad = Test-WalkReceipt -Path $walkPath -BundlePath $bundle @proofArguments
     Assert-WalkContract (-not $bad.Valid -and $bad.Reason -like '*patched with bundle*and this one is*') "A walk backed another bundle: $($bad.Reason)"
-    $bad = Test-WalkReceipt -Path $walkPath -BundlePath (Join-Path $work 'gone.mpp')
+    $bad = Test-WalkReceipt -Path $walkPath -BundlePath (Join-Path $work 'gone.mpp') @proofArguments
     Assert-WalkContract (-not $bad.Valid -and $bad.Reason -like "*there's no bundle at*") "A walk backed a bundle that isn't there: $($bad.Reason)"
 } finally {
     Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue

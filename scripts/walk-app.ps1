@@ -34,8 +34,8 @@
     scripts/walk-app.ps1 -Serial emulator-5610
 
 .EXAMPLE
-    # Walk a build already patched from this bundle and installed (records its APK hash):
-    scripts/walk-app.ps1 -Serial <your phone's adb serial> -SkipPatch
+    # Walk an installed build, proving it matches a checked signed APK and its provenance:
+    scripts/walk-app.ps1 -Serial <your phone's adb serial> -SkipPatch -PatchedApk <signed.apk>
 
 .EXAMPLE
     # Over a build signed with Morphe's own key, whose password is in HUSHTUMBLR_SIDELOAD_KEY_PASSWORD:
@@ -58,9 +58,9 @@ param(
     [string[]]$SettingsPages = @('Feed', 'Posts', 'Interface', 'Privacy', 'Links', 'Notifications',
         "Tumblr's own settings", 'Updates', 'Pause, backup and diagnostics', 'About'),
     # Walk the app that's already installed instead of patching and installing a fresh one. The
-    # installed build must have been patched from the release bundle; the receipt still names the
-    # bundle's hash, so an install from any other build would make a receipt publish won't honor.
+    # installed build must match -PatchedApk and the provenance beside it, from this exact bundle.
     [switch]$SkipPatch,
+    [string]$PatchedApk,
     # Leave the Hush settings pages out of the walk. Makes the walk PARTIAL, not a release walk.
     [switch]$SkipSettings,
     [ValidateRange(1, 30)][int]$SettleSeconds = 4,
@@ -181,15 +181,18 @@ function Get-WalkScreenKey {
 function Invoke-WalkApp {
     param(
         [string]$Serial, [string]$Package, [string[]]$Visit, [string[]]$SettingsPages,
-        [bool]$SkipPatch, [bool]$SkipSettings, [int]$SettleSeconds, [string]$OutDir,
+        [bool]$SkipPatch, [string]$PatchedApk, [bool]$SkipSettings, [int]$SettleSeconds, [string]$OutDir,
         [string]$Keystore, [string]$KeyAlias, [bool]$NoStorePassword, [string]$LeaseDirectory, [string]$ChatIdentity,
         [string]$Adb, [string]$Aapt2, [string]$Root
     )
     if (-not $Serial) { throw 'Name the device to walk with -Serial.' }
     if (-not $Root) { $Root = Split-Path -Parent $PSScriptRoot }
-    $Root = [IO.Path]::GetFullPath($Root)
-    $OutDir = [IO.Path]::GetFullPath($OutDir)
+    $Root = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Root)
+    $OutDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutDir)
     New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
+    $lease = $null
+    $walkHandles = [Collections.Generic.List[IDisposable]]::new()
+    try {
 
     # The bundle publish will hash, named in the receipt so a walk of any other build can't stand in.
     $version = Get-BundleVersion -Root $Root
@@ -197,7 +200,10 @@ function Invoke-WalkApp {
     if (-not (Test-Path -LiteralPath $bundle -PathType Leaf)) {
         throw "No release bundle at $bundle. Build it first (:patches:generatePatchesList then :patches:buildAndroid, through the governor)."
     }
-    $bundleSha256 = (Get-FileHash -LiteralPath $bundle -Algorithm SHA256).Hash.ToLowerInvariant()
+    $heldBundle = Open-HeldFile -Path $bundle -What 'The walked bundle'
+    $walkHandles.Add($heldBundle)
+    $bundle = Get-HeldPath $heldBundle
+    $bundleSha256 = Get-StreamSha256 $heldBundle
     # Publish holds the receipt to the staged bundle, so a walk of any other build can't back it.
     # Saying so up front saves a walk that was meant for the release; a walk between releases,
     # with the last release's assets still staged, goes ahead.
@@ -218,6 +224,8 @@ function Invoke-WalkApp {
     if (-not $Adb) { throw 'No adb found. Put it on the PATH or pass -Adb.' }
     $Aapt2 = Resolve-Aapt2 -Explicit $Aapt2 -Root $Root
 
+    $installApk = $PatchedApk
+    if ($SkipPatch -and -not $installApk) { throw '-SkipPatch requires -PatchedApk and its .provenance.json from a checked patch run.' }
     if (-not $SkipPatch) {
         $patchArguments = @{ OutDir = (Join-Path $OutDir 'patch'); Root = $Root }
         if ($Keystore) { $patchArguments.Keystore = $Keystore }
@@ -230,11 +238,23 @@ function Invoke-WalkApp {
         $installApk = $installApk[-1]
     }
 
-    $lease = $null
+    $installApk = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($installApk)
+    $provenanceHandle = Open-HeldFile -Path "$installApk.provenance.json" -What 'The signed APK provenance'
+    $walkHandles.Add($provenanceHandle)
+    $provenance = Get-Content -LiteralPath (Get-HeldPath $provenanceHandle) -Raw | ConvertFrom-Json
+    Assert-HushApkProvenance -Provenance $provenance -BundleSha256 $bundleSha256 -CatalogPath (Join-Path $Root 'patches-list.json') -FullSelection
+    if ($Package -cne $provenance.output.package) { throw 'The walk package differs from the checked APK.' }
+    $apkHandle = Open-HeldFile -Path $installApk -Sha256 $provenance.output.sha256 -What 'The walked signed APK'
+    $walkHandles.Add($apkHandle)
+    $installApk = Get-HeldPath $apkHandle
+    $localManifest = Get-ApkManifestFacts -Apk $installApk -Aapt2 $Aapt2
+    Assert-HushApkIdentity -Expected $provenance.output -Actual ([pscustomobject]@{
+        sha256 = Get-StreamSha256 $apkHandle; package = $localManifest.package; versionName = $localManifest.versionName
+        versionCode = [string]$localManifest.versionCode; signers = @(Get-HushApkSigners -Apk $installApk -Aapt2 $Aapt2)
+    })
     $problems = [Collections.Generic.List[string]]::new()
     $screens = 0
     $dumpPath = '/sdcard/hushtumblr-walk.xml'
-    try {
         $lease = Enter-HushDeviceLease -Adb $Adb -Serial $Serial -LeaseDirectory $LeaseDirectory -ChatIdentity $ChatIdentity
         # Ownership is checked on every call. The device identity was bound when the lease was
         # taken and is checked again by the install and at the end.
@@ -267,12 +287,15 @@ function Invoke-WalkApp {
         if (-not $SkipPatch) {
             Write-Host "[walk] installing $(Split-Path -Leaf $installApk) on $Serial"
             try {
-                Install-HushAndroidApk -Adb $Adb -Serial $Serial -PackageName $Package -Apk $installApk -Aapt2 $Aapt2 -Lease $lease
+                Install-HushAndroidApk -Adb $Adb -Serial $Serial -PackageName $Package -Apk $installApk -Aapt2 $Aapt2 -Lease $lease `
+                    -ExpectedIdentity $provenance.output
             } catch {
                 throw ("The build would not install on ${Serial}: $($_.Exception.Message) If the signer differs, patch with the key " +
                     'the installed app uses (-Keystore, -KeyAlias). The installed app and its data were left alone.')
             }
         }
+        $installedBefore = Get-HushInstalledApkIdentity -Adb $Adb -Lease $lease -PackageName $Package -Aapt2 $Aapt2
+        Assert-HushApkIdentity -Expected $provenance.output -Actual $installedBefore
         $started = [DateTimeOffset]::UtcNow
         $startedEpoch = [long]((& $walkAdb @('shell', 'date', '+%s')).Output -join '').Trim()
         [void](& $walkAdb @('shell', 'am', 'force-stop', $Package))
@@ -374,22 +397,21 @@ function Invoke-WalkApp {
         if (-not $alive) { $problems.Add('Tumblr was no longer running when the walk ended') }
 
         $identity = Confirm-HushLeasedDevice -Adb $Adb -Lease $lease
-        $appVersion = @((& $walkAdb @('shell', 'dumpsys', 'package', $Package)).Output |
-            Where-Object { $_ -match 'versionName=(.+)$' } | ForEach-Object { $Matches[1].Trim() } | Select-Object -First 1) -join ''
-        $apkPath = @((& $walkAdb @('shell', 'pm', 'path', $Package)).Output | Where-Object { $_ -like 'package:*base.apk' }) | Select-Object -First 1
-        $installedSha = ''
-        if ($apkPath) {
-            $installedSha = (((& $walkAdb @('shell', 'sha256sum', $apkPath.Substring(8).Trim())).Output -join '') -split '\s+')[0]
-        }
+        $installedAfter = $null
+        try {
+            $installedAfter = Get-HushInstalledApkIdentity -Adb $Adb -Lease $lease -PackageName $Package -Aapt2 $Aapt2
+            Assert-HushApkIdentity -Expected $provenance.output -Actual $installedAfter
+        } catch { $problems.Add("Installed APK identity changed or could not be verified: $($_.Exception.Message)") }
 
         $full = $full -and $problems.Count -eq 0
         $result = Resolve-WalkOutcome -Screens $screens -Crashes $fatal.Count -Problems ([string[]]$problems) -Full $full
         $receipt = New-WalkReceipt -Result $result -Full $full -Serial $Serial -Device $identity.Model `
-            -AppVersion $appVersion -BundleSha256 $bundleSha256 -InstalledApkSha256 $installedSha `
+            -AppVersion $installedBefore.versionName -BundleSha256 $bundleSha256 -InstalledApkSha256 $installedBefore.sha256 `
+            -Provenance $provenance -InstalledBefore $installedBefore -InstalledAfter $installedAfter `
             -Started $started -Finished ([DateTimeOffset]::UtcNow) -Screens $screens -Crashes $fatal.Count `
             -Problems ([string[]]$problems)
         $receiptPath = Join-Path $OutDir 'walk-receipt.json'
-        [IO.File]::WriteAllText($receiptPath, (ConvertTo-Json -InputObject $receipt -Depth 4) + "`n")
+        [IO.File]::WriteAllText($receiptPath, (ConvertTo-Json -InputObject $receipt -Depth 8) + "`n")
 
         Write-Host "[walk] receipt $receiptPath"
         foreach ($problem in $problems) { Write-Host "[walk]   $problem" }
@@ -398,12 +420,13 @@ function Invoke-WalkApp {
         return $receiptPath
     } finally {
         if ($lease) { Exit-HushDeviceLease $lease }
+        foreach ($handle in $walkHandles) { $handle.Dispose() }
     }
 }
 
 if ($MyInvocation.InvocationName -ne '.') {
     $receiptPath = Invoke-WalkApp -Serial $Serial -Package $Package -Visit $Visit -SettingsPages $SettingsPages `
-        -SkipPatch:$SkipPatch -SkipSettings:$SkipSettings -SettleSeconds $SettleSeconds -OutDir $OutDir `
+        -SkipPatch:$SkipPatch -PatchedApk $PatchedApk -SkipSettings:$SkipSettings -SettleSeconds $SettleSeconds -OutDir $OutDir `
         -Keystore $Keystore -KeyAlias $KeyAlias -NoStorePassword:$NoStorePassword -LeaseDirectory $LeaseDirectory -ChatIdentity $ChatIdentity `
         -Adb $Adb -Aapt2 $Aapt2 -Root $Root
     $walked = Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json

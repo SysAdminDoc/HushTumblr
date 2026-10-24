@@ -151,6 +151,8 @@ You need JDK 21, the Android SDK and a GitHub token with `read:packages` for the
 
 The bundle lands in `patches/build/release/`. `:patches:fixtureTest` also needs the Tumblr APK in the folder `HUSHTUMBLR_FIXTURE_DIR` points at.
 
+Before publication, `scripts/walk-app.ps1` checks the installed APK against the signed output and the provenance written by `scripts/patch-for-device.ps1`. To walk an existing installation, pass `-SkipPatch -PatchedApk <signed.apk>` and keep its `.provenance.json` beside it. A receipt from an older walk format can't authorize a new release.
+
 - `patches/src/main/kotlin/app/morphe/patches/tumblr/` holds the patches, and `shared/compat/AppCompatibilities.kt` names the supported build.
 - `extensions/tumblr/` and `extensions/shared/library/` are the Java code that runs inside Tumblr, settings and translations included.
 - `patches-list.json` is the generated catalog. `patches-bundle.json` is the Morphe source index and only changes at release time.

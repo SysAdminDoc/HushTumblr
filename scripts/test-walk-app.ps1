@@ -108,29 +108,33 @@ try {
     $started = [DateTimeOffset]::Parse('2026-10-22T00:00:00Z')
     $finished = $started.AddMinutes(6)
 
+    . (Join-Path $PSScriptRoot 'test-walk-data.ps1')
+    $fixture = New-WalkTestData -Directory $scratch -BundlePath $bundle
+    $proofArguments = $fixture.Arguments
     function New-WalkReceiptFile([string]$Name, [string]$Result, [bool]$Full, [int]$Screens, [int]$Crashes, [string]$Sha, [string[]]$Problems) {
         $receipt = New-WalkReceipt -Result $Result -Full $Full -Serial 'emulator-5554' -Device 'sdk_gphone64_x86_64' `
-            -AppVersion '46.8.1.100' -BundleSha256 $Sha -InstalledApkSha256 ('0' * 64) `
+            -AppVersion $fixture.Output.versionName -BundleSha256 $Sha -InstalledApkSha256 $fixture.Output.sha256 `
+            -Provenance $fixture.Provenance -InstalledBefore $fixture.Output -InstalledAfter $fixture.Output `
             -Started $started -Finished $finished -Screens $Screens -Crashes $Crashes -Problems $Problems
         $path = Join-Path $scratch $Name
-        [IO.File]::WriteAllText($path, (ConvertTo-Json -InputObject $receipt -Depth 4) + "`n")
+        [IO.File]::WriteAllText($path, (ConvertTo-Json -InputObject $receipt -Depth 8) + "`n")
         return $path
     }
 
     $passWalk = New-WalkReceiptFile 'pass.json' 'PASS' $true 17 0 $bundleSha256 @()
-    Assert-True (Test-WalkReceipt -Path $passWalk -BundlePath $bundle).Valid `
+    Assert-True (Test-WalkReceipt -Path $passWalk -BundlePath $bundle @proofArguments).Valid `
         'A whole clean walk of this bundle should back a release.'
 
     $crashWalk = New-WalkReceiptFile 'crash.json' 'FAIL' $false 9 1 $bundleSha256 @('Tumblr crashed during the walk: ...')
-    Assert-True (-not (Test-WalkReceipt -Path $crashWalk -BundlePath $bundle).Valid) `
+    Assert-True (-not (Test-WalkReceipt -Path $crashWalk -BundlePath $bundle @proofArguments).Valid) `
         'A walk that recorded a crash must not back a release.'
 
     $skipWalk = New-WalkReceiptFile 'skip.json' 'PARTIAL' $false 6 0 $bundleSha256 @()
-    Assert-True (-not (Test-WalkReceipt -Path $skipWalk -BundlePath $bundle).Valid) `
+    Assert-True (-not (Test-WalkReceipt -Path $skipWalk -BundlePath $bundle @proofArguments).Valid) `
         'A walk that skipped part of the app must not back a release.'
 
     $otherWalk = New-WalkReceiptFile 'other-bundle.json' 'PASS' $true 17 0 ('a' * 64) @()
-    Assert-True (-not (Test-WalkReceipt -Path $otherWalk -BundlePath $bundle).Valid) `
+    Assert-True (-not (Test-WalkReceipt -Path $otherWalk -BundlePath $bundle @proofArguments).Valid) `
         'A clean walk of a different bundle must not back this one.'
 
     Write-Host "[walk-app] $passed checks passed"
