@@ -61,6 +61,7 @@ param(
     # installed build must match -PatchedApk and the provenance beside it, from this exact bundle.
     [switch]$SkipPatch,
     [string]$PatchedApk,
+    [string]$CleanApk,
     # Leave the Hush settings pages out of the walk. Makes the walk PARTIAL, not a release walk.
     [switch]$SkipSettings,
     [ValidateRange(1, 30)][int]$SettleSeconds = 4,
@@ -188,7 +189,7 @@ function Get-WalkScreenKey {
 function Invoke-WalkApp {
     param(
         [string]$Serial, [string]$Package, [string[]]$Visit, [string[]]$SettingsPages,
-        [bool]$SkipPatch, [string]$PatchedApk, [bool]$SkipSettings, [int]$SettleSeconds, [string]$OutDir,
+        [bool]$SkipPatch, [string]$PatchedApk, [string]$CleanApk, [bool]$SkipSettings, [int]$SettleSeconds, [string]$OutDir,
         [string]$Keystore, [string]$KeyAlias, [bool]$NoStorePassword, [string]$LeaseDirectory, [string]$ChatIdentity,
         [string]$Adb, [string]$Aapt2, [string]$Root
     )
@@ -199,6 +200,7 @@ function Invoke-WalkApp {
     New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
     $lease = $null
     $walkHandles = [Collections.Generic.List[IDisposable]]::new()
+    $runId = [guid]::NewGuid().ToString('N')
     try {
 
     # The bundle publish will hash, named in the receipt so a walk of any other build can't stand in.
@@ -290,7 +292,6 @@ function Invoke-WalkApp {
             if ($components.Count -eq 1) { return $components[0] }
             return ''
         }
-        $inFront = { [bool](& $readActivity) }
 
         [void](& $walkAdb @('shell', 'input', 'keyevent', 'KEYCODE_WAKEUP'))
         $window = (& $walkAdb @('shell', 'dumpsys', 'window')).Output -join "`n"
@@ -310,7 +311,27 @@ function Invoke-WalkApp {
         }
         $installedBefore = Get-HushInstalledApkIdentity -Adb $Adb -Lease $lease -PackageName $Package -Aapt2 $Aapt2
         Assert-HushApkIdentity -Expected $provenance.output -Actual $installedBefore
+        $cleanSource = Resolve-WalkCleanSource -Explicit $CleanApk -Root $Root -Sha256 $provenance.sourceSha256
+        $sourceHandle = Open-HeldFile -Path $cleanSource -Sha256 $provenance.sourceSha256 -What 'The walked source APK'
+        $walkHandles.Add($sourceHandle)
+        $verifierPath = Join-Path $OutDir "device-verifier-$runId.json"
+        $global:LASTEXITCODE = -1
+        & (Join-Path $PSScriptRoot 'verify-injected-registers.ps1') -CleanApk (Get-HeldPath $sourceHandle) `
+            -PatchedApk $installApk -Bundle $bundle -SelectedPatchNames @($provenance.patches) `
+            -Serial $Serial -Adb $Adb -Aapt2 $Aapt2 -LeaseToken $lease.Token -LeaseDirectory (Split-Path -Parent $lease.Path) `
+            -ChatIdentity $ChatIdentity -DeviceEvidencePath $verifierPath -EvidenceRunId $runId `
+            -ExpectedSourceSha256 $provenance.sourceSha256 -ExpectedPatchedSha256 $provenance.output.sha256 `
+            -ReportPath (Join-Path $OutDir "injected-registers-$runId.txt")
+        if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $verifierPath -PathType Leaf)) { throw 'The walked APK has no completed device verifier comparison.' }
+        $verifierHandle = Open-HeldFile -Path $verifierPath -What 'The walk device verifier evidence'
+        $walkHandles.Add($verifierHandle)
+        $verifier = Get-Content -LiteralPath (Get-HeldPath $verifierHandle) -Raw | ConvertFrom-Json
         $started = [DateTimeOffset]::UtcNow
+        Assert-WalkVerifierEvidence -Receipt ([pscustomobject]@{
+            runId = $runId; serial = $Serial; device = $lease.Identity.Model; deviceIdentity = $lease.Identity
+            emulator = $Serial.StartsWith('emulator-', [StringComparison]::Ordinal)
+            bundleSha256 = $bundleSha256; provenance = $provenance; verifier = $verifier
+        }) -WalkStarted $started
         $startedEpoch = [long]((& $walkAdb @('shell', 'date', '+%s')).Output -join '').Trim()
         [void](& $walkAdb @('shell', 'am', 'force-stop', $Package))
         $launch = & $walkAdb @('shell', 'am', 'start', '-W', '-n', "$Package/$WalkMainActivity")
@@ -442,6 +463,7 @@ function Invoke-WalkApp {
             -AppVersion $installedBefore.versionName -BundleSha256 $bundleSha256 -InstalledApkSha256 $installedBefore.sha256 `
             -Provenance $provenance -InstalledBefore $installedBefore -InstalledAfter $installedAfter `
             -Routes @($routes) `
+            -RunId $runId -DeviceIdentity $identity -Verifier $verifier `
             -Started $started -Finished ([DateTimeOffset]::UtcNow) -Screens $screens -Crashes $fatal.Count `
             -Problems ([string[]]$problems)
         $receiptPath = Join-Path $OutDir 'walk-receipt.json'
@@ -460,7 +482,7 @@ function Invoke-WalkApp {
 
 if ($MyInvocation.InvocationName -ne '.') {
     $receiptPath = Invoke-WalkApp -Serial $Serial -Package $Package -Visit $Visit -SettingsPages $SettingsPages `
-        -SkipPatch:$SkipPatch -PatchedApk $PatchedApk -SkipSettings:$SkipSettings -SettleSeconds $SettleSeconds -OutDir $OutDir `
+        -SkipPatch:$SkipPatch -PatchedApk $PatchedApk -CleanApk $CleanApk -SkipSettings:$SkipSettings -SettleSeconds $SettleSeconds -OutDir $OutDir `
         -Keystore $Keystore -KeyAlias $KeyAlias -NoStorePassword:$NoStorePassword -LeaseDirectory $LeaseDirectory -ChatIdentity $ChatIdentity `
         -Adb $Adb -Aapt2 $Aapt2 -Root $Root
     $walked = Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json

@@ -137,10 +137,15 @@ try {
     Assert-True ((Resolve-WalkOutcome -Screens 2 -Crashes 0 -Full $true -Routes $subset `
         -PatchNames $fixture.Provenance.patches) -ceq 'PARTIAL') 'An intentional subset was not PARTIAL.'
     function New-WalkReceiptFile([string]$Name, [string]$Result, [bool]$Full, [int]$Screens, [int]$Crashes, [string]$Sha, [string[]]$Problems) {
+        $runId = 'b' * 32
+        $deviceProof = New-WalkTestVerifier -Fixture $fixture -Serial 'emulator-5554' -Model 'sdk_gphone64_x86_64' -RunId $runId
+        $deviceProof.Verifier.started = '2026-10-21T15:58:00Z'
+        $deviceProof.Verifier.finished = '2026-10-21T15:59:00Z'
         $receipt = New-WalkReceipt -Result $Result -Full $Full -Serial 'emulator-5554' -Device 'sdk_gphone64_x86_64' `
             -AppVersion $fixture.Output.versionName -BundleSha256 $Sha -InstalledApkSha256 $fixture.Output.sha256 `
             -Provenance $fixture.Provenance -InstalledBefore $fixture.Output -InstalledAfter $fixture.Output `
             -Routes $fixture.Routes `
+            -RunId $runId -DeviceIdentity $deviceProof.Identity -Verifier $deviceProof.Verifier `
             -Started $started -Finished $finished -Screens $Screens -Crashes $Crashes -Problems $Problems
         $path = Join-Path $scratch $Name
         [IO.File]::WriteAllText($path, (ConvertTo-Json -InputObject $receipt -Depth 8) + "`n")

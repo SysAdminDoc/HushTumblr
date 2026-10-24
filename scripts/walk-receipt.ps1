@@ -14,6 +14,7 @@
 #>
 . (Join-Path $PSScriptRoot 'apk-provenance.ps1')
 . (Join-Path $PSScriptRoot 'walk-plan.ps1')
+. (Join-Path $PSScriptRoot 'walk-verifier.ps1')
 
 # The phones release walks run on, by ro.product.model. An emulator passes by its serial.
 $WalkReceiptPhones = @('SM-S908U1', 'SM-S938B')
@@ -35,6 +36,9 @@ function New-WalkReceipt {
         $InstalledBefore,
         $InstalledAfter,
         [object[]]$Routes = @(),
+        [string]$RunId,
+        $DeviceIdentity,
+        $Verifier,
         [Parameter(Mandatory = $true)][DateTimeOffset]$Started,
         [Parameter(Mandatory = $true)][DateTimeOffset]$Finished,
         [int]$Screens,
@@ -49,6 +53,7 @@ function New-WalkReceipt {
         screens = $Screens; crashes = $Crashes; problems = @($Problems)
         provenance = $Provenance; installedBefore = $InstalledBefore; installedAfter = $InstalledAfter
         planVersion = 1; routes = @($Routes)
+        runId = $RunId; deviceIdentity = $DeviceIdentity; verifier = $Verifier
     }
 }
 
@@ -130,5 +135,7 @@ function Test-WalkReceipt {
         -not $coverage.Complete -or $coverage.Invalid -or $receipt.screens -ne $receipt.routes.Count) {
         return Fail "the walk does not prove its required route plan: $($coverage.Reason)"
     }
+    try { Assert-WalkVerifierEvidence -Receipt $receipt -WalkStarted $start }
+    catch { return Fail "device verifier evidence refused: $($_.Exception.Message)" }
     return [pscustomobject]@{ Valid = $true; Reason = $null; Receipt = $receipt }
 }

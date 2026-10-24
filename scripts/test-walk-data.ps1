@@ -27,3 +27,22 @@ function New-WalkTestData {
     return @{ Provenance = $provenance; Output = $output; BundleHash = $bundleHash
         Routes = $routes; Arguments = @{ CatalogPath = $catalogPath; ReleaseReceiptPath = $releasePath } }
 }
+
+function New-WalkTestVerifier {
+    param($Fixture, [string]$Serial, [string]$Model, [string]$RunId)
+    $identity = [ordered]@{ Serial = $Serial; Model = $Model; Build = 'fixture/build'; Api = '36'; Abi = 'arm64-v8a' }
+    if ($Serial.StartsWith('emulator-')) { $identity.Avd = 'Fixture_API36'; $identity.Abi = 'x86_64' }
+    $cleanHash = '6' * 64
+    $proof = [ordered]@{ schema = 1; runId = $RunId; serial = $Serial; device = $identity
+        completed = $true; staticPassed = $true; bundleSha256 = $Fixture.BundleHash
+        sourceSha256 = $Fixture.Provenance.sourceSha256; inputIdentity = $Fixture.Provenance.inputIdentity
+        cleanBaseSha256 = $cleanHash; patchedSha256 = $Fixture.Output.sha256
+        started = '2026-10-21T15:58:00Z'; finished = '2026-10-21T15:59:00Z' }
+    foreach ($side in @('clean', 'patched')) {
+        $hash = if ($side -eq 'clean') { $cleanHash } else { $Fixture.Output.sha256 }
+        $proof[$side] = [ordered]@{ completed = $true; markerFound = $true; device = $identity
+            exitCode = 0; localSize = 100; readSize = 100; localSha256 = $hash
+            remoteBeforeSha256 = $hash; remoteAfterSha256 = $hash; messages = @() }
+    }
+    return @{ Identity = $identity; Verifier = $proof }
+}

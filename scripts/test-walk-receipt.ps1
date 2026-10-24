@@ -19,10 +19,15 @@ try {
     $proofArguments = $fixture.Arguments
     # The receipt a walk of that bundle writes. -Change bends one field.
     function Write-Walk([hashtable]$Change = @{}) {
+        $serialValue = if ($Change.ContainsKey('serial')) { $Change.serial } else { 'TESTPHONE01' }
+        $modelValue = if ($Change.ContainsKey('device') -and $null -ne $Change.device) { $Change.device } else { 'SM-S908U1' }
+        $runId = 'b' * 32
+        $deviceProof = New-WalkTestVerifier -Fixture $fixture -Serial $serialValue -Model $modelValue -RunId $runId
         $walk = New-WalkReceipt -Result PASS -Full $true -Serial 'TESTPHONE01' -Device 'SM-S908U1' -AppVersion $fixture.Output.versionName `
             -BundleSha256 (Get-FileHash -LiteralPath $bundle -Algorithm SHA256).Hash -InstalledApkSha256 ('4' * 64) `
             -Provenance $fixture.Provenance -InstalledBefore $fixture.Output -InstalledAfter $fixture.Output `
             -Routes $fixture.Routes `
+            -RunId $runId -DeviceIdentity $deviceProof.Identity -Verifier $deviceProof.Verifier `
             -Started '2026-10-21T16:00:00Z' -Finished '2026-10-21T16:30:00Z' -Screens $fixture.Routes.Count -Crashes 0
         foreach ($key in $Change.Keys) { $walk[$key] = $Change[$key] }
         [IO.File]::WriteAllText($walkPath, ($walk | ConvertTo-Json -Depth 8))
@@ -49,6 +54,9 @@ try {
             @(@{ finished = '2026-10-21T16:00:00Z' }, '*timestamps*'),
             @(@{ routes = @() }, '*route plan*'),
             @(@{ screens = 1 }, '*route plan*'),
+            @(@{ verifier = $null }, '*device verifier*'),
+            @(@{ runId = '' }, '*device verifier*'),
+            @(@{ deviceIdentity = $null }, '*device verifier*'),
             @(@{ installedApkSha256 = '' }, '*identity*'),
             @(@{ device = $null }, "*doesn't say which device walked it*"),
             @(@{ device = 'Pixel 9' }, "*Pixel 9 isn't one of the release walk phones*"),
@@ -79,6 +87,31 @@ try {
         [IO.File]::WriteAllText($walkPath, ($changed | ConvertTo-Json -Depth 8))
         $bad = Test-WalkReceipt -Path $walkPath -BundlePath $bundle @proofArguments
         Assert-WalkContract (-not $bad.Valid -and $bad.Reason -like '*route plan*') "Accepted $fault route evidence: $($bad.Reason)"
+    }
+    foreach ($fault in @('static-only', 'aborted', 'wrong-input', 'wrong-bundle', 'wrong-run', 'wrong-device', 'wrong-build',
+            'changed-before', 'changed-after', 'no-marker', 'wrong-size', 'extra-tally', 'missing-tally', 'duplicate-tally', 'bad-time')) {
+        Write-Walk
+        $changed = Get-Content -LiteralPath $walkPath -Raw | ConvertFrom-Json
+        switch ($fault) {
+            'static-only' { $changed.verifier.patched = $null }
+            'aborted' { $changed.verifier.completed = $false }
+            'wrong-input' { $changed.verifier.sourceSha256 = 'f' * 64 }
+            'wrong-bundle' { $changed.verifier.bundleSha256 = 'f' * 64 }
+            'wrong-run' { $changed.verifier.runId = 'c' * 32 }
+            'wrong-device' { $changed.verifier.serial = 'another-device' }
+            'wrong-build' { $changed.verifier.device.Build = 'another/build' }
+            'changed-before' { $changed.verifier.patched.remoteBeforeSha256 = 'f' * 64 }
+            'changed-after' { $changed.verifier.patched.remoteAfterSha256 = 'f' * 64 }
+            'no-marker' { $changed.verifier.patched.markerFound = $false }
+            'wrong-size' { $changed.verifier.patched.readSize = 0 }
+            'extra-tally' { $changed.verifier.patched.messages = @(@{ message = 'VerifyError extra'; count = 1 }) }
+            'missing-tally' { $changed.verifier.clean.messages = @(@{ message = 'VerifyError missing'; count = 1 }) }
+            'duplicate-tally' { $changed.verifier.patched.messages = @(@{ message = 'VerifyError repeated'; count = 1 }, @{ message = 'VerifyError repeated'; count = 1 }) }
+            'bad-time' { $changed.verifier.finished = '2026-10-21T18:00:00Z' }
+        }
+        [IO.File]::WriteAllText($walkPath, ($changed | ConvertTo-Json -Depth 10))
+        $bad = Test-WalkReceipt -Path $walkPath -BundlePath $bundle @proofArguments
+        Assert-WalkContract (-not $bad.Valid -and $bad.Reason -like '*device verifier*') "Accepted $fault verifier evidence: $($bad.Reason)"
     }
     foreach ($field in @('sha256', 'package', 'versionName', 'versionCode', 'signers')) {
         foreach ($boundary in @('provenance.output', 'installedBefore', 'installedAfter')) {

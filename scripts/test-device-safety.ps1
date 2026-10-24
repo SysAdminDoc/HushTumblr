@@ -46,6 +46,9 @@ function New-SafetyAdb([bool]$Installed = $true, [string]$IdentitySerial = 'emul
                 elseif ($state.HashFault -eq 'different') { ('f' * 64) + '  /data/app/base.apk' }
                 else { "$digest  /data/app/base.apk" }
             }
+            '* shell sha256sum /data/local/tmp/hushtumblr-verify-*.apk' {
+                '039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81  ' + $Arguments[4]
+            }
             '* install *' { 'Success' }
             '* push *' { 'pushed' }
             '* shell log -p *' { $state.Marker = ($Arguments[3] -split ' ')[-1] }
