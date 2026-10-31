@@ -897,6 +897,10 @@ try {
         'feature-post-line-missing' = $false
         'feature-post-line-wrong-register' = $false
         'feature-post-line-wrong-paint' = $false
+        'feature-font-choice-good' = $true
+        'feature-font-choice-missing' = $false
+        'feature-font-choice-wrong-register' = $false
+        'feature-font-choice-wrong-return' = $false
         'feature-review-missing' = $false
         'feature-review-jump-to-injected-return' = $false
         'feature-activity-good' = $true
@@ -994,6 +998,9 @@ try {
             'feature-post-line-missing' { 'has 0 calls' }
             'feature-post-line-wrong-register' { "don't take the debug answer" }
             'feature-post-line-wrong-paint' { 'has 0 calls' }
+            'feature-font-choice-missing' { 'has 0 calls' }
+            'feature-font-choice-wrong-register' { "doesn't answer with the chosen font first" }
+            'feature-font-choice-wrong-return' { "don't take the Roboto answers" }
             'feature-review-jump-to-injected-return' { 'routes an original branch or handler into the middle of an injected block' }
             'feature-activity-missing-hook' { 'has 0 calls' }
             'feature-activity-wrong-list' { "doesn't take what its rule hands it" }

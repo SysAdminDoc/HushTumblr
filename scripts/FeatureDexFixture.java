@@ -1174,6 +1174,42 @@ public final class FeatureDexFixture {
                         canvas, "F", "F", "F", "F", paint)));
     }
 
+    private static void fontChoice(Map<String, List<Method>> classes, String variant) {
+        String helper = BASE + "ui/AppFont;", owner = "Lfixture/FontResources;", callback = "Lfixture/FontResources$Callback;",
+                picker = "Lfixture/FontPicker;", face = "Landroid/graphics/Typeface;", context = "Landroid/content/Context;",
+                handler = "Landroid/os/Handler;";
+        boolean hooked = !variant.equals("clean") && !variant.equals("missing");
+        List<Instruction> load = new ArrayList<>();
+        if (hooked) load.addAll(List.of(
+                variant.equals("wrong-register") ? invoke(Opcode.INVOKE_STATIC, ref(helper, "replacement", face, context, "I"), 9, 12)
+                        : invoke(Opcode.INVOKE_STATIC, ref(helper, "replacement", face, context, "I"), 9, 10),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0),
+                new ImmutableInstruction21t(Opcode.IF_EQZ, 0, 8),
+                new ImmutableInstruction21t(Opcode.IF_EQZ, 13, 5),
+                invoke(Opcode.INVOKE_VIRTUAL, ref(callback, "d", VOID, face, handler), 13, 0, 14),
+                new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0)));
+        load.addAll(List.of(literal("Font resource ID #0x", 1), new ImmutableInstruction11n(Opcode.CONST_4, 0, 0),
+                new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0)));
+        classes.put(owner, List.of(method(owner, "load", face, true, 17, load,
+                context, "I", "Landroid/util/TypedValue;", "I", callback, handler, "Z", "Z")));
+        Instruction provide = new ImmutableInstruction3rc(Opcode.INVOKE_STATIC_RANGE, 3, 1, ref(helper, "provided", face, face));
+        List<Instruction> pick = new ArrayList<>(List.of(new ImmutableInstruction21t(Opcode.IF_EQZ, 4, hooked ? 14 : 10),
+                literal("sans-serif-medium", 3), new ImmutableInstruction11n(Opcode.CONST_4, 0, 0),
+                invoke(Opcode.INVOKE_STATIC, ref(face, "create", face, STRING, "I"), 3, 0),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 3)));
+        if (hooked) pick.addAll(List.of(provide, new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, variant.equals("wrong-return") ? 0 : 3)));
+        pick.add(new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 3));
+        pick.add(new ImmutableInstruction21c(Opcode.SGET_OBJECT, 3, new ImmutableFieldReference(face, "SANS_SERIF", face)));
+        if (hooked) pick.addAll(List.of(provide, new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 3)));
+        pick.add(new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 3));
+        classes.put(picker, List.of(method(picker, "pick", face, true, 5, pick, context, "Lcom/tumblr/font/a;")));
+        if (!variant.equals("clean")) classes.put(helper, List.of(
+                method(helper, "replacement", face, true, 3, List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0),
+                        new ImmutableInstruction11n(Opcode.CONST_4, 0, 0), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0)), context, "I"),
+                method(helper, "provided", face, true, 2, List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0),
+                        new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 1)), face)));
+    }
+
     private static void activityNotifications(Map<String, List<Method>> classes, String variant) {
         boolean hooked = !variant.equals("clean");
         String pagination = "Lcom/tumblr/rumblr/model/PaginationLink;";
@@ -1219,6 +1255,7 @@ public final class FeatureDexFixture {
         optionalNudges(clean, "reminder", "clean");
         optionalNudges(clean, "gift", "clean");
         postLine(clean, "clean");
+        fontChoice(clean, "clean");
         activityNotifications(clean, "clean");
         carousel(clean, "clean");
         followButton(clean, "clean");
@@ -1324,6 +1361,12 @@ public final class FeatureDexFixture {
             Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
             postLine(classes, variant);
             write(root, "feature-post-line-" + variant, classes, true, "lineBetweenPosts");
+        }
+        for (String variant : List.of("good", "missing", "wrong-register", "wrong-return")) {
+            reset(); enable("appFont");
+            Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
+            fontChoice(classes, variant);
+            write(root, "feature-font-choice-" + variant, classes, true, "appFont");
         }
         if (FAMILIES.containsKey("filterActivityNotifications")) for (String variant : List.of("good", "missing-hook", "wrong-list", "push-hook",
                 "missing-bridge", "wrong-getter", "wrong-null-target")) {

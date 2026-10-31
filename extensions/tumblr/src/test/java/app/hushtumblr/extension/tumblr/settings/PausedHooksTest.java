@@ -94,6 +94,7 @@ import app.hushtumblr.extension.tumblr.ui.PostParts;
 import app.hushtumblr.extension.tumblr.ui.PostTimestamps;
 import app.hushtumblr.extension.tumblr.ui.ReviewPrompts;
 import app.hushtumblr.extension.tumblr.ui.OptionalNudges;
+import app.hushtumblr.extension.tumblr.ui.AppFontForTests;
 import app.hushtumblr.extension.tumblr.ui.PostLines;
 import app.hushtumblr.extension.tumblr.ui.StoreButtons;
 import app.hushtumblr.extension.tumblr.ui.HushImageContainer;
@@ -196,6 +197,7 @@ public class PausedHooksTest {
         probes.put(Settings.HIDE_GIFT_MESSAGE_POPUPS, Collections.singletonList(
                 () -> OptionalNudges.hideGiftMessage("key_has_seen_ad_free_browsing_gift_popup")));
         probes.put(Settings.LINE_BETWEEN_POSTS, Collections.singletonList(() -> PostLines.paintsGaps(0) == 1));
+        probes.put(Settings.APP_FONT, Collections.singletonList(AppFontForTests::swapsAFont));
         // Tumblr's screenshot watcher answers off.
         probes.put(Settings.TURN_OFF_SCREENSHOT_SHARING, Collections.singletonList(
                 () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("SCREENSHOT_INTERCEPTION"), true)));

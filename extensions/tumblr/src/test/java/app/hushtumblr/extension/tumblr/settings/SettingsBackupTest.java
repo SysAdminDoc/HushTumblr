@@ -251,6 +251,7 @@ public class SettingsBackupTest {
                 Settings.HIDE_BLOG_NOTIFICATION_REMINDERS,
                 Settings.HIDE_GIFT_MESSAGE_POPUPS,
                 Settings.LINE_BETWEEN_POSTS,
+                Settings.APP_FONT,
                 Settings.TURN_OFF_SCREENSHOT_SHARING,
                 Settings.DISABLE_UPDATE_PROMPTS,
                 Settings.HIDE_SUGGESTED_BLOGS,

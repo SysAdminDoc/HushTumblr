@@ -248,6 +248,20 @@ Hide gift purchase popups	Sembunyikan pop-up pembelian hadiah
 Hides the pop-up suggesting you buy a gift for a blog. You can still open gifting yourself.	Menyembunyikan pop-up yang menyarankan untuk membeli hadiah bagi sebuah blog. Anda tetap dapat membuka fitur hadiah sendiri.
 Line between posts	Garis antar postingan
 Draws a thin line in the gap between posts, so it's easier to see where one ends and the next begins.	Menggambar garis tipis di celah antar postingan, sehingga lebih mudah melihat di mana satu postingan berakhir dan berikutnya dimulai.
+App font	Font aplikasi
+Replaces Tumblr's own font with your phone's font, or a font file you choose below. Fonts a post's author picked stay as they are.	Mengganti font bawaan Tumblr dengan font ponselmu atau file font yang kamu pilih di bawah. Font yang dipilih penulis postingan tetap seperti aslinya.
+Choose a font file	Pilih file font
+Uses your phone's font. Tap to pick a .ttf or .otf file.	Memakai font ponselmu. Ketuk untuk memilih file .ttf atau .otf.
+Using %1$s. Tap to pick another.	Memakai %1$s. Ketuk untuk memilih yang lain.
+Use the phone's font	Pakai font ponsel
+Forgets the chosen font file.	Melupakan file font yang dipilih.
+Font file saved.	File font disimpan.
+Font file saved. Turn on App font to use it.	Disimpan. Aktifkan Font aplikasi untuk memakainya.
+Back to the phone's font.	Kembali ke font ponsel.
+Couldn't change the font. Try again.	Font tidak bisa diubah. Coba lagi.
+Couldn't read that file. Try again.	File itu tidak bisa dibaca. Coba lagi.
+That isn't a font file. Nothing changed.	Itu bukan file font. Tidak ada yang berubah.
+That file is too big to be a font.	File itu terlalu besar untuk sebuah font.
 Blog notification reminder	Pengingat notifikasi blog
 Gift purchase popup	Pop-up pembelian hadiah
 Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.	Menghentikan pop-up yang menanyakan pendapatmu tentang aplikasi Tumblr lalu meminta rating atau masukan.

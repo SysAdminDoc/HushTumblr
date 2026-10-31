@@ -71,6 +71,8 @@ public final class SettingsStatus {
     public static boolean giftMessagePopup() { return false; }
     public static boolean lineBetweenPosts() { return false; }
     public static boolean postLine() { return false; }
+    public static boolean appFont() { return false; }
+    public static boolean fontChoice() { return false; }
     public static boolean turnOffScreenshotSharing() { return false; }
     public static boolean screenshotSharingFlags() { return false; }
     public static boolean disableUpdatePrompts() { return false; }

@@ -302,7 +302,7 @@ public class DexDiff {
             Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1), Map.entry("activityNotifications", 7),
             Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 7), Map.entry("timelinePaging", 5),
             Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 6), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
-            Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3),
+            Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("fontChoice", 4),
             Map.entry("followButton", 3), Map.entry("footerButton", 3), Map.entry("postTags", 5),
             Map.entry("noteCounts", 6), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 8), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
@@ -5091,6 +5091,72 @@ public class DexDiff {
             capability(c.callee, shaped);
         }
 
+        /** AndroidX's font loader asks for a stand-in first and hands one to its callback, and the font picker's two Roboto answers go through a hook. */
+        void fontChoice(Contract c) {
+            String typeface = "Landroid/graphics/Typeface;";
+            List<Method> loaders = new ArrayList<>(), pickers = new ArrayList<>();
+            for (Method held : clean.holding(c.strings.get(2))) {
+                if (isStatic(held) && held.getParameterTypes().size() == 8 && held.getReturnType().equals(typeface)
+                        && descriptor(held).startsWith("(Landroid/content/Context;ILandroid/util/TypedValue;I")) loaders.add(held);
+            }
+            for (Method held : clean.holding(c.strings.get(3))) {
+                if (isStatic(held) && held.getParameterTypes().size() == 2 && held.getReturnType().equals(typeface)
+                        && descriptor(held).startsWith("(Landroid/content/Context;Lcom/tumblr/font/")) pickers.add(held);
+            }
+            Method oldLoad = unique(loaders, "the font loader"), oldPick = unique(pickers, "the font picker");
+            if (oldLoad == null || oldPick == null) { capability(c.callee, false); return; }
+            Method load = actual(oldLoad), pick = actual(oldPick);
+            List<Integer> asks = calls(load, c.strings.get(0), 1);
+            List<Integer> answers = calls(pick, c.strings.get(1), 2);
+            boolean loads = load != null && asks.equals(List.of(0));
+            if (loads) {
+                List<Instruction> body = instructions(load);
+                int context = parameter(load, 0), id = parameter(load, 1), waiting = parameter(load, 4), handler = parameter(load, 5);
+                int held = firstRegister(get(body, 1));
+                MethodReference delivery = called(get(body, 4));
+                loads = arguments(body.get(0)).equals(List.of(context, id))
+                        && movesTo(get(body, 1), held, Opcode.MOVE_RESULT_OBJECT) && held < context
+                        && movesTo(get(body, 2), held, Opcode.IF_EQZ) && target(load, 2) == 6
+                        && movesTo(get(body, 3), waiting, Opcode.IF_EQZ) && target(load, 3) == 5
+                        && delivery != null && get(body, 4).getOpcode() == Opcode.INVOKE_VIRTUAL
+                        && delivery.getDefiningClass().equals(oldLoad.getParameterTypes().get(4).toString())
+                        && descriptor(delivery).equals("(" + typeface + "Landroid/os/Handler;)V")
+                        && arguments(get(body, 4)).equals(List.of(waiting, held, handler))
+                        && movesTo(get(body, 5), held, Opcode.RETURN_OBJECT);
+                if (loads) {
+                    remove(load, 0, 6);
+                    vouch(load, 0, List.of(context, id));
+                    vouch(load, 2, List.of(held));
+                    vouch(load, 3, List.of(waiting));
+                    vouch(load, 4, List.of(waiting, held, handler));
+                    vouch(load, 5, List.of(held));
+                }
+            }
+            if (!loads) fail("the font loader doesn't answer with the chosen font first in " + oldLoad);
+            boolean picks = pick != null && answers.size() == 2;
+            if (picks) {
+                List<Instruction> before = instructions(oldPick), body = instructions(pick);
+                for (int nth = 0; picks && nth < 2; nth++) {
+                    int at = answers.get(nth), cleanAt = at - 2 * nth;
+                    Instruction chosen = get(before, cleanAt - 1);
+                    int answer = firstRegister(get(before, cleanAt));
+                    picks = movesTo(get(before, cleanAt), answer, Opcode.RETURN_OBJECT)
+                            && (movesTo(chosen, answer, Opcode.SGET_OBJECT) && names(field(chosen), typeface + "->SANS_SERIF")
+                                || movesTo(chosen, answer, Opcode.MOVE_RESULT_OBJECT)
+                                    && String.valueOf(called(get(before, cleanAt - 2))).equals(typeface + "->create(Ljava/lang/String;I)" + typeface))
+                            && arguments(body.get(at)).equals(List.of(answer))
+                            && movesTo(get(body, at + 1), answer, Opcode.MOVE_RESULT_OBJECT)
+                            && movesTo(get(body, at + 2), answer, Opcode.RETURN_OBJECT);
+                    if (picks) {
+                        remove(pick, at, at + 2);
+                        vouch(pick, at, List.of(answer));
+                    }
+                }
+            }
+            if (!picks) fail("the font hooks don't take the Roboto answers of " + oldPick);
+            capability(c.callee, loads && picks);
+        }
+
         /** The timeline spacing's draw: the debug answer goes through a hook, and the gap it paints goes through another. */
         void postLine(Contract c) {
             List<ClassDef> owners = new ArrayList<>();
@@ -5965,6 +6031,7 @@ public class DexDiff {
                     case "blogNotificationReminder": blogNotificationReminder(c); break;
                     case "giftMessagePopup": giftMessagePopup(c); break;
                     case "postLine": postLine(c); break;
+                    case "fontChoice": fontChoice(c); break;
                     case "followButton": followButton(c); break;
                     case "footerButton": footerButton(c); break;
                     case "postTags": postTags(c); break;

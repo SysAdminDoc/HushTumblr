@@ -43,7 +43,7 @@ Long-press the Tumblr logo at the top of your dashboard. You can also tap **Hush
 
 ## Patches
 
-There are 47 patches.
+There are 48 patches.
 
 | Patch | What it does |
 |---|---|
@@ -61,6 +61,7 @@ There are 47 patches.
 | `Hide filtered posts` | Takes the posts Tumblr covers with "This post contains filtered content" out of your dashboard, searches and other feeds, so your filtered tags and words hide them completely. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
 | `Hide gift purchase popups` | Hides the pop-up suggesting you buy a gift for a blog. You can still open gifting yourself. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `Line between posts` | Draws a thin line in the gap between posts, so it's easier to see where one ends and the next begins. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
+| `App font` | Replaces Tumblr's own font with your phone's font, or a font file you choose in settings. Fonts a post's author picked stay as they are. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `Hide hashtags` | Takes the tags off the bottom of posts in your dashboard, other feeds and Tumblr TV, and keeps the source link. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Hide note counts` | Takes the like, reblog and comment counts off the footer under posts, community posts included, and the counts off the top of a post's notes and its tabs. The buttons stay and still work. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Hide photo posts` | Takes photo posts out of your dashboard and other feeds as each page loads. A post with pictures and no video, its reblog trail included, counts as a photo post. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |

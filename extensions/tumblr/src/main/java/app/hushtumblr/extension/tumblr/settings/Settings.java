@@ -141,6 +141,8 @@ public class Settings extends BaseSettings {
     /** Draws a line in the gap above each timeline post. Read at every draw, so it needs no restart. */
     public static final BooleanSetting LINE_BETWEEN_POSTS =
             new BooleanSetting("hushtumblr_line_between_posts", FALSE);
+    /** Swaps Tumblr's own font as fonts load. Tumblr keeps what it loaded for as long as it runs. */
+    public static final BooleanSetting APP_FONT = new BooleanSetting("hushtumblr_app_font", FALSE, true);
 
     /**
      * Tumblr stops watching for screenshots and offering to save the post as an image

@@ -248,6 +248,20 @@ Hide gift purchase popups	Ocultar ventanas de compra de regalos
 Hides the pop-up suggesting you buy a gift for a blog. You can still open gifting yourself.	Oculta la ventana que sugiere comprar un regalo para un blog. Puedes abrir la opción de regalos por tu cuenta.
 Line between posts	Línea entre publicaciones
 Draws a thin line in the gap between posts, so it's easier to see where one ends and the next begins.	Dibuja una línea fina en el espacio entre publicaciones, para ver mejor dónde termina una y empieza la siguiente.
+App font	Fuente de la app
+Replaces Tumblr's own font with your phone's font, or a font file you choose below. Fonts a post's author picked stay as they are.	Cambia la fuente de Tumblr por la de tu teléfono o por un archivo de fuente que elijas abajo. Las fuentes que eligió el autor de una publicación se quedan como están.
+Choose a font file	Elegir un archivo de fuente
+Uses your phone's font. Tap to pick a .ttf or .otf file.	Usa la fuente de tu teléfono. Toca para elegir un archivo .ttf u .otf.
+Using %1$s. Tap to pick another.	Usando %1$s. Toca para elegir otro.
+Use the phone's font	Usar la fuente del teléfono
+Forgets the chosen font file.	Olvida el archivo de fuente elegido.
+Font file saved.	Archivo de fuente guardado.
+Font file saved. Turn on App font to use it.	Guardado. Activa Fuente de la app para usarlo.
+Back to the phone's font.	De vuelta a la fuente del teléfono.
+Couldn't change the font. Try again.	No se pudo cambiar la fuente. Inténtalo de nuevo.
+Couldn't read that file. Try again.	No se pudo leer ese archivo. Inténtalo de nuevo.
+That isn't a font file. Nothing changed.	Eso no es un archivo de fuente. No cambió nada.
+That file is too big to be a font.	Ese archivo es demasiado grande para ser una fuente.
 Blog notification reminder	Recordatorio de notificaciones de un blog
 Gift purchase popup	Ventana de compra de regalos
 Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.	Evita la ventana emergente que pregunta qué opinas de la app de Tumblr y luego pide una valoración o comentarios.
