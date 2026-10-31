@@ -305,7 +305,7 @@ public class DexDiff {
             Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3),
             Map.entry("followButton", 3), Map.entry("footerButton", 3), Map.entry("postTags", 5),
             Map.entry("noteCounts", 6), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
-            Map.entry("darkBackground", 6), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
+            Map.entry("darkBackground", 8), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
             Map.entry("matureContent", 12), Map.entry("rootPostMutes", 10), Map.entry("mutualMarkers", 13));
 
     /**
@@ -5501,7 +5501,90 @@ public class DexDiff {
                 else themed = hookAt(composer, actual(composer), asked.get(0) + 2, c.strings.get(1), List.of(firstRegister(answer)), -1, List.of(firstRegister(answer)));
             }
             designColors(c.strings.get(3), c.strings.get(4), c.strings.get(5));
+            blogPageColor(c.strings.get(6));
+            tagPageColors(c.strings.get(7));
             capability(c.callee, found && themed);
+        }
+
+        static final String BLOG_THEME = "Lcom/tumblr/bloginfo/BlogTheme;";
+        static final String BLOG_BACKGROUND_KEY = "background_color";
+        static final String HUB_HEADER = "Lcom/tumblr/rumblr/response/CommunityHubHeaderResponse$CommunityHubHeader;";
+
+        /**
+         * The function that answers a blog's page color handing its answer to [hook] right before it
+         * returns it. The place is found in the clean target the way the patch finds it: the comparison
+         * of two blog themes names the getter right after the background's key, and the one static
+         * (BlogTheme)int beside it that calls that getter and ends by returning a call's answer is the
+         * reader. A build without that shape keeps blogs' colors, so there the hook goes uncalled.
+         */
+        void blogPageColor(String hook) {
+            List<Method> comparisons = new ArrayList<>();
+            for (Method m : tumblrMethods()) {
+                if (isStatic(m) && descriptor(m).startsWith("(" + BLOG_THEME + BLOG_THEME + ")")
+                        && clean.texts.get(m.toString()).contains(BLOG_BACKGROUND_KEY)) comparisons.add(m);
+            }
+            if (comparisons.size() != 1) return;
+            List<Instruction> steps = instructions(comparisons.get(0));
+            int key = firstIndex(steps, 0, i -> reference(i) instanceof StringReference text && text.getString().equals(BLOG_BACKGROUND_KEY));
+            Instruction read = key < 0 ? null : get(steps, key + 1);
+            MethodReference getter = read == null ? null : called(read);
+            if (getter == null || !getter.getDefiningClass().equals(BLOG_THEME)) return;
+            List<Method> readers = new ArrayList<>();
+            for (Method m : tumblrMethods()) {
+                if (isStatic(m) && m.getDefiningClass().equals(comparisons.get(0).getDefiningClass()) && descriptor(m).equals("(" + BLOG_THEME + ")I")
+                        && instructions(m).stream().anyMatch(i -> isCall(i, BLOG_THEME, getter.getName(), "()Ljava/lang/String;"))) readers.add(m);
+            }
+            if (readers.size() != 1) return;
+            List<Instruction> was = instructions(readers.get(0));
+            int last = was.size() - 1;
+            Instruction kept = get(was, last - 1);
+            if (kept == null || kept.getOpcode() != Opcode.MOVE_RESULT || was.get(last).getOpcode() != Opcode.RETURN
+                    || firstRegister(kept) != firstRegister(was.get(last))) return;
+            Method m = actual(readers.get(0));
+            List<Integer> sites = calls(m, hook, 1);
+            if (sites.size() != 1) return;
+            int at = sites.get(0), register = firstRegister(kept);
+            List<Instruction> body = instructions(m);
+            if (!arguments(body.get(at)).equals(List.of(register)) || !movesTo(get(body, at + 1), register, Opcode.MOVE_RESULT)) {
+                fail(hook + " doesn't take the blog's color and put its answer back where it was in " + m);
+                return;
+            }
+            remove(m, at, at + 2);
+            anchor(m, at, last, hook);
+            vouch(m, at, List.of(register));
+        }
+
+        /**
+         * Every read of a tag page header's color handing it to [hook] once it's kept, the answer moved
+         * back over it. The JSON adapter's read stays Tumblr's, and any other call of the hook is
+         * refused as misrouted.
+         */
+        void tagPageColors(String hook) {
+            for (Method old : tumblrMethods()) {
+                if (old.getDefiningClass().endsWith("JsonAdapter;")) continue;
+                List<Instruction> was = instructions(old);
+                List<Integer> places = new ArrayList<>(), registers = new ArrayList<>();
+                for (int at = 0; at + 1 < was.size(); at++) {
+                    if (!isCall(was.get(at), HUB_HEADER, "getBackgroundColor", "()Ljava/lang/String;") || was.get(at + 1).getOpcode() != Opcode.MOVE_RESULT_OBJECT) continue;
+                    places.add(at + 2);
+                    registers.add(firstRegister(was.get(at + 1)));
+                }
+                if (places.isEmpty()) continue;
+                Method m = actual(old);
+                List<Integer> sites = calls(m, hook, places.size());
+                if (sites.size() != places.size()) continue;
+                List<Instruction> body = instructions(m);
+                for (int k = 0; k < sites.size(); k++) {
+                    int at = sites.get(k), register = registers.get(k);
+                    if (!arguments(body.get(at)).equals(List.of(register)) || !movesTo(get(body, at + 1), register, Opcode.MOVE_RESULT_OBJECT)) {
+                        fail(hook + " doesn't take the tag page's color and put its answer back where it was in " + m);
+                        continue;
+                    }
+                    remove(m, at, at + 2);
+                    anchor(m, at, places.get(k), hook);
+                    vouch(m, at, List.of(register));
+                }
+            }
         }
 
         static boolean themeOfWrapper(Instruction i) {

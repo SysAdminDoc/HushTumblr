@@ -11,6 +11,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
 import android.util.TypedValue;
@@ -20,8 +21,10 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
+import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 
 import java.util.EnumSet;
@@ -48,6 +51,9 @@ public class DarkBackgroundTest {
         PatchFamilyForTests.capabilities(EnumSet.allOf(PatchFamily.Capability.class));
         DarkBackground.ids = null;
         DarkBackground.designColors = null;
+        DarkBackground.pagePick = null;
+        DarkBackground.darkPalette = false;
+        DarkBackground.customizing = false;
         HookStatus.clear();
     }
 
@@ -59,6 +65,9 @@ public class DarkBackgroundTest {
         DarkBackground.darkForTests = null;
         DarkBackground.ids = null;
         DarkBackground.designColors = null;
+        DarkBackground.pagePick = null;
+        DarkBackground.darkPalette = false;
+        DarkBackground.customizing = false;
         Settings.DARK_BACKGROUND.resetToDefault();
         HookStatus.clear();
     }
@@ -290,6 +299,125 @@ public class DarkBackgroundTest {
         assertFalse("a missing color is never dark", DarkBackground.isDark(theme, android.R.attr.colorBackground, 0));
     }
 
+    /** #8: a blog's and a tag's own color showed through the gaps between posts, whatever color the rest took. */
+    @Test
+    public void blogAndTagPagesTakeThePickedColorInTheDarkPalette() {
+        Settings.DARK_BACKGROUND.save(true);
+        int color = standInStyle();
+        DarkBackground.darkPalette = true;
+
+        assertEquals(color, DarkBackground.pageColor(CREAM));
+        assertEquals(String.format("#%06X", color & 0xFFFFFF), DarkBackground.hubColor("#2DBFA0"));
+        assertEquals("a tag page with no color of its own", String.format("#%06X", color & 0xFFFFFF), DarkBackground.hubColor(null));
+        String report = String.join("\n", HookStatus.report());
+        assertTrue(report, report.contains("blog or tag page painted 3"));
+    }
+
+    @Test
+    public void aPageKeepsItsOwnColorWithTheSwitchOff() {
+        standInStyle();
+        DarkBackground.darkPalette = true;
+
+        assertEquals(CREAM, DarkBackground.pageColor(CREAM));
+        assertEquals("#2DBFA0", DarkBackground.hubColor("#2DBFA0"));
+        assertNull(DarkBackground.hubColor(null));
+    }
+
+    /** A light palette keeps blogs' own colors, which is what it always showed. */
+    @Test
+    public void aPageKeepsItsOwnColorOnAnotherPalette() {
+        Settings.DARK_BACKGROUND.save(true);
+        standInStyle();
+
+        assertEquals(CREAM, DarkBackground.pageColor(CREAM));
+        assertEquals("#2DBFA0", DarkBackground.hubColor("#2DBFA0"));
+    }
+
+    /** Someone editing their own blog's colors has to see the color they're editing. */
+    @Test
+    public void aPageKeepsItsOwnColorWhileItsColorsAreBeingEdited() {
+        Settings.DARK_BACKGROUND.save(true);
+        standInStyle();
+        DarkBackground.darkPalette = true;
+        DarkBackground.customizing = true;
+
+        assertEquals(CREAM, DarkBackground.pageColor(CREAM));
+        assertEquals("#2DBFA0", DarkBackground.hubColor("#2DBFA0"));
+
+        DarkBackground.customizing = false;
+        assertNotEquals("back on the blog itself", CREAM, DarkBackground.pageColor(CREAM));
+    }
+
+    @Test
+    public void aPageKeepsItsOwnColorWithoutTheHookOrTheStyle() {
+        Settings.DARK_BACKGROUND.save(true);
+        DarkBackground.darkPalette = true;
+
+        assertEquals("no style", CREAM, DarkBackground.pageColor(CREAM));
+        assertEquals("no style", "#2DBFA0", DarkBackground.hubColor("#2DBFA0"));
+
+        standInStyle();
+        PatchFamilyForTests.capabilities(EnumSet.noneOf(PatchFamily.Capability.class));
+        assertEquals("no hook", CREAM, DarkBackground.pageColor(CREAM));
+        assertEquals("no hook", "#2DBFA0", DarkBackground.hubColor("#2DBFA0"));
+    }
+
+    @Test
+    public void aPageReadBeforeTheSettingsAreReadyKeepsItsOwnColor() {
+        Settings.DARK_BACKGROUND.save(true);
+        standInStyle();
+        DarkBackground.darkPalette = true;
+
+        SettingsContextRule.beforeThePauseIsDecided(() -> assertEquals(CREAM, DarkBackground.pageColor(CREAM)));
+    }
+
+    /** The activity's theme decides the palette. A later Compose theme of another palette doesn't. */
+    @Test
+    public void onlyAnActivitysThemeDecidesThePalette() {
+        Settings.DARK_BACKGROUND.save(true);
+        int color = standInStyle();
+        DarkBackground.styleForTests = android.R.style.ThemeOverlay_Material_Dark;
+        DarkBackground.darkForTests = ignored -> true;
+        Activity shown = Robolectric.buildActivity(Activity.class).create().get();
+
+        DarkBackground.onActivityTheme(shown);
+        assertTrue(DarkBackground.darkPalette);
+        assertEquals(color, DarkBackground.pageColor(CREAM));
+
+        DarkBackground.darkForTests = ignored -> false;
+        DarkBackground.onComposeTheme(lightTheme());
+        assertTrue("Compose's theme isn't the screen's", DarkBackground.darkPalette);
+
+        DarkBackground.onActivityTheme(shown);
+        assertFalse("the screen moved to another palette", DarkBackground.darkPalette);
+        assertEquals(CREAM, DarkBackground.pageColor(CREAM));
+    }
+
+    /** Going back from a customize screen sets no theme, so which screen is in front follows the lifecycle. */
+    @Test
+    public void aCustomizeScreenStopsCountingOnceAnotherIsInFront() {
+        Settings.DARK_BACKGROUND.save(true);
+        standInStyle();
+        DarkBackground.styleForTests = android.R.style.ThemeOverlay_Material_Dark;
+        DarkBackground.darkForTests = ignored -> true;
+        ActivityController<CustomizeOpticaStandIn> customize = Robolectric.buildActivity(CustomizeOpticaStandIn.class).create();
+        ActivityController<Activity> blog = Robolectric.buildActivity(Activity.class).create();
+
+        DarkBackground.onActivityTheme(customize.get());
+        assertTrue(DarkBackground.customizing);
+        assertEquals(CREAM, DarkBackground.pageColor(CREAM));
+
+        blog.start().resume();
+        assertFalse(DarkBackground.customizing);
+        assertNotEquals(CREAM, DarkBackground.pageColor(CREAM));
+
+        customize.start().resume();
+        assertTrue(DarkBackground.customizing);
+    }
+
+    /** Named for the real screen's name, which is what tells it apart. */
+    public static final class CustomizeOpticaStandIn extends Activity {}
+
     @Test
     public void theHooksTakeNothingQuietly() {
         Settings.DARK_BACKGROUND.save(true);
@@ -322,6 +450,9 @@ public class DarkBackgroundTest {
     /** The Dark palette's two surface grays, #0d0d0d and #1a1a1a, as Tumblr's design colors hand them over. */
     private static final long PAGE_GRAY = 0xFF0D0D0D00000000L;
     private static final long PANEL_GRAY = 0xFF1A1A1A00000000L;
+
+    /** The cream from the blog page reported in #8. */
+    private static final int CREAM = 0xFFF5EBD7;
 
     /**
      * Stands a framework dark theme in for the patch's style and its background attribute for the

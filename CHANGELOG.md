@@ -4,6 +4,7 @@
 
 * **Tumblr:** The patches move from 46.8.1.100 to Tumblr 46.9.1.100, the newest release. Every patch applies to it, so that's the version to patch.
 * **Tumblr:** The bundle is built on Morphe patcher 2.1.0 now. You'll need Morphe Manager 2.3.0 or newer, since older Manager builds can't load it.
+* **Tumblr:** Dark background color now reaches blog and tag pages. Those pages paint their owner's color, so a cream blog or a teal tag used to show through the gaps between black posts. The screens where you edit your own blog's colors still show the real ones.
 * **Tooling:** A release walk now requires Android's verifier to finish on the clean reference and the exact installed build. Both uploaded inputs keep matching hashes before and after verification. Publication rejects stale, incomplete or mismatched evidence, including extra or missing verifier messages.
 * **Tooling:** A release walk now checks each required destination instead of trusting its screen count. Login screens, wrong search results, duplicate or missing routes, recorded problems and invalid timestamps can't earn a full PASS. Shorter exploratory walks remain partial.
 * **Tooling:** Release walks now prove which APK was installed. Patch runs keep the input, bundle, patch selection and signing identity beside the signed output. The walker checks the installed bytes before and after its run, and publication rejects missing, changed or historical evidence.

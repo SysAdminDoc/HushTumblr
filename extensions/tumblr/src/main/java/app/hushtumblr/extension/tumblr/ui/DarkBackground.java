@@ -6,12 +6,16 @@
 package app.hushtumblr.extension.tumblr.ui;
 
 import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
 import android.content.res.Resources;
+import android.os.Bundle;
 import android.util.TypedValue;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.Locale;
 import java.util.function.Predicate;
 
 import app.hushtumblr.extension.shared.Utils;
@@ -40,6 +44,13 @@ import app.hushtumblr.extension.tumblr.settings.Settings;
  * palette's set asks, which is the one the System palette uses at night too. The footer under a
  * post paints itself with that lighter gray, so {@link #designFooter} hands it the card's color.
  *
+ * <p>A blog's page and a tag's page don't read a theme for their background at all: each paints the
+ * color its owner chose, and the gaps between posts are that color showing through. So the two places
+ * those colors are read call in here as well, {@link #pageColor} for a blog and {@link #hubColor} for
+ * a tag, and get the picked color while the switch is on and the Dark palette is the one showing. The
+ * screens where a person edits their own blog's colors keep the real ones, or they'd be editing a
+ * color they can't see.
+ *
  * <p>A theme a screen already drew with keeps its colors, and the design system's set is built once
  * for as long as Tumblr runs, so the summary says a restart shows it.
  */
@@ -58,6 +69,10 @@ public final class DarkBackground {
     static final String OTHER_PALETTE = "other palette left alone";
     static final String DESIGN_PAINTED = "design colors painted";
     static final String DESIGN_EARLY = "design colors read early";
+    static final String PAGE_PAINTED = "blog or tag page painted";
+
+    /** Parts of the class names of the screens where a person edits their own blog's colors. */
+    private static final String[] CUSTOMIZING_SCREENS = {"CustomizeOptica", "BlogPagesPreview"};
 
     /**
      * How much lighter than the page a bar, a row or a dialog is, on each of red, green and blue. The
@@ -85,6 +100,23 @@ public final class DarkBackground {
     @Nullable
     static volatile int[] ids;
 
+    /**
+     * Whether the last activity to set its theme got the style. Only an activity's theme decides this:
+     * Tumblr's Compose colors read a theme of their own, which can be another palette's.
+     */
+    static volatile boolean darkPalette;
+
+    /** Whether a screen where a person edits their own blog's colors is the one in front. */
+    static volatile boolean customizing;
+
+    /** The picked color for a page, null until it's first needed. A test clears it to look again. */
+    @Nullable
+    static volatile Integer pagePick;
+
+    /** The Application whose activities are being watched. */
+    @Nullable
+    private static volatile Application watched;
+
     /** Stand in for the resource lookups in a test. Null in the app. */
     @Nullable
     static volatile Integer styleForTests;
@@ -95,10 +127,106 @@ public final class DarkBackground {
     public static void onActivityTheme(@Nullable Activity activity) {
         if (activity == null || !Utils.settingsReady()) return;
         try {
-            paint(activity.getTheme(), activity.getResources(), activity.getPackageName());
+            watchScreens(activity);
+            customizing = customizes(activity);
+            darkPalette = paint(activity.getTheme(), activity.getResources(), activity.getPackageName());
         } catch (Throwable failure) {
             HookStatus.threw(FamilyNames.DARK_BACKGROUND, "activity theme", failure);
         }
+    }
+
+    /**
+     * Follows which screen is in front. Going back from a customizing screen sets no theme, so the
+     * theme hook alone would leave {@link #customizing} on for the screen underneath.
+     */
+    private static void watchScreens(Activity activity) {
+        Application application = activity.getApplication();
+        if (application == null || application == watched) return;
+        watched = application;
+        application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
+            @Override
+            public void onActivityResumed(@NonNull Activity resumed) {
+                customizing = customizes(resumed);
+            }
+
+            @Override
+            public void onActivityCreated(@NonNull Activity created, @Nullable Bundle state) {
+                customizing = customizes(created);
+            }
+
+            @Override
+            public void onActivityStarted(@NonNull Activity started) {}
+
+            @Override
+            public void onActivityPaused(@NonNull Activity paused) {}
+
+            @Override
+            public void onActivityStopped(@NonNull Activity stopped) {}
+
+            @Override
+            public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle state) {}
+
+            @Override
+            public void onActivityDestroyed(@NonNull Activity destroyed) {}
+        });
+    }
+
+    /** Whether [activity] is a screen where a person edits their own blog's colors. */
+    static boolean customizes(Activity activity) {
+        String name = activity.getClass().getName();
+        for (String screen : CUSTOMIZING_SCREENS) if (name.contains(screen)) return true;
+        return false;
+    }
+
+    /**
+     * Placed where a blog's background color has been worked out. Answers the picked color while the
+     * pages are being painted, and [tumblrs] otherwise. Tumblr picks the blog's title color against
+     * this answer, so the title stays readable on it. Never throws.
+     */
+    public static int pageColor(int tumblrs) {
+        try {
+            Integer picked = pick();
+            return picked == null ? tumblrs : picked;
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.DARK_BACKGROUND, "page color", failure);
+            return tumblrs;
+        }
+    }
+
+    /**
+     * Placed where a tag page has read its header's background color, which it parses. Answers the
+     * picked color as #RRGGBB while the pages are being painted, and [tumblrs] otherwise, null
+     * included. Never throws.
+     */
+    @Nullable
+    public static String hubColor(@Nullable String tumblrs) {
+        try {
+            Integer picked = pick();
+            return picked == null ? tumblrs : String.format(Locale.ROOT, "#%06X", picked & 0xFFFFFF);
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.DARK_BACKGROUND, "tag page color", failure);
+            return tumblrs;
+        }
+    }
+
+    /** The picked color when blog and tag pages get painted right now, or null when they keep their own. */
+    @Nullable
+    private static Integer pick() {
+        if (!Utils.settingsReady() || !PatchFamily.Capability.THEME_BACKGROUND.installed()) return null;
+        HookStatus.invoked(FamilyNames.DARK_BACKGROUND);
+        if (!Settings.DARK_BACKGROUND.get() || !darkPalette || customizing) return null;
+        Integer known = pagePick;
+        if (known == null) {
+            Context context = Utils.getContext();
+            if (context == null) return null;
+            Resources resources = context.getResources();
+            int[] found = ids(resources, context.getPackageName());
+            known = styleColor(resources, found[0], found[1]);
+            if (known == null) return null;
+            pagePick = known;
+        }
+        HookStatus.counted(FamilyNames.DARK_BACKGROUND, PAGE_PAINTED);
+        return known;
     }
 
     /** Placed right after Tumblr's Compose colors make the theme they read from. Never throws. */

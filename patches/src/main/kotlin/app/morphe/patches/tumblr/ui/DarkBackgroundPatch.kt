@@ -24,6 +24,7 @@ import app.morphe.patches.tumblr.lookup.only
 import app.morphe.patches.tumblr.lookup.requireExtensionHook
 import app.morphe.patches.tumblr.lookup.requireShape
 import app.morphe.patches.tumblr.lookup.sameAs
+import app.morphe.patches.tumblr.lookup.stringRef
 import app.morphe.patches.tumblr.lookup.strings
 import app.morphe.patches.tumblr.misc.extension.EXTENSION_PACKAGE
 import app.morphe.patches.tumblr.misc.extension.enableCapability
@@ -34,6 +35,7 @@ import app.morphe.patches.tumblr.misc.extension.requireStatusMethod
 import app.morphe.patches.tumblr.misc.extension.tumblrExtensionPatch
 import app.morphe.patches.tumblr.misc.settings.EXTENSION_ROOT
 import app.morphe.patches.tumblr.misc.settings.settingsPatch
+import app.morphe.util.addInstructionsAtControlFlowLabel
 import app.morphe.util.extendsClass
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.Method
@@ -57,6 +59,13 @@ internal const val COMPOSE_THEME_HOOK = "$DARK_BACKGROUND->onComposeTheme(Landro
 internal const val DESIGN_PAGE_HOOK = "$DARK_BACKGROUND->designPage(J)J"
 internal const val DESIGN_PANEL_HOOK = "$DARK_BACKGROUND->designPanel(J)J"
 internal const val DESIGN_FOOTER_HOOK = "$DARK_BACKGROUND->designFooter(J)J"
+internal const val PAGE_COLOR_HOOK = "$DARK_BACKGROUND->pageColor(I)I"
+internal const val HUB_COLOR_HOOK = "$DARK_BACKGROUND->hubColor(Ljava/lang/String;)Ljava/lang/String;"
+
+/** A blog's theme, the key its background is saved under, and a tag page's header. All three names are kept. */
+internal const val BLOG_THEME = "Lcom/tumblr/bloginfo/BlogTheme;"
+internal const val BLOG_BACKGROUND_KEY = "background_color"
+internal const val HUB_HEADER = "Lcom/tumblr/rumblr/response/CommunityHubHeaderResponse\$CommunityHubHeader;"
 
 /** The Compose note of the footer under a post, the function that paints its background. */
 internal const val POST_FOOTER_NOTE = "${FOOTER_CONTROLS}PostFooterSplitNotesCountContent ("
@@ -254,14 +263,16 @@ private fun darkBackgroundStylePatch(background: () -> Int) = resourcePatch {
  *
  * Tumblr's design system keeps its colors in code, one set per palette, so the Dark palette's set
  * also hands its two surface grays to `DarkBackground` as it's built (see [resolveDesignColors]).
- * A build that keeps them some other way gets a warning and the rest of the patch.
+ * A build that keeps them some other way gets a warning and the rest of the patch. A blog's page and
+ * a tag's page paint their owner's color instead of a theme's, so those two colors go through
+ * `DarkBackground` too (see [resolveBlogPageColor] and [resolveTagPageColors]), with the same warning.
  */
 @Suppress("unused")
 val darkBackgroundPatch = bytecodePatch(
     name = PATCH,
     description = "Makes the background of Tumblr's Dark Mode palette black, which can save battery on OLED screens, or" +
-        " another dark color you pick when patching. Other palettes stay as they are. Starts off. Turn it on in" +
-        " Tumblr settings > HushTumblr > Interface.",
+        " another dark color you pick when patching. Blog and tag pages take it too, in place of their own colors." +
+        " Other palettes stay as they are. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface.",
     default = true,
 ) {
     category("Interface")
@@ -294,6 +305,8 @@ val darkBackgroundPatch = bytecodePatch(
         val designColors = resolveDesignColors()
         // Only with the design colors hooked: the footer's hook only swaps the gray they hand out.
         val footer = designColors?.let { resolvePostFooterColor() }
+        val blogPage = resolveBlogPageColor()
+        val tagPages = resolveTagPageColors()
         hooks.activity.addInstructions(
             hooks.activityIndex,
             "invoke-static/range { v${hooks.activityRegister} .. v${hooks.activityRegister} }, $ACTIVITY_THEME_HOOK",
@@ -318,6 +331,21 @@ val darkBackgroundPatch = bytecodePatch(
                 read.index,
                 "invoke-static/range { v${read.register} .. v${read.register + 1} }, ${read.hook}\n" +
                     "move-result-wide v${read.register}",
+            )
+        }
+        blogPage?.let { (method, read) ->
+            mutableOf(method).addInstructionsAtControlFlowLabel(
+                read.index,
+                "invoke-static/range { v${read.register} .. v${read.register} }, ${read.hook}\n" +
+                    "move-result v${read.register}",
+            )
+        }
+        // Last first, so a method's earlier read keeps its index if it ever has two.
+        for ((method, read) in tagPages.sortedByDescending { it.second.index }) {
+            mutableOf(method).addInstructions(
+                read.index,
+                "invoke-static/range { v${read.register} .. v${read.register} }, ${read.hook}\n" +
+                    "move-result-object v${read.register}",
             )
         }
         enableCapability("themeBackground")
@@ -528,6 +556,88 @@ internal fun BytecodePatchContext.resolvePostFooterColor(): Pair<Method, DesignC
         ?: return without("the post footer hands ${reads.size} design colors straight to a background instead of one")
     requireExtensionHook(PATCH, DESIGN_FOOTER_HOOK)
     return footer to read
+}
+
+/**
+ * Finds where a blog's page color is worked out, or answers null with a warning, which leaves blog
+ * pages their owners' colors and changes nothing else.
+ *
+ * Saving a theme compares two [BLOG_THEME]s and writes each changed value under its key, so the
+ * getter read right after [BLOG_BACKGROUND_KEY] is the background's. The function that turns that
+ * into the color screens paint is the one static `(BlogTheme)int` beside it that calls the getter.
+ * Every page reads that function, and its title color is picked against the answer, so the hook goes
+ * right before the return. The theme itself stays real: the customize screens and that comparison
+ * read the getter straight. In 46.9.1.100 that's `ey2.s`, found from `ey2.l` (2026-10-31).
+ */
+internal fun BytecodePatchContext.resolveBlogPageColor(): Pair<Method, DesignColorRead>? {
+    fun without(why: String): Pair<Method, DesignColorRead>? {
+        patchLog.warning("$PATCH: $why, so a blog's page keeps the color its owner chose")
+        return null
+    }
+    val twoThemes = listOf(BLOG_THEME, BLOG_THEME)
+    val comparisons = classDefByStrings(BLOG_BACKGROUND_KEY)
+        .filter { !it.type.startsWith(EXTENSION_ROOT) }
+        .distinctBy { it.type }
+        .flatMap { owner ->
+            owner.methods.filter { method ->
+                method.isStatic() && method.parameterTypes.map(CharSequence::toString) == twoThemes &&
+                    BLOG_BACKGROUND_KEY in method.strings()
+            }
+        }
+    val comparison = comparisons.singleOrNull()
+        ?: return without("${comparisons.size} functions compare two blog themes' $BLOG_BACKGROUND_KEY instead of one")
+    val steps = comparison.instructionList()
+    val getter = steps.getOrNull(steps.indexOfFirst { it.stringRef() == BLOG_BACKGROUND_KEY } + 1)?.methodRef()
+        ?.takeIf { it.definingClass == BLOG_THEME && it.hasShape(emptyList(), "Ljava/lang/String;") }
+        ?: return without("a blog theme's background isn't read right after its key")
+    val readers = classDefByOrNull(comparison.definingClass)?.methods?.filter { method ->
+        method.isStatic() && method.hasShape(listOf(BLOG_THEME), "I") &&
+            method.instructionList().any { it.methodRef()?.sameAs(getter) == true }
+    } ?: emptyList()
+    val reader = readers.singleOrNull()
+        ?: return without("${readers.size} functions answer a blog's background color instead of one")
+    val body = reader.instructionList()
+    val kept = body.getOrNull(body.lastIndex - 1)?.takeIf { it.opcode == Opcode.MOVE_RESULT } as? OneRegisterInstruction
+    val returned = body.last().takeIf { it.opcode == Opcode.RETURN } as? OneRegisterInstruction
+    if (kept == null || returned == null || kept.registerA != returned.registerA) {
+        return without("the function that answers a blog's background color doesn't end by returning a call's answer")
+    }
+    requireExtensionHook(PATCH, PAGE_COLOR_HOOK)
+    return reader to DesignColorRead(body.lastIndex, kept.registerA, PAGE_COLOR_HOOK)
+}
+
+/**
+ * Finds where a tag page reads its background from its header, or answers an empty list with a
+ * warning, which leaves tag pages their own colors and changes nothing else.
+ *
+ * Every read of [HUB_HEADER]'s color is kept in a register and parsed later, so the hook goes right
+ * after the `move-result-object` and writes its answer back there. The JSON adapter's read stays
+ * real, so a header Tumblr writes out keeps its color. In 46.9.1.100 those are
+ * `HubContainerFragment.L5`, which paints the page's bars, and `HubTimelineFragment`'s `m9` and
+ * `getBackgroundColor` (2026-10-31).
+ */
+internal fun BytecodePatchContext.resolveTagPageColors(): List<Pair<Method, DesignColorRead>> {
+    val reads = mutableListOf<Pair<Method, DesignColorRead>>()
+    classDefForEach { owner ->
+        if (owner.type.startsWith(EXTENSION_ROOT) || owner.type.endsWith("JsonAdapter;")) return@classDefForEach
+        owner.methods.forEach { method ->
+            val body = method.instructionList()
+            body.indices.forEach { at ->
+                val call = body[at].methodRef()
+                if (call?.definingClass == HUB_HEADER && call.name == "getBackgroundColor" && call.hasShape(emptyList(), "Ljava/lang/String;")) {
+                    (body.getOrNull(at + 1)?.takeIf { it.opcode == Opcode.MOVE_RESULT_OBJECT } as? OneRegisterInstruction)?.let { kept ->
+                        reads += method to DesignColorRead(at + 2, kept.registerA, HUB_COLOR_HOOK)
+                    }
+                }
+            }
+        }
+    }
+    if (reads.isEmpty()) {
+        patchLog.warning("$PATCH: nothing reads a tag page header's color, so a tag's page keeps its own color")
+    } else {
+        requireExtensionHook(PATCH, HUB_COLOR_HOOK)
+    }
+    return reads
 }
 
 /** A static `(modifier, long, shape)` call answering the modifier's type, with the long in [register] and the one after. */
