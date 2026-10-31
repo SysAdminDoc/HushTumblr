@@ -3689,11 +3689,11 @@ public class DexDiff {
                         && arguments(b.get(k + 1)).get(0).equals(arguments(b.get(k + 2)).get(0))) binds = true;
                 if (!binds) fail(lifecycle + ": fresh account parser");
             }
-            Method fetch = nativeMethod(service + "->f()Lfm4;", lifecycle);
+            Method fetch = nativeMethod(service + "->f()Lsm4;", lifecycle);
             if (fetch != null) {
                 List<Instruction> b = instructions(fetch);
                 int at = firstIndex(b, 0, i -> isCall(i, request, "<init>", "(" + service + ")V"));
-                if (at < 0 || firstIndex(b, at + 1, i -> isCall(i, "Llmj;", "u", "()Lfm4;")) < 0) fail(lifecycle + ": callback constructed after subscription");
+                if (at < 0 || firstIndex(b, at + 1, i -> isCall(i, "Lhoj;", "u", "()Lsm4;")) < 0) fail(lifecycle + ": callback constructed after subscription");
             }
             Method replace = nativeMethod(credentials + "->r(" + STRING_TYPE + STRING_TYPE + ")V", lifecycle);
             if (replace != null) {
@@ -3710,13 +3710,13 @@ public class DexDiff {
                     hookAtLabel(replace, actual(replace), ends.get(0) - 1, hooks + "->credentialsChanged()V", List.of(), -1, List.of());
                 }
             }
-            Method reset = nativeMethod(credentials + "->p(Lpqm;)V", lifecycle);
+            Method reset = nativeMethod(credentials + "->p(Llsm;)V", lifecycle);
             if (reset != null) {
                 List<Instruction> b = instructions(reset);
                 if (b.isEmpty() || b.get(0).getOpcode() != Opcode.MONITOR_ENTER || callSites(b, credentials + "->a()V").isEmpty()) fail(lifecycle + ": credential reset monitor");
                 hookAtLabel(reset, actual(reset), 1, hooks + "->logout()V", List.of(), -1, List.of());
             }
-            Method out = nativeMethod(logout + "->i(Landroid/content/Context;ZLbx5;)Ljava/lang/Object;", lifecycle);
+            Method out = nativeMethod(logout + "->i(Landroid/content/Context;ZLox5;)Ljava/lang/Object;", lifecycle);
             if (out != null) {
                 if (callSites(instructions(out), "Lcom/tumblr/Remember;->b()V").size() != 1) fail(lifecycle + ": native logout Remember clear");
                 hookAt(out, actual(out), 0, hooks + "->logout()V", List.of(), -1, List.of());
@@ -3733,7 +3733,7 @@ public class DexDiff {
                     requestReason = "mature permission requester changed", continuationReason = "mature continuation bridge changed";
             for (String type : List.of(gate, age, permission, response, metadata, repository, user, "Lcom/tumblr/rumblr/model/UserInfo;")) preserveClass(type);
             boolean found = true;
-            Method old = nativeMethod(gate + "->k(Lhyf;)Z", coverReason);
+            Method old = nativeMethod(gate + "->k(Lyzf;)Z", coverReason);
             if (old == null) found = false;
             else {
                 List<Instruction> b = instructions(old);
@@ -3743,8 +3743,8 @@ public class DexDiff {
                 List<Integer> places = List.of(12, 13, 16, 17), registers = List.of(2, 1, 2, 1);
                 boolean good = old.getImplementation().getRegisterCount() == 4 && old.getImplementation().getTryBlocks().isEmpty()
                         && b.stream().map(Instruction::getOpcode).toList().equals(shape)
-                        && isCall(get(b, 1), gate, "l", "(Lhyf;)Z") && isCall(get(b, 5), gate, "f", "(Lhyf;)Z")
-                        && isCall(get(b, 8), gate, "j", "(Lhyf;)Z") && isCall(get(b, 14), gate, "j", "(Lhyf;)Z");
+                        && isCall(get(b, 1), gate, "l", "(Lyzf;)Z") && isCall(get(b, 5), gate, "f", "(Lyzf;)Z")
+                        && isCall(get(b, 8), gate, "j", "(Lyzf;)Z") && isCall(get(b, 14), gate, "j", "(Lyzf;)Z");
                 for (int k = 0; good && k < places.size(); k++) good &= firstRegister(b.get(places.get(k))) == registers.get(k);
                 Method m = actual(old);
                 List<Integer> sites = calls(m, coverHook, 4);
@@ -3764,9 +3764,9 @@ public class DexDiff {
             if (nsfw == null) found = false;
             else {
                 List<Instruction> b = instructions(nsfw);
-                int at = firstIndex(b, 0, i -> isCall(i, "Lrc1;", "U0", "()Z"));
+                int at = firstIndex(b, 0, i -> isCall(i, "Led1;", "U0", "()Z"));
                 Method after = actual(nsfw);
-                if (at < 0 || at > 8 || !isCall(get(b, 10), gate, "k", "(Lhyf;)Z") || after == null
+                if (at < 0 || at > 8 || !isCall(get(b, 10), gate, "k", "(Lyzf;)Z") || after == null
                         || !normalized(nsfw, null).equals(normalized(after, null))) { fail("native NSFW restriction changed"); found = false; }
             }
             String accountFace = BASE + "mature/HushMatureAccount;";
@@ -3816,7 +3816,7 @@ public class DexDiff {
 
             String parserType = age.substring(0, age.length() - 1) + "JsonAdapter;", parsedHook = hooks + "->ageGateParsed(" + object + "I)V";
             preserveClass(parserType);
-            Method parser = nativeMethod(parserType + "->fromJson(Lc8b;)" + object, ageReason);
+            Method parser = nativeMethod(parserType + "->fromJson(Le9b;)" + object, ageReason);
             if (parser == null) found = false;
             else {
                 List<Instruction> b = instructions(parser);
@@ -3825,7 +3825,7 @@ public class DexDiff {
                         && get(b, 11) instanceof TwoRegisterInstruction t && t.getOpcode() == Opcode.MOVE && t.getRegisterA() == 9 && t.getRegisterB() == 3
                         && literalIs(get(b, 65), Opcode.AND_INT_LIT8, 9, -2) && ((TwoRegisterInstruction) b.get(65)).getRegisterB() == 9
                         && isCall(get(b, 77), age, "<init>", "(ZLjava/lang/String;Ljava/lang/String;Lcom/tumblr/rumblr/model/AgeGroup;)V")
-                        && isCall(get(b, 81), age, "<init>", "(ZLjava/lang/String;Ljava/lang/String;Lcom/tumblr/rumblr/model/AgeGroup;ILr17;)V")
+                        && isCall(get(b, 81), age, "<init>", "(ZLjava/lang/String;Ljava/lang/String;Lcom/tumblr/rumblr/model/AgeGroup;ILh27;)V")
                         && b.get(81) instanceof RegisterRangeInstruction r && r.getStartRegister() == 4 && r.getRegisterCount() == 7
                         && movesTo(get(b, 78), 14, Opcode.RETURN_OBJECT) && movesTo(get(b, 82), 4, Opcode.RETURN_OBJECT) && movesTo(get(b, 96), 2, Opcode.RETURN_OBJECT);
                 Method m = actual(parser);
@@ -3844,7 +3844,7 @@ public class DexDiff {
             String permissionParserType = permission.substring(0, permission.length() - 1) + "JsonAdapter;",
                     permissionHook = hooks + "->permissionParsed(" + object + "I)V", permissionReason = "mature permission presence hook changed";
             preserveClass(permissionParserType);
-            Method permissionParser = nativeMethod(permissionParserType + "->fromJson(Lc8b;)" + object, permissionReason);
+            Method permissionParser = nativeMethod(permissionParserType + "->fromJson(Le9b;)" + object, permissionReason);
             if (permissionParser == null) found = false;
             else {
                 List<Instruction> p = instructions(permissionParser);
@@ -3872,7 +3872,7 @@ public class DexDiff {
                 found &= good;
             }
             String serviceHook = hooks + "->service(" + object + ")V";
-            Method ctor = nativeMethod(repository + "-><init>(Lsh7;" + service + ")V", requestReason);
+            Method ctor = nativeMethod(repository + "-><init>(Lii7;" + service + ")V", requestReason);
             if (ctor == null) found = false;
             else {
                 List<Instruction> b = instructions(ctor);
@@ -3896,7 +3896,7 @@ public class DexDiff {
                 if (!good) fail(requestReason + ": existing service capture");
                 found &= good;
             }
-            Method getPermission = patched.methods.get(service + "->getCommunityLabelUserConfig(Lbx5;)" + object);
+            Method getPermission = patched.methods.get(service + "->getCommunityLabelUserConfig(Lox5;)" + object);
             ClassDef nativeService = patched.classes.get(service);
             boolean get = nativeService != null && AccessFlags.INTERFACE.isSet(nativeService.getAccessFlags()) && getPermission != null
                     && AccessFlags.PUBLIC.isSet(getPermission.getAccessFlags()) && AccessFlags.ABSTRACT.isSet(getPermission.getAccessFlags())
@@ -3911,25 +3911,25 @@ public class DexDiff {
                     && movesTo(fb.get(2), 1, Opcode.NEW_INSTANCE) && continuation.equals(String.valueOf(reference(fb.get(2))))
                     && callIs(fb.get(3), Opcode.INVOKE_DIRECT, continuation + "-><init>(" + object + ")V", 1, 5)
                     && callIs(fb.get(4), Opcode.INVOKE_INTERFACE, getPermission.toString(), 0, 1) && movesTo(fb.get(5), 2, Opcode.MOVE_RESULT_OBJECT)
-                    && callIs(fb.get(6), Opcode.INVOKE_STATIC, "Ls2b;->g()" + object) && movesTo(fb.get(7), 3, Opcode.MOVE_RESULT_OBJECT)
+                    && callIs(fb.get(6), Opcode.INVOKE_STATIC, "Lu3b;->g()" + object) && movesTo(fb.get(7), 3, Opcode.MOVE_RESULT_OBJECT)
                     && fb.get(8).getOpcode() == Opcode.IF_EQ && ((TwoRegisterInstruction) fb.get(8)).getRegisterA() == 2 && ((TwoRegisterInstruction) fb.get(8)).getRegisterB() == 3 && target(fetch, 8) == 10
                     && callIs(fb.get(9), Opcode.INVOKE_STATIC, hooks + "->received(" + object + object + ")V", 5, 2) && fb.get(10).getOpcode() == Opcode.RETURN_VOID;
             if (!request) fail(requestReason);
             found &= request;
-            ClassDef nativeContinuation = clean.classes.get("Lbx5;"), context = clean.classes.get("Ly58;"), suspended = clean.classes.get("Ls2b;"), afterContinuation = patched.classes.get(continuation);
-            Method getContext = actual(continuation + "->getContext()Ly76;");
+            ClassDef nativeContinuation = clean.classes.get("Lox5;"), context = clean.classes.get("Lo68;"), suspended = clean.classes.get("Lu3b;"), afterContinuation = patched.classes.get(continuation);
+            Method getContext = actual(continuation + "->getContext()Ll86;");
             List<Instruction> cb = getContext == null ? List.of() : instructions(getContext);
-            Method contextName = nativeMethod("Ly58;->toString()" + STRING_TYPE, continuationReason), marker = nativeMethod("Lu2b;->g()" + object, continuationReason);
+            Method contextName = nativeMethod("Lo68;->toString()" + STRING_TYPE, continuationReason), marker = nativeMethod("Lw3b;->g()" + object, continuationReason);
             Method resume = actual(continuation + "->resumeWith(" + object + ")V");
             boolean resumes = false;
             if (resume != null) for (Instruction i : instructions(resume)) if (isCall(i, hooks, "received", "(" + object + object + ")V")) resumes = true;
             boolean continuationGood = nativeContinuation != null && AccessFlags.INTERFACE.isSet(nativeContinuation.getAccessFlags())
-                    && clean.methods.containsKey("Lbx5;->getContext()Ly76;") && clean.methods.containsKey("Lbx5;->resumeWith(" + object + ")V")
-                    && context != null && context.getInterfaces().contains("Ly76;") && hasField(clean, "Ly58;", "a", "Ly58;", AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue() | AccessFlags.FINAL.getValue(), 0)
+                    && clean.methods.containsKey("Lox5;->getContext()Ll86;") && clean.methods.containsKey("Lox5;->resumeWith(" + object + ")V")
+                    && context != null && context.getInterfaces().contains("Ll86;") && hasField(clean, "Lo68;", "a", "Lo68;", AccessFlags.PUBLIC.getValue() | AccessFlags.STATIC.getValue() | AccessFlags.FINAL.getValue(), 0)
                     && contextName != null && reference(get(instructions(contextName), 0)) instanceof StringReference s && s.getString().equals("EmptyCoroutineContext")
-                    && suspended != null && "Lu2b;".equals(suspended.getSuperclass()) && marker != null && "Lp86;->COROUTINE_SUSPENDED:Lp86;".equals(String.valueOf(reference(get(instructions(marker), 0))))
-                    && afterContinuation != null && afterContinuation.getInterfaces().contains("Lbx5;") && getContext != null && !isStatic(getContext) && AccessFlags.PUBLIC.isSet(getContext.getAccessFlags())
-                    && cb.size() == 2 && fieldIs(cb.get(0), Opcode.SGET_OBJECT, "Ly58;->a:Ly58;", 0, -1) && movesTo(cb.get(1), 0, Opcode.RETURN_OBJECT) && resumes;
+                    && suspended != null && "Lw3b;".equals(suspended.getSuperclass()) && marker != null && "Lc96;->COROUTINE_SUSPENDED:Lc96;".equals(String.valueOf(reference(get(instructions(marker), 0))))
+                    && afterContinuation != null && afterContinuation.getInterfaces().contains("Lox5;") && getContext != null && !isStatic(getContext) && AccessFlags.PUBLIC.isSet(getContext.getAccessFlags())
+                    && cb.size() == 2 && fieldIs(cb.get(0), Opcode.SGET_OBJECT, "Lo68;->a:Lo68;", 0, -1) && movesTo(cb.get(1), 0, Opcode.RETURN_OBJECT) && resumes;
             if (!continuationGood) fail(continuationReason);
             found &= continuationGood;
             controls(actual(hooks + "->received(" + object + object + ")V"), true);
@@ -3976,7 +3976,7 @@ public class DexDiff {
                     && literalIs(set.get(7), Opcode.AND_INT_LIT8, 0, 1) && ((TwoRegisterInstruction) set.get(7)).getRegisterB() == 3
                     && literalIs(set.get(8), Opcode.XOR_INT_LIT8, 0, 1) && ((TwoRegisterInstruction) set.get(8)).getRegisterB() == 0
                     && fieldIs(set.get(9), Opcode.IPUT_BOOLEAN, trailField, 0, 1) && set.get(10).getOpcode() == Opcode.RETURN_VOID;
-            Method reader = nativeMethod(adapter + "->fromJson(Lc8b;)Ljava/lang/Object;", reason);
+            Method reader = nativeMethod(adapter + "->fromJson(Le9b;)Ljava/lang/Object;", reason);
             if (reader == null) good = false;
             else {
                 List<Instruction> before = instructions(reader);
@@ -4001,11 +4001,11 @@ public class DexDiff {
                         && allocations.equals(List.of(2098)) && movesTo(get(before, 2098), 4, Opcode.NEW_INSTANCE) && constructors.equals(List.of(2166))
                         && get(before, 2166) instanceof RegisterRangeInstruction r && r.getOpcode() == Opcode.INVOKE_DIRECT_RANGE && r.getStartRegister() == 4 && r.getRegisterCount() == 156
                         && ctor != null && ctor.getParameterTypes().size() >= 6 && ctor.getParameterTypes().subList(ctor.getParameterTypes().size() - 6, ctor.getParameterTypes().size())
-                            .stream().map(Object::toString).toList().equals(List.of("I", "I", "I", "I", "I", "Lr17;"))
+                            .stream().map(Object::toString).toList().equals(List.of("I", "I", "I", "I", "I", "Lh27;"))
                         && returns.equals(List.of(2167, 2181)) && movesTo(get(before, 2167), 4, Opcode.RETURN_OBJECT)
                         && literalIs(get(before, 2065), Opcode.CONST_16, 157, 0) && movesTo(get(before, 2069), 0, Opcode.IF_NEZ)
                         && movesTo(get(before, 2181), 157, Opcode.RETURN_OBJECT) && !writtenBetween(before, 2066, 2070, 157) && !writtenBetween(before, 2168, 2182, 157)
-                        && callIs(get(before, 2180), Opcode.INVOKE_STATIC, "Ld6b;->a(Ljava/lang/String;)V", 0);
+                        && callIs(get(before, 2180), Opcode.INVOKE_STATIC, "Lf7b;->a(Ljava/lang/String;)V", 0);
                 if (nativeProof) {
                     FeatureFlow graph = flow(reader);
                     nativeProof = predecessors(graph, 2167).equals(List.of(2166)) && graph.normal.get(2069).contains(2168);
@@ -4056,27 +4056,27 @@ public class DexDiff {
             String headerReason = "mutual header hook changed", accountReason = "mutual account bridge changed", blogReason = "mutual blog bridge changed",
                     pageReason = "mutual follower page bridge changed", requestReason = "mutual native requester changed", responseReason = "mutual response bridge changed";
             for (String type : List.of(header, user, primary, shortBlog, blog, follower, page, pagination, link, response, service, metadata)) preserveClass(type);
-            Method bind = nativeMethod(header + "->t2(Lhyf;Lppn;Z" + blog + "Z)V", headerReason);
+            Method bind = nativeMethod(header + "->t2(Lyzf;Lmrn;Z" + blog + "Z)V", headerReason);
             boolean shown = bind != null;
             if (bind != null) {
                 List<Instruction> b = instructions(bind);
                 shown = bind.getImplementation().getRegisterCount() == 21 && b.size() == 128 && bind.getImplementation().getTryBlocks().isEmpty()
                         && movePair(get(b, 1), Opcode.MOVE_OBJECT_FROM16, 5, 19)
-                        && callIs(get(b, 14), Opcode.INVOKE_DIRECT, header + "->Z0(Lhyf;" + blog + ")" + STRING_TYPE, 15, 2, 5)
+                        && callIs(get(b, 14), Opcode.INVOKE_DIRECT, header + "->Z0(Lyzf;" + blog + ")" + STRING_TYPE, 15, 2, 5)
                         && movesTo(get(b, 15), 13, Opcode.MOVE_RESULT_OBJECT) && !writtenBetween(b, 2, 106, 5) && !writtenBetween(b, 16, 106, 13)
                         && fieldIs(get(b, 104), Opcode.IGET_OBJECT, header + "->K:" + text, 0, 15)
                         && callIs(get(b, 105), Opcode.INVOKE_VIRTUAL, text + "->setText(Ljava/lang/CharSequence;)V", 0, 8)
                         && hookAtLabel(bind, actual(bind), 106, hooks + "->bind(" + object + object + STRING_TYPE + ")V", List.of(0, 5, 13), -1, List.of(0, 5, 13));
                 if (shown) labelAnchors.add(new Anchor(actual(bind), 106, 106, headerReason));
             }
-            Method name = nativeMethod(header + "->Z0(Lhyf;" + blog + ")" + STRING_TYPE, headerReason);
-            shown &= name != null && instructions(name).size() == 17 && isCall(get(instructions(name), 4), blog, "d0", "()" + STRING_TYPE);
+            Method name = nativeMethod(header + "->Z0(Lyzf;" + blog + ")" + STRING_TYPE, headerReason);
+            shown &= name != null && instructions(name).size() == 17 && isCall(get(instructions(name), 4), blog, "Z", "()" + STRING_TYPE);
             List<Method> fulls = new ArrayList<>(); ClassDef oldHeader = clean.classes.get(header);
             if (oldHeader != null) for (Method m : oldHeader.getMethods()) if (m.getName().equals("S0") && m.getReturnType().equals("V")) fulls.add(m);
             Method full = fulls.size() == 1 ? fulls.get(0) : null, detach = nativeMethod(header + "->onDetachedFromWindow()V", headerReason);
             featureControls = false; // Clearing a recycled view must run while paused or switched off too.
             shown &= full != null && full.getImplementation().getRegisterCount() == 35 && full.getParameterTypes().size() == 18
-                    && full.getParameterTypes().get(0).equals("Lhyf;") && instructions(full).size() == 297
+                    && full.getParameterTypes().get(0).equals("Lyzf;") && instructions(full).size() == 297
                     && isCall(get(instructions(full), 7), header, "X1", "()V")
                     && hookAtLabel(full, actual(full), 0, hooks + "->clear(" + object + ")V", List.of(16), -1, List.of(16));
             shown &= detach != null && detach.getImplementation().getRegisterCount() == 1 && instructions(detach).size() == 4
@@ -4103,12 +4103,12 @@ public class DexDiff {
             MethodReference primaryGetter = adapterGetter(primary, "primary"), shortName = adapterGetter(shortBlog, "name"), shortUuid = adapterGetter(shortBlog, "uuid");
             boolean blogs = nativeFieldGetter(primaryGetter, "X", "Z", true) && nativeFieldGetter(shortName, "a", STRING_TYPE, true)
                     && nativeFieldGetter(shortUuid, "g", STRING_TYPE, true)
-                    && nativeFieldGetter(clean.methods.get(blog + "->d0()" + STRING_TYPE), "a", STRING_TYPE, false)
+                    && nativeFieldGetter(clean.methods.get(blog + "->Z()" + STRING_TYPE), "a", STRING_TYPE, false)
                     && nativeFieldGetter(clean.methods.get(blog + "->t0()" + STRING_TYPE), "E", STRING_TYPE, false)
                     && covariantBridge(primary, base + "HushPrimaryBlog;", "hushMutualPrimary", "Z", primaryGetter)
                     && covariantBridge(shortBlog, base + "HushMutualBlog;", "hushMutualName", STRING_TYPE, shortName)
                     && covariantBridge(shortBlog, base + "HushMutualBlog;", "hushMutualUuid", STRING_TYPE, shortUuid)
-                    && covariantBridge(blog, base + "HushMutualBlog;", "hushMutualName", STRING_TYPE, clean.methods.get(blog + "->d0()" + STRING_TYPE))
+                    && covariantBridge(blog, base + "HushMutualBlog;", "hushMutualName", STRING_TYPE, clean.methods.get(blog + "->Z()" + STRING_TYPE))
                     && covariantBridge(blog, base + "HushMutualBlog;", "hushMutualUuid", STRING_TYPE, clean.methods.get(blog + "->t0()" + STRING_TYPE));
             ClassDef pcd = clean.classes.get(primary), bcd = clean.classes.get("Lcom/tumblr/rumblr/model/blog/BlogInfo;");
             blogs &= pcd != null && pcd.getSuperclass().equals("Lcom/tumblr/rumblr/model/blog/BlogInfo;") && bcd != null && bcd.getSuperclass().equals(shortBlog)
@@ -4184,7 +4184,7 @@ public class DexDiff {
             List<Instruction> b = instructions(defaults), p = instructions(constructor);
             return defaults.getImplementation().getRegisterCount() == 129 && b.size() == 283 && constructor.getImplementation().getRegisterCount() == 110 && p.size() == 83
                     && constructor.getParameterTypes().stream().mapToInt(v -> v.equals("J") || v.equals("D") ? 2 : 1).sum() == 60
-                    && parameters.subList(parameters.size() - 3, parameters.size()).stream().map(Object::toString).toList().equals(List.of("I", "I", "Lr17;"))
+                    && parameters.subList(parameters.size() - 3, parameters.size()).stream().map(Object::toString).toList().equals(List.of("I", "I", "Lh27;"))
                     && movePair(get(p, 11), Opcode.MOVE_OBJECT_FROM16, 0, 49) && !writtenBetween(p, 12, 60, 0)
                     && movePair(get(p, 58), Opcode.MOVE_FROM16, 1, 94) && fieldIs(get(p, 59), Opcode.IPUT_BOOLEAN, type + "->X:Z", 1, 0)
                     && movePair(get(b, 1), Opcode.MOVE_FROM16, 1, 127) && literalIs(get(b, 19), Opcode.CONST_4, 3, 0) && !writtenBetween(b, 20, 202, 3)
@@ -4199,7 +4199,7 @@ public class DexDiff {
             if (defaults == null || constructor == null) return false;
             List<Instruction> b = instructions(defaults), p = instructions(constructor);
             return defaults.getImplementation().getRegisterCount() == 10 && b.size() == 18 && constructor.getImplementation().getRegisterCount() == 7 && p.size() == 7
-                    && descriptor(defaults).equals("(" + String.join("", constructor.getParameterTypes()) + "ILr17;)V")
+                    && descriptor(defaults).equals("(" + String.join("", constructor.getParameterTypes()) + "ILh27;)V")
                     && fieldIs(get(p, 4), Opcode.IPUT_BOOLEAN, type + "->isFollowing:Z", 5, 0)
                     && literalIs(get(b, 10), Opcode.AND_INT_LIT8, 9, 8) && ((TwoRegisterInstruction) b.get(10)).getRegisterB() == 8
                     && movesTo(get(b, 11), 9, Opcode.IF_EQZ) && target(defaults, 11) == 13 && literalIs(get(b, 12), Opcode.CONST_4, 6, 0)
@@ -4231,20 +4231,20 @@ public class DexDiff {
                     && annotationString(next.getParameters().get(1).getAnnotations(), "Lretrofit2/http/Query;", "fields[blogs]");
             for (Method m : Arrays.asList(first, next)) good &= m != null && AccessFlags.PUBLIC.isSet(m.getAccessFlags()) && AccessFlags.ABSTRACT.isSet(m.getAccessFlags())
                     && m.getAnnotations().stream().noneMatch(a -> Set.of("Lretrofit2/http/POST;", "Lretrofit2/http/PUT;", "Lretrofit2/http/PATCH;", "Lretrofit2/http/DELETE;").contains(a.getType()));
-            Method nativeRead = nativeMethod("Lcom/tumblr/ui/fragment/FollowerFragment;->c5()" + call, reason), core = nativeMethod("Lcom/tumblr/CoreApp;->X()" + service, reason);
+            Method nativeRead = nativeMethod("Lcom/tumblr/ui/fragment/FollowerFragment;->c5()" + call, reason), core = nativeMethod("Lcom/tumblr/CoreApp;->Z()" + service, reason);
             String fields = nativeRead == null ? null : literal(get(instructions(nativeRead), 13));
             good &= nativeRead != null && instructions(nativeRead).size() == 18 && ".tumblr.com".equals(literal(get(instructions(nativeRead), 9)))
                     && first != null && String.valueOf(reference(get(instructions(nativeRead), 14))).equals(first.toString())
                     && fields != null && Arrays.asList(fields.split(",")).contains("uuid") && core != null && isStatic(core);
-            for (String key : List.of(call + "->execute()" + response, call + "->timeout()Lzql;", call + "->cancel()V")) {
+            for (String key : List.of(call + "->execute()" + response, call + "->timeout()Lvsl;", call + "->cancel()V")) {
                 Method method = clean.methods.get(key); good &= method != null && !isStatic(method) && AccessFlags.PUBLIC.isSet(method.getAccessFlags()) && AccessFlags.ABSTRACT.isSet(method.getAccessFlags());
             }
-            good &= clean.methods.containsKey("Lzql;->timeout(J" + time + ")Lzql;") && publicGetter(clean.methods.get(response + "->isSuccessful()Z"), "Z")
+            good &= clean.methods.containsKey("Lvsl;->timeout(J" + time + ")Lvsl;") && publicGetter(clean.methods.get(response + "->isSuccessful()Z"), "Z")
                     && publicGetter(clean.methods.get(response + "->body()" + object), object);
             for (String name : List.of("first", "next")) {
                 Method m = actual(source + "->" + name + "(" + STRING_TYPE + ")" + object); List<Instruction> b = m == null ? List.of() : instructions(m);
                 good &= m != null && !isStatic(m) && AccessFlags.PUBLIC.isSet(m.getAccessFlags()) && m.getImplementation().getRegisterCount() == 4 && b.size() == 6
-                        && callIs(b.get(0), Opcode.INVOKE_STATIC, "Lcom/tumblr/CoreApp;->X()" + service)
+                        && callIs(b.get(0), Opcode.INVOKE_STATIC, "Lcom/tumblr/CoreApp;->Z()" + service)
                         && movesTo(b.get(1), 0, Opcode.MOVE_RESULT_OBJECT) && fields != null && fields.equals(literal(b.get(2))) && firstRegister(b.get(2)) == 1
                         && callIs(b.get(3), Opcode.INVOKE_INTERFACE, service + "->" + (name.equals("first") ? "followers" : "followersPagination") + signature, 0, 3, 1)
                         && movesTo(b.get(4), 0, Opcode.MOVE_RESULT_OBJECT) && movesTo(b.get(5), 0, Opcode.RETURN_OBJECT);
@@ -4253,9 +4253,9 @@ public class DexDiff {
             List<Instruction> b = execute == null ? List.of() : instructions(execute), cb = cancel == null ? List.of() : instructions(cancel);
             good &= execute != null && !isStatic(execute) && AccessFlags.PUBLIC.isSet(execute.getAccessFlags()) && execute.getImplementation().getRegisterCount() == 8 && b.size() == 16
                     && movePair(b.get(0), Opcode.MOVE_OBJECT, 0, 5) && fieldIsType(b.get(1), Opcode.CHECK_CAST, call, 0, -1)
-                    && callIs(b.get(2), Opcode.INVOKE_INTERFACE, call + "->timeout()Lzql;", 0) && movesTo(b.get(3), 1, Opcode.MOVE_RESULT_OBJECT)
+                    && callIs(b.get(2), Opcode.INVOKE_INTERFACE, call + "->timeout()Lvsl;", 0) && movesTo(b.get(3), 1, Opcode.MOVE_RESULT_OBJECT)
                     && fieldIs(b.get(4), Opcode.SGET_OBJECT, time + "->MILLISECONDS:" + time, 2, -1)
-                    && callIs(b.get(5), Opcode.INVOKE_VIRTUAL, "Lzql;->timeout(J" + time + ")Lzql;", 1, 6, 7, 2)
+                    && callIs(b.get(5), Opcode.INVOKE_VIRTUAL, "Lvsl;->timeout(J" + time + ")Lvsl;", 1, 6, 7, 2)
                     && callIs(b.get(6), Opcode.INVOKE_INTERFACE, call + "->execute()" + response, 0) && movesTo(b.get(7), 1, Opcode.MOVE_RESULT_OBJECT)
                     && callIs(b.get(8), Opcode.INVOKE_VIRTUAL, response + "->isSuccessful()Z", 1) && movesTo(b.get(9), 2, Opcode.MOVE_RESULT)
                     && movesTo(b.get(10), 2, Opcode.IF_EQZ) && target(execute, 10) == 14
@@ -4271,13 +4271,13 @@ public class DexDiff {
         void rootPostMutes(Contract c) {
             String root = c.strings.get(0), menu = c.strings.get(1), post = c.strings.get(2), wrapper = c.strings.get(3), menuKey = c.strings.get(4),
                     timeline = c.strings.get(5), face = c.strings.get(6), local = c.strings.get(7), action = c.strings.get(8), timelineObject = c.strings.get(9);
-            String object = "Ljava/lang/Object;", list = "Ljava/util/List;", mode = "Lbql;", callback = "Lkf9;", unit = "Ljlm;",
+            String object = "Ljava/lang/Object;", list = "Ljava/util/List;", mode = "Lxrl;", callback = "Lag9;", unit = "Lfnm;",
                     builder = "Lcom/tumblr/components/bottomsheet/b$b;", concrete = "Lcom/tumblr/components/bottomsheet/b$a;", payload = "Lcom/tumblr/rumblr/model/Timelineable;";
             String canonical = root + "->canonicalRoot(" + STRING_TYPE + STRING_TYPE + STRING_TYPE + list + "Z)" + STRING_TYPE;
             String presenceField = post + "->hushRootTrailPresent:Z", captureField = wrapper + "->hushCanonicalRoot:" + STRING_TYPE;
             String rootReason = "root canonical bridge changed", captureReason = "root wrapper capture changed",
                     menuReason = "root menu hook changed", localReason = "root local timeline bridge changed", callbackReason = "root callback bridge changed";
-            for (String type : List.of(post, wrapper, timeline, mode, timelineObject, "Lmuj;")) preserveClass(type);
+            for (String type : List.of(post, wrapper, timeline, mode, timelineObject, "Liwj;")) preserveClass(type);
             List<MethodReference> getters = new ArrayList<>();
             for (String key : List.of("reblogged_root_id", "reblogged_from_id", "id", "trail")) getters.add(canonicalGetter(post, key, key.equals("trail") ? list : STRING_TYPE));
             Method bridge = actual(post + "->hushRootId()" + STRING_TYPE);
@@ -4377,7 +4377,7 @@ public class DexDiff {
             if (callbackClass != null) for (Method m : callbackClass.getMethods()) declarations.add(m);
             Method actionInvoke = actual(action + "->invoke()" + object);
             boolean callbackGood = callbackClass != null && AccessFlags.PUBLIC.isSet(callbackClass.getAccessFlags()) && AccessFlags.INTERFACE.isSet(callbackClass.getAccessFlags())
-                    && callbackClass.getInterfaces().equals(List.of("Lmf9;")) && declarations.size() == 1 && declarations.get(0).getName().equals("invoke")
+                    && callbackClass.getInterfaces().equals(List.of("Lcg9;")) && declarations.size() == 1 && declarations.get(0).getName().equals("invoke")
                     && descriptor(declarations.get(0)).equals("()" + object) && AccessFlags.PUBLIC.isSet(declarations.get(0).getAccessFlags()) && AccessFlags.ABSTRACT.isSet(declarations.get(0).getAccessFlags())
                     && actionClass != null && actionClass.getInterfaces().contains(callback) && actionInvoke != null && !isStatic(actionInvoke) && AccessFlags.PUBLIC.isSet(actionInvoke.getAccessFlags())
                     && callSites(instructions(actionInvoke), action + "->run()V").size() == 1 && callSites(instructions(actionInvoke), menu + "->unit()" + object).size() == 1
@@ -4405,7 +4405,7 @@ public class DexDiff {
             List<Instruction> b = getter == null ? List.of() : instructions(getter);
             List<Method> declarations = new ArrayList<>();
             if (bridge != null) bridge.getMethods().forEach(declarations::add);
-            boolean good = nativeOwner != null && nativeOwner.getInterfaces().contains("Lghe;") && implementsBridge(owner, face)
+            boolean good = nativeOwner != null && nativeOwner.getInterfaces().contains("Lxie;") && implementsBridge(owner, face)
                     && hasField(clean, owner, "a", timeline, AccessFlags.FINAL.getValue(), AccessFlags.STATIC.getValue())
                     && hasField(patched, owner, "a", timeline, AccessFlags.FINAL.getValue(), AccessFlags.STATIC.getValue())
                     && bridge != null && declarations.size() == 1 && declaration != null && AccessFlags.PUBLIC.isSet(declaration.getAccessFlags())
@@ -4432,7 +4432,7 @@ public class DexDiff {
         /** Both redesigned post menu inputs and the scratch callback retain their native provenance. */
         boolean rootHeaderMenu(String owner, String hook, String builder, String concrete) {
             String reason = "root redesigned menu hook changed";
-            Method old = nativeMethod(owner + "->H2(Lpqm;Lhyf;Lhll;Lghe;Lyt2;Ljql;Lavb;Lzz1;)V", reason);
+            Method old = nativeMethod(owner + "->H2(Llsm;Lyzf;Ldnl;Lxie;Llu2;Lfsl;Lcwb;Lm02;)V", reason);
             if (old == null) return false;
             List<Instruction> before = instructions(old);
             boolean good = !isStatic(old) && AccessFlags.PRIVATE.isSet(old.getAccessFlags()) && old.getImplementation().getRegisterCount() == 29 && before.size() == 210
@@ -4462,7 +4462,7 @@ public class DexDiff {
         /** One hook precedes the two native owned-blog finalizers, using that same callback's context. */
         boolean rootOwnedMenu(String owner, String timeline, String hook, String builder, String concrete) {
             String reason = "root owned menu hook changed", field = owner + "->a:" + timeline;
-            Method old = nativeMethod(owner + "->a(Lhyf;ZZZLjava/lang/String;)V", reason);
+            Method old = nativeMethod(owner + "->a(Lyzf;ZZZLjava/lang/String;)V", reason);
             if (old == null) return false;
             List<Instruction> before = instructions(old);
             boolean good = !isStatic(old) && AccessFlags.PUBLIC.isSet(old.getAccessFlags()) && old.getImplementation().getRegisterCount() == 26 && before.size() == 321
@@ -4515,12 +4515,12 @@ public class DexDiff {
         }
 
         boolean rootCardStub(String menu, String face, String timelineObject, String payload) {
-            Method cardGetter = clean.methods.get("Lmuj;->l()" + payload), timelineGetter = clean.methods.get(timelineObject + "->getData()" + payload);
+            Method cardGetter = clean.methods.get("Liwj;->l()" + payload), timelineGetter = clean.methods.get(timelineObject + "->getData()" + payload);
             Method m = actual(menu + "->cardRoot(Ljava/lang/Object;)" + STRING_TYPE);
             List<Instruction> b = m == null ? List.of() : instructions(m);
             return publicGetter(cardGetter, payload) & publicGetter(timelineGetter, payload) && m != null && isStatic(m) && b.size() == 19 && m.getImplementation().getRegisterCount() == 3
-                    && fieldIsType(b.get(0), Opcode.INSTANCE_OF, "Lhyf;", 0, 2) && movesTo(b.get(1), 0, Opcode.IF_EQZ) && target(m, 1) == 6
-                    && movesTo(b.get(2), 2, Opcode.CHECK_CAST) && "Lhyf;".equals(String.valueOf(reference(b.get(2))))
+                    && fieldIsType(b.get(0), Opcode.INSTANCE_OF, "Lyzf;", 0, 2) && movesTo(b.get(1), 0, Opcode.IF_EQZ) && target(m, 1) == 6
+                    && movesTo(b.get(2), 2, Opcode.CHECK_CAST) && "Lyzf;".equals(String.valueOf(reference(b.get(2))))
                     && callIs(b.get(3), Opcode.INVOKE_VIRTUAL, cardGetter.toString(), 2) && movesTo(b.get(4), 0, Opcode.MOVE_RESULT_OBJECT) && b.get(5).getOpcode() == Opcode.GOTO && target(m, 5) == 11
                     && fieldIsType(b.get(6), Opcode.INSTANCE_OF, timelineObject, 0, 2) && movesTo(b.get(7), 0, Opcode.IF_EQZ) && target(m, 7) == 17
                     && movesTo(b.get(8), 2, Opcode.CHECK_CAST) && timelineObject.equals(String.valueOf(reference(b.get(8))))
@@ -4545,20 +4545,20 @@ public class DexDiff {
                     && fieldIs(ib.get(1), Opcode.IGET_OBJECT, timeline + "->z:" + list, 1, 2) && callIs(ib.get(2), Opcode.INVOKE_DIRECT, "Ljava/util/ArrayList;-><init>(Ljava/util/Collection;)V", 0, 1)
                     && movesTo(ib.get(3), 0, Opcode.RETURN_OBJECT) && apply != null && !isStatic(apply) && AccessFlags.PUBLIC.isSet(apply.getAccessFlags())
                     && ab.size() == 3 && apply.getImplementation().getRegisterCount() == 3 && fieldIs(ab.get(0), Opcode.SGET_OBJECT, mode + "->FROM_CACHE:" + mode, 0, -1)
-                    && callIs(ab.get(1), Opcode.INVOKE_VIRTUAL, timeline + "->k6(" + mode + list + ")V", 1, 0, 2) && ab.get(2).getOpcode() == Opcode.RETURN_VOID;
-            Method rebind = nativeMethod(timeline + "->k6(" + mode + list + ")V", "root local timeline bridge changed"), predicate = nativeMethod(mode + "->g()Z", "root local timeline bridge changed"),
-                    render = nativeMethod(timeline + "->Z6(" + mode + list + ")V", "root local timeline bridge changed"), init = nativeMethod(mode + "-><clinit>()V", "root local timeline bridge changed");
+                    && callIs(ab.get(1), Opcode.INVOKE_VIRTUAL, timeline + "->l6(" + mode + list + ")V", 1, 0, 2) && ab.get(2).getOpcode() == Opcode.RETURN_VOID;
+            Method rebind = nativeMethod(timeline + "->l6(" + mode + list + ")V", "root local timeline bridge changed"), predicate = nativeMethod(mode + "->g()Z", "root local timeline bridge changed"),
+                    render = nativeMethod(timeline + "->a7(" + mode + list + ")V", "root local timeline bridge changed"), init = nativeMethod(mode + "-><clinit>()V", "root local timeline bridge changed");
             List<Instruction> rb = rebind == null ? List.of() : instructions(rebind), pb = predicate == null ? List.of() : instructions(predicate), xb = render == null ? List.of() : instructions(render);
             good &= rebind != null && !isStatic(rebind) && AccessFlags.PROTECTED.isSet(rebind.getAccessFlags()) && rebind.getImplementation().getRegisterCount() == 6 && rb.size() == 60
                     && callIs(rb.get(51), Opcode.INVOKE_VIRTUAL, mode + "->g()Z", 4) && movesTo(rb.get(52), 0, Opcode.MOVE_RESULT) && movesTo(rb.get(53), 0, Opcode.IF_NEZ) && ((OffsetInstruction) rb.get(53)).getCodeOffset() == 7
                     && fieldIs(rb.get(54), Opcode.IGET_OBJECT, timeline + "->z:" + list, 0, 3) && callIs(rb.get(55), Opcode.INVOKE_INTERFACE, list + "->clear()V", 0)
                     && fieldIs(rb.get(56), Opcode.IGET_OBJECT, timeline + "->z:" + list, 0, 3) && callIs(rb.get(57), Opcode.INVOKE_INTERFACE, list + "->addAll(Ljava/util/Collection;)Z", 0, 5)
-                    && callIs(rb.get(58), Opcode.INVOKE_DIRECT, timeline + "->Z6(" + mode + list + ")V", 3, 4, 5) && rb.get(59).getOpcode() == Opcode.RETURN_VOID;
+                    && callIs(rb.get(58), Opcode.INVOKE_DIRECT, timeline + "->a7(" + mode + list + ")V", 3, 4, 5) && rb.get(59).getOpcode() == Opcode.RETURN_VOID;
             good &= predicate != null && predicate.getImplementation().getRegisterCount() == 2 && pb.size() == 6
                     && fieldIs(pb.get(0), Opcode.SGET_OBJECT, mode + "->PAGINATION:" + mode, 0, -1) && pb.get(1) instanceof TwoRegisterInstruction t && t.getOpcode() == Opcode.IF_NE && t.getRegisterA() == 1 && t.getRegisterB() == 0
                     && ((OffsetInstruction) pb.get(1)).getCodeOffset() == 4 && literalIs(pb.get(2), Opcode.CONST_4, 1, 1) && movesTo(pb.get(3), 1, Opcode.RETURN)
                     && literalIs(pb.get(4), Opcode.CONST_4, 1, 0) && movesTo(pb.get(5), 1, Opcode.RETURN);
-            good &= xb.size() == 46 && callSites(xb, timeline + "->a7(" + list + mode + list + list + "II)V").size() == 1 && callSites(xb, timeline + "->g6()V").size() == 1;
+            good &= xb.size() == 46 && callSites(xb, timeline + "->b7(" + list + mode + list + list + "II)V").size() == 1 && callSites(xb, timeline + "->h6()V").size() == 1;
             for (Instruction i : xb) if (called(i) != null && !Set.of(timeline, "Ljava/util/Collection;", "Ljava/util/Queue;", "Ljava/lang/Integer;", "Lcom/google/common/collect/ImmutableList;").contains(called(i).getDefiningClass())) good = false;
             List<Instruction> eb = init == null ? List.of() : instructions(init);
             for (String name : List.of("FROM_CACHE", "PAGINATION")) {
