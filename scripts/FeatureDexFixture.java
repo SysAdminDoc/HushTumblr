@@ -427,8 +427,27 @@ public final class FeatureDexFixture {
                 List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 1)), LIST),
                 method(TIMELINE_FILTER, "filterKept", LIST, true, 2,
                         List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 1)), LIST)));
+        directPost(classes, variant);
         // The filter can empty a page, so the fragment's question about an empty page comes with it.
         paging(classes, hooked ? "good" : "clean");
+    }
+
+    /** The query that opens one post by itself, telling the extension the id right before it asks. */
+    private static void directPost(Map<String, List<Method>> classes, String variant) {
+        String service = "Lcom/tumblr/rumblr/TumblrService;";
+        String directPosts = BASE + "timeline/DirectPosts;";
+        Instruction told = invoke(Opcode.INVOKE_STATIC, ref(directPosts, "opening", VOID, STRING), variant.equals("direct-wrong-id") ? 0 : 1);
+        boolean before = !variant.equals("clean") && !variant.equals("direct-missing") && !variant.equals("direct-late");
+        List<Instruction> body = new ArrayList<>(List.of(literal("blog", 0), literal("55", 1)));
+        if (before) body.add(told);
+        body.addAll(List.of(invoke(Opcode.INVOKE_INTERFACE, ref(service, "postPermalink", "Lretrofit2/Call;", STRING, STRING), 2, 0, 1),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0)));
+        if (variant.equals("direct-late")) body.add(told);
+        body.add(new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0));
+        String query = "Lfixture/PostQuery;";
+        classes.put(query, List.of(method(query, "b", "Lretrofit2/Call;", false, 3, body, service)));
+        if (!variant.equals("clean")) classes.put(directPosts, List.of(method(directPosts, "opening", VOID, true, 2,
+                List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), end()), STRING)));
     }
 
     private static Instruction member(Opcode opcode, int value, int receiver, String owner, String name, String type) {
@@ -786,12 +805,12 @@ public final class FeatureDexFixture {
 
     private static void smallSelectors(File root, Map<String, List<Method>> settings) throws Exception {
         SMALL_CASES.clear();
-        for (String variant : List.of("good", "missing", "copy-missing", "wrong-list", "late")) {
+        for (String variant : List.of("good", "missing", "copy-missing", "wrong-list", "late", "direct-missing", "direct-wrong-id", "direct-late")) {
             reset(); enable("hideReblogs");
             Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
             timeline(classes, variant); postBridge(classes, "good");
             smallCase(root, "feature-small-timeline-" + variant, classes, "hideReblogs", variant.equals("good") ? ""
-                    : variant.contains("missing") ? "has 0 calls" : variant.equals("late") ? "is not where its rule puts it" : "doesn't take what its rule hands it");
+                    : variant.contains("missing") ? "has 0 calls" : variant.endsWith("late") ? "is not where its rule puts it" : "doesn't take what its rule hands it");
         }
         for (String variant : List.of("good", "missing", "wrong-next", "wrong-flag", "wrong-load", "late", "uncontrolled")) {
             reset(); enable("hideReblogs");

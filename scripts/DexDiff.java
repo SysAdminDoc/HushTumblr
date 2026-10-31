@@ -300,7 +300,7 @@ public class DexDiff {
 
     private static final Map<String, Integer> MUTATION_COLUMNS = Map.ofEntries(
             Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1), Map.entry("activityNotifications", 7),
-            Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 5), Map.entry("timelinePaging", 5),
+            Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 7), Map.entry("timelinePaging", 5),
             Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 6), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
             Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3),
             Map.entry("followButton", 3), Map.entry("footerButton", 3), Map.entry("postTags", 5),
@@ -3362,7 +3362,30 @@ public class DexDiff {
                 int items = parameter(old, 0);
                 found &= hookAt(old, actual(old), 0, c.strings.get(0), List.of(items), items, List.of());
             }
-            capability(c.callee, found && timelineCopies(c.strings.get(3), c.strings.get(2)));
+            boolean copies = timelineCopies(c.strings.get(3), c.strings.get(2));
+            boolean direct = directPost(c.strings.get(4), c.strings.get(5));
+            capability(c.callee, found && copies && direct);
+        }
+
+        /**
+         * The one query that opens a post by itself, which takes Tumblr's service and answers a call,
+         * tells [hook] the id it's asking for right before its [ask]. The id is that call's last
+         * argument, and a clean call shows the register holds one. True when it's so.
+         */
+        boolean directPost(String hook, String ask) {
+            String service = ask.substring(0, ask.indexOf("->"));
+            List<Method> queries = new ArrayList<>();
+            for (Method old : tumblrMethods()) {
+                if (old.getParameterTypes().size() == 1 && old.getParameterTypes().get(0).toString().equals(service)
+                        && old.getReturnType().equals("Lretrofit2/Call;")
+                        && firstIndex(instructions(old), 0, i -> ask.equals(String.valueOf(reference(i)))) >= 0) queries.add(old);
+            }
+            if (queries.size() != 1) { fail(queries.size() + " queries ask " + ask + ", not one"); return false; }
+            Method old = queries.get(0);
+            List<Instruction> before = instructions(old);
+            int at = firstIndex(before, 0, i -> ask.equals(String.valueOf(reference(i))));
+            int id = arguments(before.get(at)).get(2);
+            return hookAt(old, actual(old), at, hook, List.of(id), -1, List.of(id));
         }
 
         /**
