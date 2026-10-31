@@ -9,6 +9,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.res.Resources;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.TypedValue;
@@ -50,7 +51,8 @@ import app.hushtumblr.extension.tumblr.settings.Settings;
  * those colors are read call in here as well, {@link #pageColor} for a blog and {@link #hubColor} for
  * a tag, and get the picked color while the switch is on and the Dark palette is the one showing. The
  * screens where a person edits their own blog's colors keep the real ones, or they'd be editing a
- * color they can't see.
+ * color they can't see. A blog's title and link colors were chosen for its own background, so they
+ * call in as well, {@link #pageTextColor}, and change only when they wouldn't show on the picked one.
  *
  * <p>On Android 12 and newer, Match my wallpaper swaps {@link #STYLE} for {@link #WALLPAPER_STYLE},
  * which sets the same surfaces to two of the dark tones Android makes from the wallpaper. That style
@@ -81,6 +83,14 @@ public final class DarkBackground {
     static final String DESIGN_PAINTED = "design colors painted";
     static final String DESIGN_EARLY = "design colors read early";
     static final String PAGE_PAINTED = "blog or tag page painted";
+    static final String TEXT_CHANGED = "blog text made readable";
+
+    /** The contrast a blog's title or link color needs on the picked color to stay, the WCAG line for body text. */
+    static final double READABLE_CONTRAST = 4.5;
+
+    /** What a blog's title or link color turns into when it wouldn't show, the same two Tumblr falls back on. */
+    static final int LIGHT_TEXT = 0xFFFFFFFF;
+    static final int DARK_TEXT = 0xFF040404;
 
     /** Parts of the class names of the screens where a person edits their own blog's colors. */
     private static final String[] CUSTOMIZING_SCREENS = {"CustomizeOptica", "BlogPagesPreview"};
@@ -195,8 +205,7 @@ public final class DarkBackground {
 
     /**
      * Placed where a blog's background color has been worked out. Answers the picked color while the
-     * pages are being painted, and [tumblrs] otherwise. Tumblr picks the blog's title color against
-     * this answer, so the title stays readable on it. Never throws.
+     * pages are being painted, and [tumblrs] otherwise. Never throws.
      */
     public static int pageColor(int tumblrs) {
         try {
@@ -206,6 +215,38 @@ public final class DarkBackground {
             HookStatus.threw(FamilyNames.DARK_BACKGROUND, "page color", failure);
             return tumblrs;
         }
+    }
+
+    /**
+     * Placed where a blog's title color and its link color have been worked out. Tumblr uses those two
+     * as they are, and their owner chose them for the blog's own background, so a dark title would
+     * vanish on a black page. While the pages are being painted this answers [tumblrs] if it reads on
+     * the picked color and white or near black if it doesn't, and [tumblrs] otherwise. Never throws.
+     */
+    public static int pageTextColor(int tumblrs) {
+        try {
+            Integer page = picked();
+            if (page == null) return tumblrs;
+            int readable = readableOn(page, tumblrs);
+            if (readable != tumblrs) HookStatus.counted(FamilyNames.DARK_BACKGROUND, TEXT_CHANGED);
+            return readable;
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.DARK_BACKGROUND, "page text color", failure);
+            return tumblrs;
+        }
+    }
+
+    /** [text] if it reads on [page], or else whichever of Tumblr's two fallback colors reads better there. */
+    static int readableOn(int page, int text) {
+        double background = Color.luminance(page);
+        if (contrast(Color.luminance(text), background) >= READABLE_CONTRAST) return text;
+        return contrast(Color.luminance(LIGHT_TEXT), background) >= contrast(Color.luminance(DARK_TEXT), background)
+                ? LIGHT_TEXT : DARK_TEXT;
+    }
+
+    /** The WCAG contrast ratio of two luminances, from 1 for the same to 21 for black on white. */
+    private static double contrast(double first, double second) {
+        return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
     }
 
     /**
@@ -224,9 +265,17 @@ public final class DarkBackground {
         }
     }
 
-    /** The picked color when blog and tag pages get painted right now, or null when they keep their own. */
+    /** {@link #picked} for painting a page, which the report counts. */
     @Nullable
     private static Integer pick() {
+        Integer picked = picked();
+        if (picked != null) HookStatus.counted(FamilyNames.DARK_BACKGROUND, PAGE_PAINTED);
+        return picked;
+    }
+
+    /** The picked color when blog and tag pages get painted right now, or null when they keep their own. */
+    @Nullable
+    private static Integer picked() {
         if (!Utils.settingsReady() || !PatchFamily.Capability.THEME_BACKGROUND.installed()) return null;
         HookStatus.invoked(FamilyNames.DARK_BACKGROUND);
         if (!Settings.DARK_BACKGROUND.get() || !darkPalette || customizing) return null;
@@ -240,7 +289,6 @@ public final class DarkBackground {
             if (known == null) return null;
             pagePick = known;
         }
-        HookStatus.counted(FamilyNames.DARK_BACKGROUND, PAGE_PAINTED);
         return known;
     }
 

@@ -305,7 +305,7 @@ public class DexDiff {
             Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("fontChoice", 4),
             Map.entry("followButton", 3), Map.entry("footerButton", 3), Map.entry("postTags", 5),
             Map.entry("noteCounts", 6), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
-            Map.entry("darkBackground", 8), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
+            Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
             Map.entry("matureContent", 12), Map.entry("rootPostMutes", 10), Map.entry("mutualMarkers", 13));
 
     /**
@@ -5645,46 +5645,68 @@ public class DexDiff {
                 else themed = hookAt(composer, actual(composer), asked.get(0) + 2, c.strings.get(1), List.of(firstRegister(answer)), -1, List.of(firstRegister(answer)));
             }
             designColors(c.strings.get(3), c.strings.get(4), c.strings.get(5));
-            blogPageColor(c.strings.get(6));
+            blogColors(c.strings.get(6), c.strings.get(8));
             tagPageColors(c.strings.get(7));
             capability(c.callee, found && themed);
         }
 
         static final String BLOG_THEME = "Lcom/tumblr/bloginfo/BlogTheme;";
         static final String BLOG_BACKGROUND_KEY = "background_color";
+        static final String BLOG_TITLE_KEY = "title_color";
+        static final String BLOG_LINK_KEY = "link_color";
         static final String HUB_HEADER = "Lcom/tumblr/rumblr/response/CommunityHubHeaderResponse$CommunityHubHeader;";
 
         /**
-         * The function that answers a blog's page color handing its answer to [hook] right before it
-         * returns it. The place is found in the clean target the way the patch finds it: the comparison
-         * of two blog themes names the getter right after the background's key, and the one static
-         * (BlogTheme)int beside it that calls that getter and ends by returning a call's answer is the
-         * reader. A build without that shape keeps blogs' colors, so there the hook goes uncalled.
+         * The functions that answer a blog's page, title and link colors each handing their answer to
+         * its hook right before they return it. A build without all three keeps blogs' colors, as the
+         * patch does, since a painted page needs its text colors hooked, so there the hooks go uncalled.
          */
-        void blogPageColor(String hook) {
+        void blogColors(String pageHook, String textHook) {
+            Method page = blogColorReader(BLOG_BACKGROUND_KEY), title = blogColorReader(BLOG_TITLE_KEY), link = blogColorReader(BLOG_LINK_KEY);
+            if (page == null || title == null || link == null) return;
+            blogColorHook(page, pageHook);
+            blogColorHook(title, textHook);
+            blogColorHook(link, textHook);
+        }
+
+        /**
+         * The clean target's function that answers the blog color saved under [saved], found the way the
+         * patch finds it: the comparison of two blog themes names the getter right after the key, and the
+         * one static (BlogTheme)int beside it that calls that getter and ends by returning a call's answer
+         * is the reader. Null without that shape.
+         */
+        Method blogColorReader(String saved) {
             List<Method> comparisons = new ArrayList<>();
             for (Method m : tumblrMethods()) {
                 if (isStatic(m) && descriptor(m).startsWith("(" + BLOG_THEME + BLOG_THEME + ")")
-                        && clean.texts.get(m.toString()).contains(BLOG_BACKGROUND_KEY)) comparisons.add(m);
+                        && clean.texts.get(m.toString()).contains(saved)) comparisons.add(m);
             }
-            if (comparisons.size() != 1) return;
+            if (comparisons.size() != 1) return null;
             List<Instruction> steps = instructions(comparisons.get(0));
-            int key = firstIndex(steps, 0, i -> reference(i) instanceof StringReference text && text.getString().equals(BLOG_BACKGROUND_KEY));
+            int key = firstIndex(steps, 0, i -> reference(i) instanceof StringReference text && text.getString().equals(saved));
             Instruction read = key < 0 ? null : get(steps, key + 1);
             MethodReference getter = read == null ? null : called(read);
-            if (getter == null || !getter.getDefiningClass().equals(BLOG_THEME)) return;
+            if (getter == null || !getter.getDefiningClass().equals(BLOG_THEME)) return null;
             List<Method> readers = new ArrayList<>();
             for (Method m : tumblrMethods()) {
                 if (isStatic(m) && m.getDefiningClass().equals(comparisons.get(0).getDefiningClass()) && descriptor(m).equals("(" + BLOG_THEME + ")I")
                         && instructions(m).stream().anyMatch(i -> isCall(i, BLOG_THEME, getter.getName(), "()Ljava/lang/String;"))) readers.add(m);
             }
-            if (readers.size() != 1) return;
+            if (readers.size() != 1) return null;
             List<Instruction> was = instructions(readers.get(0));
             int last = was.size() - 1;
             Instruction kept = get(was, last - 1);
             if (kept == null || kept.getOpcode() != Opcode.MOVE_RESULT || was.get(last).getOpcode() != Opcode.RETURN
-                    || firstRegister(kept) != firstRegister(was.get(last))) return;
-            Method m = actual(readers.get(0));
+                    || firstRegister(kept) != firstRegister(was.get(last))) return null;
+            return readers.get(0);
+        }
+
+        /** [reader], which ends by returning a call's answer, handing that answer to [hook] right before it returns it. */
+        void blogColorHook(Method reader, String hook) {
+            List<Instruction> was = instructions(reader);
+            int last = was.size() - 1;
+            Instruction kept = get(was, last - 1);
+            Method m = actual(reader);
             List<Integer> sites = calls(m, hook, 1);
             if (sites.size() != 1) return;
             int at = sites.get(0), register = firstRegister(kept);

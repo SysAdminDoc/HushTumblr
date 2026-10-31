@@ -175,9 +175,9 @@ class DarkBackgroundFixtureTest {
     }
 
     /**
-     * A blog's page color goes through the extension right before its function returns it, and a tag
-     * page's right after it's read from the header, the answer going back where it was. The JSON
-     * adapter's read and the customize screens' reads of the theme stay Tumblr's.
+     * A blog's page, title and link colors go through the extension right before their functions
+     * return them, and a tag page's right after it's read from the header, the answer going back where
+     * it was. The JSON adapter's read and the customize screens' reads of the theme stay Tumblr's.
      */
     @Test
     fun `each declared build hands blog and tag page colors to the extension`() {
@@ -186,26 +186,31 @@ class DarkBackgroundFixtureTest {
             val adapter = pages.filter { it.type.endsWith("JsonAdapter;") }.map { it.type to shapeOf(it) }
             assertEquals("${build.name}: the header's JSON adapter reads the color too", 1, adapter.size)
             val context = PatchContexts.of((ExtensionDex.classes() + themeClasses(build) + pages).distinctBy { it.type })
-            val (blog, blogRead) = context.resolveBlogPageColor()
-                ?: throw AssertionError("${build.name}: a blog's page color wasn't found")
-            val blogBefore = blog.instructionList()
+            val blogs = context.resolveBlogColors()
+            assertEquals("${build.name}: a blog's page color, then its title and link colors",
+                listOf(PAGE_COLOR_HOOK, PAGE_TEXT_COLOR_HOOK, PAGE_TEXT_COLOR_HOOK), blogs.map { it.second.hook })
+            assertEquals("${build.name}: three functions", 3, blogs.map { it.first.toString() }.toSet().size)
+            val blogsBefore = blogs.associate { (method, _) -> method.toString() to method.instructionList() }
             val tags = context.resolveTagPageColors()
             assertEquals("${build.name}: the page's bars and the timeline's two reads", 3, tags.size)
             val tagsBefore = tags.associate { (method, _) -> method.toString() to method.instructionList() }
 
             darkBackgroundPatch.execute(context)
 
-            val blogAfter = context.mutableClassDefBy(blog.definingClass).methods
-                .single { it.name == blog.name && it.parameterTypes == blog.parameterTypes }.instructionList()
-            val at = blogRead.index
-            assertEquals("${blog.name}: a call and its answer", blogBefore.size + 2, blogAfter.size)
-            assertEquals("${blog.name} $at: after the color is kept", Opcode.MOVE_RESULT, blogAfter[at - 1].opcode)
-            assertEquals("${blog.name} $at", PAGE_COLOR_HOOK, blogAfter[at].descriptor())
-            assertEquals("${blog.name} $at: on the color", listOf(blogRead.register), blogAfter[at].namedRegisters())
-            assertEquals("${blog.name} $at: goes back where the color was", blogRead.register, (blogAfter[at + 1] as OneRegisterInstruction).registerA)
-            assertEquals("${blog.name}: and that's returned", Opcode.RETURN, blogAfter[at + 2].opcode)
-            assertEquals("${blog.name}: Tumblr's own code around it", blogBefore.map { it.opcode },
-                blogAfter.filterIndexed { index, _ -> index != at && index != at + 1 }.map { it.opcode })
+            for ((blog, blogRead) in blogs) {
+                val blogBefore = blogsBefore.getValue(blog.toString())
+                val blogAfter = context.mutableClassDefBy(blog.definingClass).methods
+                    .single { it.name == blog.name && it.parameterTypes == blog.parameterTypes }.instructionList()
+                val at = blogRead.index
+                assertEquals("${blog.name}: a call and its answer", blogBefore.size + 2, blogAfter.size)
+                assertEquals("${blog.name} $at: after the color is kept", Opcode.MOVE_RESULT, blogAfter[at - 1].opcode)
+                assertEquals("${blog.name} $at", blogRead.hook, blogAfter[at].descriptor())
+                assertEquals("${blog.name} $at: on the color", listOf(blogRead.register), blogAfter[at].namedRegisters())
+                assertEquals("${blog.name} $at: goes back where the color was", blogRead.register, (blogAfter[at + 1] as OneRegisterInstruction).registerA)
+                assertEquals("${blog.name}: and that's returned", Opcode.RETURN, blogAfter[at + 2].opcode)
+                assertEquals("${blog.name}: Tumblr's own code around it", blogBefore.map { it.opcode },
+                    blogAfter.filterIndexed { index, _ -> index != at && index != at + 1 }.map { it.opcode })
+            }
 
             for ((method, read) in tags) {
                 val before = tagsBefore.getValue(method.toString())

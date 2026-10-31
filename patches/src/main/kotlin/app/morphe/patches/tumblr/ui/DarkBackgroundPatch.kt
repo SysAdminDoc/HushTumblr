@@ -60,11 +60,14 @@ internal const val DESIGN_PAGE_HOOK = "$DARK_BACKGROUND->designPage(J)J"
 internal const val DESIGN_PANEL_HOOK = "$DARK_BACKGROUND->designPanel(J)J"
 internal const val DESIGN_FOOTER_HOOK = "$DARK_BACKGROUND->designFooter(J)J"
 internal const val PAGE_COLOR_HOOK = "$DARK_BACKGROUND->pageColor(I)I"
+internal const val PAGE_TEXT_COLOR_HOOK = "$DARK_BACKGROUND->pageTextColor(I)I"
 internal const val HUB_COLOR_HOOK = "$DARK_BACKGROUND->hubColor(Ljava/lang/String;)Ljava/lang/String;"
 
-/** A blog's theme, the key its background is saved under, and a tag page's header. All three names are kept. */
+/** A blog's theme, the keys its colors are saved under, and a tag page's header. All these names are kept. */
 internal const val BLOG_THEME = "Lcom/tumblr/bloginfo/BlogTheme;"
 internal const val BLOG_BACKGROUND_KEY = "background_color"
+internal const val BLOG_TITLE_KEY = "title_color"
+internal const val BLOG_LINK_KEY = "link_color"
 internal const val HUB_HEADER = "Lcom/tumblr/rumblr/response/CommunityHubHeaderResponse\$CommunityHubHeader;"
 
 /** The Compose note of the footer under a post, the function that paints its background. */
@@ -281,7 +284,7 @@ private fun darkBackgroundStylePatch(background: () -> Int) = resourcePatch {
  * also hands its two surface grays to `DarkBackground` as it's built (see [resolveDesignColors]).
  * A build that keeps them some other way gets a warning and the rest of the patch. A blog's page and
  * a tag's page paint their owner's color instead of a theme's, so those two colors go through
- * `DarkBackground` too (see [resolveBlogPageColor] and [resolveTagPageColors]), with the same warning.
+ * `DarkBackground` too (see [resolveBlogColors] and [resolveTagPageColors]), with the same warning.
  */
 @Suppress("unused")
 val darkBackgroundPatch = bytecodePatch(
@@ -322,7 +325,7 @@ val darkBackgroundPatch = bytecodePatch(
         val designColors = resolveDesignColors()
         // Only with the design colors hooked: the footer's hook only swaps the gray they hand out.
         val footer = designColors?.let { resolvePostFooterColor() }
-        val blogPage = resolveBlogPageColor()
+        val blogColors = resolveBlogColors()
         val tagPages = resolveTagPageColors()
         hooks.activity.addInstructions(
             hooks.activityIndex,
@@ -350,7 +353,7 @@ val darkBackgroundPatch = bytecodePatch(
                     "move-result-wide v${read.register}",
             )
         }
-        blogPage?.let { (method, read) ->
+        for ((method, read) in blogColors) {
             mutableOf(method).addInstructionsAtControlFlowLabel(
                 read.index,
                 "invoke-static/range { v${read.register} .. v${read.register} }, ${read.hook}\n" +
@@ -576,51 +579,63 @@ internal fun BytecodePatchContext.resolvePostFooterColor(): Pair<Method, DesignC
 }
 
 /**
- * Finds where a blog's page color is worked out, or answers null with a warning, which leaves blog
- * pages their owners' colors and changes nothing else.
+ * Finds where a blog's page, title and link colors are worked out, or answers an empty list with a
+ * warning, which leaves blog pages their owners' colors and changes nothing else. All three or none:
+ * a page painted without its title and link colors hooked can leave a dark title invisible on it.
  *
  * Saving a theme compares two [BLOG_THEME]s and writes each changed value under its key, so the
- * getter read right after [BLOG_BACKGROUND_KEY] is the background's. The function that turns that
- * into the color screens paint is the one static `(BlogTheme)int` beside it that calls the getter.
- * Every page reads that function, and its title color is picked against the answer, so the hook goes
- * right before the return. The theme itself stays real: the customize screens and that comparison
- * read the getter straight. In 46.9.1.100 that's `ey2.s`, found from `ey2.l` (2026-10-31).
+ * getter read right after a key is that color's. The function that turns it into the color screens
+ * use is the one static `(BlogTheme)int` beside the comparison that calls the getter. Every screen
+ * reads those functions, so each hook goes right before the return. The theme itself stays real: the
+ * customize screens and that comparison read the getters straight. In 46.9.1.100 those are `ey2.s`,
+ * `ey2.z` and `ey2.n`, found from `ey2.l` (2026-10-31).
  */
-internal fun BytecodePatchContext.resolveBlogPageColor(): Pair<Method, DesignColorRead>? {
+internal fun BytecodePatchContext.resolveBlogColors(): List<Pair<Method, DesignColorRead>> {
+    val colors = listOf(
+        BLOG_BACKGROUND_KEY to PAGE_COLOR_HOOK,
+        BLOG_TITLE_KEY to PAGE_TEXT_COLOR_HOOK,
+        BLOG_LINK_KEY to PAGE_TEXT_COLOR_HOOK,
+    )
+    val reads = colors.map { (key, hook) -> resolveBlogColor(key, hook) ?: return emptyList() }
+    colors.forEach { (_, hook) -> requireExtensionHook(PATCH, hook) }
+    return reads
+}
+
+/** The function that answers the blog color saved under [key], and where [hook] goes in it, or null with a warning. */
+private fun BytecodePatchContext.resolveBlogColor(key: String, hook: String): Pair<Method, DesignColorRead>? {
     fun without(why: String): Pair<Method, DesignColorRead>? {
         patchLog.warning("$PATCH: $why, so a blog's page keeps the color its owner chose")
         return null
     }
     val twoThemes = listOf(BLOG_THEME, BLOG_THEME)
-    val comparisons = classDefByStrings(BLOG_BACKGROUND_KEY)
+    val comparisons = classDefByStrings(key)
         .filter { !it.type.startsWith(EXTENSION_ROOT) }
         .distinctBy { it.type }
         .flatMap { owner ->
             owner.methods.filter { method ->
                 method.isStatic() && method.parameterTypes.map(CharSequence::toString) == twoThemes &&
-                    BLOG_BACKGROUND_KEY in method.strings()
+                    key in method.strings()
             }
         }
     val comparison = comparisons.singleOrNull()
-        ?: return without("${comparisons.size} functions compare two blog themes' $BLOG_BACKGROUND_KEY instead of one")
+        ?: return without("${comparisons.size} functions compare two blog themes' $key instead of one")
     val steps = comparison.instructionList()
-    val getter = steps.getOrNull(steps.indexOfFirst { it.stringRef() == BLOG_BACKGROUND_KEY } + 1)?.methodRef()
+    val getter = steps.getOrNull(steps.indexOfFirst { it.stringRef() == key } + 1)?.methodRef()
         ?.takeIf { it.definingClass == BLOG_THEME && it.hasShape(emptyList(), "Ljava/lang/String;") }
-        ?: return without("a blog theme's background isn't read right after its key")
+        ?: return without("a blog theme's $key isn't read right after its key")
     val readers = classDefByOrNull(comparison.definingClass)?.methods?.filter { method ->
         method.isStatic() && method.hasShape(listOf(BLOG_THEME), "I") &&
             method.instructionList().any { it.methodRef()?.sameAs(getter) == true }
     } ?: emptyList()
     val reader = readers.singleOrNull()
-        ?: return without("${readers.size} functions answer a blog's background color instead of one")
+        ?: return without("${readers.size} functions answer a blog's $key instead of one")
     val body = reader.instructionList()
     val kept = body.getOrNull(body.lastIndex - 1)?.takeIf { it.opcode == Opcode.MOVE_RESULT } as? OneRegisterInstruction
     val returned = body.last().takeIf { it.opcode == Opcode.RETURN } as? OneRegisterInstruction
     if (kept == null || returned == null || kept.registerA != returned.registerA) {
-        return without("the function that answers a blog's background color doesn't end by returning a call's answer")
+        return without("the function that answers a blog's $key doesn't end by returning a call's answer")
     }
-    requireExtensionHook(PATCH, PAGE_COLOR_HOOK)
-    return reader to DesignColorRead(body.lastIndex, kept.registerA, PAGE_COLOR_HOOK)
+    return reader to DesignColorRead(body.lastIndex, kept.registerA, hook)
 }
 
 /**

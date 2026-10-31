@@ -448,6 +448,49 @@ public class DarkBackgroundTest {
         SettingsContextRule.beforeThePauseIsDecided(() -> assertEquals(CREAM, DarkBackground.pageColor(CREAM)));
     }
 
+    /** #8: wilwheaton's navy title and description all but vanished once the page behind them turned black. */
+    @Test
+    public void aBlogsTextStaysReadableOnThePickedColor() {
+        Settings.DARK_BACKGROUND.save(true);
+        standInStyle();
+        DarkBackground.darkPalette = true;
+
+        DarkBackground.pagePick = BLACK;
+        assertEquals("navy on black", DarkBackground.LIGHT_TEXT, DarkBackground.pageTextColor(NAVY));
+        assertEquals("cream already reads on black", CREAM, DarkBackground.pageTextColor(CREAM));
+
+        DarkBackground.pagePick = CREAM;
+        assertEquals("a pale picked color takes dark text", DarkBackground.DARK_TEXT, DarkBackground.pageTextColor(DarkBackground.LIGHT_TEXT));
+        assertEquals("navy already reads on cream", NAVY, DarkBackground.pageTextColor(NAVY));
+
+        String report = String.join("\n", HookStatus.report());
+        assertTrue(report, report.contains(DarkBackground.TEXT_CHANGED + " 2"));
+        assertFalse("text isn't a page", report.contains(DarkBackground.PAGE_PAINTED));
+    }
+
+    /** Everywhere a page keeps its own color, its text keeps its own too, however dark. */
+    @Test
+    public void aBlogsTextKeepsItsColorWhereThePageKeepsItsOwn() {
+        standInStyle();
+        DarkBackground.pagePick = BLACK;
+        DarkBackground.darkPalette = true;
+        assertEquals("switch off", NAVY, DarkBackground.pageTextColor(NAVY));
+
+        Settings.DARK_BACKGROUND.save(true);
+        DarkBackground.darkPalette = false;
+        assertEquals("another palette", NAVY, DarkBackground.pageTextColor(NAVY));
+
+        DarkBackground.darkPalette = true;
+        DarkBackground.customizing = true;
+        assertEquals("editing the blog's colors", NAVY, DarkBackground.pageTextColor(NAVY));
+
+        DarkBackground.customizing = false;
+        SettingsContextRule.beforeThePauseIsDecided(() -> assertEquals("before the settings are ready", NAVY, DarkBackground.pageTextColor(NAVY)));
+
+        PatchFamilyForTests.capabilities(EnumSet.noneOf(PatchFamily.Capability.class));
+        assertEquals("no hook", NAVY, DarkBackground.pageTextColor(NAVY));
+    }
+
     /** The activity's theme decides the palette. A later Compose theme of another palette doesn't. */
     @Test
     public void onlyAnActivitysThemeDecidesThePalette() {
@@ -530,6 +573,10 @@ public class DarkBackgroundTest {
 
     /** The cream from the blog page reported in #8. */
     private static final int CREAM = 0xFFF5EBD7;
+
+    /** A title color like the blog's in #8, and the black page it vanished on. */
+    private static final int NAVY = 0xFF0B1A3D;
+    private static final int BLACK = 0xFF000000;
 
     /**
      * Stands a framework dark theme in for the patch's style and its background attribute for the
