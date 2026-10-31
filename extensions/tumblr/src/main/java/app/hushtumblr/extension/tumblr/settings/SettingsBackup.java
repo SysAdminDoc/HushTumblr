@@ -152,6 +152,7 @@ public final class SettingsBackup {
             Settings.REVEAL_ALLOWED_MATURE_CONTENT,
             Settings.SHOW_MUTUAL_MARKERS,
             Settings.DARK_BACKGROUND,
+            Settings.DARK_BACKGROUND_WALLPAPER,
             Settings.HIDE_EXPLORE_TAB,
             Settings.HIDE_NOTIFICATIONS_TAB,
             Settings.REORDER_TABS,

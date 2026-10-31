@@ -63,13 +63,90 @@ public class DarkBackgroundTest {
         PatchFamilyForTests.capabilities(null);
         DarkBackground.styleForTests = null;
         DarkBackground.darkForTests = null;
+        DarkBackground.raisedForTests = null;
         DarkBackground.ids = null;
         DarkBackground.designColors = null;
         DarkBackground.pagePick = null;
         DarkBackground.darkPalette = false;
         DarkBackground.customizing = false;
         Settings.DARK_BACKGROUND.resetToDefault();
+        Settings.DARK_BACKGROUND_WALLPAPER.resetToDefault();
         HookStatus.clear();
+    }
+
+    /** With the wallpaper switch on, Android 12 and newer ask for the wallpaper's style, and the report names it when it's missing. */
+    @Test
+    @Config(sdk = 36)
+    public void theWallpaperSwitchAsksForTheWallpaperStyle() {
+        Settings.DARK_BACKGROUND.save(true);
+        Settings.DARK_BACKGROUND_WALLPAPER.save(true);
+
+        assertEquals(PAGE_GRAY, DarkBackground.designPage(PAGE_GRAY));
+        String report = String.join("\n", HookStatus.report());
+        assertTrue(report, report.contains(DarkBackground.WALLPAPER_STYLE));
+    }
+
+    /** With it off, the same phone asks for the picked color's style. */
+    @Test
+    @Config(sdk = 36)
+    public void withTheWallpaperSwitchOffThePickedColorsStyleIsAskedFor() {
+        Settings.DARK_BACKGROUND.save(true);
+
+        assertEquals(PAGE_GRAY, DarkBackground.designPage(PAGE_GRAY));
+        String report = String.join("\n", HookStatus.report());
+        assertTrue(report, report.contains(DarkBackground.STYLE));
+        assertFalse(report, report.contains(DarkBackground.WALLPAPER_STYLE));
+    }
+
+    /** Android 11 and older make no colors from a wallpaper, so the switch changes nothing there. */
+    @Test
+    public void beforeAndroid12TheWallpaperSwitchKeepsThePickedColorsStyle() {
+        Settings.DARK_BACKGROUND.save(true);
+        Settings.DARK_BACKGROUND_WALLPAPER.save(true);
+
+        assertEquals(PAGE_GRAY, DarkBackground.designPage(PAGE_GRAY));
+        String report = String.join("\n", HookStatus.report());
+        assertTrue(report, report.contains(DarkBackground.STYLE));
+        assertFalse(report, report.contains(DarkBackground.WALLPAPER_STYLE));
+    }
+
+    /** The wallpaper has its own lighter tone, so a panel takes that, and the footer still matches the card. */
+    @Test
+    @Config(sdk = 36)
+    public void aWallpaperPanelTakesTheStylesLighterTone() {
+        Settings.DARK_BACKGROUND.save(true);
+        Settings.DARK_BACKGROUND_WALLPAPER.save(true);
+        int page = standInStyle();
+        DarkBackground.raisedForTests = android.R.attr.colorBackgroundFloating;
+        Integer tone = DarkBackground.styleColor(app().getResources(), android.R.style.Theme_Material,
+                android.R.attr.colorBackgroundFloating);
+        assertNotEquals("the stand-in tone isn't a step up from the page", DarkBackground.raised(page), (int) tone);
+
+        assertEquals(DarkBackground.packed(page), DarkBackground.designPage(PAGE_GRAY));
+        assertEquals(DarkBackground.packed(tone), DarkBackground.designPanel(PANEL_GRAY));
+        assertEquals(DarkBackground.packed(page), DarkBackground.designFooter(DarkBackground.packed(tone)));
+    }
+
+    /** A wallpaper style with no lighter tone still leaves a panel apart from its page. */
+    @Test
+    @Config(sdk = 36)
+    public void aWallpaperStyleWithoutALighterToneStepsUpFromThePage() {
+        Settings.DARK_BACKGROUND.save(true);
+        Settings.DARK_BACKGROUND_WALLPAPER.save(true);
+        int page = standInStyle();
+
+        assertEquals(DarkBackground.packed(DarkBackground.raised(page)), DarkBackground.designPanel(PANEL_GRAY));
+    }
+
+    /** The picked color's panel is always the step up, whatever an older phone's switch says. */
+    @Test
+    public void beforeAndroid12APanelStepsUpFromThePickedColor() {
+        Settings.DARK_BACKGROUND.save(true);
+        Settings.DARK_BACKGROUND_WALLPAPER.save(true);
+        int page = standInStyle();
+        DarkBackground.raisedForTests = android.R.attr.colorBackgroundFloating;
+
+        assertEquals(DarkBackground.packed(DarkBackground.raised(page)), DarkBackground.designPanel(PANEL_GRAY));
     }
 
     @Test

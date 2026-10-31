@@ -321,6 +321,8 @@ Looks for: %1$s	Sucht nach: %1$s
 # context: Dark background color turns the background of Tumblr's Dark Mode palette (Settings > Appearance) black, or a dark color chosen when the app was patched. Use Tumblr's own name for the Dark Mode palette in your language.
 Dark background color	Dunkle Hintergrundfarbe
 Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.	Färbt neu geöffnete Dunkelmodus-Bildschirme schwarz oder in der beim Patchen gewählten dunklen Farbe. Offene Bildschirme behalten ihre Farben bis zum Neustart von Tumblr.
+Match my wallpaper	An mein Hintergrundbild anpassen
+Takes the dark background from your wallpaper's colors in place of the one picked when patching. Needs Android 12 or newer and Dark background color on. A new wallpaper shows after Tumblr restarts.	Nimmt den dunklen Hintergrund aus den Farben deines Hintergrundbilds statt der beim Patchen gewählten Farbe. Braucht Android 12 oder neuer und eingeschaltete Dunkle Hintergrundfarbe. Ein neues Hintergrundbild erscheint, wenn Tumblr neu startet.
 # context: the bottom bar's tabs. Hide the Explore tab and Hide the Notifications tab take one tab's button off the bar; Reorder the bottom bar puts the tabs in an order chosen in a list where a tap moves a tab one place up. Use Tumblr's own names for the tabs in your language.
 Hide the Explore tab	Entdecken-Tab ausblenden
 Takes the Explore and search button off the bottom bar.	Entfernt die Schaltfläche für Entdecken und Suche aus der unteren Leiste.

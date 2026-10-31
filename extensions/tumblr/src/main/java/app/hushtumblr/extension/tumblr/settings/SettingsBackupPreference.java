@@ -525,6 +525,7 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
             case "hushtumblr_hide_posts_with_words": return L10n.t("Hide posts with these words");
             case "hushtumblr_hide_filtered_posts": return L10n.t("Hide filtered posts");
             case "hushtumblr_dark_background": return L10n.t("Dark background color");
+            case "hushtumblr_dark_background_wallpaper": return L10n.t("Match my wallpaper");
             case "hushtumblr_hide_explore_tab": return L10n.t("Hide the Explore tab");
             case "hushtumblr_hide_notifications_tab": return L10n.t("Hide the Notifications tab");
             case "hushtumblr_reorder_tabs": return L10n.t("Reorder the bottom bar");

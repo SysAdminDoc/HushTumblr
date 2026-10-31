@@ -47,7 +47,7 @@ There are 47 patches.
 
 | Patch | What it does |
 |---|---|
-| `Dark background color` | Makes the background of Tumblr's Dark Mode palette black, which can save battery on OLED screens, or another dark color you pick when patching. Blog and tag pages take it too, in place of their own colors. Other palettes stay as they are. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
+| `Dark background color` | Makes the background of Tumblr's Dark Mode palette black, which can save battery on OLED screens, or another dark color you pick when patching. On Android 12 or newer it can follow your wallpaper's colors instead. Blog and tag pages take it too, in place of their own colors. Other palettes stay as they are. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `Disable analytics` | Turns off Firebase crash reports and Google's analytics collection, and Tumblr's own tracking and ad measurement once it restarts. The Firebase and Google part stays until you patch again without it. On by default. Turn it off in Tumblr settings > HushTumblr > Privacy. |
 | `Disable update prompts` | Stops Tumblr asking Google Play for a newer version and showing Play's update prompt. Starts off. Turn it on in Tumblr settings > HushTumblr > Updates. |
 | `Filter activity notifications` | Hides selected likes, reblogs, replies, follows, mentions, asks and boops from the activity list as pages load. Each switch starts off. Choose them in Tumblr settings > HushTumblr > Notifications. |

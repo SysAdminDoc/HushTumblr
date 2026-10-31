@@ -21,6 +21,8 @@ package app.hushtumblr.extension.tumblr.settings;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 
+import android.os.Build;
+
 import app.hushtumblr.extension.shared.settings.BaseSettings;
 import app.hushtumblr.extension.shared.settings.BooleanSetting;
 
@@ -325,6 +327,10 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting DARK_BACKGROUND =
             new BooleanSetting("hushtumblr_dark_background", FALSE, true);
+    /** Takes that background from the wallpaper's colors. Android 11 and older don't make any, so the row greys out there. */
+    public static final BooleanSetting DARK_BACKGROUND_WALLPAPER =
+            new BooleanSetting("hushtumblr_dark_background_wallpaper", FALSE, true,
+                    () -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S);
 
     /**
      * The bottom bar doesn't show the Explore tab's button; the tab itself stays in Tumblr's list

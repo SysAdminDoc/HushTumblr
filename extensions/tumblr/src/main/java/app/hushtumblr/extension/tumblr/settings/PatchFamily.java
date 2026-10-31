@@ -98,7 +98,7 @@ public enum PatchFamily {
     HIDE_POSTS_WITH_WORDS(FamilyNames.HIDE_POSTS_WITH_WORDS, "hidePostsWithWords", null, Settings.HIDE_POSTS_WITH_WORDS,
             Settings.WORDS_CURRENT_TEXT, Settings.WORDS_REBLOG_TRAIL, Settings.WORDS_TAGS, Settings.WORDS_SUMMARY),
     HIDE_FILTERED_POSTS(FamilyNames.HIDE_FILTERED_POSTS, "hideFilteredPosts", null, Settings.HIDE_FILTERED_POSTS),
-    DARK_BACKGROUND(FamilyNames.DARK_BACKGROUND, "darkBackground", null, Settings.DARK_BACKGROUND),
+    DARK_BACKGROUND(FamilyNames.DARK_BACKGROUND, "darkBackground", null, Settings.DARK_BACKGROUND, Settings.DARK_BACKGROUND_WALLPAPER),
     HIDE_EXPLORE_TAB(FamilyNames.HIDE_EXPLORE_TAB, "hideExploreTab", null, Settings.HIDE_EXPLORE_TAB),
     HIDE_NOTIFICATIONS_TAB(FamilyNames.HIDE_NOTIFICATIONS_TAB, "hideNotificationsTab", null, Settings.HIDE_NOTIFICATIONS_TAB),
     REORDER_TABS(FamilyNames.REORDER_TABS, "reorderTabs", null, Settings.REORDER_TABS),

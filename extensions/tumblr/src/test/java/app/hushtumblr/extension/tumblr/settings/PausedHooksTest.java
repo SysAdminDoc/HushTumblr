@@ -256,6 +256,7 @@ public class PausedHooksTest {
         // page gray comes back as the style's color.
         probes.put(Settings.DARK_BACKGROUND, Arrays.asList(
                 DarkBackgroundForTests::paintsATheme, DarkBackgroundForTests::paintsTheDesignColors));
+        probes.put(Settings.DARK_BACKGROUND_WALLPAPER, Collections.singletonList(DarkBackgroundForTests::choosesTheWallpaper));
         // The Explore tab's button goes when the bar is built.
         probes.put(Settings.HIDE_EXPLORE_TAB, Collections.singletonList(BottomBarTabsForTests::hidesTheExploreTab));
         // The Notifications tab's button goes when the bar is built.

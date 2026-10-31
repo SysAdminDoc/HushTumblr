@@ -587,6 +587,10 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             patchToggle(ui, context, build, PatchFamily.DARK_BACKGROUND, Settings.DARK_BACKGROUND,
                     L10n.t("Dark background color"), L10n.t("Makes newly opened Dark Mode screens black, or the dark "
                         + "color picked when patching. Open screens keep their colors until Tumblr restarts."), SettingsIcons.INTERFACE);
+            patchToggle(ui, context, build, PatchFamily.DARK_BACKGROUND, Settings.DARK_BACKGROUND_WALLPAPER,
+                    L10n.t("Match my wallpaper"), L10n.t("Takes the dark background from your wallpaper's colors in place of "
+                        + "the one picked when patching. Needs Android 12 or newer and Dark background color on. "
+                        + "A new wallpaper shows after Tumblr restarts."), SettingsIcons.INTERFACE);
         }
 
         if (!Collections.disjoint(build, PatchFamily.PRIVACY_PAGE)) {

@@ -9,6 +9,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.res.Resources;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.TypedValue;
 
@@ -51,6 +52,10 @@ import app.hushtumblr.extension.tumblr.settings.Settings;
  * screens where a person edits their own blog's colors keep the real ones, or they'd be editing a
  * color they can't see.
  *
+ * <p>On Android 12 and newer, Match my wallpaper swaps {@link #STYLE} for {@link #WALLPAPER_STYLE},
+ * which sets the same surfaces to two of the dark tones Android makes from the wallpaper. That style
+ * brings its own lighter tone, so a panel reads it in place of a step up from the page.
+ *
  * <p>A theme a screen already drew with keeps its colors, and the design system's set is built once
  * for as long as Tumblr runs, so the summary says a restart shows it.
  */
@@ -59,6 +64,12 @@ public final class DarkBackground {
 
     /** The style the patch adds. Its name is the patch's to choose, so it's looked up by name. */
     static final String STYLE = "HushTumblrDarkBackground";
+
+    /** The patch's other style, the same surfaces in the wallpaper's dark tones. */
+    static final String WALLPAPER_STYLE = "HushTumblrDarkBackgroundWallpaper";
+
+    /** The attribute the wallpaper's style gives its lighter tone. */
+    static final String RAISED_ATTRIBUTE = "themeHighlightedContentBackgroundColor";
 
     /** The theme attribute for the screen color, and the Dark palette's color resource behind it. */
     static final String SCREEN_ATTRIBUTE = "themePrimaryColor";
@@ -80,6 +91,10 @@ public final class DarkBackground {
      * two together.
      */
     static final int RAISE_STEP = 0x0D;
+
+    /** The test app has no {@link #RAISED_ATTRIBUTE}, so tests hand in another. */
+    @Nullable
+    static volatile Integer raisedForTests;
 
     /** The design system's colors left as Tumblr made them. */
     private static final long[] TUMBLRS_OWN = new long[0];
@@ -334,7 +349,30 @@ public final class DarkBackground {
         Integer page = styleColor(resources, found[0], found[1]);
         if (page == null) return TUMBLRS_OWN;
         HookStatus.counted(FamilyNames.DARK_BACKGROUND, DESIGN_PAINTED);
-        return new long[] {packed(page), packed(raised(page))};
+        Integer panel = wallpaperPanel(resources, found[0], context.getPackageName());
+        return new long[] {packed(page), packed(panel != null ? panel : raised(page))};
+    }
+
+    /** The lighter tone the wallpaper's style sets, or null when the style in use is the picked color's. */
+    // The attribute's name is kept, so it has no R field here.
+    @SuppressWarnings("DiscouragedApi")
+    @Nullable
+    private static Integer wallpaperPanel(Resources resources, int style, String packageName) {
+        if (!followsWallpaper()) return null;
+        Integer forced = raisedForTests;
+        int attribute = forced != null ? forced : resources.getIdentifier(RAISED_ATTRIBUTE, "attr", packageName);
+        return styleColor(resources, style, attribute);
+    }
+
+    /** Whether Match my wallpaper reads on, on any Android version. */
+    static boolean wallpaperChosen() {
+        return Utils.settingsReady() && PatchFamily.Capability.THEME_BACKGROUND.installed()
+                && Settings.DARK_BACKGROUND_WALLPAPER.get();
+    }
+
+    /** Whether the wallpaper's style is the one to use. Android 11 and older make no colors from a wallpaper. */
+    static boolean followsWallpaper() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && wallpaperChosen();
     }
 
     /** The solid color [style] gives [attribute], or null when either is missing or it isn't a color. */
@@ -379,10 +417,11 @@ public final class DarkBackground {
     private static int[] ids(Resources resources, String packageName) {
         int[] known = ids;
         if (known != null) return known;
-        int style = resources.getIdentifier(STYLE, "style", packageName);
+        String styleName = followsWallpaper() ? WALLPAPER_STYLE : STYLE;
+        int style = resources.getIdentifier(styleName, "style", packageName);
         int attribute = resources.getIdentifier(SCREEN_ATTRIBUTE, "attr", packageName);
         int color = resources.getIdentifier(DARK_SCREEN_COLOR, "color", packageName);
-        if (style == 0) HookStatus.missingMember(FamilyNames.DARK_BACKGROUND, "style", "resources", STYLE);
+        if (style == 0) HookStatus.missingMember(FamilyNames.DARK_BACKGROUND, "style", "resources", styleName);
         if (attribute == 0) HookStatus.missingMember(FamilyNames.DARK_BACKGROUND, "attr", "resources", SCREEN_ATTRIBUTE);
         if (color == 0) HookStatus.missingMember(FamilyNames.DARK_BACKGROUND, "color", "resources", DARK_SCREEN_COLOR);
         known = new int[] {style, attribute, color};

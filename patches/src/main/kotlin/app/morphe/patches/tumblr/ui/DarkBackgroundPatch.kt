@@ -73,6 +73,17 @@ internal const val POST_FOOTER_NOTE = "${FOOTER_CONTROLS}PostFooterSplitNotesCou
 /** The style the patch adds. The extension's `DarkBackground.STYLE` looks it up by this name. */
 internal const val DARK_BACKGROUND_STYLE = "HushTumblrDarkBackground"
 
+/** The same surfaces in the dark tones Android makes from the wallpaper. `DarkBackground.WALLPAPER_STYLE` looks it up. */
+internal const val DARK_WALLPAPER_STYLE = "HushTumblrDarkBackgroundWallpaper"
+
+/**
+ * Android 12's second accent tones are dark and tinted by the wallpaper, where its first neutral's
+ * darkest is plain black. Those colors only exist on Android 12 and newer, and the extension only
+ * reaches for this style there.
+ */
+internal const val WALLPAPER_PAGE_COLOR = "@android:color/system_accent2_900"
+internal const val WALLPAPER_RAISED_COLOR = "@android:color/system_accent2_800"
+
 /** Where the style goes. ARSCLib takes a resource's type from its file's name. */
 internal const val DARK_BACKGROUND_STYLES = "res/values/styles.xml"
 
@@ -200,7 +211,8 @@ private fun NodeList.elements(): List<Element> = (0 until length).mapNotNull { i
  * no style in the file sets is left out. Each attribute is written the way the file's own styles
  * write it, so an app attribute keeps whatever package prefix the decoder gave it. The style has no
  * parent: it only goes over a theme that already has the rest. Refuses a file that already has the
- * style, or whose styles never set a required attribute.
+ * style, or whose styles never set a required attribute. [DARK_WALLPAPER_STYLE] goes in beside it,
+ * setting the same surfaces to [WALLPAPER_PAGE_COLOR] and [WALLPAPER_RAISED_COLOR].
  */
 internal fun Document.addDarkBackgroundStyle(color: Int) {
     val resources = documentElement
@@ -214,7 +226,8 @@ internal fun Document.addDarkBackgroundStyle(color: Int) {
         name == attribute || (!name.startsWith("android:") && name.substringAfter(':') == attribute)
     }
 
-    val values = linkedMapOf<String, Int>()
+    // Each surface the styles set, and whether it takes the lighter of the two colors.
+    val surfaces = linkedMapOf<String, Boolean>()
     for (attribute in DARK_BACKGROUND_ATTRIBUTES) {
         val name = nameOf(attribute)
         if (name == null) {
@@ -223,23 +236,26 @@ internal fun Document.addDarkBackgroundStyle(color: Int) {
             }
             continue
         }
-        values[name] = color
+        surfaces[name] = false
     }
-    val raised = raisedColor(color, HIGHLIGHT_STEP)
-    nameOf(HIGHLIGHTED_ATTRIBUTE)?.let { values[it] = raised }
-    for (surface in DARK_FLAT_SURFACES) nameOf(surface)?.let { values[it] = color }
-    for (surface in DARK_RAISED_SURFACES) nameOf(surface)?.let { values[it] = raised }
-    if (WINDOW_BACKGROUND_ATTRIBUTE in written) values[WINDOW_BACKGROUND_ATTRIBUTE] = color
+    nameOf(HIGHLIGHTED_ATTRIBUTE)?.let { surfaces[it] = true }
+    for (surface in DARK_FLAT_SURFACES) nameOf(surface)?.let { surfaces[it] = false }
+    for (surface in DARK_RAISED_SURFACES) nameOf(surface)?.let { surfaces[it] = true }
+    if (WINDOW_BACKGROUND_ATTRIBUTE in written) surfaces[WINDOW_BACKGROUND_ATTRIBUTE] = false
 
-    resources.appendChild(createElement("style").apply {
-        setAttribute("name", DARK_BACKGROUND_STYLE)
-        values.forEach { (name, value) ->
-            appendChild(createElement("item").apply {
-                setAttribute("name", name)
-                textContent = "#%08x".format(value)
-            })
-        }
-    })
+    fun appendStyle(style: String, page: String, raised: String) {
+        resources.appendChild(createElement("style").apply {
+            setAttribute("name", style)
+            surfaces.forEach { (name, lifted) ->
+                appendChild(createElement("item").apply {
+                    setAttribute("name", name)
+                    textContent = if (lifted) raised else page
+                })
+            }
+        })
+    }
+    appendStyle(DARK_BACKGROUND_STYLE, "#%08x".format(color), "#%08x".format(raisedColor(color, HIGHLIGHT_STEP)))
+    appendStyle(DARK_WALLPAPER_STYLE, WALLPAPER_PAGE_COLOR, WALLPAPER_RAISED_COLOR)
 }
 
 /** The style the extension puts over a Dark Mode theme, in the color [background] answers. */
@@ -271,7 +287,8 @@ private fun darkBackgroundStylePatch(background: () -> Int) = resourcePatch {
 val darkBackgroundPatch = bytecodePatch(
     name = PATCH,
     description = "Makes the background of Tumblr's Dark Mode palette black, which can save battery on OLED screens, or" +
-        " another dark color you pick when patching. Blog and tag pages take it too, in place of their own colors." +
+        " another dark color you pick when patching. On Android 12 or newer it can follow your wallpaper's colors instead." +
+        " Blog and tag pages take it too, in place of their own colors." +
         " Other palettes stay as they are. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface.",
     default = true,
 ) {

@@ -282,6 +282,7 @@ class DarkBackgroundFixtureTest {
     @Test
     fun `the patch and the extension name the same style`() {
         assertEquals(DARK_BACKGROUND_STYLE, ExtensionDex.stringConstant(DARK_BACKGROUND, "STYLE"))
+        assertEquals(DARK_WALLPAPER_STYLE, ExtensionDex.stringConstant(DARK_BACKGROUND, "WALLPAPER_STYLE"))
     }
 
     /** A design system row is as far from its page as a highlighted surface in the style is. */

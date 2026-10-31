@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(826);
+        Map<String, String> table = new HashMap<>(830);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -461,6 +461,8 @@ public final class L10nTranslations {
                 "Tags des aktuellen Beitrags pr\u00fcfen");
         table.put("Match current post text",
                 "Aktuellen Beitragstext pr\u00fcfen");
+        table.put("Match my wallpaper",
+                "An mein Hintergrundbild anpassen");
         table.put("Match post summaries",
                 "Beitragszusammenfassungen pr\u00fcfen");
         table.put("Match reblog trail text",
@@ -549,11 +551,11 @@ public final class L10nTranslations {
                 "Push-Benachrichtigungen");
         table.put("Puts every feature switch back the way it started.",
                 "Setzt jeden Funktionsschalter auf seinen Ausgangszustand zur\u00fcck.");
-        table.put("Puts the bottom bar's tabs in the order set below.",
-                "Ordnet die Tabs der unteren Leiste in der unten gew\u00e4hlten Reihenfolge an.");
     }
 
     private static void fillDe4(Map<String, String> table) {
+        table.put("Puts the bottom bar's tabs in the order set below.",
+                "Ordnet die Tabs der unteren Leiste in der unten gew\u00e4hlten Reihenfolge an.");
         table.put("Putting diagnostic data back",
                 "Diagnosedaten werden wiederhergestellt");
         table.put("Quick setups",
@@ -672,11 +674,11 @@ public final class L10nTranslations {
                 "Nur auf diesem Ger\u00e4t f\u00fcr dieses Tumblr-Konto gespeichert. Tippe auf einen Post, um ihn wieder anzuzeigen. Pro Konto werden bis zu 500 Posts gespeichert.");
         table.put("Support HushTumblr",
                 "HushTumblr unterst\u00fctzen");
-        table.put("Supported links",
-                "Unterst\u00fctzte Links");
     }
 
     private static void fillDe5(Map<String, String> table) {
+        table.put("Supported links",
+                "Unterst\u00fctzte Links");
         table.put("Tab order",
                 "Tab-Reihenfolge");
         table.put("Tabs go in this order: %1$s.",
@@ -717,6 +719,8 @@ public final class L10nTranslations {
                 "Nimmt den Kommentar-Button aus der Leiste unter Beitr\u00e4gen.");
         table.put("Takes the communities Tumblr suggests you join, and their headings, out of your dashboard and other feeds.",
                 "Entfernt die Communitys, denen du laut Tumblr beitreten sollst, samt ihren \u00dcberschriften aus deinem Dashboard und anderen Feeds.");
+        table.put("Takes the dark background from your wallpaper's colors in place of the one picked when patching. Needs Android 12 or newer and Dark background color on. A new wallpaper shows after Tumblr restarts.",
+                "Nimmt den dunklen Hintergrund aus den Farben deines Hintergrundbilds statt der beim Patchen gew\u00e4hlten Farbe. Braucht Android 12 oder neuer und eingeschaltete Dunkle Hintergrundfarbe. Ein neues Hintergrundbild erscheint, wenn Tumblr neu startet.");
         table.put("Takes the like button out of the footer under posts, and the reactions off community posts.",
                 "Nimmt den Like-Button aus der Leiste unter Beitr\u00e4gen und die Reaktionen von Community-Beitr\u00e4gen.");
         table.put("Takes the like, reblog and comment counts off the footer under posts and off a post's notes, and keeps the buttons.",
@@ -793,13 +797,13 @@ public final class L10nTranslations {
                 "Diese Liste ist zu gro\u00df f\u00fcr eine Einstellungssicherung. K\u00fcrze sie vor dem Speichern. Dein Entwurf bleibt hier.");
         table.put("This phone has no file picker, so there's no way to choose a file here.",
                 "Dieses Handy hat keine Dateiauswahl, hier l\u00e4sst sich also keine Datei w\u00e4hlen.");
+    }
+
+    private static void fillDe6(Map<String, String> table) {
         table.put("Tracking and app permissions",
                 "Tracking und App-Berechtigungen");
         table.put("Try a different word or clear the search.",
                 "Versuch ein anderes Wort oder l\u00f6sche die Suche.");
-    }
-
-    private static void fillDe6(Map<String, String> table) {
         table.put("Try again, or go back to Tumblr.",
                 "Versuche es noch einmal oder kehre zu Tumblr zur\u00fcck.");
         table.put("Tumblr TV",
@@ -909,7 +913,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(826);
+        Map<String, String> table = new HashMap<>(830);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -1320,6 +1324,8 @@ public final class L10nTranslations {
                 "Buscar en las etiquetas de la publicaci\u00f3n actual");
         table.put("Match current post text",
                 "Buscar en el texto de la publicaci\u00f3n actual");
+        table.put("Match my wallpaper",
+                "Combinar con mi fondo de pantalla");
         table.put("Match post summaries",
                 "Buscar en los res\u00famenes de publicaciones");
         table.put("Match reblog trail text",
@@ -1408,11 +1414,11 @@ public final class L10nTranslations {
                 "Notificaciones push");
         table.put("Puts every feature switch back the way it started.",
                 "Devuelve cada interruptor de funci\u00f3n a como estaba al principio.");
-        table.put("Puts the bottom bar's tabs in the order set below.",
-                "Pone las pesta\u00f1as de la barra inferior en el orden elegido abajo.");
     }
 
     private static void fillEs4(Map<String, String> table) {
+        table.put("Puts the bottom bar's tabs in the order set below.",
+                "Pone las pesta\u00f1as de la barra inferior en el orden elegido abajo.");
         table.put("Putting diagnostic data back",
                 "Restaurando datos de diagn\u00f3stico");
         table.put("Quick setups",
@@ -1531,11 +1537,11 @@ public final class L10nTranslations {
                 "Se guardan solo en este dispositivo para esta cuenta de Tumblr. Toca una publicaci\u00f3n para dejar de silenciarla. Se conservan hasta 500 publicaciones por cuenta.");
         table.put("Support HushTumblr",
                 "Apoya HushTumblr");
-        table.put("Supported links",
-                "Enlaces compatibles");
     }
 
     private static void fillEs5(Map<String, String> table) {
+        table.put("Supported links",
+                "Enlaces compatibles");
         table.put("Tab order",
                 "Orden de las pesta\u00f1as");
         table.put("Tabs go in this order: %1$s.",
@@ -1576,6 +1582,8 @@ public final class L10nTranslations {
                 "Quita el bot\u00f3n de comentarios del pie de las publicaciones.");
         table.put("Takes the communities Tumblr suggests you join, and their headings, out of your dashboard and other feeds.",
                 "Quita las comunidades a las que Tumblr te sugiere unirte, y sus encabezados, de tu panel y otros feeds.");
+        table.put("Takes the dark background from your wallpaper's colors in place of the one picked when patching. Needs Android 12 or newer and Dark background color on. A new wallpaper shows after Tumblr restarts.",
+                "Toma el fondo oscuro de los colores de tu fondo de pantalla en lugar del elegido al parchear. Necesita Android 12 o posterior y Color de fondo oscuro activado. Un fondo de pantalla nuevo se ve cuando Tumblr se reinicia.");
         table.put("Takes the like button out of the footer under posts, and the reactions off community posts.",
                 "Quita el bot\u00f3n Me gusta del pie de las publicaciones y las reacciones de las publicaciones de comunidades.");
         table.put("Takes the like, reblog and comment counts off the footer under posts and off a post's notes, and keeps the buttons.",
@@ -1652,13 +1660,13 @@ public final class L10nTranslations {
                 "Esta lista es demasiado grande para una copia de los ajustes. Ac\u00f3rtala antes de guardarla. Tu borrador sigue aqu\u00ed.");
         table.put("This phone has no file picker, so there's no way to choose a file here.",
                 "Este tel\u00e9fono no tiene selector de archivos, as\u00ed que aqu\u00ed no hay forma de elegir un archivo.");
+    }
+
+    private static void fillEs6(Map<String, String> table) {
         table.put("Tracking and app permissions",
                 "Rastreo y permisos de la aplicaci\u00f3n");
         table.put("Try a different word or clear the search.",
                 "Prueba otra palabra o borra la b\u00fasqueda.");
-    }
-
-    private static void fillEs6(Map<String, String> table) {
         table.put("Try again, or go back to Tumblr.",
                 "Int\u00e9ntalo de nuevo o vuelve a Tumblr.");
         table.put("Tumblr TV",
@@ -1768,7 +1776,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(826);
+        Map<String, String> table = new HashMap<>(830);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -2179,6 +2187,8 @@ public final class L10nTranslations {
                 "Cocokkan tag postingan saat ini");
         table.put("Match current post text",
                 "Cocokkan teks postingan saat ini");
+        table.put("Match my wallpaper",
+                "Sesuaikan dengan wallpaper saya");
         table.put("Match post summaries",
                 "Cocokkan ringkasan postingan");
         table.put("Match reblog trail text",
@@ -2267,11 +2277,11 @@ public final class L10nTranslations {
                 "Notifikasi push");
         table.put("Puts every feature switch back the way it started.",
                 "Mengembalikan setiap sakelar fitur seperti semula.");
-        table.put("Puts the bottom bar's tabs in the order set below.",
-                "Menyusun tab di bilah bawah sesuai urutan yang diatur di bawah.");
     }
 
     private static void fillIn4(Map<String, String> table) {
+        table.put("Puts the bottom bar's tabs in the order set below.",
+                "Menyusun tab di bilah bawah sesuai urutan yang diatur di bawah.");
         table.put("Putting diagnostic data back",
                 "Memulihkan data diagnostik");
         table.put("Quick setups",
@@ -2390,11 +2400,11 @@ public final class L10nTranslations {
                 "Disimpan hanya di perangkat ini untuk akun Tumblr ini. Ketuk postingan untuk menampilkannya kembali. Maksimal 500 postingan disimpan per akun.");
         table.put("Support HushTumblr",
                 "Dukung HushTumblr");
-        table.put("Supported links",
-                "Tautan yang didukung");
     }
 
     private static void fillIn5(Map<String, String> table) {
+        table.put("Supported links",
+                "Tautan yang didukung");
         table.put("Tab order",
                 "Urutan tab");
         table.put("Tabs go in this order: %1$s.",
@@ -2435,6 +2445,8 @@ public final class L10nTranslations {
                 "Menghapus tombol komentar dari bagian bawah postingan.");
         table.put("Takes the communities Tumblr suggests you join, and their headings, out of your dashboard and other feeds.",
                 "Menghapus komunitas yang disarankan Tumblr untuk kamu ikuti, beserta judulnya, dari dasbor dan feed lainnya.");
+        table.put("Takes the dark background from your wallpaper's colors in place of the one picked when patching. Needs Android 12 or newer and Dark background color on. A new wallpaper shows after Tumblr restarts.",
+                "Mengambil latar gelap dari warna wallpaper Anda, bukan warna yang dipilih saat patch. Perlu Android 12 atau lebih baru dan Warna latar gelap aktif. Wallpaper baru tampil setelah Tumblr dimulai ulang.");
         table.put("Takes the like button out of the footer under posts, and the reactions off community posts.",
                 "Menghapus tombol suka dari bagian bawah postingan, dan reaksi dari postingan komunitas.");
         table.put("Takes the like, reblog and comment counts off the footer under posts and off a post's notes, and keeps the buttons.",
@@ -2511,13 +2523,13 @@ public final class L10nTranslations {
                 "Daftar ini terlalu besar untuk cadangan pengaturan. Persingkat sebelum menyimpan. Draf Anda masih ada di sini.");
         table.put("This phone has no file picker, so there's no way to choose a file here.",
                 "Ponsel ini tidak memiliki pemilih file, jadi file tidak dapat dipilih di sini.");
+    }
+
+    private static void fillIn6(Map<String, String> table) {
         table.put("Tracking and app permissions",
                 "Pelacakan dan izin aplikasi");
         table.put("Try a different word or clear the search.",
                 "Coba kata lain atau hapus pencarian.");
-    }
-
-    private static void fillIn6(Map<String, String> table) {
         table.put("Try again, or go back to Tumblr.",
                 "Coba lagi, atau kembali ke Tumblr.");
         table.put("Tumblr TV",
@@ -2627,7 +2639,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(826);
+        Map<String, String> table = new HashMap<>(830);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -3038,6 +3050,8 @@ public final class L10nTranslations {
                 "Buscar nas tags do post atual");
         table.put("Match current post text",
                 "Buscar no texto do post atual");
+        table.put("Match my wallpaper",
+                "Combinar com meu papel de parede");
         table.put("Match post summaries",
                 "Buscar nos resumos dos posts");
         table.put("Match reblog trail text",
@@ -3126,11 +3140,11 @@ public final class L10nTranslations {
                 "Notifica\u00e7\u00f5es push");
         table.put("Puts every feature switch back the way it started.",
                 "Volta cada op\u00e7\u00e3o de recurso ao estado inicial.");
-        table.put("Puts the bottom bar's tabs in the order set below.",
-                "Coloca as abas da barra de baixo na ordem escolhida abaixo.");
     }
 
     private static void fillPt_rBR4(Map<String, String> table) {
+        table.put("Puts the bottom bar's tabs in the order set below.",
+                "Coloca as abas da barra de baixo na ordem escolhida abaixo.");
         table.put("Putting diagnostic data back",
                 "Restaurando dados de diagn\u00f3stico");
         table.put("Quick setups",
@@ -3249,11 +3263,11 @@ public final class L10nTranslations {
                 "Armazenados apenas neste dispositivo para esta conta do Tumblr. Toque em um post para voltar a mostr\u00e1-lo. At\u00e9 500 posts s\u00e3o mantidos por conta.");
         table.put("Support HushTumblr",
                 "Apoie o HushTumblr");
-        table.put("Supported links",
-                "Links compat\u00edveis");
     }
 
     private static void fillPt_rBR5(Map<String, String> table) {
+        table.put("Supported links",
+                "Links compat\u00edveis");
         table.put("Tab order",
                 "Ordem das abas");
         table.put("Tabs go in this order: %1$s.",
@@ -3294,6 +3308,8 @@ public final class L10nTranslations {
                 "Tira o bot\u00e3o de comentar do rodap\u00e9 dos posts.");
         table.put("Takes the communities Tumblr suggests you join, and their headings, out of your dashboard and other feeds.",
                 "Tira do seu painel e de outros feeds as comunidades em que o Tumblr sugere que voc\u00ea entre, junto com os t\u00edtulos delas.");
+        table.put("Takes the dark background from your wallpaper's colors in place of the one picked when patching. Needs Android 12 or newer and Dark background color on. A new wallpaper shows after Tumblr restarts.",
+                "Usa as cores do seu papel de parede no fundo escuro, no lugar da cor escolhida ao aplicar o patch. Precisa do Android 12 ou mais recente e de Cor de fundo escura ligada. Um novo papel de parede aparece quando o Tumblr reinicia.");
         table.put("Takes the like button out of the footer under posts, and the reactions off community posts.",
                 "Tira o bot\u00e3o de curtir do rodap\u00e9 dos posts e as rea\u00e7\u00f5es dos posts de comunidades.");
         table.put("Takes the like, reblog and comment counts off the footer under posts and off a post's notes, and keeps the buttons.",
@@ -3370,13 +3386,13 @@ public final class L10nTranslations {
                 "Esta lista \u00e9 grande demais para um backup das configura\u00e7\u00f5es. Reduza-a antes de salvar. Seu rascunho continua aqui.");
         table.put("This phone has no file picker, so there's no way to choose a file here.",
                 "Este dispositivo n\u00e3o tem seletor de arquivos, ent\u00e3o n\u00e3o \u00e9 poss\u00edvel escolher um arquivo aqui.");
+    }
+
+    private static void fillPt_rBR6(Map<String, String> table) {
         table.put("Tracking and app permissions",
                 "Rastreamento e permiss\u00f5es do aplicativo");
         table.put("Try a different word or clear the search.",
                 "Tente outra palavra ou limpe a busca.");
-    }
-
-    private static void fillPt_rBR6(Map<String, String> table) {
         table.put("Try again, or go back to Tumblr.",
                 "Tente novamente ou volte para o Tumblr.");
         table.put("Tumblr TV",
@@ -3486,7 +3502,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(826);
+        Map<String, String> table = new HashMap<>(830);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -3897,6 +3913,8 @@ public final class L10nTranslations {
                 "Ge\u00e7erli g\u00f6nderi etiketlerinde e\u015fle\u015ftir");
         table.put("Match current post text",
                 "Ge\u00e7erli g\u00f6nderi metninde e\u015fle\u015ftir");
+        table.put("Match my wallpaper",
+                "Duvar ka\u011f\u0131d\u0131ma uydur");
         table.put("Match post summaries",
                 "G\u00f6nderi \u00f6zetlerinde e\u015fle\u015ftir");
         table.put("Match reblog trail text",
@@ -3985,11 +4003,11 @@ public final class L10nTranslations {
                 "Anl\u0131k bildirimler");
         table.put("Puts every feature switch back the way it started.",
                 "Her \u00f6zellik anahtar\u0131n\u0131 ba\u015flang\u0131\u00e7taki h\u00e2line d\u00f6nd\u00fcr\u00fcr.");
-        table.put("Puts the bottom bar's tabs in the order set below.",
-                "Alt \u00e7ubuktaki sekmeleri a\u015fa\u011f\u0131da se\u00e7ilen s\u0131raya koyar.");
     }
 
     private static void fillTr4(Map<String, String> table) {
+        table.put("Puts the bottom bar's tabs in the order set below.",
+                "Alt \u00e7ubuktaki sekmeleri a\u015fa\u011f\u0131da se\u00e7ilen s\u0131raya koyar.");
         table.put("Putting diagnostic data back",
                 "Tan\u0131lama verileri geri y\u00fckleniyor");
         table.put("Quick setups",
@@ -4108,11 +4126,11 @@ public final class L10nTranslations {
                 "Yaln\u0131zca bu cihazda ve bu Tumblr hesab\u0131 i\u00e7in saklan\u0131r. Susturmay\u0131 kald\u0131rmak i\u00e7in bir g\u00f6nderiye dokunun. Hesap ba\u015f\u0131na en fazla 500 g\u00f6nderi saklan\u0131r.");
         table.put("Support HushTumblr",
                 "HushTumblr'\u0131 destekle");
-        table.put("Supported links",
-                "Desteklenen ba\u011flant\u0131lar");
     }
 
     private static void fillTr5(Map<String, String> table) {
+        table.put("Supported links",
+                "Desteklenen ba\u011flant\u0131lar");
         table.put("Tab order",
                 "Sekme s\u0131ras\u0131");
         table.put("Tabs go in this order: %1$s.",
@@ -4153,6 +4171,8 @@ public final class L10nTranslations {
                 "G\u00f6nderilerin alt\u0131ndaki yorum d\u00fc\u011fmesini kald\u0131r\u0131r.");
         table.put("Takes the communities Tumblr suggests you join, and their headings, out of your dashboard and other feeds.",
                 "Tumblr'\u0131n kat\u0131lman\u0131 \u00f6nerdi\u011fi topluluklar\u0131 ve ba\u015fl\u0131klar\u0131n\u0131 panondan ve di\u011fer ak\u0131\u015flardan kald\u0131r\u0131r.");
+        table.put("Takes the dark background from your wallpaper's colors in place of the one picked when patching. Needs Android 12 or newer and Dark background color on. A new wallpaper shows after Tumblr restarts.",
+                "Koyu arka plan\u0131, yama s\u0131ras\u0131nda se\u00e7ilen renk yerine duvar ka\u011f\u0131d\u0131n\u0131z\u0131n renklerinden al\u0131r. Android 12 veya \u00fcst\u00fc ve Koyu arka plan renginin a\u00e7\u0131k olmas\u0131 gerekir. Yeni bir duvar ka\u011f\u0131d\u0131 Tumblr yeniden ba\u015flay\u0131nca g\u00f6r\u00fcn\u00fcr.");
         table.put("Takes the like button out of the footer under posts, and the reactions off community posts.",
                 "G\u00f6nderilerin alt\u0131ndaki be\u011fen d\u00fc\u011fmesini ve topluluk g\u00f6nderilerindeki tepkileri kald\u0131r\u0131r.");
         table.put("Takes the like, reblog and comment counts off the footer under posts and off a post's notes, and keeps the buttons.",
@@ -4229,13 +4249,13 @@ public final class L10nTranslations {
                 "Bu liste ayar yede\u011fi i\u00e7in \u00e7ok b\u00fcy\u00fck. Kaydetmeden \u00f6nce k\u0131salt\u0131n. Tasla\u011f\u0131n\u0131z h\u00e2l\u00e2 burada.");
         table.put("This phone has no file picker, so there's no way to choose a file here.",
                 "Bu telefonda dosya se\u00e7ici yok, bu y\u00fczden burada dosya se\u00e7menin bir yolu yok.");
+    }
+
+    private static void fillTr6(Map<String, String> table) {
         table.put("Tracking and app permissions",
                 "Takip ve uygulama izinleri");
         table.put("Try a different word or clear the search.",
                 "Ba\u015fka bir kelime deneyin veya aramay\u0131 temizleyin.");
-    }
-
-    private static void fillTr6(Map<String, String> table) {
         table.put("Try again, or go back to Tumblr.",
                 "Tekrar dene veya Tumblr'a geri d\u00f6n.");
         table.put("Tumblr TV",
