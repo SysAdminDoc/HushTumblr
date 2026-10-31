@@ -15,6 +15,7 @@ import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patches.tumblr.lookup.instructionList
 import app.morphe.patches.tumblr.lookup.methodRef
+import app.morphe.patches.tumblr.lookup.stringRef
 import app.morphe.patches.tumblr.lookup.strings
 import app.morphe.patches.tumblr.misc.extension.SETTINGS_STATUS
 import app.morphe.util.namedRegisters
@@ -35,7 +36,7 @@ class AppFontFixtureTest {
     private val flags = listOf("appFont", "fontChoice")
 
     private fun holdsAFontName(method: Method): Boolean =
-        method.strings().any { it == FONT_LOAD_FAILURE || it == MEDIUM_ROBOTO }
+        method.strings().any { it == FONT_LOAD_FAILURE || it == MEDIUM_ROBOTO || it == PREINFLATED_ROW }
 
     /** The classes holding the two font names, and the loader's callback, which holds neither. */
     private fun hosts(build: File): List<ClassDef> {
@@ -48,15 +49,17 @@ class AppFontFixtureTest {
 
     private fun opcodes(method: Method): List<Opcode> = method.instructionList().map { it.opcode }.filter { it != Opcode.NOP }
 
-    @Test fun `the loader asks first, the picker's two answers go through the extension, and nothing else moves`() {
+    @Test fun `the loader asks first, the picker's two answers and an inflated row go through the extension, and nothing else moves`() {
         for (build in Fixtures.declaredBuilds()) {
             val classes = hosts(build)
             val context = PatchContexts.of(ExtensionDex.classes() + classes)
             val plan = context.resolveFontPlan()
             val loader = opcodes(plan.load)
             val picker = opcodes(plan.picker)
+            val provider = opcodes(plan.provider)
+            val edited = listOf(plan.load, plan.picker, plan.provider).map { it.toString() }
             val others = classes.flatMap { it.methods }
-                .filter { it.toString() != plan.load.toString() && it.toString() != plan.picker.toString() }
+                .filter { it.toString() !in edited }
                 .associate { it.toString() to opcodes(it) }
 
             appFontPatch.execute(context)
@@ -92,6 +95,18 @@ class AppFontFixtureTest {
                 at !in asks && at - 1 !in asks
             }.map { it.opcode }.filter { it != Opcode.NOP })
 
+            val handing = plan.provider.instructionList()
+            val (at, row) = plan.row
+            assertEquals(build.name, FONT_PREINFLATED_HOOK, handing[at].methodRef().toString())
+            assertEquals("${build.name}: the row", listOf(row), handing[at].namedRegisters())
+            assertEquals(build.name, Opcode.RETURN_OBJECT, handing[at + 1].opcode)
+            assertEquals(build.name, row, (handing[at + 1] as OneRegisterInstruction).registerA)
+            val logged = handing.indexOfFirst { it.stringRef() == PREINFLATED_ROW }
+            assertTrue("${build.name}: the row it logged", logged in 0 until at &&
+                handing.subList(logged, at).none { it.opcode == Opcode.RETURN_OBJECT })
+            assertEquals("${build.name}: the provider's own steps", provider, handing.filterIndexed { step, _ -> step != at }
+                .map { it.opcode }.filter { it != Opcode.NOP })
+
             for (owner in classes) for (method in context.mutableClassDefBy(owner.type).methods) {
                 val kept = others[method.toString()] ?: continue
                 assertEquals("${build.name}: keep $method", kept, opcodes(method))
@@ -121,6 +136,17 @@ class AppFontFixtureTest {
             assertTrue(build.name, classes.flatMap { it.methods }.count { FONT_LOAD_FAILURE in it.strings() } >= 1)
             val context = PatchContexts.of(ExtensionDex.classes() + classes.filter { owner ->
                 owner.methods.none { FONT_LOAD_FAILURE in it.strings() }
+            })
+            assertThrows(PatchException::class.java) { appFontPatch.execute(context) }
+            assertFlags(context, 0)
+        }
+    }
+
+    @Test fun `a build without the view provider's log line refuses before any edit`() {
+        for (build in Fixtures.declaredBuilds()) {
+            val classes = hosts(build)
+            val context = PatchContexts.of(ExtensionDex.classes() + classes.filter { owner ->
+                owner.methods.none { PREINFLATED_ROW in it.strings() }
             })
             assertThrows(PatchException::class.java) { appFontPatch.execute(context) }
             assertFlags(context, 0)

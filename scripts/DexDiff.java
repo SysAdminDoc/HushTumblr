@@ -302,7 +302,7 @@ public class DexDiff {
             Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1), Map.entry("activityNotifications", 7),
             Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 7), Map.entry("timelinePaging", 5),
             Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 6), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
-            Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("fontChoice", 4),
+            Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("fontChoice", 6),
             Map.entry("followButton", 3), Map.entry("footerButton", 3), Map.entry("postTags", 5),
             Map.entry("noteCounts", 6), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
@@ -5091,7 +5091,7 @@ public class DexDiff {
             capability(c.callee, shaped);
         }
 
-        /** AndroidX's font loader asks for a stand-in first and hands one to its callback, and the font picker's two Roboto answers go through a hook. */
+        /** AndroidX's font loader asks for a stand-in first and hands one to its callback, the font picker's two Roboto answers go through a hook, and so does a row inflated ahead of time. */
         void fontChoice(Contract c) {
             String typeface = "Landroid/graphics/Typeface;";
             List<Method> loaders = new ArrayList<>(), pickers = new ArrayList<>();
@@ -5103,9 +5103,14 @@ public class DexDiff {
                 if (isStatic(held) && held.getParameterTypes().size() == 2 && held.getReturnType().equals(typeface)
                         && descriptor(held).startsWith("(Landroid/content/Context;Lcom/tumblr/font/")) pickers.add(held);
             }
-            Method oldLoad = unique(loaders, "the font loader"), oldPick = unique(pickers, "the font picker");
-            if (oldLoad == null || oldPick == null) { capability(c.callee, false); return; }
-            Method load = actual(oldLoad), pick = actual(oldPick);
+            List<Method> providers = new ArrayList<>();
+            for (Method held : clean.holding(c.strings.get(4))) {
+                if (!isStatic(held) && descriptor(held).equals("(ILandroid/view/ViewGroup;)Landroid/view/View;")) providers.add(held);
+            }
+            Method oldLoad = unique(loaders, "the font loader"), oldPick = unique(pickers, "the font picker"),
+                    oldProvider = unique(providers, "the view provider's handover");
+            if (oldLoad == null || oldPick == null || oldProvider == null) { capability(c.callee, false); return; }
+            Method load = actual(oldLoad), pick = actual(oldPick), provider = actual(oldProvider);
             List<Integer> asks = calls(load, c.strings.get(0), 1);
             List<Integer> answers = calls(pick, c.strings.get(1), 2);
             boolean loads = load != null && asks.equals(List.of(0));
@@ -5154,7 +5159,20 @@ public class DexDiff {
                 }
             }
             if (!picks) fail("the font hooks don't take the Roboto answers of " + oldPick);
-            capability(c.callee, loads && picks);
+            List<Integer> rows = calls(provider, c.strings.get(5), 1);
+            boolean hands = provider != null && rows.size() == 1;
+            if (hands) {
+                List<Instruction> before = instructions(oldProvider), body = instructions(provider);
+                int at = rows.get(0), row = firstRegister(get(body, at + 1));
+                hands = movesTo(get(before, at), row, Opcode.RETURN_OBJECT) && arguments(body.get(at)).equals(List.of(row))
+                        && before.subList(0, at).stream().noneMatch(step -> step.getOpcode() == Opcode.RETURN_OBJECT);
+                if (hands) {
+                    remove(provider, at, at + 1);
+                    vouch(provider, at, List.of(row));
+                }
+            }
+            if (!hands) fail("the view provider's inflated row doesn't go through the font hook in " + oldProvider);
+            capability(c.callee, loads && picks && hands);
         }
 
         /** The timeline spacing's draw: the debug answer goes through a hook, and the gap it paints goes through another. */

@@ -32,6 +32,7 @@ import app.morphe.patches.tumblr.misc.extension.enableStatus
 import app.morphe.patches.tumblr.misc.extension.requireStatusMethod
 import app.morphe.patches.tumblr.misc.extension.tumblrExtensionPatch
 import app.morphe.patches.tumblr.misc.settings.settingsPatch
+import app.morphe.util.addInstructionsAtControlFlowLabel
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 
@@ -40,12 +41,15 @@ internal const val APP_FONT = "$EXTENSION_PACKAGE/ui/AppFont;"
 private const val TYPEFACE = "Landroid/graphics/Typeface;"
 private const val CONTEXT = "Landroid/content/Context;"
 private const val HANDLER = "Landroid/os/Handler;"
+private const val VIEW = "Landroid/view/View;"
 internal const val FONT_REPLACEMENT_HOOK = "$APP_FONT->replacement($CONTEXT" + "I)$TYPEFACE"
 internal const val FONT_PROVIDED_HOOK = "$APP_FONT->provided($TYPEFACE)$TYPEFACE"
+internal const val FONT_PREINFLATED_HOOK = "$APP_FONT->preinflated($VIEW)V"
 
-/** The loader's failure message and the medium Roboto's family name, each held by one method of the right shape. */
+/** The loader's failure message, the medium Roboto's family name and the provider's log line, each held by one method of the right shape. */
 internal const val FONT_LOAD_FAILURE = "Font resource ID #0x"
 internal const val MEDIUM_ROBOTO = "sans-serif-medium"
+internal const val PREINFLATED_ROW = "Returning pre-inflated View for resId: "
 
 /** Where Tumblr's list of fonts lives. R8 renames the list, not its package. */
 private const val FONT_PACKAGE = "Lcom/tumblr/font/"
@@ -60,6 +64,9 @@ internal class FontPlan(
     val picker: MutableMethod,
     /** Where each of the picker's Roboto answers returns, and the register it returns. */
     val answers: List<Pair<Int, Int>>,
+    val provider: MutableMethod,
+    /** Where the provider returns a row it inflated ahead of time, and the register holding the row. */
+    val row: Pair<Int, Int>,
 )
 
 /**
@@ -68,6 +75,11 @@ internal class FontPlan(
  * callback and as the answer, the way a font found in its cache does, and null goes on to Tumblr's
  * font. Tumblr's font picker (`s59` in 46.9.1.100) answers two fonts with Roboto by family name and
  * never reaches the loader, so those two answers go through the extension as well.
+ *
+ * The dashboard's view provider (`eq0` in 46.9.1.100) inflates its first rows on a background thread
+ * with an inflater that has no AppCompat. Those are plain TextViews, and a plain TextView reads
+ * `android:fontFamily` inside Android, past the loader, so each such row goes through the extension
+ * as it's handed over.
  */
 @Suppress("unused")
 val appFontPatch = bytecodePatch(
@@ -105,6 +117,8 @@ val appFontPatch = bytecodePatch(
             """,
             ExternalLabel("hush_keep", first),
         )
+        val (handover, row) = plan.row
+        plan.provider.addInstructionsAtControlFlowLabel(handover, "invoke-static/range { v$row .. v$row }, $FONT_PREINFLATED_HOOK")
         enableCapability("fontChoice")
         enableStatus("appFont")
     }
@@ -113,6 +127,7 @@ val appFontPatch = bytecodePatch(
 internal fun BytecodePatchContext.resolveFontPlan(): FontPlan {
     requireExtensionHook(PATCH, FONT_REPLACEMENT_HOOK)
     requireExtensionHook(PATCH, FONT_PROVIDED_HOOK)
+    requireExtensionHook(PATCH, FONT_PREINFLATED_HOOK)
     val load = appClassesWithString(FONT_LOAD_FAILURE).flatMap { it.methods }.filter { method ->
         val types = method.parameterTypes.map(CharSequence::toString)
         method.isStatic() && method.returnType == TYPEFACE && types.size == LOADER_PARAMETERS &&
@@ -147,10 +162,20 @@ internal fun BytecodePatchContext.resolveFontPlan(): FontPlan {
         requireShape(PATCH, given != null, "the font picker doesn't answer right after choosing Roboto")
         at to given!!.registerA
     }
+
+    val provider = appClassesWithString(PREINFLATED_ROW).flatMap { it.methods }.filter { method ->
+        !method.isStatic() && method.hasShape(listOf("I", "Landroid/view/ViewGroup;"), VIEW) && PREINFLATED_ROW in method.strings()
+    }.only(PATCH, "the view provider's handover")
+    val handing = provider.instructionList()
+    val logged = handing.indices.filter { handing[it].stringRef() == PREINFLATED_ROW }.only(PATCH, "the view provider's log line")
+    val handover = (logged until handing.size).firstOrNull { handing[it].opcode == Opcode.RETURN_OBJECT }
+    requireShape(PATCH, handover != null, "the view provider doesn't return the row it logged")
     return FontPlan(
         mutableOf(load),
         "$callback->${deliver.name}($TYPEFACE$HANDLER)V",
         mutableOf(picker),
         answers,
+        mutableOf(provider),
+        handover!! to (handing[handover] as OneRegisterInstruction).registerA,
     )
 }

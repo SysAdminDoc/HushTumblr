@@ -9,6 +9,9 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Typeface;
 import android.os.Build;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 
@@ -41,7 +44,9 @@ import app.hushtumblr.extension.tumblr.settings.TextSettings;
  * text and Compose text alike, so {@link #replacement} sits at its start and answers for Favorit,
  * Tumblr's interface font. The fonts a post's author can pick (Calluna, Clearface and the rest) are
  * other resources, so they stay. What's left is the Roboto Tumblr asks the system for by name. That's
- * already the phone's font, so {@link #provided} only steps in when there's a chosen file.
+ * already the phone's font, so {@link #provided} only steps in when there's a chosen file. The rows
+ * the dashboard inflates ahead of time are built without AppCompat, so Android itself loads their
+ * fonts and {@link #preinflated} changes them as they're handed over.
  *
  * <p>Only the Typeface changes, so a text's spans, links and size stay, and a glyph the chosen font
  * doesn't have falls back to the system's. Tumblr keeps the fonts it loaded for as long as it runs,
@@ -123,6 +128,52 @@ public final class AppFont {
             HookStatus.threw(FamilyNames.APP_FONT, "system font", failure);
             return tumblrs;
         }
+    }
+
+    /**
+     * Placed where the dashboard hands over a row it inflated ahead of time. That inflater has no
+     * AppCompat, so the row's text views got their fonts from Android and never reached
+     * {@link #replacement}. Never throws.
+     */
+    public static void preinflated(View row) {
+        try {
+            if (!Utils.settingsReady() || !PatchFamily.Capability.FONT_CHOICE.installed()) return;
+            HookStatus.invoked(FamilyNames.APP_FONT);
+            if (!Settings.APP_FONT.get() || row == null) return;
+            Context context = row.getContext();
+            int[] ids = interfaceFontIds(context);
+            Typeface[] tumblrs = new Typeface[ids.length];
+            for (int at = 0; at < ids.length; at++) {
+                if (ids[at] != 0) tumblrs[at] = context.getResources().getFont(ids[at]);
+            }
+            restyle(row, tumblrs, context);
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.APP_FONT, "inflated row", failure);
+        }
+    }
+
+    /** Swaps the face of every text view under [view] that draws in one of [tumblrs], in the order of {@link #WEIGHTS}. */
+    static void restyle(View view, Typeface[] tumblrs, Context context) {
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int at = 0; at < group.getChildCount(); at++) restyle(group.getChildAt(at), tumblrs, context);
+        } else if (view instanceof TextView) {
+            TextView text = (TextView) view;
+            Typeface drawn = text.getTypeface();
+            int weight = drawn == null ? 0 : weightAmong(tumblrs, drawn);
+            if (weight == 0) return;
+            HookStatus.counted(FamilyNames.APP_FONT, SWAPPED);
+            text.setTypeface(face(context, weight), drawn.getStyle());
+        }
+    }
+
+    /** The weight [drawn] has when it's one of [tumblrs], bold or italic on top or not, or 0. Android keeps one object per font and style. */
+    private static int weightAmong(Typeface[] tumblrs, Typeface drawn) {
+        for (int at = 0; at < tumblrs.length; at++) {
+            Typeface own = tumblrs[at];
+            if (own != null && (drawn == own || drawn == Typeface.create(own, drawn.getStyle()))) return WEIGHTS[at];
+        }
+        return 0;
     }
 
     /**

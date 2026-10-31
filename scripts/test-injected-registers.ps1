@@ -901,6 +901,8 @@ try {
         'feature-font-choice-missing' = $false
         'feature-font-choice-wrong-register' = $false
         'feature-font-choice-wrong-return' = $false
+        'feature-font-choice-missing-row' = $false
+        'feature-font-choice-wrong-row' = $false
         'feature-review-missing' = $false
         'feature-review-jump-to-injected-return' = $false
         'feature-activity-good' = $true
@@ -1001,6 +1003,8 @@ try {
             'feature-font-choice-missing' { 'has 0 calls' }
             'feature-font-choice-wrong-register' { "doesn't answer with the chosen font first" }
             'feature-font-choice-wrong-return' { "don't take the Roboto answers" }
+            'feature-font-choice-missing-row' { 'has 0 calls' }
+            'feature-font-choice-wrong-row' { "doesn't go through the font hook" }
             'feature-review-jump-to-injected-return' { 'routes an original branch or handler into the middle of an injected block' }
             'feature-activity-missing-hook' { 'has 0 calls' }
             'feature-activity-wrong-list' { "doesn't take what its rule hands it" }

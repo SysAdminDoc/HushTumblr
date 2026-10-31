@@ -1203,11 +1203,21 @@ public final class FeatureDexFixture {
         if (hooked) pick.addAll(List.of(provide, new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 3)));
         pick.add(new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 3));
         classes.put(picker, List.of(method(picker, "pick", face, true, 5, pick, context, "Lcom/tumblr/font/a;")));
+        String provider = "Lfixture/RowProvider;", view = "Landroid/view/View;", group = "Landroid/view/ViewGroup;";
+        ImmutableMethodReference child = ref(group, "getChildAt", view, "I");
+        List<Instruction> handover = new ArrayList<>(List.of(literal("Returning pre-inflated View for resId: ", 0),
+                invoke(Opcode.INVOKE_VIRTUAL, child, 4, 3), new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0),
+                invoke(Opcode.INVOKE_VIRTUAL, child, 4, 3), new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1)));
+        if (hooked && !variant.equals("missing-row")) handover.add(new ImmutableInstruction3rc(Opcode.INVOKE_STATIC_RANGE,
+                variant.equals("wrong-row") ? 1 : 0, 1, ref(helper, "preinflated", VOID, view)));
+        handover.add(new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0));
+        classes.put(provider, List.of(method(provider, "handOver", view, false, 5, handover, "I", group)));
         if (!variant.equals("clean")) classes.put(helper, List.of(
                 method(helper, "replacement", face, true, 3, List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0),
                         new ImmutableInstruction11n(Opcode.CONST_4, 0, 0), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0)), context, "I"),
                 method(helper, "provided", face, true, 2, List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0),
-                        new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 1)), face)));
+                        new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 1)), face),
+                method(helper, "preinflated", VOID, true, 2, List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), end()), view)));
     }
 
     private static void activityNotifications(Map<String, List<Method>> classes, String variant) {
@@ -1362,7 +1372,7 @@ public final class FeatureDexFixture {
             postLine(classes, variant);
             write(root, "feature-post-line-" + variant, classes, true, "lineBetweenPosts");
         }
-        for (String variant : List.of("good", "missing", "wrong-register", "wrong-return")) {
+        for (String variant : List.of("good", "missing", "wrong-register", "wrong-return", "missing-row", "wrong-row")) {
             reset(); enable("appFont");
             Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
             fontChoice(classes, variant);

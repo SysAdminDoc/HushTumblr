@@ -18,6 +18,10 @@ import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
 import android.graphics.Typeface;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import org.junit.After;
 import org.junit.Before;
@@ -170,6 +174,74 @@ public class AppFontTest {
         assertNull(AppFont.provided(null));
     }
 
+    /** The dashboard's first rows come from an inflater without AppCompat, so Android loads their fonts and the loader never sees them. */
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    public void aRowInflatedAheadOfTimeTakesTheFontAtEachTextsWeight() {
+        Settings.APP_FONT.save(true);
+        Typeface tumblrsRegular = Typeface.create(Typeface.SERIF, 400, false), tumblrsMedium = Typeface.create(Typeface.SERIF, 500, false);
+        Typeface[] tumblrs = {tumblrsRegular, null, tumblrsMedium, null};
+        Typeface authors = Typeface.create(Typeface.MONOSPACE, 400, false);
+
+        TextView name = text(tumblrsMedium), body = text(tumblrsRegular), author = text(authors), bolded = text(Typeface.create(tumblrsMedium, Typeface.BOLD));
+        Button follow = new Button(context);
+        follow.setTypeface(tumblrsMedium);
+        LinearLayout header = new LinearLayout(context), row = new LinearLayout(context);
+        header.addView(name);
+        header.addView(follow);
+        header.addView(new ImageView(context));
+        row.addView(header);
+        row.addView(body);
+        row.addView(author);
+        row.addView(bolded);
+
+        AppFont.restyle(row, tumblrs, context);
+
+        Typeface medium = AppFont.replacement(context, MEDIUM);
+        assertSame("a name", medium, name.getTypeface());
+        assertSame("a button", medium, follow.getTypeface());
+        assertSame("another weight", AppFont.replacement(context, REGULAR), body.getTypeface());
+        assertSame("a post's author picked this", authors, author.getTypeface());
+        assertSame("still bold, in the new font", Typeface.create(medium, Typeface.BOLD), bolded.getTypeface());
+    }
+
+    @Test
+    public void offARowInflatedAheadOfTimeKeepsItsFont() {
+        Typeface tumblrs = Typeface.create("sans-serif", Typeface.NORMAL);
+        TextView name = text(tumblrs);
+        AppFont.preinflated(name);
+        assertSame(tumblrs, name.getTypeface());
+    }
+
+    @Test
+    public void aBuildWithoutTheHooksLeavesAnInflatedRowAlone() {
+        Settings.APP_FONT.save(true);
+        PatchFamilyForTests.capabilities(EnumSet.noneOf(PatchFamily.Capability.class));
+        Typeface tumblrs = Typeface.create("sans-serif", Typeface.NORMAL);
+        TextView name = text(tumblrs);
+        AppFont.preinflated(name);
+        assertSame(tumblrs, name.getTypeface());
+    }
+
+    @Test
+    public void aFontAndroidWontLoadLeavesTheRowAlone() {
+        Settings.APP_FONT.save(true);
+        Typeface tumblrs = Typeface.create("sans-serif", Typeface.NORMAL);
+        TextView name = text(tumblrs);
+        AppFont.preinflated(name);
+        assertSame(tumblrs, name.getTypeface());
+        String report = String.join("\n", HookStatus.report());
+        assertTrue(report, report.contains("inflated row"));
+    }
+
+    @Test
+    public void noRowIsLeftAlone() {
+        Settings.APP_FONT.save(true);
+        AppFont.preinflated(null);
+        String report = String.join("\n", HookStatus.report());
+        assertFalse(report, report.contains("inflated row"));
+    }
+
     @Test
     public void everyKindOfFontFileIsTaken() throws Exception {
         for (String tag : new String[] {"OTTO", "true", "ttcf", "\0\1\0\0"}) {
@@ -265,6 +337,12 @@ public class AppFontTest {
     public void aFontHeaderWithNoFontBehindItIsRefused() {
         assertThrows(AppFont.Refused.class, () -> AppFont.install(context, stream(font("OTTO")), "a.otf"));
         assertFalse(chosen.exists());
+    }
+
+    private TextView text(Typeface face) {
+        TextView view = new TextView(context);
+        view.setTypeface(face);
+        return view;
     }
 
     private static byte[] font(String tag) {
