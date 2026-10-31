@@ -893,6 +893,10 @@ try {
         'feature-gift-popup-wrong-key' = $false
         'feature-gift-popup-wrong-argument' = $false
         'feature-gift-popup-wrong-branch' = $false
+        'feature-post-line-good' = $true
+        'feature-post-line-missing' = $false
+        'feature-post-line-wrong-register' = $false
+        'feature-post-line-wrong-paint' = $false
         'feature-review-missing' = $false
         'feature-review-jump-to-injected-return' = $false
         'feature-activity-good' = $true
@@ -987,6 +991,9 @@ try {
             'feature-gift-popup-wrong-key' { "doesn't receive the native instance key" }
             'feature-gift-popup-wrong-argument' { "doesn't receive the native instance key" }
             'feature-gift-popup-wrong-branch' { "doesn't receive the native instance key" }
+            'feature-post-line-missing' { 'has 0 calls' }
+            'feature-post-line-wrong-register' { "don't take the debug answer" }
+            'feature-post-line-wrong-paint' { 'has 0 calls' }
             'feature-review-jump-to-injected-return' { 'routes an original branch or handler into the middle of an injected block' }
             'feature-activity-missing-hook' { 'has 0 calls' }
             'feature-activity-wrong-list' { "doesn't take what its rule hands it" }

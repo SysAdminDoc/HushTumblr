@@ -49,6 +49,7 @@ family|disableUpdatePrompts|Disable update prompts|updatePromptFlags
 family|skipReviewPrompts|Skip review prompts|reviewPrompt
 family|hideBlogNotificationReminders|Hide blog notification reminders|blogNotificationReminder
 family|hideGiftMessagePopups|Hide gift purchase popups|giftMessagePopup
+family|lineBetweenPosts|Line between posts|postLine
 family|hideSuggestedBlogs|Hide suggested blogs|suggestedBlogCards
 family|hideSuggestedCommunities|Hide suggested communities|suggestedCommunityCards
 family|hideSuggestedTags|Hide suggested tags|suggestedTagCards
@@ -119,6 +120,7 @@ mutation|reviewPrompt|reviewPrompt|Lapp/hushtumblr/extension/tumblr/ui/ReviewPro
 # Optional prompt decisions. The shared gift renderer must hand over its instance key so crab tips stay native.
 mutation|blogNotificationReminder|blogNotificationReminder|Lapp/hushtumblr/extension/tumblr/ui/OptionalNudges;->hideBlogNotificationReminder()Z|blog_notify_enabled
 mutation|giftMessagePopup|giftMessagePopup|Lapp/hushtumblr/extension/tumblr/ui/OptionalNudges;->hideGiftMessage(Ljava/lang/String;)Z|key_has_seen_ad_free_browsing_gift_popup|key_has_seen_summon_crabs_popup
+mutation|postLine|postLine|Lapp/hushtumblr/extension/tumblr/ui/PostLines;->paintsGaps(I)I|Lapp/hushtumblr/extension/tumblr/ui/PostLines;->paintGap(Landroid/graphics/Canvas;FFFFLandroid/graphics/Paint;)V|debug_timeline_object_spacing
 mutation|followButton|followButton|Lapp/hushtumblr/extension/tumblr/ui/PostParts;->hideFollowButton()Z|Lcom/tumblr/ui/widget/PostCardHeader;|Lcom/tumblr/rumblr/model/post/PostHeaderAction$ActionType;->FOLLOW
 # A footer button's question, the Compose function it guards (by its source note) and the
 # community footer hook the family adds, or none.

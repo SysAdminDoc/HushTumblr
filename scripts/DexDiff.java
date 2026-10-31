@@ -302,7 +302,7 @@ public class DexDiff {
             Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1), Map.entry("activityNotifications", 7),
             Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 5), Map.entry("timelinePaging", 5),
             Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 6), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
-            Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3),
+            Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3),
             Map.entry("followButton", 3), Map.entry("footerButton", 3), Map.entry("postTags", 5),
             Map.entry("noteCounts", 6), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 8), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
@@ -5068,6 +5068,61 @@ public class DexDiff {
             capability(c.callee, shaped);
         }
 
+        /** The timeline spacing's draw: the debug answer goes through a hook, and the gap it paints goes through another. */
+        void postLine(Contract c) {
+            List<ClassDef> owners = new ArrayList<>();
+            for (Method held : clean.holding(c.strings.get(2))) {
+                ClassDef holder = clean.classes.get(held.getDefiningClass());
+                if (holder.getSuperclass() != null && holder.getSuperclass().startsWith("Landroidx/recyclerview/widget/RecyclerView$")
+                        && !owners.contains(holder)) owners.add(holder);
+            }
+            ClassDef owner = owners.size() == 1 ? owners.get(0) : null;
+            if (owner == null) { fail("the timeline spacing class has " + owners.size() + " matches"); capability(c.callee, false); return; }
+            List<Method> checks = new ArrayList<>(), draws = new ArrayList<>();
+            for (Method m : owner.getMethods()) {
+                if (m.getImplementation() == null || isStatic(m)) continue;
+                if (descriptor(m).equals("()Z") && clean.texts.get(m.toString()).contains(c.strings.get(2))) checks.add(m);
+                if (m.getParameterTypes().size() == 3 && m.getReturnType().equals("V")
+                        && m.getParameterTypes().get(0).toString().equals("Landroid/graphics/Canvas;")
+                        && m.getParameterTypes().get(1).toString().equals("Landroidx/recyclerview/widget/RecyclerView;")) draws.add(m);
+            }
+            Method check = unique(checks, "the timeline spacing's debug check");
+            Method old = null;
+            if (check != null) {
+                List<Method> reading = new ArrayList<>();
+                for (Method m : draws) if (!callSites(instructions(m), check.toString()).isEmpty()) reading.add(m);
+                old = unique(reading, "the timeline spacing's draw");
+            }
+            if (old == null) { capability(c.callee, false); return; }
+            Method m = actual(old);
+            List<Integer> asks = calls(m, c.strings.get(0), 1);
+            List<Integer> paints = calls(m, c.strings.get(1), 1);
+            String rect = "Landroid/graphics/Canvas;->drawRect(FFFFLandroid/graphics/Paint;)V";
+            List<Integer> cleanChecks = callSites(instructions(old), check.toString());
+            List<Integer> cleanPaints = callSites(instructions(old), rect);
+            boolean shaped = m != null && asks.size() == 1 && paints.size() == 1 && cleanChecks.size() == 1 && cleanPaints.size() == 1;
+            if (shaped) {
+                List<Instruction> body = instructions(m);
+                int at = asks.get(0), paint = paints.get(0), read = cleanChecks.get(0);
+                int kept = firstRegister(get(instructions(old), read + 1));
+                Instruction was = instructions(old).get(cleanPaints.get(0));
+                shaped = movesTo(get(instructions(old), read + 1), kept, Opcode.MOVE_RESULT) && at == read + 2
+                        && callIs(get(body, read), get(instructions(old), read).getOpcode(), check.toString(), arguments(get(instructions(old), read)).get(0))
+                        && movesTo(get(body, read + 1), kept, Opcode.MOVE_RESULT)
+                        && arguments(body.get(at)).equals(List.of(kept)) && movesTo(get(body, at + 1), kept, Opcode.MOVE_RESULT)
+                        && callSites(body, rect).isEmpty()
+                        && arguments(body.get(paint)).equals(arguments(was)) && paint == cleanPaints.get(0) + 2;
+                if (shaped) {
+                    remove(m, at, at + 2);
+                    vouch(m, at, List.of(kept));
+                    vouch(m, paint, arguments(was));
+                    edits.computeIfAbsent(m.toString(), k -> new FeatureEdits()).replacements.put(paint, was);
+                }
+            }
+            if (!shaped) fail("the post line hooks don't take the debug answer and the painted gap of " + old);
+            capability(c.callee, shaped);
+        }
+
         /** The post header's Follow button check, which the header's Follow action test calls, answering yes first when asked. */
         void followButton(Contract c) {
             String header = c.strings.get(1);
@@ -5886,6 +5941,7 @@ public class DexDiff {
                     case "reviewPrompt": reviewPrompt(c); break;
                     case "blogNotificationReminder": blogNotificationReminder(c); break;
                     case "giftMessagePopup": giftMessagePopup(c); break;
+                    case "postLine": postLine(c); break;
                     case "followButton": followButton(c); break;
                     case "footerButton": footerButton(c); break;
                     case "postTags": postTags(c); break;

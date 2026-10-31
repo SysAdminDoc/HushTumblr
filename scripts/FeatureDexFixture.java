@@ -64,7 +64,8 @@ public final class FeatureDexFixture {
     private static final String TIMELINE_RESPONSE = "Lcom/tumblr/rumblr/response/timeline/TimelineResponse;";
     private static final String POSTS_RESPONSE = "Lcom/tumblr/rumblr/response/timeline/PostsResponse;";
     private static final Map<String, String> SUPERCLASSES = Map.of(APP, CORE_APP, ACTIVITY, COMPONENT_ACTIVITY,
-            CORE_APP, "Landroid/app/Application;", COMPONENT_ACTIVITY, "Landroid/app/Activity;", POSTS_RESPONSE, TIMELINE_RESPONSE);
+            CORE_APP, "Landroid/app/Application;", COMPONENT_ACTIVITY, "Landroid/app/Activity;", POSTS_RESPONSE, TIMELINE_RESPONSE,
+            "Lfixture/PostSpacing;", "Landroidx/recyclerview/widget/RecyclerView$o;");
     private static final String VOID = "V";
     private static final String OBJECT = "Ljava/lang/Object;";
     private static final String LIST = "Ljava/util/List;";
@@ -1129,6 +1130,31 @@ public final class FeatureDexFixture {
                         new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN, 0)), STRING)));
     }
 
+    private static void postLine(Map<String, List<Method>> classes, String variant) {
+        String helper = BASE + "ui/PostLines;", owner = "Lfixture/PostSpacing;", canvas = "Landroid/graphics/Canvas;",
+                paint = "Landroid/graphics/Paint;", list = "Landroidx/recyclerview/widget/RecyclerView;";
+        boolean hooked = !variant.equals("clean") && !variant.equals("missing");
+        List<Instruction> draw = new ArrayList<>(List.of(invoke(Opcode.INVOKE_DIRECT, ref(owner, "debug", "Z"), 9),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0)));
+        if (hooked) draw.addAll(List.of(new ImmutableInstruction3rc(Opcode.INVOKE_STATIC_RANGE, variant.equals("wrong-register") ? 1 : 0, 1,
+                        ref(helper, "paintsGaps", "I", "I")),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0)));
+        draw.add(new ImmutableInstruction21t(Opcode.IF_EQZ, 0, 5));
+        draw.add(hooked && !variant.equals("wrong-paint")
+                ? new ImmutableInstruction3rc(Opcode.INVOKE_STATIC_RANGE, 3, 6, ref(helper, "paintGap", VOID, canvas, "F", "F", "F", "F", paint))
+                : new ImmutableInstruction3rc(Opcode.INVOKE_VIRTUAL_RANGE, 3, 6, ref(canvas, "drawRect", VOID, "F", "F", "F", "F", paint)));
+        draw.add(end());
+        classes.put(owner, List.of(
+                method(owner, "debug", "Z", false, 2, List.of(literal("debug_timeline_object_spacing", 0), new ImmutableInstruction11n(Opcode.CONST_4, 0, 0),
+                        new ImmutableInstruction11x(Opcode.RETURN, 0))),
+                method(owner, "draw", VOID, false, 13, draw, canvas, list, "Landroidx/recyclerview/widget/RecyclerView$a0;")));
+        if (!variant.equals("clean")) classes.put(helper, List.of(
+                method(helper, "paintsGaps", "I", true, 2, List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0),
+                        new ImmutableInstruction11x(Opcode.RETURN, 0)), "I"),
+                method(helper, "paintGap", VOID, true, 7, List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), end()),
+                        canvas, "F", "F", "F", "F", paint)));
+    }
+
     private static void activityNotifications(Map<String, List<Method>> classes, String variant) {
         boolean hooked = !variant.equals("clean");
         String pagination = "Lcom/tumblr/rumblr/model/PaginationLink;";
@@ -1173,6 +1199,7 @@ public final class FeatureDexFixture {
         reviewPrompt(clean, "clean");
         optionalNudges(clean, "reminder", "clean");
         optionalNudges(clean, "gift", "clean");
+        postLine(clean, "clean");
         activityNotifications(clean, "clean");
         carousel(clean, "clean");
         followButton(clean, "clean");
@@ -1272,6 +1299,12 @@ public final class FeatureDexFixture {
             Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
             optionalNudges(classes, "gift", variant);
             write(root, "feature-gift-popup-" + variant, classes, true, "hideGiftMessagePopups");
+        }
+        for (String variant : List.of("good", "missing", "wrong-register", "wrong-paint")) {
+            reset(); enable("lineBetweenPosts");
+            Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
+            postLine(classes, variant);
+            write(root, "feature-post-line-" + variant, classes, true, "lineBetweenPosts");
         }
         if (FAMILIES.containsKey("filterActivityNotifications")) for (String variant : List.of("good", "missing-hook", "wrong-list", "push-hook",
                 "missing-bridge", "wrong-getter", "wrong-null-target")) {

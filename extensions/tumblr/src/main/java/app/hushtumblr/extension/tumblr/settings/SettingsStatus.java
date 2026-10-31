@@ -69,6 +69,8 @@ public final class SettingsStatus {
     public static boolean blogNotificationReminder() { return false; }
     public static boolean hideGiftMessagePopups() { return false; }
     public static boolean giftMessagePopup() { return false; }
+    public static boolean lineBetweenPosts() { return false; }
+    public static boolean postLine() { return false; }
     public static boolean turnOffScreenshotSharing() { return false; }
     public static boolean screenshotSharingFlags() { return false; }
     public static boolean disableUpdatePrompts() { return false; }

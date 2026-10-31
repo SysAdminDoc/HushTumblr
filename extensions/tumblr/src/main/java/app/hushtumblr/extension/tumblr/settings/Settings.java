@@ -136,6 +136,9 @@ public class Settings extends BaseSettings {
     /** Only the unsolicited gift popup is hidden. Deliberate gifting and crab tips stay intact. */
     public static final BooleanSetting HIDE_GIFT_MESSAGE_POPUPS =
             new BooleanSetting("hushtumblr_hide_gift_message_popups", FALSE);
+    /** Draws a line in the gap above each timeline post. Read at every draw, so it needs no restart. */
+    public static final BooleanSetting LINE_BETWEEN_POSTS =
+            new BooleanSetting("hushtumblr_line_between_posts", FALSE);
 
     /**
      * Tumblr stops watching for screenshots and offering to save the post as an image

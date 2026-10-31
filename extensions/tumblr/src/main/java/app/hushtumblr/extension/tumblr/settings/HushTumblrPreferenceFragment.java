@@ -579,6 +579,10 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                     Settings.HIDE_GIFT_MESSAGE_POPUPS, L10n.t("Hide gift purchase popups"),
                     L10n.t("Hides the pop-up suggesting you buy a gift for a blog. You can still open gifting yourself."),
                     SettingsIcons.BLOCK);
+            patchToggle(ui, context, build, PatchFamily.LINE_BETWEEN_POSTS,
+                    Settings.LINE_BETWEEN_POSTS, L10n.t("Line between posts"),
+                    L10n.t("Draws a thin line in the gap between posts, so it's easier to see where one ends and the next begins."),
+                    SettingsIcons.INTERFACE);
             // Read when a screen's theme is made (DarkBackground), so screens already open keep their colors.
             patchToggle(ui, context, build, PatchFamily.DARK_BACKGROUND, Settings.DARK_BACKGROUND,
                     L10n.t("Dark background color"), L10n.t("Makes newly opened Dark Mode screens black, or the dark "

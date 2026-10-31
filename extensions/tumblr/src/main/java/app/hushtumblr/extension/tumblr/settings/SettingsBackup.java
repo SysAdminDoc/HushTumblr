@@ -108,6 +108,7 @@ public final class SettingsBackup {
             Settings.SKIP_REVIEW_PROMPTS,
             Settings.HIDE_BLOG_NOTIFICATION_REMINDERS,
             Settings.HIDE_GIFT_MESSAGE_POPUPS,
+            Settings.LINE_BETWEEN_POSTS,
             Settings.TURN_OFF_SCREENSHOT_SHARING,
             Settings.DISABLE_UPDATE_PROMPTS,
             Settings.HIDE_SUGGESTED_BLOGS,
