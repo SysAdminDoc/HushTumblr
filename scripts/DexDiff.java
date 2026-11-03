@@ -302,7 +302,7 @@ public class DexDiff {
             Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1), Map.entry("activityNotifications", 7),
             Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 7), Map.entry("timelinePaging", 5),
             Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 6), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
-            Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("fontChoice", 6),
+            Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("videoLinkPress", 6), Map.entry("fontChoice", 6),
             Map.entry("followButton", 3), Map.entry("footerButton", 3), Map.entry("postTags", 5),
             Map.entry("noteCounts", 6), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
@@ -5230,6 +5230,86 @@ public class DexDiff {
             capability(c.callee, shaped);
         }
 
+        /**
+         * A video in a post hands its container and address over right after the binder builds the
+         * video's details, and the timeline controls' long-press listener, set up from the controls'
+         * inflater, goes through the extension before the controls take it.
+         */
+        void videoLinkPress(Contract c) {
+            String details = c.strings.get(3), container = c.strings.get(4), block = c.strings.get(5);
+            List<Method> binders = new ArrayList<>(), inflaters = new ArrayList<>();
+            for (Method m : tumblrMethods()) {
+                if (isStatic(m)) continue;
+                List<Instruction> body = instructions(m);
+                if (m.getReturnType().equals("V") && m.getParameterTypes().stream().anyMatch(p -> p.toString().equals(block))
+                        && !callSites(body, details).isEmpty() && body.stream().anyMatch(i -> readsContainer(i, container))) binders.add(m);
+                if (descriptor(m).equals("(Landroid/content/Context;)Landroid/view/View;")
+                        && body.stream().anyMatch(i -> names(field(i), c.strings.get(2)))) inflaters.add(m);
+            }
+            Method oldBinder = unique(binders, "the post video binder");
+            Method inflater = unique(inflaters, "the timeline video controls' inflater");
+            Method oldControls = null;
+            if (inflater != null) {
+                Set<String> setups = new TreeSet<>();
+                for (Instruction i : instructions(inflater)) {
+                    MethodReference r = called(i);
+                    if (r != null && r.getDefiningClass().equals(inflater.getDefiningClass()) && descriptor(r).equals("(Landroid/view/View;)V"))
+                        setups.add(r.toString());
+                }
+                List<Method> found = new ArrayList<>();
+                for (String key : setups) if (clean.methods.get(key) != null) found.add(clean.methods.get(key));
+                oldControls = setups.size() == 1 ? unique(found, "the controls' setup") : unique(List.of(), "the controls' setup");
+            }
+            if (oldBinder == null || oldControls == null) { capability(c.callee, false); return; }
+
+            List<Instruction> was = instructions(oldBinder);
+            List<Integer> built = callSites(was, details);
+            List<Integer> made = built.size() == 1 ? arguments(was.get(built.get(0))) : List.of();
+            int address = made.size() == 4 ? made.get(1) : -1;
+            int read = address < 0 ? -1 : firstIndex(was, built.get(0) + 1, i -> readsContainer(i, container));
+            int holder = read < 0 ? -1 : firstRegister(was.get(read));
+            Method binder = actual(oldBinder);
+            List<Integer> binds = calls(binder, c.strings.get(0), 1);
+            boolean bound = read > 0 && holder != address && !writtenBetween(was, built.get(0) + 1, read, address)
+                    && binds.size() == 1 && binds.get(0) == read + 1
+                    && arguments(instructions(binder).get(read + 1)).equals(List.of(holder, address));
+            if (bound) {
+                fallthroughOnly(oldBinder, read + 1, "the video address hook");
+                remove(binder, read + 1, read + 2);
+                vouch(binder, read + 1, List.of(holder, address));
+            } else fail("the video address hook doesn't follow the container read with the container and the address in " + oldBinder);
+
+            List<Instruction> setup = instructions(oldControls);
+            List<Integer> sets = new ArrayList<>();
+            for (int k = 0; k < setup.size(); k++) {
+                MethodReference r = called(setup.get(k));
+                if (r != null && r.getName().equals("setOnLongClickListener") && descriptor(r).equals("(Landroid/view/View$OnLongClickListener;)V")) sets.add(k);
+            }
+            Method controls = actual(oldControls);
+            List<Integer> presses = calls(controls, c.strings.get(1), 1);
+            List<Integer> passed = sets.size() == 1 ? arguments(setup.get(sets.get(0))) : List.of();
+            int listener = passed.size() == 2 ? passed.get(1) : -1;
+            boolean pressed = listener >= 0 && presses.size() == 1 && presses.get(0).equals(sets.get(0));
+            if (pressed) {
+                int at = presses.get(0);
+                List<Instruction> body = instructions(controls);
+                Instruction set = setup.get(at);
+                pressed = arguments(body.get(at)).equals(List.of(listener)) && movesTo(get(body, at + 1), listener, Opcode.MOVE_RESULT_OBJECT)
+                        && callIs(get(body, at + 2), set.getOpcode(), String.valueOf(reference(set)), passed.toArray(new Integer[0]));
+                if (pressed) {
+                    fallthroughOnly(oldControls, at, "the long-press hook");
+                    remove(controls, at, at + 2);
+                    vouch(controls, at, List.of(listener));
+                }
+            }
+            if (!pressed) fail("the long-press hook doesn't hand the controls' listener through in " + oldControls);
+            capability(c.callee, bound && pressed);
+        }
+
+        static boolean readsContainer(Instruction i, String container) {
+            return i.getOpcode() == Opcode.IGET_OBJECT && field(i) != null && field(i).getType().equals(container);
+        }
+
         /** The post header's Follow button check, which the header's Follow action test calls, answering yes first when asked. */
         void followButton(Contract c) {
             String header = c.strings.get(1);
@@ -6071,6 +6151,7 @@ public class DexDiff {
                     case "blogNotificationReminder": blogNotificationReminder(c); break;
                     case "giftMessagePopup": giftMessagePopup(c); break;
                     case "postLine": postLine(c); break;
+                    case "videoLinkPress": videoLinkPress(c); break;
                     case "fontChoice": fontChoice(c); break;
                     case "followButton": followButton(c); break;
                     case "footerButton": footerButton(c); break;
