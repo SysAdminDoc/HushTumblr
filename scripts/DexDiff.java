@@ -303,7 +303,7 @@ public class DexDiff {
             Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 7), Map.entry("timelinePaging", 5),
             Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 6), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
             Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("videoLinkPress", 6), Map.entry("fontChoice", 6),
-            Map.entry("followButton", 3), Map.entry("footerButton", 3), Map.entry("postTags", 5),
+            Map.entry("followButton", 5), Map.entry("footerButton", 3), Map.entry("postTags", 5),
             Map.entry("noteCounts", 6), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
             Map.entry("matureContent", 12), Map.entry("rootPostMutes", 10), Map.entry("mutualMarkers", 13));
@@ -5310,7 +5310,10 @@ public class DexDiff {
             return i.getOpcode() == Opcode.IGET_OBJECT && field(i) != null && field(i).getType().equals(container);
         }
 
-        /** The post header's Follow button check, which the header's Follow action test calls, answering yes first when asked. */
+        /**
+         * The post header's Follow button check, which the header's Follow action test calls, answering
+         * yes first when asked, and the reblog trail's Follow button handed its entry through the trail hook.
+         */
         void followButton(Contract c) {
             String header = c.strings.get(1);
             ClassDef view = clean.classes.get(header);
@@ -5333,7 +5336,68 @@ public class DexDiff {
             }
             Tail yes = (body, from) -> body.get(from).getOpcode() == Opcode.CONST_4 && ((NarrowLiteralInstruction) body.get(from)).getNarrowLiteral() == 1
                     && body.get(from + 1).getOpcode() == Opcode.RETURN && firstRegister(body.get(from + 1)) == firstRegister(body.get(from));
-            capability(c.callee, old != null && guardFirst(old, c.strings.get(0), List.of(), 2, yes));
+            boolean found = old != null && guardFirst(old, c.strings.get(0), List.of(), 2, yes);
+            found &= trailFollow(c.strings.get(3), c.strings.get(4));
+            capability(c.callee, found);
+        }
+
+        /**
+         * The method that shows a reblog trail entry's Follow button: it takes [header], asks it for
+         * the view its constructors keep from header_cta, sets a view's visibility more than once and
+         * tests one object parameter, the entry. [hook] handed that entry first thing, its answer
+         * moved back over the entry and cast to the entry's type.
+         */
+        boolean trailFollow(String hook, String header) {
+            ClassDef view = clean.classes.get(header);
+            if (view == null) { fail("Tumblr's " + header + " is absent"); return false; }
+            Set<String> kept = new TreeSet<>();
+            for (Method m : view.getMethods()) if (m.getName().equals("<init>") && m.getImplementation() != null) {
+                List<Instruction> body = instructions(m);
+                int id = firstIndex(body, 0, i -> i.getOpcode() == Opcode.SGET && names(field(i), VIEW_IDS + "->header_cta"));
+                FieldReference put = field(get(body, firstIndex(body, id, i -> i.getOpcode() == Opcode.IPUT_OBJECT)));
+                if (put != null && put.getDefiningClass().equals(header)) kept.add(put.getName() + ":" + put.getType());
+            }
+            if (kept.size() != 1) { fail("the reblog header's Follow button field has " + kept.size() + " clean targets, expected 1"); return false; }
+            String button = kept.iterator().next();
+            List<Method> getters = new ArrayList<>();
+            for (Method m : view.getMethods()) if (!isStatic(m) && m.getParameterTypes().isEmpty() && m.getImplementation() != null) {
+                List<Instruction> body = instructions(m);
+                FieldReference read = field(get(body, 0));
+                if (body.size() == 2 && body.get(0).getOpcode() == Opcode.IGET_OBJECT && read != null
+                        && button.equals(read.getName() + ":" + read.getType()) && body.get(1).getOpcode() == Opcode.RETURN_OBJECT) getters.add(m);
+            }
+            Method getter = unique(getters, "the reblog header's Follow button getter");
+            if (getter == null) return false;
+            List<Method> showers = new ArrayList<>();
+            for (Method m : tumblrMethods()) {
+                if (m.getParameterTypes().stream().noneMatch(p -> p.toString().equals(header))) continue;
+                List<Instruction> body = instructions(m);
+                if (body.stream().anyMatch(i -> isCall(i, header, getter.getName(), "()" + getter.getReturnType()))
+                        && body.stream().filter(i -> isCall(i, "Landroid/view/View;", "setVisibility", "(I)V")).count() > 1) showers.add(m);
+            }
+            Method old = unique(showers, "the method that shows a reblog trail entry's Follow button");
+            if (old == null) return false;
+            List<Instruction> was = instructions(old);
+            List<Integer> entries = new ArrayList<>();
+            for (int k = 0; k < old.getParameterTypes().size(); k++) {
+                String type = old.getParameterTypes().get(k).toString();
+                int register = parameter(old, k);
+                if (type.startsWith("L") && !type.equals(header) && was.stream().anyMatch(i ->
+                        (i.getOpcode() == Opcode.IF_EQZ || i.getOpcode() == Opcode.IF_NEZ) && firstRegister(i) == register)) entries.add(k);
+            }
+            if (entries.size() != 1) { fail("the trail entry the Follow button is shown for has " + entries.size() + " clean targets, expected 1"); return false; }
+            int entry = parameter(old, entries.get(0));
+            String type = old.getParameterTypes().get(entries.get(0)).toString();
+            Method m = actual(old);
+            if (!hookAt(old, m, 0, hook, List.of(entry), entry, List.of())) return false;
+            int at = callSites(instructions(m), hook).get(0);
+            Instruction cast = get(instructions(m), at + 2);
+            if (!movesTo(cast, entry, Opcode.CHECK_CAST) || !type.equals(String.valueOf(reference(cast)))) {
+                fail(hook + "'s answer isn't cast back to " + type + " in " + m);
+                return false;
+            }
+            remove(m, at + 2, at + 3);
+            return true;
         }
 
         /** The footer function Compose names [control], found by its source note. */
