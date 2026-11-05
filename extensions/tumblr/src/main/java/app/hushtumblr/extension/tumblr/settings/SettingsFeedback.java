@@ -1,5 +1,6 @@
 /*
- * Copyright 2026 SysAdminDoc
+ * Copyright 2026 HushTumblr contributors
+ * https://github.com/SysAdminDoc/HushTumblr
  * SPDX-License-Identifier: GPL-3.0-only
  */
 package app.hushtumblr.extension.tumblr.settings;
