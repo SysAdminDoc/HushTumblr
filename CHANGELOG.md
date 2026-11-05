@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* The patches move from 46.8.1.100 to Tumblr 46.9.1.100, the newest release. Every patch applies to it, so that's the version to patch.
+* The patches move from 46.8.1.100 to Tumblr 47.0.0.108, the newest release. Every patch applies to it, so that's the version to patch.
 * The bundle is built on Morphe patcher 2.2.0 now. You'll need Morphe Manager 2.4.0 or newer, since older Manager builds can't load it.
 * Dark background color now reaches blog and tag pages. Those pages paint their owner's color, so a cream blog or a teal tag used to show through the gaps between black posts. A blog's title or link color that wouldn't show on the new background turns white or near black. The screens where you edit your own blog's colors still show the real ones.
 * New **Line between posts** switch on the Interface page, off by default. It draws a thin line in the gap between posts, so it's easier to see where one ends on a black background.

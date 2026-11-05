@@ -163,7 +163,7 @@ The walk also runs Android's verifier against the clean reference and the signed
 - `patches/src/main/kotlin/app/morphe/patches/tumblr/` holds the patches, and `shared/compat/AppCompatibilities.kt` names the supported build.
 - `extensions/tumblr/` and `extensions/shared/library/` are the Java code that runs inside Tumblr, settings and translations included.
 - `patches-list.json` is the generated catalog. `patches-bundle.json` is the Morphe source index and only changes at release time.
-- `docs/` maps the hooks in Tumblr 46.9.1.100, and `scripts/release/release.ps1` cuts a release.
+- `docs/` maps the hooks in Tumblr 47.0.0.108, and `scripts/release/release.ps1` cuts a release.
 
 ## Credits and license
 

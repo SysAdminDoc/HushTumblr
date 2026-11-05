@@ -90,7 +90,7 @@ public final class FeatureDexFixture {
     private static final String PAGINATION_FRAGMENT = "Lcom/tumblr/ui/fragment/PaginationFragment;";
     private static final String PAGE_LINKS = "Lcom/tumblr/timeline/model/link/TimelinePaginationLink;";
     private static final String PAGE_LINK = "Lcom/tumblr/timeline/model/link/Link;";
-    private static final String LOAD_TYPE = "Lxrl;";
+    private static final String LOAD_TYPE = "Luxl;";
     private static final String FEATURE = "Lfixture/Feature;";
     private static final String FEATURE_CHECK = "Lfixture/FeatureCheck;";
     private static final String FEATURE_SWITCHES = BASE + "flags/FeatureSwitches;";
@@ -116,9 +116,9 @@ public final class FeatureDexFixture {
     private static final String PHOTO_CONTAINER = "Lcom/tumblr/ui/widget/graywater/viewholder/PhotoContainer;";
     private static final String PHOTO_HOLDER = "Lcom/tumblr/ui/widget/graywater/viewholder/PhotoViewHolder;";
     private static final String PHOTO_ROW_ITEM = "Lcom/tumblr/ui/widget/graywater/viewholder/PhotosetRowItem;";
-    private static final String PHOTO_BINDER = "Lzka$a;";
-    private static final String GALLERY_BINDER = "Lx1f;";
-    private static final String GALLERY_ROW = "Lu1f;";
+    private static final String PHOTO_BINDER = "Lboa$a;";
+    private static final String GALLERY_BINDER = "Lb6f;";
+    private static final String GALLERY_ROW = "Ly5f;";
     private static final String ALT_TEXT = BASE + "ui/AltTextCaptions;";
     private static final String IMAGE_DESCRIPTION = BASE + "ui/HushImageDescription;";
     private static final String IMAGE_CONTAINER = BASE + "ui/HushImageContainer;";
@@ -468,15 +468,15 @@ public final class FeatureDexFixture {
      * kept isEmpty() answer.
      */
     static List<Method> pagingMethods(String variant) {
-        ImmutableMethodReference load = ref(TIMELINE_FRAGMENT, "v6", VOID, LOAD_TYPE, "Z");
-        ImmutableMethodReference emptyView = ref(TIMELINE_FRAGMENT, "N4", VOID), settle = ref(TIMELINE_FRAGMENT, "Q5", VOID, LOAD_TYPE);
+        ImmutableMethodReference load = ref(TIMELINE_FRAGMENT, "y6", VOID, LOAD_TYPE, "Z");
+        ImmutableMethodReference emptyView = ref(TIMELINE_FRAGMENT, "N4", VOID), settle = ref(TIMELINE_FRAGMENT, "R5", VOID, LOAD_TYPE);
         List<Instruction> body = new ArrayList<>(List.of(
                 invoke(Opcode.INVOKE_INTERFACE, ref(LIST, "isEmpty", "Z"), 5), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 7),
                 new ImmutableInstruction11n(Opcode.CONST_4, 1, 1), new ImmutableInstruction21t(Opcode.IF_EQZ, 7, 0),
                 loadType(5), new ImmutableInstruction22t(Opcode.IF_NE, 4, 5, 0),
-                invoke(Opcode.INVOKE_VIRTUAL, ref(TIMELINE_FRAGMENT, "P5", VOID), 3), end(),
+                invoke(Opcode.INVOKE_VIRTUAL, ref(TIMELINE_FRAGMENT, "Q5", VOID), 3), end(),
                 member(Opcode.IPUT_BOOLEAN, 1, 3, PAGINATION_FRAGMENT, "l", "Z"), invoke(Opcode.INVOKE_VIRTUAL, emptyView, 3), end(),
-                new ImmutableInstruction11n(Opcode.CONST_4, 7, 0), member(Opcode.IPUT_OBJECT, 7, 3, TIMELINE_FRAGMENT, "W", "Lretrofit2/Call;"),
+                new ImmutableInstruction11n(Opcode.CONST_4, 7, 0), member(Opcode.IPUT_OBJECT, 7, 3, TIMELINE_FRAGMENT, "X", "Lretrofit2/Call;"),
                 invoke(Opcode.INVOKE_VIRTUAL, settle, 3, 4),
                 member(Opcode.IPUT_OBJECT, 6, 3, PAGINATION_FRAGMENT, "k", "Landroid/os/Parcelable;"),
                 member(Opcode.IPUT_BOOLEAN, 7, 3, PAGINATION_FRAGMENT, "l", "Z"),
@@ -495,19 +495,19 @@ public final class FeatureDexFixture {
                     invoke(Opcode.INVOKE_VIRTUAL, emptyView, 3), end(),
                     member(Opcode.IPUT_OBJECT, 6, 3, PAGINATION_FRAGMENT, "k", "Landroid/os/Parcelable;"), loadType(1),
                     new ImmutableInstruction22t(Opcode.IF_EQ, 4, 1, 0), invoke(Opcode.INVOKE_VIRTUAL, settle, 3, 4),
-                    invoke(Opcode.INVOKE_VIRTUAL, variant.equals("wrong-load") ? ref(TIMELINE_FRAGMENT, "w6", VOID, LOAD_TYPE, "Z") : load, 3, 1, 7), end()));
+                    invoke(Opcode.INVOKE_VIRTUAL, variant.equals("wrong-load") ? ref(TIMELINE_FRAGMENT, "z6", VOID, LOAD_TYPE, "Z") : load, 3, 1, 7), end()));
             body.addAll(at, hook);
             // Tumblr's own two branches moved with their targets, and the block's four land inside it or right after.
             captionBranch(body, at + 1, at + 4); captionBranch(body, at + 6, at + 18); captionBranch(body, at + 8, at + 12);
             captionBranch(body, at + 14, at + 16); captionBranch(body, 21, 29); captionBranch(body, 23, 26);
         }
         return List.of(method(TIMELINE_FRAGMENT, "n4", VOID, false, 9, body, LOAD_TYPE, LIST, PAGE_LINKS, "Ljava/util/Map;", "Z"),
-                method(TIMELINE_FRAGMENT, "v6", VOID, false, 3, List.of(end()), LOAD_TYPE, "Z"),
+                method(TIMELINE_FRAGMENT, "y6", VOID, false, 3, List.of(end()), LOAD_TYPE, "Z"),
                 // The fragment's own next-page call, made when a scroll nears the end.
-                method(TIMELINE_FRAGMENT, "Z5", VOID, false, 3,
+                method(TIMELINE_FRAGMENT, "b6", VOID, false, 3,
                         List.of(loadType(0), new ImmutableInstruction11n(Opcode.CONST_4, 1, 1), invoke(Opcode.INVOKE_VIRTUAL, load, 2, 0, 1), end())),
-                method(TIMELINE_FRAGMENT, "N4", VOID, false, 1, List.of(end())), method(TIMELINE_FRAGMENT, "P5", VOID, false, 1, List.of(end())),
-                method(TIMELINE_FRAGMENT, "Q5", VOID, false, 2, List.of(end()), LOAD_TYPE));
+                method(TIMELINE_FRAGMENT, "N4", VOID, false, 1, List.of(end())), method(TIMELINE_FRAGMENT, "Q5", VOID, false, 1, List.of(end())),
+                method(TIMELINE_FRAGMENT, "R5", VOID, false, 2, List.of(end()), LOAD_TYPE));
     }
 
     /** The timeline fragment, with the hook that asks what to do with an emptied page unless clean. */
@@ -812,7 +812,7 @@ public final class FeatureDexFixture {
                         new ImmutableFieldReference(PHOTO_BINDER, variant.equals("wrong-photo-field") ? "d" : "c", IMAGE_BLOCK)),
                 invoke(Opcode.INVOKE_STATIC, ref(ALT_TEXT, "photo", VOID, OBJECT, OBJECT), variant.equals("wrong-photo-holder") ? 3 : 2, 0)));
         photo.add(new ImmutableInstruction11n(Opcode.CONST_4, 0, 0)); photo.add(end());
-        classes.put(PHOTO_BINDER, List.of(method(PHOTO_BINDER, "i", VOID, false, 5, photo, PHOTO_HOLDER, "Liwj;", STRING)));
+        classes.put(PHOTO_BINDER, List.of(method(PHOTO_BINDER, "i", VOID, false, 5, photo, PHOTO_HOLDER, "La2k;", STRING)));
         List<Instruction> gallery = new ArrayList<>(), full = new ArrayList<>();
         if (hooked && !variant.equals("missing-gallery")) gallery.add(invoke(Opcode.INVOKE_STATIC, ref(ALT_TEXT, "gallery", VOID, OBJECT, OBJECT),
                 2, variant.equals("wrong-gallery-image") ? 1 : 3));
@@ -820,7 +820,7 @@ public final class FeatureDexFixture {
                 variant.equals("wrong-clear-row") ? 5 : 6));
         gallery.add(end()); full.add(end());
         classes.put(GALLERY_BINDER, List.of(method(GALLERY_BINDER, "r", VOID, false, 4, gallery, CONTEXT, PHOTO_ROW_ITEM, IMAGE_BLOCK),
-                method(GALLERY_BINDER, "n", VOID, false, 9, full, CONTEXT, "Lcom/tumblr/analytics/ScreenType;", "Lmrn;", "Lgw7;", "Lhae;", GALLERY_ROW, "Liwj;", "Lxh2;")));
+                method(GALLERY_BINDER, "n", VOID, false, 9, full, CONTEXT, "Lcom/tumblr/analytics/ScreenType;", "Ljxn;", "Lny7;", "Ljee;", GALLERY_ROW, "La2k;", "Ltj2;")));
     }
 
     private static void smallCase(File root, String name, Map<String, List<Method>> classes, String family, String reason) throws Exception {
@@ -1024,7 +1024,7 @@ public final class FeatureDexFixture {
 
     private static void postJsonPresence(Map<String, List<Method>> classes, boolean patched, String fault) {
         String adapter = POST.substring(0, POST.length() - 1) + "JsonAdapter;";
-        String[] parameters = new String[155]; Arrays.fill(parameters, "I"); parameters[154] = "Lh27;";
+        String[] parameters = new String[155]; Arrays.fill(parameters, "I"); parameters[154] = "Lh47;";
         List<Method> model = new ArrayList<>(classes.get(POST));
         model.removeIf(m -> m.getName().equals("<init>") && m.getParameterTypes().size() == 155);
         model.add(new ImmutableMethod(POST, "<init>", Arrays.stream(parameters).map(p -> new ImmutableMethodParameter(p, Set.of(), null)).toList(),
@@ -1061,7 +1061,7 @@ public final class FeatureDexFixture {
         reader.set(2070, new ImmutableInstruction22x(Opcode.MOVE_FROM16, 158, 7));
         reader.set(2166, new ImmutableInstruction3rc(Opcode.INVOKE_DIRECT_RANGE, 4, 156, ref(POST, "<init>", VOID, parameters)));
         reader.set(2167, new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 4));
-        reader.set(2180, invoke(Opcode.INVOKE_STATIC, ref("Lf7b;", "a", VOID, STRING), 0));
+        reader.set(2180, invoke(Opcode.INVOKE_STATIC, ref("Lbbb;", "a", VOID, STRING), 0));
         reader.set(2181, new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 157));
         int error = 2168;
         if (patched && !fault.equals("missing-presence-hook")) {
@@ -1074,7 +1074,7 @@ public final class FeatureDexFixture {
         reader.set(2069, new ImmutableInstruction21t(Opcode.IF_NEZ, 0, codeOffset(reader, 2069, error)));
         if (patched && fault.equals("missing-error-return")) reader.set(error + 13, new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0));
         List<Method> adapterMethods = new ArrayList<>(classes.get(adapter)); adapterMethods.removeIf(m -> m.getName().equals("fromJson"));
-        adapterMethods.add(method(adapter, "fromJson", OBJECT, false, 178, reader, "Le9b;")); classes.put(adapter, adapterMethods);
+        adapterMethods.add(method(adapter, "fromJson", OBJECT, false, 178, reader, "Ladb;")); classes.put(adapter, adapterMethods);
     }
 
     private static String postKey(String name) {
