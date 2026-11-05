@@ -112,6 +112,15 @@ final class SettingsNavigation extends BaseAdapter {
     private final AbstractPreferenceFragment.RestartFeedbackPresenter restartFeedback;
     /** The page the last rebuild drew, so a row coming or going on that same page keeps the list's place. */
     private String rebuiltPage;
+    /**
+     * The row {@link #keepPlace} holds still, and its top, until the list next lays out. One switch
+     * flip rebuilds the page dozens of times before that layout, and each rebuild's
+     * notifyDataSetChanged puts the list back on the position it last laid out: after the restart
+     * row came or went above, that's the row next to this one, and the page jumped a row.
+     */
+    private Preference held;
+    private int heldTop;
+    private final View.OnLayoutChangeListener laidOut = (v, l, t, r, b, oldL, oldT, oldR, oldB) -> held = null;
     private final Preference empty;
     /** The line a category or search page starts with while a pause applies to it. */
     private final Preference pageStatus;
@@ -210,6 +219,7 @@ final class SettingsNavigation extends BaseAdapter {
             if (selected() == null) route = "";
         }
         source.registerDataSetObserver(changes);
+        list.addOnLayoutChangeListener(laidOut);
         list.setAdapter(this);
         // A long press on Quick setups takes it off the home page, and Pause, backup and diagnostics brings it back.
         list.setOnItemLongClickListener((parent, view, position, id) -> {
@@ -397,6 +407,7 @@ final class SettingsNavigation extends BaseAdapter {
 
     void close() {
         source.unregisterDataSetObserver(changes);
+        list.removeOnLayoutChangeListener(laidOut);
         AbstractPreferenceFragment.clearRestartFeedbackPresenter(restartFeedback);
     }
 
@@ -507,18 +518,30 @@ final class SettingsNavigation extends BaseAdapter {
      * The restart row comes and goes above the rows in view when a switch is flipped. On the same
      * page, with nothing else above moving, the list moves with it, so the row that was tapped
      * stays where it was. A row added at the top of what's in view is left to push the list down,
-     * so it's seen.
+     * so it's seen. The row held stays held through every rebuild until the list lays out.
      */
     private void keepPlace(int restartWas, boolean pageStatusWas) {
         String pageWas = rebuiltPage;
         rebuiltPage = route + '\n' + query;
+        if (!rebuiltPage.equals(pageWas) || pageStatusWas != visible.contains(pageStatus) || list.getChildCount() == 0) {
+            held = null;
+            return;
+        }
         int restartNow = visible.indexOf(restart);
-        if (!rebuiltPage.equals(pageWas) || (restartWas < 0) == (restartNow < 0)
-                || pageStatusWas != visible.contains(pageStatus) || list.getChildCount() == 0) return;
-        int first = list.getFirstVisiblePosition();
-        int top = list.getChildAt(0).getTop();
-        if (restartNow >= 0 && restartNow < first) list.setSelectionFromTop(first + 1, top);
-        else if (restartWas >= 0 && restartWas < first) list.setSelectionFromTop(first - 1, top);
+        // While a row is held the list's children still show the rows before the first change,
+        // so their positions say nothing about this one.
+        if (held == null && (restartWas < 0) != (restartNow < 0)) {
+            int first = list.getFirstVisiblePosition();
+            int at = restartNow >= 0 && restartNow < first ? first + 1
+                    : restartWas >= 0 && restartWas < first ? first - 1 : -1;
+            if (at < 0 || at >= visible.size()) return;
+            held = visible.get(at);
+            heldTop = list.getChildAt(0).getTop();
+        }
+        if (held == null) return;
+        int at = visible.indexOf(held);
+        if (at < 0) held = null;
+        else list.setSelectionFromTop(at, heldTop - list.getPaddingTop());
     }
 
     private int headings() {

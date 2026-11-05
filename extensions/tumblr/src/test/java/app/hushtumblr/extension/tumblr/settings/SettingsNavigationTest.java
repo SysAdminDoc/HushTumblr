@@ -773,6 +773,81 @@ public class SettingsNavigationTest {
         assertFalse(contains(SettingsNavigation.RESTART));
     }
 
+    /**
+     * A finger tap on a switch near the end of a page leaves the tapped row where it was, whether the
+     * restart row comes, stays with a new count, or goes. On a phone the page jumped by up to two
+     * rows after a tap there, so the next tap at the same spot flipped a different switch.
+     */
+    @Test @Config(sdk = 33) @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    public void aFingerTapNearThePageEndLeavesTheTappedRowWhereItWas() {
+        touchMode(true);
+        try {
+            // The window's own height: an idle main looper lays the window out at that size anyway.
+            page.navigation.navigate("Interface");
+            layout(dialog.getView());
+            for (int i = 0; i < 20 && list().getLastVisiblePosition() < list().getCount() - 1; i++) {
+                list().scrollListBy(2000);
+                layout(dialog.getView());
+            }
+            BooleanSetting dark = Settings.DARK_BACKGROUND;
+            BooleanSetting wallpaper = Settings.DARK_BACKGROUND_WALLPAPER;
+            assertEquals("the page doesn't end on Match my wallpaper: " + titles(),
+                    list().getCount() - 1, position(wallpaper.key));
+            assertEquals("the list isn't at its end", list().getCount() - 1, list().getLastVisiblePosition());
+            for (BooleanSetting setting : new BooleanSetting[] {dark, wallpaper, wallpaper, wallpaper, dark, dark, wallpaper, dark}) {
+                boolean was = setting.savedValue();
+                int top = rowTop(setting.key);
+                String before = children();
+                fingerTap(setting.key);
+                layout(dialog.getView());
+                assertEquals(setting.key + " didn't flip", !was, setting.savedValue());
+                assertEquals(setting.key + " moved after its tap\nbefore " + before + "\nafter  " + children(),
+                        top, rowTop(setting.key));
+            }
+            assertFalse("both switches are back off, so no restart is owed", contains(SettingsNavigation.RESTART));
+        } finally {
+            Settings.DARK_BACKGROUND.resetToDefault();
+            Settings.DARK_BACKGROUND_WALLPAPER.resetToDefault();
+            app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.clear();
+        }
+    }
+
+    /** The first position in view, then each row's key and top, for a failure message. */
+    private String children() {
+        StringBuilder out = new StringBuilder("first=" + list().getFirstVisiblePosition());
+        for (int i = 0; i < list().getChildCount(); i++) {
+            Object item = list().getAdapter().getItem(list().getFirstVisiblePosition() + i);
+            String key = item instanceof android.preference.Preference ? ((android.preference.Preference) item).getKey() : String.valueOf(item);
+            out.append(" [").append(key).append('@').append(list().getChildAt(i).getTop()).append(']');
+        }
+        return out.toString();
+    }
+
+    /** Where [key]'s row starts in the list, which fails when the row isn't on screen. */
+    private int rowTop(String key) {
+        int position = position(key);
+        View row = list().getChildAt(position - list().getFirstVisiblePosition());
+        assertNotNull(key + " is off screen", row);
+        return row.getTop();
+    }
+
+    /** A finger's down and up over the part of [key]'s row that shows, left of its switch, as on a phone. */
+    private void fingerTap(String key) {
+        int position = position(key);
+        View row = list().getChildAt(position - list().getFirstVisiblePosition());
+        assertNotNull(key + " is off screen", row);
+        float x = row.getWidth() / 3f;
+        float y = (Math.max(row.getTop(), 0) + Math.min(row.getBottom(), list().getHeight())) / 2f;
+        long now = android.os.SystemClock.uptimeMillis();
+        android.view.MotionEvent down = android.view.MotionEvent.obtain(now, now, android.view.MotionEvent.ACTION_DOWN, x, y, 0);
+        android.view.MotionEvent up = android.view.MotionEvent.obtain(now, now + 40, android.view.MotionEvent.ACTION_UP, x, y, 0);
+        assertTrue(list().dispatchTouchEvent(down));
+        assertTrue(list().dispatchTouchEvent(up));
+        down.recycle();
+        up.recycle();
+        ShadowLooper.idleMainLooper(500, java.util.concurrent.TimeUnit.MILLISECONDS);
+    }
+
     /** The paused line on real pages, dark and light, for a look before the phone does. */
     @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
     public void renderPausedPages() throws Exception {
