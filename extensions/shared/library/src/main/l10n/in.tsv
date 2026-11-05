@@ -13,7 +13,9 @@ Android 11 and older don't say which links open here. Tap to open this app's set
 Back	Kembali
 Cancel	Batal
 Clear diagnostic data	Hapus data diagnostik
+Copy link	Salin tautan
 Copy quick report	Salin laporan singkat
+Couldn't copy the link. Try again.	Tautan tidak dapat disalin. Coba lagi.
 Couldn't import the settings, and couldn't put back the ones you had. Check the settings on this screen.	Pengaturan tidak dapat diimpor, dan pengaturan sebelumnya tidak dapat dikembalikan. Periksa pengaturan di layar ini.
 Couldn't import the settings. Nothing was changed.	Pengaturan tidak dapat diimpor. Tidak ada yang diubah.
 Couldn't open that file. Nothing was changed.	File itu tidak dapat dibuka. Tidak ada yang diubah.
@@ -31,6 +33,7 @@ Clears the saved log and patch check results that a report would include.	Mengha
 Every switch but Debug logging acts as if it were off, and what was set when you patched stays in. Your settings stay as they are.	Semua sakelar kecuali Pencatatan debug dianggap nonaktif, dan yang diatur saat Anda menambal tetap aktif. Pengaturan Anda tetap seperti semula.
 Export diagnostic report	Ekspor laporan diagnostik
 Export settings	Ekspor pengaturan
+Link copied	Tautan disalin
 Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.	Mematikan semua sakelar HushTumblr kecuali Pencatatan debug saat Tumblr dibuka berikutnya. Yang Anda pilih saat menambal tetap berlaku, dan pilihan Anda tersimpan.
 Save your settings to a file, including word lists and tab order. These choices apply to all accounts in this Tumblr app. Pause, Debug logging and release checks aren't included.	Simpan pengaturan Anda ke file, termasuk daftar kata dan urutan tab. Pilihan ini berlaku untuk semua akun di aplikasi Tumblr ini. Jeda, Pencatatan debug, dan pemeriksaan rilis tidak disertakan.
 Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.	Pengaturan diekspor. Aplikasi yang menyimpan file itu tidak mengizinkan HushTumblr membacanya kembali, jadi file itu tidak diperiksa.
@@ -251,6 +254,7 @@ Draws a thin line in the gap between posts, so it's easier to see where one ends
 App font	Font aplikasi
 Replaces Tumblr's own font with your phone's font, or a font file you choose below. Fonts a post's author picked stay as they are.	Mengganti font bawaan Tumblr dengan font ponselmu atau file font yang kamu pilih di bawah. Font yang dipilih penulis postingan tetap seperti aslinya.
 Choose a font file	Pilih file font
+Choose another file	Pilih file lain
 Uses your phone's font. Tap to pick a .ttf or .otf file.	Memakai font ponselmu. Ketuk untuk memilih file .ttf atau .otf.
 Using %1$s. Tap to pick another.	Memakai %1$s. Ketuk untuk memilih yang lain.
 Use the phone's font	Pakai font ponsel

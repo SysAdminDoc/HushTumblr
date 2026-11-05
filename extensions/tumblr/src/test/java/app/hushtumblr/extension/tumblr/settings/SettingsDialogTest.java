@@ -63,6 +63,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The settings dialog as Tumblr hosts it: a dialog fragment over an activity that isn't ours,
@@ -376,6 +377,195 @@ public class SettingsDialogTest {
         dialog.dismiss();
     }
 
+    /**
+     * The list reads the saved order, so a Tab order tap while a save is in flight waits for it and
+     * then opens the list. A save that never lands says so under the row instead of dropping the tap.
+     */
+    @Test
+    public void aTabOrderTapDuringASaveOpensTheListOnceTheSaveLands() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        TextSettings.HIDDEN_WORDS.save("earlier words");
+        TextSettings.TAB_ORDER.save("");
+        HushTumblrPreferenceFragment page = pageOf(show(controller.get()));
+        Preference tabs = page.findPreference(HushTumblrPreferenceFragment.TAB_ORDER_ROW);
+        CharSequence summary = tabs.getSummary();
+        List<Runnable> queued = new ArrayList<>();
+        try {
+            for (boolean lands : new boolean[]{true, false}) {
+                // Each row's own page, as a reader taps it.
+                SettingsL10nTest.openPageOf(page, HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW);
+                click(page.findPreference(HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW));
+                AlertDialog editor = ShadowAlertDialog.getLatestAlertDialog();
+                ((EditText) editor.findViewById(android.R.id.edit)).setText(lands ? "first words" : "second words");
+                HushTumblrPreferenceFragment.editWorkerForTests = queued::add;
+                editor.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+                assertEquals(1, queued.size());
+                ShadowAlertDialog.reset();
+
+                SettingsL10nTest.openPageOf(page, HushTumblrPreferenceFragment.TAB_ORDER_ROW);
+                click(tabs);
+                assertNull("the list opened over a save it reads", ShadowAlertDialog.getLatestAlertDialog());
+                assertEquals("Saving changes", String.valueOf(tabs.getSummary()));
+                if (lands) {
+                    HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
+                    queued.remove(0).run();
+                    ShadowLooper.idleMainLooper(HushTumblrPreferenceFragment.TAB_ORDER_WAIT_STEP, TimeUnit.MILLISECONDS);
+                    AlertDialog list = ShadowAlertDialog.getLatestAlertDialog();
+                    assertNotNull("the tap was dropped", list);
+                    assertTrue(list.isShowing());
+                    assertEquals(summary, tabs.getSummary());
+                    list.dismiss();
+                    ShadowLooper.idleMainLooper();
+                } else {
+                    ShadowLooper.idleMainLooper(HushTumblrPreferenceFragment.TAB_ORDER_WAIT_LIMIT
+                            + HushTumblrPreferenceFragment.TAB_ORDER_WAIT_STEP, TimeUnit.MILLISECONDS);
+                    assertNull(ShadowAlertDialog.getLatestAlertDialog());
+                    assertEquals(summary, tabs.getSummary());
+                    assertEquals("Couldn't start that. Try again in a moment.", SettingsFeedbackTest.message(tabs));
+                    HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
+                    queued.remove(0).run();
+                    ShadowLooper.idleMainLooper();
+                    click(tabs);
+                    AlertDialog list = ShadowAlertDialog.getLatestAlertDialog();
+                    assertNotNull(list);
+                    assertNull("the old failure stayed after the list opened", SettingsFeedbackTest.message(tabs));
+                    list.dismiss();
+                    ShadowLooper.idleMainLooper();
+                }
+            }
+        } finally {
+            HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
+            for (Runnable write : queued) write.run();
+        }
+    }
+
+    @Test @Config(sdk = {26, 36})
+    public void aFailedTabMoveCanBeRetriedAfterReopeningWithoutAnotherMove() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        TextSettings.TAB_ORDER.save("");
+        HushTumblrPreferenceFragment page = pageOf(show(controller.get()));
+        Preference row = page.findPreference(HushTumblrPreferenceFragment.TAB_ORDER_ROW);
+        String attempted = app.hushtumblr.extension.tumblr.ui.BottomBarTabs.join(
+                app.hushtumblr.extension.tumblr.ui.BottomBarTabs.movedUp(
+                        app.hushtumblr.extension.tumblr.ui.BottomBarTabs.choices(""), 2));
+        click(row);
+        AlertDialog dialog = ShadowAlertDialog.getLatestAlertDialog();
+        try (FailingStore ignored = FailingStore.install(FailingStore.Fault.COMMIT_FALSE)) {
+            dialog.getListView().performItemClick(null, 2, 2);
+        }
+        ShadowLooper.idleMainLooper();
+        assertEquals("", TextSettings.TAB_ORDER.persistedValue());
+        assertEquals(View.VISIBLE, dialog.getButton(AlertDialog.BUTTON_NEGATIVE).getVisibility());
+        TextView failure = dialog.getWindow().getDecorView().findViewWithTag(SettingsFeedback.MESSAGE_TAG);
+        assertTrue(failure.getText().toString().contains("Your earlier order is unchanged"));
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+        click(row);
+        AlertDialog reopened = ShadowAlertDialog.getLatestAlertDialog();
+        assertEquals(View.VISIBLE, reopened.getButton(AlertDialog.BUTTON_NEGATIVE).getVisibility());
+        reopened.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();
+        ShadowLooper.idleMainLooper();
+        assertEquals(attempted, TextSettings.TAB_ORDER.persistedValue());
+        assertEquals(View.GONE, reopened.getButton(AlertDialog.BUTTON_NEGATIVE).getVisibility());
+        reopened.dismiss();
+    }
+
+    /** A failed move whose order was replaced since, as an import does, offers no Retry that would put it back. */
+    @Test
+    public void aFailedTabMoveIsDroppedOnceAnotherOrderIsSaved() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        TextSettings.TAB_ORDER.save("");
+        HushTumblrPreferenceFragment page = pageOf(show(controller.get()));
+        Preference row = page.findPreference(HushTumblrPreferenceFragment.TAB_ORDER_ROW);
+        click(row);
+        AlertDialog dialog = ShadowAlertDialog.getLatestAlertDialog();
+        try (FailingStore ignored = FailingStore.install(FailingStore.Fault.COMMIT_FALSE)) {
+            dialog.getListView().performItemClick(null, 2, 2);
+        }
+        ShadowLooper.idleMainLooper();
+        assertEquals(View.VISIBLE, dialog.getButton(AlertDialog.BUTTON_NEGATIVE).getVisibility());
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+
+        String imported = app.hushtumblr.extension.tumblr.ui.BottomBarTabs.join(
+                app.hushtumblr.extension.tumblr.ui.BottomBarTabs.movedUp(
+                        app.hushtumblr.extension.tumblr.ui.BottomBarTabs.choices(""), 1));
+        TextSettings.TAB_ORDER.save(imported);
+        ShadowLooper.idleMainLooper();
+        click(row);
+        AlertDialog reopened = ShadowAlertDialog.getLatestAlertDialog();
+        assertNotSame(dialog, reopened);
+        assertTrue("Retry would put the failed move back over the newer order",
+                reopened.getButton(AlertDialog.BUTTON_NEGATIVE).getVisibility() != View.VISIBLE);
+        assertEquals(imported, TextSettings.TAB_ORDER.persistedValue());
+        reopened.dismiss();
+    }
+
+    /** TalkBack hears where a moved tab went, and nothing about a move when Tumblr's order is put back. */
+    @Test @Config(sdk = {26, 36})
+    public void onlyAMoveSaysWhereTheTabWent() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        TextSettings.TAB_ORDER.save("");
+        Activity host = controller.get();
+        org.robolectric.Shadows.shadowOf((android.view.accessibility.AccessibilityManager)
+                host.getSystemService(android.content.Context.ACCESSIBILITY_SERVICE)).setEnabled(true);
+        HushTumblrPreferenceFragment page = pageOf(show(host));
+        click(page.findPreference(HushTumblrPreferenceFragment.TAB_ORDER_ROW));
+        AlertDialog dialog = ShadowAlertDialog.getLatestAlertDialog();
+        dialog.getListView().performItemClick(null, 2, 2);
+        ShadowLooper.idleMainLooper(100, TimeUnit.MILLISECONDS);
+        assertEquals(1, movedAnnouncements(host).size());
+
+        dialog.getButton(AlertDialog.BUTTON_NEUTRAL).performClick();
+        ShadowLooper.idleMainLooper(100, TimeUnit.MILLISECONDS);
+        assertEquals("", TextSettings.TAB_ORDER.persistedValue());
+        assertEquals("putting Tumblr's order back said a tab moved", 1, movedAnnouncements(host).size());
+        dialog.dismiss();
+    }
+
+    private static List<String> movedAnnouncements(Activity host) {
+        List<String> said = new ArrayList<>();
+        for (android.view.accessibility.AccessibilityEvent event : org.robolectric.Shadows.shadowOf(
+                (android.view.accessibility.AccessibilityManager) host.getSystemService(
+                        android.content.Context.ACCESSIBILITY_SERVICE)).getSentAccessibilityEvents()) {
+            if (event.getEventType() != android.view.accessibility.AccessibilityEvent.TYPE_ANNOUNCEMENT) continue;
+            String text = String.valueOf(event.getText());
+            if (text.contains("moved to position")) said.add(text);
+        }
+        return said;
+    }
+
+    /**
+     * Moving the first tab up says so under the list, where a long translation at large text isn't
+     * cut off as a toast's would be, and a failed save keeps its next step there too.
+     */
+    @Test @Config(sdk = {26, 36})
+    public void theFirstTabSaysSoUnderTheListAndKeepsAFailedSavesNextStep() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        TextSettings.TAB_ORDER.save("");
+        HushTumblrPreferenceFragment page = pageOf(show(controller.get()));
+        click(page.findPreference(HushTumblrPreferenceFragment.TAB_ORDER_ROW));
+        AlertDialog dialog = ShadowAlertDialog.getLatestAlertDialog();
+        dialog.getListView().performItemClick(null, 0, 0);
+        ShadowLooper.idleMainLooper();
+        assertEquals("", TextSettings.TAB_ORDER.persistedValue());
+        TextView said = dialog.getWindow().getDecorView().findViewWithTag(SettingsFeedback.MESSAGE_TAG);
+        assertTrue(said.getText().toString(), said.getText().toString().endsWith("is already first."));
+        String toast = ShadowToast.getTextOfLatestToast();
+        assertTrue("still said in a toast", toast == null || !toast.contains("already first"));
+
+        try (FailingStore ignored = FailingStore.install(FailingStore.Fault.COMMIT_FALSE)) {
+            dialog.getListView().performItemClick(null, 2, 2);
+        }
+        ShadowLooper.idleMainLooper();
+        dialog.getListView().performItemClick(null, 0, 0);
+        ShadowLooper.idleMainLooper();
+        said = dialog.getWindow().getDecorView().findViewWithTag(SettingsFeedback.MESSAGE_TAG);
+        String both = said.getText().toString();
+        assertTrue(both, both.contains("is already first."));
+        assertTrue("the failed save's next step was dropped: " + both, both.contains("Your earlier order is unchanged"));
+        assertEquals(View.VISIBLE, dialog.getButton(AlertDialog.BUTTON_NEGATIVE).getVisibility());
+        dialog.dismiss();
+    }
+
     @Test
     public void overBudgetWordsStayEditableWithoutReplacingSavedWords() {
         PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
@@ -418,6 +608,23 @@ public class SettingsDialogTest {
         assertTrue("the rebuilt page is empty", rebuilt.getPreferenceScreen().getPreferenceCount() > 0);
         assertEquals(1, pages(dialog).size());
         assertFalse(controller.get().isFinishing());
+    }
+
+    /** A result waiting for its row outlasts the recovery page, which has no rows, and shows once Retry builds them. */
+    @Test
+    public void aWaitingResultOutlastsTheRecoveryPage() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        String failed = "Couldn't save that change. Try again.";
+        HushTumblrPreferenceFragment.unseenResult(Settings.HIDE_ADVERTISING_ID.key, failed);
+        HushTumblrPreferenceFragment.failNextInitialization = new IllegalStateException("injected");
+        SettingsDialog dialog = show(controller.get());
+        click(pageOf(dialog).findPreference(RETRY));
+        dialog.getChildFragmentManager().executePendingTransactions();
+        ShadowLooper.idleMainLooper();
+        HushTumblrPreferenceFragment rebuilt = pageOf(dialog);
+        SettingsL10nTest.openPageOf(rebuilt, Settings.HIDE_ADVERTISING_ID.key);
+        ShadowLooper.idleMainLooper();
+        assertEquals(failed, SettingsFeedbackTest.message(rebuilt.findPreference(Settings.HIDE_ADVERTISING_ID.key)));
     }
 
     @Test

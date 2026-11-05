@@ -33,8 +33,10 @@ import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.preference.Preference;
 import android.preference.PreferenceCategory;
+import android.preference.PreferenceGroup;
 import android.preference.PreferenceScreen;
 import android.preference.SwitchPreference;
 import android.preference.TwoStatePreference;
@@ -71,9 +73,11 @@ import androidx.annotation.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -155,6 +159,13 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
     /** Where a settings file waiting on the person's answer is kept across the page being rebuilt. */
     static final String PENDING_IMPORT_STATE = "hushtumblr_pending_import";
     private static final String WORDS_DRAFT_STATE = "hushtumblr_words_draft";
+    private static final String TAB_DRAFT_STATE = "hushtumblr_tab_draft";
+    @Nullable private String tabOrderDraft;
+    /** The saved order when {@link #tabOrderDraft} was tried, to tell a newer save apart. */
+    @Nullable private String tabOrderDraftBase;
+    @Nullable private String tabOrderFocused;
+    @Nullable private AlertDialog tabOrderDialog;
+    private boolean restoreTabOrderEditor;
     @Nullable private AlertDialog wordsDialog;
     @Nullable private EditText wordsField;
     @Nullable private String wordsDraft;
@@ -249,6 +260,13 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
     @Nullable
     Bundle pendingImport;
 
+    /**
+     * True when {@link #pendingImport} was already answered with Import and kept because the import
+     * failed or didn't start. It waits for an Import tap then, rather than coming back on its own
+     * over the row that says what happened.
+     */
+    boolean importRetained;
+
     /** The preview of {@link #pendingImport} while it's on screen. */
     @Nullable
     AlertDialog importPreview;
@@ -274,17 +292,152 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         if (getParentFragment() instanceof SettingsDialog && !sections().isEmpty()) {
             navigation = new SettingsNavigation(this, (SettingsDialog) getParentFragment(), savedInstanceState);
         }
+        Bundle results = savedInstanceState == null ? null : savedInstanceState.getBundle(FEEDBACK_STATE);
+        if (results != null && getPreferenceScreen() != null) {
+            forEachFeedback(getPreferenceScreen(), (key, feedback) -> feedback.restore(results, key));
+        }
+        livePage = new WeakReference<>(this);
+        showUnseenResults();
+    }
+
+    /**
+     * Results that came back after their screen closed, by row key. A toast says each one then,
+     * and only two lines of it on Android 12 and later, so the row shows it in full the next time
+     * settings opens. Touched on the main thread only.
+     */
+    private static final Map<String, String> UNSEEN_RESULTS = new HashMap<>();
+
+    /** The page built last, which a result whose own page was replaced (a rotation, say) lands on. */
+    private static WeakReference<HushTumblrPreferenceFragment> livePage = new WeakReference<>(null);
+
+    /**
+     * Shows [message] under the row with [key] on the page on screen now. With none, says it now
+     * and keeps it for that row on the next settings screen.
+     */
+    static void unseenResult(String key, String message) {
+        Utils.runOnMainThreadNowOrLater(() -> {
+            if (shownOnScreen(key, message)) return;
+            Utils.showToastLong(message);
+            UNSEEN_RESULTS.put(key, message);
+        });
+    }
+
+    /**
+     * True when the page in view has a row with [key] and now shows [message] under it. A row on
+     * another page of settings, built but not drawn, doesn't count.
+     */
+    private static boolean shownOnScreen(String key, String message) {
+        HushTumblrPreferenceFragment page = livePage.get();
+        SettingsFeedback row = page != null && page.onScreen() && page.inView(key) ? page.feedbackFor(key) : null;
+        if (row == null) return false;
+        row.show(message);
+        return true;
+    }
+
+    static {
+        // The diagnostic report's and clear row's results go under those rows too. One the
+        // reader needs later (a failure, or where a file was saved) waits for its row when that
+        // isn't in view, and anything else is a toast as before.
+        LogBufferManager.resultPresenter = (key, message, keep) -> {
+            if (shownOnScreen(key, message)) return true;
+            if (!keep) return false;
+            unseenResult(key, message);
+            return true;
+        };
+    }
+
+    @Override
+    protected void preferenceChangeFailed(@Nullable Preference pref, CharSequence message) {
+        if (pref != null && pref.getKey() != null) unseenResult(pref.getKey(), String.valueOf(message));
+        else super.preferenceChangeFailed(pref, message);
+    }
+
+    private boolean onScreen() {
+        if (!isAdded() || isRemoving() || getPreferenceScreen() == null) return false;
+        if (!(getParentFragment() instanceof SettingsDialog)) return isResumed();
+        Dialog dialog = ((SettingsDialog) getParentFragment()).getDialog();
+        return dialog != null && dialog.isShowing();
+    }
+
+    @Nullable
+    private SettingsFeedback feedbackFor(String key) {
+        SettingsFeedback[] found = {null};
+        forEachFeedback(getPreferenceScreen(), (rowKey, feedback) -> {
+            if (rowKey.equals(key)) found[0] = feedback;
+        });
+        if (found[0] == null && navigation != null) {
+            Row row = navigation.ownRow(key);
+            if (row != null) found[0] = row.feedback;
+        }
+        return found[0];
+    }
+
+    /** The row with [key] is on the page in view, or this screen has only one page. */
+    boolean inView(String key) {
+        return navigation == null || navigation.shows(key);
+    }
+
+    /** The row with [key] starts something new, which says its own result, so the waiting one goes. */
+    static void forgetUnseen(@Nullable String key) {
+        if (key != null) UNSEEN_RESULTS.remove(key);
+    }
+
+    /** Puts each waiting result under its row once that row's page is the one in view. */
+    void showUnseenResults() {
+        if (UNSEEN_RESULTS.isEmpty() || getPreferenceScreen() == null || livePage.get() != this) return;
+        // Settings that couldn't be built show a page with none of these rows. The results wait
+        // for the Retry that builds them.
+        if (navigation == null && getParentFragment() instanceof SettingsDialog) return;
+        for (String key : new ArrayList<>(UNSEEN_RESULTS.keySet())) {
+            SettingsFeedback feedback = feedbackFor(key);
+            if (feedback == null) {
+                // No row of these settings can show it (its patch isn't in this build), and the
+                // toast already said it.
+                UNSEEN_RESULTS.remove(key);
+                continue;
+            }
+            if (!inView(key)) continue;
+            // Taken out before it shows: showing rebuilds the page, which drains this map again
+            // from inside this loop, and a key read twice would clear the result it just showed.
+            String waiting = UNSEEN_RESULTS.remove(key);
+            if (waiting != null) feedback.show(waiting);
+        }
+    }
+
+    /** Each row's result, saved by key, so a screen Android rebuilds still says what to do next. */
+    static final String FEEDBACK_STATE = "hushtumblr_feedback";
+    /** Keys for rows that store no setting but can still hold a result. */
+    static final String SOURCE_ROW = "action_source_code";
+    static final String STATUS_CARD = "hushtumblr_status";
+
+    static void forEachFeedback(PreferenceGroup group, java.util.function.BiConsumer<String, SettingsFeedback> each) {
+        for (int i = 0; i < group.getPreferenceCount(); i++) {
+            Preference row = group.getPreference(i);
+            SettingsFeedback feedback = row instanceof Row ? ((Row) row).feedback
+                    : row instanceof Toggle ? ((Toggle) row).feedback
+                    : row instanceof SettingsBackupPreference ? ((SettingsBackupPreference) row).feedback
+                    : row instanceof SetupGuidancePreference ? ((SetupGuidancePreference) row).feedback
+                    : row instanceof ExportRow ? ((ExportRow) row).feedback
+                    : row instanceof ClearRow ? ((ClearRow) row).feedback : null;
+            if (feedback != null && row.getKey() != null) each.accept(row.getKey(), feedback);
+            if (row instanceof PreferenceGroup) forEachFeedback((PreferenceGroup) row, each);
+        }
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         if (savedInstanceState != null) {
             pendingImport = savedInstanceState.getBundle(PENDING_IMPORT_STATE);
+            importRetained = savedInstanceState.getBoolean(PENDING_IMPORT_STATE + "_retained");
             wordsDraft = savedInstanceState.getString(WORDS_DRAFT_STATE);
             editingAllowedWords = savedInstanceState.getBoolean(WORDS_DRAFT_STATE + "_allowed");
             wordsSelectionStart = savedInstanceState.getInt(WORDS_DRAFT_STATE + "_start");
             wordsSelectionEnd = savedInstanceState.getInt(WORDS_DRAFT_STATE + "_end");
             restoreWordsEditor = wordsDraft != null;
+            tabOrderDraft = savedInstanceState.getString(TAB_DRAFT_STATE);
+            tabOrderDraftBase = savedInstanceState.getString(TAB_DRAFT_STATE + "_base");
+            tabOrderFocused = savedInstanceState.getString(TAB_DRAFT_STATE + "_focus");
+            restoreTabOrderEditor = savedInstanceState.getBoolean(TAB_DRAFT_STATE + "_open");
         }
         super.onCreate(savedInstanceState);
     }
@@ -312,17 +465,32 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         super.onResume();
         SettingsBackupPreference.onPageResumed(this);
         showSupportedLinks();
+        // A result that came back while Tumblr was in the background shows now that settings is back.
+        showUnseenResults();
         if (restoreWordsEditor && getContext() != null) {
             Preference row = findPreference(editingAllowedWords ? ALLOWED_WORDS_ROW : HIDDEN_WORDS_ROW);
             if (row != null) showWords(themed(getContext()), row);
+        } else if (restoreTabOrderEditor && getContext() != null) {
+            // Once per rebuilt screen: a list that can't open now isn't reopened on every resume.
+            restoreTabOrderEditor = false;
+            Preference row = findPreference(TAB_ORDER_ROW);
+            if (row != null) showTabOrder(themed(getContext()), row);
         }
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        if (pendingImport != null) outState.putBundle(PENDING_IMPORT_STATE, pendingImport);
+        if (pendingImport != null) {
+            outState.putBundle(PENDING_IMPORT_STATE, pendingImport);
+            outState.putBoolean(PENDING_IMPORT_STATE + "_retained", importRetained);
+        }
         if (navigation != null) navigation.save(outState);
+        if (getPreferenceScreen() != null) {
+            Bundle results = new Bundle();
+            forEachFeedback(getPreferenceScreen(), (key, feedback) -> feedback.save(results, key));
+            if (!results.isEmpty()) outState.putBundle(FEEDBACK_STATE, results);
+        }
         rememberWordsDraft();
         if (wordsDraft != null) {
             outState.putString(WORDS_DRAFT_STATE, wordsDraft);
@@ -330,6 +498,12 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             outState.putInt(WORDS_DRAFT_STATE + "_start", wordsSelectionStart);
             outState.putInt(WORDS_DRAFT_STATE + "_end", wordsSelectionEnd);
         }
+        if (tabOrderDraft != null) {
+            outState.putString(TAB_DRAFT_STATE, tabOrderDraft);
+            outState.putString(TAB_DRAFT_STATE + "_base", tabOrderDraftBase);
+        }
+        outState.putString(TAB_DRAFT_STATE + "_focus", tabOrderFocused);
+        outState.putBoolean(TAB_DRAFT_STATE + "_open", tabOrderDialog != null && tabOrderDialog.isShowing());
     }
 
     @Override
@@ -338,6 +512,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         ReleaseCheck.unwatch(this);
         if (navigation != null) navigation.close();
         navigation = null;
+        if (livePage.get() == this) livePage = new WeakReference<>(null);
         super.onDestroyView();
     }
 
@@ -761,18 +936,21 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
 
         about.addPreference(mark(new SetupGuidancePreference(context), SettingsIcons.ABOUT));
 
-        Preference source = new Row(context);
+        Row source = new Row(context);
+        // Keyed so a link that couldn't open still says where to go after Android rebuilds the screen.
+        source.setKey(SOURCE_ROW);
         source.setTitle(L10n.t("Source code and issues"));
         source.setSummary(SOURCE_ADDRESS);
         source.setPersistent(false);
         source.setOnPreferenceClickListener(p -> {
             try {
                 startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(SOURCE_URL)));
+                source.feedback.clear();
             } catch (ActivityNotFoundException | SecurityException missing) {
                 // No browser, or none switched on. Uncaught, Android's exception closed Tumblr.
                 Logger.printInfo(() -> "No app opened the source code link");
-                Utils.showToastLong(L10n.f("No app on this phone can open the link. The address is %1$s.",
-                        L10n.isolate(SOURCE_ADDRESS)));
+                source.feedback.show(L10n.f("No app on this phone can open the link. The address is %1$s.",
+                        L10n.isolate(SOURCE_ADDRESS)), SOURCE_URL);
             }
             return true;
         });
@@ -908,6 +1086,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
      */
     private Preference statusCard(Context context) {
         Row card = new Row(context);
+        // Keyed so a Resume that didn't take still says so after Android rebuilds the screen.
+        card.setKey(STATUS_CARD);
         card.setPersistent(false);
         boolean paused = HushTumblrPause.isPaused();
         ScreenColors palette = ScreenColors.DEFAULT;
@@ -932,9 +1112,20 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
     }
 
     void resumeFromOverview() {
+        resumeFromOverview(null);
+    }
+
+    /**
+     * Resume, tapped on [tapped] (a page's pause line) or on the home card when null. What it
+     * leaves to do goes under the row that was tapped, which is the one in view.
+     */
+    void resumeFromOverview(@Nullable Preference tapped) {
         Context context = getContext();
         Preference card = statusCard;
         if (context == null || card == null || hasPendingEdits() || !ownsStatusCard(card)) return;
+        Preference said = tapped != null ? tapped : card;
+        String saidKey = said.getKey() != null ? said.getKey() : STATUS_CARD;
+        clearStatusResults();
         card.setEnabled(false);
         card.setSummary(L10n.t("Saving changes"));
         java.util.concurrent.atomic.AtomicReference<HushTumblrPause.Reason> outcome =
@@ -946,34 +1137,72 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                 Logger.printInfo(() -> "HushTumblr resume failed", failure);
             }
         }, () -> {
-            // The worker has refreshed a replacement page before this owned result runs.
-            if (!ownsStatusCard(card)) return;
+            String left = null;
+            if (outcome.get() == HushTumblrPause.Reason.MARKER_FILE) {
+                String file = L10n.isolate(HushTumblrPause.MARKER_FILE_NAME);
+                String folder = L10n.isolate(markerFolder(context.getPackageName()));
+                left = BaseSettings.PAUSED.savedValue() || BaseSettings.SAFE_MODE.savedValue()
+                        ? L10n.f("The file %1$s couldn't be removed. Delete it from %2$s, then tap Resume again.", file, folder)
+                        : L10n.f("The file %1$s couldn't be removed. Delete it from %2$s to turn HushTumblr back on.",
+                        file, folder);
+            } else if (outcome.get() != HushTumblrPause.Reason.NONE) {
+                left = L10n.t("Couldn't turn HushTumblr back on. Try again.");
+            }
+            // The worker has refreshed a replacement page before this owned result runs. What's
+            // left to do goes under that page's card, or the next one's.
+            if (!ownsStatusCard(card)) {
+                if (left != null) unseenResult(saidKey, left);
+                return;
+            }
             card.setEnabled(true);
             // Show the value actually kept, including a failed write or rollback.
             Preference pause = findPreference(BaseSettings.PAUSED.key);
             if (pause instanceof SwitchPreference) {
                 ((SwitchPreference) pause).setChecked(BaseSettings.PAUSED.savedValue());
             }
-            if (outcome.get() == HushTumblrPause.Reason.MARKER_FILE) {
-                String file = L10n.isolate(HushTumblrPause.MARKER_FILE_NAME);
-                String folder = L10n.isolate(markerFolder(context.getPackageName()));
-                String left = BaseSettings.PAUSED.savedValue() || BaseSettings.SAFE_MODE.savedValue()
-                        ? L10n.f("The file %1$s couldn't be removed. Delete it from %2$s, then tap Resume again.", file, folder)
-                        : L10n.f("The file %1$s couldn't be removed. Delete it from %2$s to turn HushTumblr back on.",
-                        file, folder);
-                card.setSummary(left);
-                Utils.showToastLong(left);
-                return;
-            }
-            if (outcome.get() != HushTumblrPause.Reason.NONE) {
-                Utils.showToastLong(L10n.t("Couldn't turn HushTumblr back on. Try again."));
-            }
+            // Under the row tapped, where a rebuilt screen keeps it and a toast's two lines can't
+            // cut the folder off.
+            if (left != null) statusResult(saidKey, left);
             showStatus(card, context);
         })) {
             card.setEnabled(true);
             showStatus(card, context);
-            Utils.showToastLong(L10n.t("Couldn't start that. Try again in a moment."));
+            cardResult(said, L10n.t("Couldn't start that. Try again in a moment."));
         }
+    }
+
+    /** What a Resume tap left to do, under the card it was tapped on until the next tap. */
+    private static void cardResult(@Nullable Preference card, @Nullable String message) {
+        SettingsFeedback feedback = card instanceof Row ? ((Row) card).feedback : null;
+        if (feedback != null && (message != null || feedback.message() != null)) feedback.show(message);
+    }
+
+    /**
+     * A new Resume, Pause or Undo answers for itself. Both status rows tell the same pause, so
+     * neither keeps the note the last tap left on either.
+     */
+    void clearStatusResults() {
+        forgetUnseen(STATUS_CARD);
+        forgetUnseen(SettingsNavigation.PAGE_STATUS);
+        cardResult(statusCard, null);
+        if (navigation != null) cardResult(navigation.ownRow(SettingsNavigation.PAGE_STATUS), null);
+    }
+
+    /**
+     * What a Resume left to do, under whichever status row is in view now: the reader may have
+     * opened another page while it ran. With neither in view, it waits for the row tapped.
+     */
+    private void statusResult(String saidKey, String message) {
+        for (String key : new String[] {saidKey, STATUS_CARD, SettingsNavigation.PAGE_STATUS}) {
+            if (!inView(key)) continue;
+            Preference row = STATUS_CARD.equals(key) ? statusCard
+                    : navigation != null ? navigation.ownRow(key) : null;
+            if (row instanceof Row) {
+                cardResult(row, message);
+                return;
+            }
+        }
+        unseenResult(saidKey, message);
     }
 
     private boolean ownsStatusCard(Preference card) {
@@ -1020,7 +1249,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         row.actsAtOnce = true;
         row.setSummary(ReleaseCheck.checkNowSummary());
         row.setOnPreferenceClickListener(p -> {
-            if (!ReleaseCheck.checkNow()) Utils.showToastLong(L10n.t("Couldn't start that. Try again in a moment."));
+            if (!ReleaseCheck.checkNow()) row.feedback.show(L10n.t("Couldn't start that. Try again in a moment."));
+            else row.feedback.clear();
             p.setSummary(ReleaseCheck.checkNowSummary());
             return true;
         });
@@ -1267,15 +1497,40 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
     /** Every file is offered, as a font's type depends on the app holding it. The file itself gets checked. */
     private void pickFontFile() {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*");
+        clearFontResults();
         try {
             startActivityForResult(intent, FONT_FILE);
         } catch (ActivityNotFoundException missing) {
             Logger.printInfo(() -> "No file picker for the font file");
-            Utils.showToastLong(L10n.t("This phone has no file picker, so there's no way to choose a file here."));
+            rowResult(FONT_FILE_ROW, L10n.t("This phone has no file picker, so there's no way to choose a file here."));
         } catch (RuntimeException error) {
             Logger.printInfo(() -> "Could not open the file picker: " + error.getClass().getSimpleName());
-            Utils.showToastLong(L10n.t("Couldn't open the file picker. Try again."));
+            rowResult(FONT_FILE_ROW, L10n.t("Couldn't open the file picker. Try again."));
         }
+    }
+
+    /**
+     * Says [message] under the row with [key], where it stays until that row's next action, or
+     * clears it when [message] is null. With the screen closed, the row shows it when settings
+     * next opens.
+     */
+    private void rowResult(String key, @Nullable String message) {
+        if (message != null) {
+            // On this page when it's in view, and otherwise kept for the row's page.
+            unseenResult(key, message);
+            return;
+        }
+        UNSEEN_RESULTS.remove(key);
+        Preference row = isAdded() ? findPreference(key) : null;
+        // Quick setups and the page links belong to the navigation, not the preference screen.
+        if (row == null && isAdded() && navigation != null) row = navigation.ownRow(key);
+        if (row instanceof Row && ((Row) row).feedback.message() != null) ((Row) row).feedback.clear();
+    }
+
+    /** Either font row's last result is about a file that a new pick or a forget replaces. */
+    private void clearFontResults() {
+        rowResult(FONT_FILE_ROW, null);
+        rowResult(PHONE_FONT_ROW, null);
     }
 
     private void onFontFilePicked(int resultCode, Intent data) {
@@ -1283,8 +1538,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         if (uri == null) return; // Cancelled.
         Context app = getContext().getApplicationContext();
         String[] outcome = new String[1];
-        if (!submitEdit(() -> outcome[0] = installFontFile(app, uri), () -> showFontOutcome(outcome[0]))) {
-            Utils.showToastLong(L10n.t("Couldn't start that. Try again in a moment."));
+        if (!submitEdit(() -> outcome[0] = installFontFile(app, uri), () -> showFontOutcome(FONT_FILE_ROW, outcome[0]))) {
+            rowResult(FONT_FILE_ROW, L10n.t("Couldn't start that. Try again in a moment."));
         }
     }
 
@@ -1314,6 +1569,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
     }
 
     private void forgetFontFile() {
+        clearFontResults();
         Context app = getContext().getApplicationContext();
         String[] outcome = new String[1];
         if (!submitEdit(() -> {
@@ -1326,8 +1582,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                 Logger.printInfo(() -> "Could not forget the font file: " + failure.getClass().getSimpleName());
                 outcome[0] = L10n.t("Couldn't change the font. Try again.");
             }
-        }, () -> showFontOutcome(outcome[0]))) {
-            Utils.showToastLong(L10n.t("Couldn't start that. Try again in a moment."));
+        }, () -> showFontOutcome(PHONE_FONT_ROW, outcome[0]))) {
+            rowResult(PHONE_FONT_ROW, L10n.t("Couldn't start that. Try again in a moment."));
         }
     }
 
@@ -1342,8 +1598,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         }
     }
 
-    private void showFontOutcome(@Nullable String message) {
-        if (message != null) Utils.showToastLong(message);
+    private void showFontOutcome(String key, @Nullable String message) {
+        if (message != null) rowResult(key, message);
         if (!isAdded()) return;
         refreshSwitches();
         onRestartPendingChanged();
@@ -1364,14 +1620,58 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         return row;
     }
 
+    static final long TAB_ORDER_WAIT_STEP = 250;
+    static final long TAB_ORDER_WAIT_LIMIT = 10_000;
+    /** When a Tab order tap started waiting for a save, or 0. */
+    private long tabOrderWaitStarted;
+
+    private void openTabOrderAfterSave(Context context, Preference row) {
+        boolean sameRow = isAdded() && findPreference(TAB_ORDER_ROW) == row;
+        if (sameRow && hasPendingEdits() && SystemClock.uptimeMillis() - tabOrderWaitStarted < TAB_ORDER_WAIT_LIMIT) {
+            Utils.runOnMainThreadDelayed(() -> openTabOrderAfterSave(context, row), TAB_ORDER_WAIT_STEP);
+            return;
+        }
+        tabOrderWaitStarted = 0;
+        row.setSummary(tabOrderSummary(TextSettings.TAB_ORDER.savedValue()));
+        if (!sameRow) return;
+        if (hasPendingEdits()) {
+            // The reader may have opened another page during the wait.
+            rowResult(TAB_ORDER_ROW, L10n.t("Couldn't start that. Try again in a moment."));
+        } else if (isResumed() && tabOrderDialog == null) {
+            showTabOrder(context, row);
+        }
+    }
+
     /**
      * The tabs on the bar in the order chosen. A tap on one moves it a place up and saves the order
      * at once, keeping the list open, so a tab can be walked to the top. Tumblr's order clears the
      * choice. The bar is built as Tumblr starts, so it shows after a restart.
      */
     private void showTabOrder(Context context, Preference row) {
+        if (hasPendingEdits()) {
+            // The list reads the saved order, so it waits for the save in flight and then opens.
+            if (tabOrderWaitStarted == 0) {
+                tabOrderWaitStarted = SystemClock.uptimeMillis();
+                row.setSummary(L10n.t("Saving changes"));
+                Utils.runOnMainThreadDelayed(() -> openTabOrderAfterSave(context, row), TAB_ORDER_WAIT_STEP);
+            }
+            return;
+        }
+        String savedOrder = TextSettings.TAB_ORDER.savedValue();
+        // A draft is done with once it's saved, or once another order was saved since it failed,
+        // such as by an import or Tumblr's order: Retry would put the older choice back over it.
+        if (tabOrderDraft != null && (tabOrderDraft.equals(savedOrder)
+                || (tabOrderDraftBase != null && !tabOrderDraftBase.equals(savedOrder)))) {
+            tabOrderDraft = null;
+            tabOrderDraftBase = null;
+        }
         List<String> order = new ArrayList<>(BottomBarTabs.choices(TextSettings.TAB_ORDER.savedValue()));
-        String[] focusedTab = {order.get(0)};
+        String[] focusedTab = {tabOrderFocused != null && order.contains(tabOrderFocused) ? tabOrderFocused : order.get(0)};
+        SettingsFeedback feedback = new SettingsFeedback();
+        LinearLayout feedbackRegion = new LinearLayout(context);
+        feedbackRegion.setOrientation(LinearLayout.VERTICAL);
+        int inset = Math.round(24 * context.getResources().getDisplayMetrics().density);
+        feedbackRegion.setPaddingRelative(inset, 0, inset, inset / 2);
         ArrayAdapter<String> labels = new ArrayAdapter<String>(context,
                 android.R.layout.simple_list_item_1, tabLabels(order)) {
             @Override public View getView(int position, View recycled, ViewGroup parent) {
@@ -1397,45 +1697,86 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                 .setTitle(L10n.t("Tap a tab to move it up"))
                 .setAdapter(labels, null)
                 .setNeutralButton(L10n.t("Tumblr's order"), null)
+                .setNegativeButton(L10n.t("Retry"), null)
                 .setPositiveButton(L10n.t("Done"), null));
         if (dialog == null) return;
+        // A "try again" from a tap that waited too long is done with once the list is open.
+        if (row instanceof Row && ((Row) row).feedback.message() != null) ((Row) row).feedback.clear();
+        placeUnderList(dialog, feedbackRegion);
+        tabOrderDialog = dialog;
+        restoreTabOrderEditor = false;
+        dialog.setOnDismissListener(closed -> {
+            shownDialogs.remove(dialog);
+            if (tabOrderDialog == dialog) tabOrderDialog = null;
+        });
+        feedback.bind(feedbackRegion, () -> dialog.isShowing() && isAdded() && shownDialogs.contains(dialog));
+        Button retry = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+        retry.setVisibility(tabOrderDraft == null ? View.GONE : View.VISIBLE);
+        if (tabOrderDraft != null) feedback.show(L10n.t("Couldn't save the tab order. Your earlier order is unchanged. Try again."));
         boolean[] saving = {false};
+        // Only a save that moved a tab says where it went. Putting Tumblr's order back moves nothing.
+        boolean[] moving = {false};
+        Consumer<Boolean> refreshed = saved -> {
+            saving[0] = false;
+            order.clear();
+            order.addAll(BottomBarTabs.choices(TextSettings.TAB_ORDER.savedValue()));
+            labels.clear();
+            labels.addAll(tabLabels(order));
+            row.setSummary(tabOrderSummary(TextSettings.TAB_ORDER.savedValue()));
+            retry.setVisibility(tabOrderDraft == null ? View.GONE : View.VISIBLE);
+            focusTab(dialog, order, focusedTab[0], saved && moving[0]);
+        };
+        retry.setOnClickListener(ignored -> {
+            if (saving[0] || tabOrderDraft == null || !dialog.isShowing() || !isAdded()) return;
+            saving[0] = true;
+            moving[0] = !tabOrderDraft.isEmpty();
+            saveTabOrder(tabOrderDraft, dialog, feedback, refreshed);
+        });
         dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(ignored -> {
             if (saving[0] || !dialog.isShowing() || !isAdded()) return;
             saving[0] = true;
-            saveTabOrder("", dialog, saved -> {
-                saving[0] = false;
-                order.clear();
-                order.addAll(BottomBarTabs.choices(TextSettings.TAB_ORDER.savedValue()));
-                labels.clear();
-                labels.addAll(tabLabels(order));
-                row.setSummary(tabOrderSummary(TextSettings.TAB_ORDER.savedValue()));
-                focusTab(dialog, order, focusedTab[0], false);
-            });
+            moving[0] = false;
+            saveTabOrder("", dialog, feedback, refreshed);
         });
         // A click listener of its own, so a tap moves the tab without closing the list.
         dialog.getListView().setOnItemClickListener((parent, view, position, id) -> {
             if (saving[0] || !dialog.isShowing() || !isAdded()) return;
             String movedTab = order.get(position);
             if (position == 0) {
+                // Under the list, where a long translation at large text isn't cut off as a toast's
+                // would be. A failed save still waiting on Retry keeps its next step under it.
                 String first = L10n.f("%1$s is already first.", tabLabel(movedTab));
-                dialog.getListView().announceForAccessibility(first);
-                Utils.showToastShort(first);
+                feedback.show(tabOrderDraft == null ? first : first + "\n"
+                        + L10n.t("Couldn't save the tab order. Your earlier order is unchanged. Try again."));
                 return;
             }
             focusedTab[0] = movedTab;
+            tabOrderFocused = movedTab;
             List<String> moved = BottomBarTabs.movedUp(order, position);
             saving[0] = true;
-            saveTabOrder(BottomBarTabs.join(moved), dialog, saved -> {
-                saving[0] = false;
-                order.clear();
-                order.addAll(BottomBarTabs.choices(TextSettings.TAB_ORDER.savedValue()));
-                labels.clear();
-                labels.addAll(tabLabels(order));
-                row.setSummary(tabOrderSummary(TextSettings.TAB_ORDER.savedValue()));
-                focusTab(dialog, order, movedTab, saved);
-            });
+            moving[0] = true;
+            saveTabOrder(BottomBarTabs.join(moved), dialog, feedback, refreshed);
         });
+    }
+
+    /**
+     * Puts [region] under a list dialog's list, in the list's own panel. A custom view beside a list
+     * stops Android's dialog layout from shrinking the list, which pushes the buttons off a small
+     * screen at large text. Here the list gives up the height the region needs instead.
+     */
+    static void placeUnderList(AlertDialog dialog, View region) {
+        ListView list = dialog.getListView();
+        if (list == null || !(list.getParent() instanceof ViewGroup)) return;
+        ViewGroup panel = (ViewGroup) list.getParent();
+        int index = panel.indexOfChild(list);
+        ViewGroup.LayoutParams params = list.getLayoutParams();
+        panel.removeViewAt(index);
+        LinearLayout column = new LinearLayout(list.getContext());
+        column.setOrientation(LinearLayout.VERTICAL);
+        column.addView(list, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        column.addView(region, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+        panel.addView(column, index, params);
     }
 
     private void focusTab(AlertDialog dialog, List<String> order, String tab, boolean announce) {
@@ -1458,7 +1799,9 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         list.requestLayout();
     }
 
-    private void saveTabOrder(String value, AlertDialog dialog, Consumer<Boolean> done) {
+    private void saveTabOrder(String value, AlertDialog dialog, SettingsFeedback feedback, Consumer<Boolean> done) {
+        tabOrderDraft = value;
+        tabOrderDraftBase = TextSettings.TAB_ORDER.savedValue();
         setEditorBusy(dialog, true);
         dialog.getListView().setEnabled(false);
         dialog.getListView().announceForAccessibility(L10n.t("Saving changes"));
@@ -1475,12 +1818,17 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             }
             boolean outcome = saved;
             Utils.runOnMainThreadNowOrLater(() -> {
+                if (outcome && value.equals(tabOrderDraft)) {
+                    tabOrderDraft = null;
+                    tabOrderDraftBase = null;
+                }
                 SettingsBackupPreference.refreshCurrentPage();
                 if (!dialog.isShowing() || !isAdded() || !shownDialogs.contains(dialog)) return;
                 setEditorBusy(dialog, false);
                 dialog.getListView().setEnabled(true);
-                if (!outcome) Utils.showToastLong(L10n.t("Couldn't save the tab order. Your earlier order is unchanged. Try again."));
+                if (!outcome) feedback.show(L10n.t("Couldn't save the tab order. Your earlier order is unchanged. Try again."));
                 else {
+                    feedback.clear();
                     onRestartPendingChanged();
                     if (restartPending.contains(TextSettings.TAB_ORDER.key)) showRestartDialog(getContext());
                 }
@@ -1489,7 +1837,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         })) {
             setEditorBusy(dialog, false);
             dialog.getListView().setEnabled(true);
-            Utils.showToastLong(L10n.t("Couldn't start that. Try again in a moment."));
+            feedback.show(L10n.t("Couldn't start that. Try again in a moment."));
             done.accept(false);
         }
     }
@@ -1559,11 +1907,12 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         row.setOnPreferenceClickListener(ignored -> {
             try {
                 startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                row.feedback.clear();
             } catch (ActivityNotFoundException | SecurityException missing) {
                 Logger.printInfo(() -> "No app opened the release help link");
                 String address = url.substring(url.indexOf("://") + 3);
-                Utils.showToastLong(L10n.f("No app on this phone can open the link. The address is %1$s.",
-                        L10n.isolate(address)));
+                row.feedback.show(L10n.f("No app on this phone can open the link. The address is %1$s.",
+                        L10n.isolate(address)), url);
             }
             return true;
         });
@@ -1582,7 +1931,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         row.setPersistent(false);
         row.setSummary(SupportedLinks.summary(SupportedLinks.read(context)));
         row.setOnPreferenceClickListener(p -> {
-            openLinkSettings(context);
+            openLinkSettings(context, row);
             return true;
         });
         return row;
@@ -1594,17 +1943,18 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         if (row != null) row.setSummary(SupportedLinks.summary(SupportedLinks.read(row.getContext())));
     }
 
-    private void openLinkSettings(Context context) {
+    private void openLinkSettings(Context context, Row owner) {
         for (Intent page : SupportedLinks.settingsIntents(context)) {
             try {
                 startActivity(page);
+                owner.feedback.clear();
                 return;
             } catch (ActivityNotFoundException | SecurityException missing) {
                 // A phone without Open by default still has the app's own page, which leads there.
             }
         }
         Logger.printInfo(() -> "No settings page opened for supported links");
-        Utils.showToastLong(L10n.t("Android's settings for this app didn't open. Open App info from Tumblr's icon, "
+        owner.feedback.show(L10n.t("Android's settings for this app didn't open. Open App info from Tumblr's icon, "
                 + "then Open by default."));
     }
 
@@ -1659,9 +2009,11 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         Map<BooleanSetting, Boolean> shown = QuickSetups.shown(screen, values);
         if (hasPendingEdits()) {
             // A switch is still saving. Its own save would land after this one and undo part of it.
-            Utils.showToastLong(L10n.t("Couldn't start that. Try again in a moment."));
+            rowResult(SettingsNavigation.QUICK_SETUPS, L10n.t("Couldn't start that. Try again in a moment."));
             return;
         }
+        // A new choice replaces whatever the last one left under the row.
+        rowResult(SettingsNavigation.QUICK_SETUPS, null);
         int[] changed = {0};
         boolean[] failed = {false};
         boolean accepted = submitEdit(() -> {
@@ -1675,7 +2027,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             Context context = getContext();
             if (isAdded()) refreshSwitches();
             if (failed[0]) {
-                Utils.showToastLong(String.valueOf(preferenceChangeRecoveredMessage(context)));
+                rowResult(SettingsNavigation.QUICK_SETUPS, String.valueOf(preferenceChangeRecoveredMessage(context)));
                 return;
             }
             int count = changed[0];
@@ -1688,7 +2040,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                 }
             }
         });
-        if (!accepted) Utils.showToastLong(L10n.t("Couldn't start that. Try again in a moment."));
+        if (!accepted) rowResult(SettingsNavigation.QUICK_SETUPS, L10n.t("Couldn't start that. Try again in a moment."));
     }
 
     /**
@@ -1731,14 +2083,15 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
     }
 
     /** Opens the Ko-fi page, or says no app here can, as Source code and issues does. */
-    static void openSupport(Context context) {
+    static void openSupport(Context context, SettingsFeedback feedback) {
         try {
             context.startActivity(supportIntent());
+            feedback.clear();
         } catch (ActivityNotFoundException | SecurityException missing) {
             // No browser, or none switched on. Uncaught, Android's exception closed Tumblr.
             Logger.printInfo(() -> "No app opened the support link");
-            Utils.showToastLong(L10n.f("No app on this phone can open the link. The address is %1$s.",
-                    L10n.isolate(SUPPORT_ADDRESS)));
+            feedback.show(L10n.f("No app on this phone can open the link. The address is %1$s.",
+                    L10n.isolate(SUPPORT_ADDRESS)), SUPPORT_URL);
         }
     }
 
@@ -1839,6 +2192,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
 
     /** A row of text, which a screen reader calls a button when a tap does something. */
     static final class Row extends Preference implements ImmediateAction {
+        final SettingsFeedback feedback = new SettingsFeedback(this::notifyChanged);
         /** Set on a row whose tap does what it says at once, which then goes without a chevron. */
         boolean actsAtOnce;
 
@@ -1857,6 +2211,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             showAllText(view);
             ScreenColors.row(view, this);
             view.setAccessibilityDelegate(isSelectable() ? new RowSemantics(this, Button.class) : null);
+            feedback.bind(view);
         }
     }
 
@@ -1880,6 +2235,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
 
     /** A switch row, which a screen reader calls a switch and reads as on or off. */
     static final class Toggle extends SwitchPreference {
+        /** A save that failed or never started, said under the switch until its next flip. */
+        final SettingsFeedback feedback = new SettingsFeedback(this::notifyChanged);
         private final HushTumblrPreferenceFragment owner;
         private final BooleanSetting setting;
         private boolean saving;
@@ -1896,6 +2253,10 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             setOnPreferenceChangeListener((preference, value) -> {
                 if (!(value instanceof Boolean) || saving || !isEnabled() || !ownsVisibleRow()) return false;
                 CharSequence summary = getSummary();
+                if (feedback.message() != null) feedback.clear();
+                forgetUnseen(getKey());
+                // The Pause switch answers for the pause, so what the last Resume said is done with.
+                if (setting == BaseSettings.PAUSED) owner.clearStatusResults();
                 saving = true;
                 super.setEnabled(false);
                 setSummary(L10n.t("Saving the setting"));
@@ -1917,7 +2278,10 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                         super.setEnabled(available);
                         SettingsBackupPreference.refreshCurrentPage();
                         if (!success) {
-                            Utils.showToastLong(String.valueOf(owner.preferenceChangeRecoveredMessage(getContext())));
+                            String failed = String.valueOf(owner.preferenceChangeRecoveredMessage(getContext()));
+                            // Under the switch when its page is in view. Closed settings, or another
+                            // page, show the saved value and say this under it once it's back.
+                            unseenResult(getKey(), failed);
                         }
                         if (!ownsVisibleRow()) return;
                         setChecked(setting.savedValue());
@@ -1932,7 +2296,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                     saving = false;
                     setSummary(summary);
                     super.setEnabled(available);
-                    Utils.showToastLong(L10n.t("Couldn't start that. Try again in a moment."));
+                    feedback.show(L10n.t("Couldn't start that. Try again in a moment."));
                 }
                 return false;
             });
@@ -1963,12 +2327,26 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             showAllText(view);
             ScreenColors.row(view, this);
             view.setAccessibilityDelegate(new RowSemantics(this, Switch.class));
+            feedback.bind(view);
         }
     }
 
+    /** A tap starts the next report or clear, which says its own result, so the last one goes. */
+    static void clearsResultOnTap(Preference row, SettingsFeedback feedback) {
+        Preference.OnPreferenceClickListener tap = row.getOnPreferenceClickListener();
+        row.setOnPreferenceClickListener(tapped -> {
+            if (feedback.message() != null) feedback.clear();
+            forgetUnseen(row.getKey());
+            return tap == null || tap.onPreferenceClick(tapped);
+        });
+    }
+
     final class ExportRow extends ExportDiagnosticReportPreference {
+        final SettingsFeedback feedback = new SettingsFeedback(this::notifyChanged);
+
         ExportRow(Context context) {
             super(context);
+            clearsResultOnTap(this, feedback);
         }
 
         /** The two choices as cards, each saying what it does under its name. */
@@ -2009,12 +2387,16 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             showAllText(view);
             ScreenColors.row(view, this);
             view.setAccessibilityDelegate(new RowSemantics(this, Button.class));
+            feedback.bind(view);
         }
     }
 
     static final class ClearRow extends ClearLogBufferPreference {
+        final SettingsFeedback feedback = new SettingsFeedback(this::notifyChanged);
+
         ClearRow(Context context) {
             super(context);
+            clearsResultOnTap(this, feedback);
         }
 
         @Override
@@ -2023,6 +2405,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             showAllText(view);
             ScreenColors.row(view, this);
             view.setAccessibilityDelegate(new RowSemantics(this, Button.class));
+            feedback.bind(view);
         }
     }
 

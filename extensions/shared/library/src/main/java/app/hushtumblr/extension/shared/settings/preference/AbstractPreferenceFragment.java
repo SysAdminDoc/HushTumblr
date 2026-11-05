@@ -319,9 +319,9 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
             boolean restored = pref != null && setting != null
                     && restorePreferenceFromSetting(pref, setting, sharedPreferences);
             Context context = getActivity();
-            Utils.showToastLong(String.valueOf(restored
+            preferenceChangeFailed(pref, restored
                     ? preferenceChangeRecoveredMessage(context)
-                    : preferenceChangeRecoveryFailedMessage(context)));
+                    : preferenceChangeRecoveryFailedMessage(context));
         } finally {
             updatingPreference = false;
         }
@@ -685,6 +685,14 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
 
     protected CharSequence preferenceChangeRecoveryFailedMessage(@Nullable Context context) {
         return L10n.t(context, "Settings couldn't refresh completely. Reopen settings and try again.");
+    }
+
+    /**
+     * Says that the change to [pref] failed. A toast here; a bundle that shows results under their
+     * rows puts it under [pref], where it outlasts a toast's two lines on Android 12 and later.
+     */
+    protected void preferenceChangeFailed(@Nullable Preference pref, CharSequence message) {
+        Utils.showToastLong(String.valueOf(message));
     }
 
     public static void showRestartDialog(Context context) {

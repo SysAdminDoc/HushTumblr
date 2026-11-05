@@ -13,7 +13,9 @@ Android 11 and older don't say which links open here. Tap to open this app's set
 Back	Geri
 Cancel	İptal
 Clear diagnostic data	Tanılama verilerini temizle
+Copy link	Bağlantıyı kopyala
 Copy quick report	Hızlı raporu kopyala
+Couldn't copy the link. Try again.	Bağlantı kopyalanamadı. Yeniden dene.
 Couldn't import the settings, and couldn't put back the ones you had. Check the settings on this screen.	Ayarlar içe aktarılamadı ve önceki ayarların geri yüklenemedi. Bu ekrandaki ayarları kontrol et.
 Couldn't import the settings. Nothing was changed.	Ayarlar içe aktarılamadı. Hiçbir şey değiştirilmedi.
 Couldn't open that file. Nothing was changed.	Bu dosya açılamadı. Hiçbir şey değiştirilmedi.
@@ -31,6 +33,7 @@ Clears the saved log and patch check results that a report would include.	Bir ra
 Every switch but Debug logging acts as if it were off, and what was set when you patched stays in. Your settings stay as they are.	Hata ayıklama günlüğü dışındaki her anahtar kapalıymış gibi davranır, yamaladığında ayarlananlar ise devrede kalır. Ayarların olduğu gibi kalır.
 Export diagnostic report	Tanılama raporunu dışa aktar
 Export settings	Ayarları dışa aktar
+Link copied	Bağlantı kopyalandı
 Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.	Tumblr bir sonraki açılışında Hata ayıklama günlüğü dışındaki tüm HushTumblr anahtarlarını kapatır. Yamalarken seçtiklerin kalır ve tercihlerin kayıtlı kalır.
 Save your settings to a file, including word lists and tab order. These choices apply to all accounts in this Tumblr app. Pause, Debug logging and release checks aren't included.	Sözcük listeleri ve sekme sırası dahil ayarlarını bir dosyaya kaydet. Bu seçimler Tumblr uygulamasındaki tüm hesaplar için geçerlidir. Duraklatma, Hata ayıklama günlüğü ve sürüm denetimi dahil edilmez.
 Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.	Ayarlar dışa aktarıldı. Dosyayı tutan uygulama HushTumblr'ın onu geri okumasına izin vermedi, bu yüzden kontrol edilmedi.
@@ -251,6 +254,7 @@ Draws a thin line in the gap between posts, so it's easier to see where one ends
 App font	Uygulama yazı tipi
 Replaces Tumblr's own font with your phone's font, or a font file you choose below. Fonts a post's author picked stay as they are.	Tumblr'ın kendi yazı tipini telefonunun yazı tipiyle veya aşağıdan seçtiğin bir yazı tipi dosyasıyla değiştirir. Gönderi yazarının seçtiği yazı tipleri olduğu gibi kalır.
 Choose a font file	Yazı tipi dosyası seç
+Choose another file	Başka bir dosya seç
 Uses your phone's font. Tap to pick a .ttf or .otf file.	Telefonunun yazı tipini kullanır. Bir .ttf veya .otf dosyası seçmek için dokun.
 Using %1$s. Tap to pick another.	%1$s kullanılıyor. Başka birini seçmek için dokun.
 Use the phone's font	Telefonun yazı tipini kullan

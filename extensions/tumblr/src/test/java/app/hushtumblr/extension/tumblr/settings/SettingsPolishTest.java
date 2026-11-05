@@ -6,6 +6,7 @@ package app.hushtumblr.extension.tumblr.settings;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -75,7 +76,9 @@ import java.util.EnumSet;
 import java.util.Locale;
 
 import app.hushtumblr.extension.shared.L10n;
+import app.hushtumblr.extension.shared.L10nTablesForTests;
 import app.hushtumblr.extension.shared.SettingsContextRule;
+import app.hushtumblr.extension.shared.settings.FailingStore;
 import app.hushtumblr.extension.shared.settings.PauseForTests;
 
 /** Actual settings controls in a light host, including the smaller viewport left by a keyboard. */
@@ -407,6 +410,117 @@ public class SettingsPolishTest {
         licenses.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
         settle();
         assertFalse(licenses.isShowing());
+    }
+
+    @Test
+    @Config(sdk = {31, 36})
+    public void recoveryMessagesAndCopyLinksWrapAtDoubleSizeInEveryLanguage() throws Exception {
+        controller = Robolectric.buildActivity(LightHost.class).setup().visible();
+        // L10n reads the application's language, so each pass sets it there. The shipped tables,
+        // then the mirrored pseudo-locale for right-to-left.
+        String[][] languages = {{"en-rUS", null}, {"de", "de"}, {"es", "es"}, {"in-rID", "in"}, {"pt-rBR", "pt-rbr"},
+                {"tr", "tr"}, {"ar-rXB-ldrtl", null}};
+        java.util.List<String> overTwoLines = new java.util.ArrayList<>();
+        for (String[] pass : languages) {
+            String language = pass[0];
+            RuntimeEnvironment.setQualifiers("+" + language);
+            Locale locale = RuntimeEnvironment.getApplication().getResources().getConfiguration().getLocales().get(0);
+            android.content.res.Configuration config = new android.content.res.Configuration(controller.get().getResources().getConfiguration());
+            config.setLocale(locale);
+            config.setLayoutDirection(locale);
+            config.fontScale = 2f;
+            android.content.Context context = HushTumblrPreferenceFragment.themed(controller.get().createConfigurationContext(config));
+            ScrollView scroll = new ScrollView(context);
+            // As a window does, take the direction from the configuration, not Locale.getDefault().
+            scroll.setLayoutDirection(config.getLayoutDirection());
+            FrameLayout frame = new FrameLayout(context);
+            scroll.addView(frame);
+            controller.get().setContentView(scroll);
+            HushTumblrPreferenceFragment.Row action = new HushTumblrPreferenceFragment.Row(context);
+            action.setTitle(L10n.t(context, "Release notes"));
+            action.setSummary(L10n.t(context, "Read HushTumblr releases on GitHub. Nothing is downloaded here."));
+            String address = HushTumblrPreferenceFragment.RELEASE_NOTES_URL;
+            action.feedback.show(L10n.f(context, "No app on this phone can open the link. The address is %1$s.",
+                    L10n.isolate(address)), address);
+            View row = action.getView(null, frame);
+            frame.addView(row);
+            layout(scroll);
+            assertTextTree(row);
+            Button copy = row.findViewWithTag(SettingsFeedback.COPY_TAG);
+            assertNotNull(language, copy);
+            java.util.Map<String, String> table = pass[1] == null ? null : L10nTablesForTests.of(pass[1]);
+            String recovery = "No app on this phone can open the link. The address is %1$s.";
+            String label = copy.getText().toString();
+            String line = SettingsFeedbackTest.message(action);
+            if (language.startsWith("ar")) {
+                // The pseudo-locale mirrors English word by word, so the words match once the bidi controls go.
+                assertNotEquals("the mirrored pass shows plain English", "Copy link", label);
+                assertEquals("Copy link", label.replaceAll("\\p{Cf}", ""));
+                assertEquals(recovery.replace("%1$s", address), line.replaceAll("\\p{Cf}", ""));
+            } else {
+                assertEquals(language + " copy label", table == null ? "Copy link" : table.get("Copy link"), label);
+                assertEquals(language + " recovery line",
+                        (table == null ? recovery : table.get(recovery)).replace("%1$s", L10n.isolate(address)), line);
+            }
+            assertEquals(language + " direction", language.startsWith("ar") ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR,
+                    row.getLayoutDirection());
+            scroll.setSmoothScrollingEnabled(false);
+            scroll.fullScroll(View.FOCUS_DOWN);
+            settle();
+            assertVisible(copy, scroll);
+            render("retained-recovery-" + language, scroll);
+            ShadowToast.reset();
+            copy.performClick();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                assertNull(language + " toast repeats Android's own copy confirmation", ShadowToast.getTextOfLatestToast());
+            } else {
+                assertEquals(L10n.t(context, "Link copied"), ShadowToast.getTextOfLatestToast());
+            }
+            // Every toast that is still the only place its words appear. Android 12 and later cut a
+            // text toast at two lines, so each is measured as drawn, never by counting characters.
+            // Anything with a next step stays under its row instead.
+            String[] toasts = {
+                    L10n.t(context, "Link copied"),
+                    L10n.t(context, "Words saved"),
+                    L10n.quantity(context, 12, "Changed %1$d setting", "Changed %1$d settings", 12),
+            };
+            // The width the framework's transient_notification_with_icon leaves the words: a 300dp
+            // toast_width, less 16dp padding each side and the 24dp app icon with its 10dp margin.
+            int textWidth = Math.round(234 * context.getResources().getDisplayMetrics().density);
+            for (String said : toasts) {
+                TextView toast = new TextView(context);
+                toast.setTextSize(14);
+                toast.setText(said);
+                layout(toast, textWidth, 1200);
+                if (toast.getLineCount() > 2) overTwoLines.add(language + ": " + said);
+                else assertWholeText(toast);
+            }
+        }
+        assertTrue("toasts over two rendered lines at double size: " + overTwoLines, overTwoLines.isEmpty());
+    }
+
+    @Test
+    @Config(sdk = {26, 36}, qualifiers = "ar-rXB-ldrtl-w390dp-h600dp-notnight-xhdpi")
+    public void tabFailureAndRetryStayReachableAtDoubleRtlSize() throws Exception {
+        RuntimeEnvironment.setFontScale(2f);
+        open();
+        AlertDialog tabs = click(page.findPreference(HushTumblrPreferenceFragment.TAB_ORDER_ROW));
+        try (FailingStore ignored = FailingStore.install(FailingStore.Fault.COMMIT_FALSE)) {
+            tabs.getListView().performItemClick(null, 2, 2);
+            app.hushtumblr.extension.shared.Utils.awaitBackgroundTasksForTests();
+            settle();
+        }
+        View decor = bounded(tabs);
+        TextView failure = decor.findViewWithTag(SettingsFeedback.MESSAGE_TAG);
+        assertNotNull(failure);
+        assertWholeText(failure);
+        assertVisible(failure, decor);
+        assertButtons(tabs);
+        render("tab-order-retained-failure-rtl", decor);
+        tabs.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();
+        app.hushtumblr.extension.shared.Utils.awaitBackgroundTasksForTests();
+        settle();
+        assertFalse(TextSettings.TAB_ORDER.savedValue().isEmpty());
     }
 
     @Test public void inlineWordRefusalKeepsTheDraftAndEditingRecoversToASavedList() throws Exception {

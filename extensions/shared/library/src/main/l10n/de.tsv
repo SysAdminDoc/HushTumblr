@@ -13,7 +13,9 @@ Android 11 and older don't say which links open here. Tap to open this app's set
 Back	Zurück
 Cancel	Abbrechen
 Clear diagnostic data	Diagnosedaten löschen
+Copy link	Link kopieren
 Copy quick report	Kurzbericht kopieren
+Couldn't copy the link. Try again.	Der Link konnte nicht kopiert werden. Versuch es noch einmal.
 Couldn't import the settings, and couldn't put back the ones you had. Check the settings on this screen.	Die Einstellungen ließen sich nicht importieren, und deine vorherigen ließen sich nicht wiederherstellen. Prüfe die Einstellungen auf diesem Bildschirm.
 Couldn't import the settings. Nothing was changed.	Die Einstellungen ließen sich nicht importieren. Es wurde nichts geändert.
 Couldn't open that file. Nothing was changed.	Diese Datei ließ sich nicht öffnen. Es wurde nichts geändert.
@@ -31,6 +33,7 @@ Clears the saved log and patch check results that a report would include.	Leert 
 Every switch but Debug logging acts as if it were off, and what was set when you patched stays in. Your settings stay as they are.	Jeder Schalter außer der Debug-Protokollierung verhält sich, als wäre er aus, und was beim Patchen festgelegt wurde, bleibt aktiv. Deine Einstellungen bleiben, wie sie sind.
 Export diagnostic report	Diagnosebericht exportieren
 Export settings	Einstellungen exportieren
+Link copied	Link kopiert
 Turns off every HushTumblr switch except Debug logging the next time Tumblr starts. What you chose when you patched stays, and your choices are saved.	Schaltet beim nächsten Start von Tumblr jeden HushTumblr-Schalter außer der Debug-Protokollierung aus. Was du beim Patchen gewählt hast, bleibt, und deine Auswahl bleibt gespeichert.
 Save your settings to a file, including word lists and tab order. These choices apply to all accounts in this Tumblr app. Pause, Debug logging and release checks aren't included.	Speichert deine Einstellungen in einer Datei, einschließlich Wortlisten und Tab-Reihenfolge. Diese Auswahl gilt für alle Konten in dieser Tumblr-App. Pause, Debug-Protokollierung und die Suche nach neuen Versionen sind nicht enthalten.
 Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.	Einstellungen exportiert. Die App, in der die Datei liegt, ließ HushTumblr sie nicht zurücklesen, daher wurde sie nicht geprüft.
@@ -251,6 +254,7 @@ Draws a thin line in the gap between posts, so it's easier to see where one ends
 App font	App-Schriftart
 Replaces Tumblr's own font with your phone's font, or a font file you choose below. Fonts a post's author picked stay as they are.	Ersetzt Tumblrs eigene Schriftart durch die deines Telefons oder durch eine Schriftdatei, die du unten auswählst. Schriftarten, die der Autor eines Beitrags gewählt hat, bleiben unverändert.
 Choose a font file	Schriftdatei auswählen
+Choose another file	Andere Datei wählen
 Uses your phone's font. Tap to pick a .ttf or .otf file.	Nutzt die Schriftart deines Telefons. Tippe, um eine .ttf- oder .otf-Datei auszuwählen.
 Using %1$s. Tap to pick another.	%1$s wird verwendet. Tippe, um eine andere auszuwählen.
 Use the phone's font	Schriftart des Telefons nutzen
