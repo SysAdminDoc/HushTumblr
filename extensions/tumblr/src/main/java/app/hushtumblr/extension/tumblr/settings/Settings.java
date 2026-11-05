@@ -288,6 +288,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_keep_reblogs_with_content", FALSE);
 
     /**
+     * Reblogs made on a blog of yours, the ones Tumblr says you can edit, leave each page of the
+     * dashboard and the feeds that load like it. A blog's own page keeps them
+     * ({@link app.hushtumblr.extension.tumblr.timeline.PostRules}).
+     */
+    public static final BooleanSetting HIDE_OWN_REBLOGS =
+            new BooleanSetting("hushtumblr_hide_own_reblogs", FALSE);
+
+    /**
      * Posts with a video anywhere in them, the reblog trail included, leave each page of posts
      * Tumblr loads ({@link app.hushtumblr.extension.tumblr.timeline.PostRules}).
      */

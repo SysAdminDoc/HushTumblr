@@ -379,6 +379,8 @@ Keep tagged reblogs	Etiketli yeniden bloglamaları tut
 When reblogs are hidden, keep ones with tags. Other post filters still apply.	Yeniden bloglamalar gizlenirken etiketli olanları tutar. Diğer gönderi filtreleri uygulanmaya devam eder.
 Keep reblogs with added content	Eklenen içeriği olan yeniden bloglamaları tut
 When reblogs are hidden, keep ones where the reblogger added something of their own. Other post filters still apply.	Yeniden bloglamalar gizlenirken, yeniden bloglayanın kendi eklemesi olanları tutar. Diğer gönderi filtreleri uygulanmaya devam eder.
+Hide your own reblogs	Kendi yeniden bloglarını gizle
+Takes the reblogs you made out of your dashboard and the feeds like it. Your blog still shows them.	Yaptığın yeniden blogları panondan ve benzeri akışlardan kaldırır. Blogun onları göstermeye devam eder.
 Match current post text	Geçerli gönderi metninde eşleştir
 Match reblog trail text	Yeniden bloglama zinciri metninde eşleştir
 Match current post tags	Geçerli gönderi etiketlerinde eşleştir

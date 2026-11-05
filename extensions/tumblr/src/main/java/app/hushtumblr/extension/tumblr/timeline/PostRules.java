@@ -27,8 +27,8 @@ import app.hushtumblr.extension.tumblr.settings.Settings;
 import app.hushtumblr.extension.tumblr.settings.TextSettings;
 
 /**
- * The post switches of the timeline filter: Hide reblogs, Hide video posts, Hide photo posts, Hide
- * text posts, Hide posts with these words and Hide filtered posts. {@link TimelineFilter} asks
+ * The post switches of the timeline filter: Hide reblogs, Hide your own reblogs, Hide video posts,
+ * Hide photo posts, Hide text posts, Hide posts with these words and Hide filtered posts. {@link TimelineFilter} asks
  * {@link #now} once a page and hands each item's payload to {@link #removes}.
  *
  * <p>A post is read through {@link HushPost}, which the post bridge patch adds to Tumblr's post
@@ -48,14 +48,20 @@ public final class PostRules {
 
     /** The families whose switches are here. A heading never goes with one of their posts. */
     static final Set<String> FAMILIES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-            FamilyNames.HIDE_REBLOGS, FamilyNames.HIDE_VIDEO_POSTS, FamilyNames.HIDE_PHOTO_POSTS,
-            FamilyNames.HIDE_TEXT_POSTS, FamilyNames.HIDE_POSTS_WITH_WORDS, FamilyNames.HIDE_FILTERED_POSTS)));
+            FamilyNames.HIDE_REBLOGS, FamilyNames.HIDE_OWN_REBLOGS, FamilyNames.HIDE_VIDEO_POSTS,
+            FamilyNames.HIDE_PHOTO_POSTS, FamilyNames.HIDE_TEXT_POSTS, FamilyNames.HIDE_POSTS_WITH_WORDS,
+            FamilyNames.HIDE_FILTERED_POSTS)));
 
     enum Kind { VIDEO, PHOTO, TEXT }
 
     final boolean reblogs;
     final boolean keepTaggedReblogs;
     final boolean keepReblogsWithContent;
+    /** Hide your own reblogs: a reblog Tumblr says you can edit leaves a dashboard page. */
+    final boolean ownReblogs;
+    /** Whether this page is a dashboard page, read off the stack the first time an own reblog comes. */
+    @Nullable
+    private Boolean onDashboard;
     final boolean video;
     final boolean photo;
     final boolean text;
@@ -68,12 +74,14 @@ public final class PostRules {
     final boolean wordsSummary;
     final boolean filtered;
 
-    PostRules(boolean reblogs, boolean keepTaggedReblogs, boolean keepReblogsWithContent, boolean video,
-              boolean photo, boolean text, List<String> words, List<String> allowedWords, boolean wordsCurrentText,
-              boolean wordsReblogTrail, boolean wordsTags, boolean wordsSummary, boolean filtered) {
+    PostRules(boolean reblogs, boolean keepTaggedReblogs, boolean keepReblogsWithContent, boolean ownReblogs,
+              boolean video, boolean photo, boolean text, List<String> words, List<String> allowedWords,
+              boolean wordsCurrentText, boolean wordsReblogTrail, boolean wordsTags, boolean wordsSummary,
+              boolean filtered) {
         this.reblogs = reblogs;
         this.keepTaggedReblogs = keepTaggedReblogs;
         this.keepReblogsWithContent = keepReblogsWithContent;
+        this.ownReblogs = ownReblogs;
         this.video = video;
         this.photo = photo;
         this.text = text;
@@ -99,6 +107,7 @@ public final class PostRules {
     @Nullable
     static PostRules now() {
         boolean reblogs = on(PatchFamily.Capability.REBLOG_POSTS, FamilyNames.HIDE_REBLOGS, Settings.HIDE_REBLOGS);
+        boolean own = on(PatchFamily.Capability.OWN_REBLOG_POSTS, FamilyNames.HIDE_OWN_REBLOGS, Settings.HIDE_OWN_REBLOGS);
         boolean video = on(PatchFamily.Capability.VIDEO_POSTS, FamilyNames.HIDE_VIDEO_POSTS, Settings.HIDE_VIDEO_POSTS);
         boolean photo = on(PatchFamily.Capability.PHOTO_POSTS, FamilyNames.HIDE_PHOTO_POSTS, Settings.HIDE_PHOTO_POSTS);
         boolean text = on(PatchFamily.Capability.TEXT_POSTS, FamilyNames.HIDE_TEXT_POSTS, Settings.HIDE_TEXT_POSTS);
@@ -110,10 +119,10 @@ public final class PostRules {
                 ? wordList(TextSettings.HIDDEN_WORDS.get()) : Collections.emptyList();
         boolean filtered = on(PatchFamily.Capability.FILTERED_POSTS, FamilyNames.HIDE_FILTERED_POSTS,
                 Settings.HIDE_FILTERED_POSTS);
-        if (!reblogs && !video && !photo && !text && words.isEmpty() && !filtered) return null;
+        if (!reblogs && !own && !video && !photo && !text && words.isEmpty() && !filtered) return null;
         List<String> allowed = words.isEmpty() ? Collections.emptyList() : cachedWordList(TextSettings.ALLOWED_WORDS.get(), true);
         return new PostRules(reblogs, reblogs && Settings.KEEP_TAGGED_REBLOGS.get(),
-                reblogs && Settings.KEEP_REBLOGS_WITH_CONTENT.get(), video, photo, text,
+                reblogs && Settings.KEEP_REBLOGS_WITH_CONTENT.get(), own, video, photo, text,
                 words, allowed, current, trail, tags, summary, filtered);
     }
 
@@ -127,6 +136,7 @@ public final class PostRules {
     /** The first switch that's on, the family a failure is reported under. */
     String owner() {
         if (reblogs) return FamilyNames.HIDE_REBLOGS;
+        if (ownReblogs) return FamilyNames.HIDE_OWN_REBLOGS;
         if (video) return FamilyNames.HIDE_VIDEO_POSTS;
         if (photo) return FamilyNames.HIDE_PHOTO_POSTS;
         if (text) return FamilyNames.HIDE_TEXT_POSTS;
@@ -143,9 +153,11 @@ public final class PostRules {
         if (filtered && isFiltered(payload)) return FamilyNames.HIDE_FILTERED_POSTS;
         HushPost post = postOf(payload);
         if (post == null) return null;
-        List<?> trail = reblogs || video || photo || text || !words.isEmpty() && wordsReblogTrail ? post.hushTrail() : null;
+        List<?> trail = reblogs || ownReblogs || video || photo || text || !words.isEmpty() && wordsReblogTrail
+                ? post.hushTrail() : null;
         if (reblogs && isReblog(post, trail) && !(keepTaggedReblogs && hasCurrentTags(post))
                 && !(keepReblogsWithContent && hasCurrentContent(post))) return FamilyNames.HIDE_REBLOGS;
+        if (ownReblogs && isOwn(payload) && isReblog(post, trail) && onDashboard()) return FamilyNames.HIDE_OWN_REBLOGS;
         if (video || photo || text) {
             Kind kind = kindOf(post, trail);
             if (video && kind == Kind.VIDEO) return FamilyNames.HIDE_VIDEO_POSTS;
@@ -170,6 +182,24 @@ public final class PostRules {
             if (entry != null) return true;
         }
         return false;
+    }
+
+    /**
+     * Whether [payload] is a post made on a blog of yours: Tumblr's can_edit, which the paid post
+     * bridge reads. A post without that field, or one the bridge can't read, isn't yours.
+     */
+    static boolean isOwn(@Nullable Object payload) {
+        return payload instanceof HushPaidPost && ((HushPaidPost) payload).hushCanEdit();
+    }
+
+    /**
+     * Whether this page is one of the dashboard's, or of a feed that loads like it. Your own blog,
+     * your likes and search results keep your reblogs. Read once a page, on the thread building it.
+     */
+    private boolean onDashboard() {
+        Boolean known = onDashboard;
+        if (known == null) onDashboard = known = PageSource.onDashboard();
+        return known;
     }
 
     /** The post [payload] is, or null when it isn't one. */

@@ -59,6 +59,7 @@ public class PostRulesTest {
         PatchFamilyForTests.capabilities(null);
         Settings.HIDE_ADS.resetToDefault();
         Settings.HIDE_REBLOGS.resetToDefault();
+        Settings.HIDE_OWN_REBLOGS.resetToDefault();
         Settings.KEEP_TAGGED_REBLOGS.resetToDefault();
         Settings.KEEP_REBLOGS_WITH_CONTENT.resetToDefault();
         Settings.HIDE_VIDEO_POSTS.resetToDefault();
@@ -150,6 +151,56 @@ public class PostRulesTest {
         Settings.HIDE_REBLOGS.save(true);
         TimelineObject reblog = TimelineItems.reblogOf(Collections.singletonList(new TextBlock("first")));
         assertEquals(Arrays.asList(TEXT, PHOTO), shown(TEXT, reblog, PHOTO));
+    }
+
+    private static final TimelineObject YOUR_REBLOG =
+            TimelineItems.yourReblogOf(Collections.singletonList(new TextBlock("first")), new TextBlock("mine"));
+    private static final TimelineObject THEIR_REBLOG =
+            TimelineItems.reblogOf(Collections.singletonList(new TextBlock("first")), new TextBlock("theirs"));
+    private static final TimelineObject YOUR_POST = TimelineItems.yourPostWith(new TextBlock("my own"));
+
+    /**
+     * Hide your own reblogs starts off. Turned on, a reblog Tumblr says you can edit leaves a
+     * dashboard page, and someone else's reblog and a post you made yourself stay.
+     */
+    @Test
+    public void hideYourOwnReblogsTakesYourReblogsOffTheDashboard() {
+        List<Object> page = Arrays.asList(TEXT, YOUR_REBLOG, THEIR_REBLOG, YOUR_POST);
+        assertFalse(Settings.HIDE_OWN_REBLOGS.get());
+        assertSame(page, TimelineItems.onTheDashboard(page));
+        Settings.HIDE_OWN_REBLOGS.save(true);
+        HookStatus.clear();
+        assertEquals(Arrays.asList(TEXT, THEIR_REBLOG, YOUR_POST), TimelineItems.onTheDashboard(page));
+        String report = String.join(" | ", HookStatus.report());
+        assertTrue(report, report.contains(FamilyNames.HIDE_OWN_REBLOGS) && report.contains("post removed 1"));
+    }
+
+    /** Your blog, your likes, a search and a page from a response it doesn't know all keep your reblogs. */
+    @Test
+    public void yourReblogsStayEverywhereButTheDashboard() {
+        Settings.HIDE_OWN_REBLOGS.save(true);
+        List<Object> page = Arrays.asList(TEXT, YOUR_REBLOG, THEIR_REBLOG);
+        assertSame("your blog", page, TimelineItems.onABlog(page));
+        assertSame("likes", page, TimelineItems.inLikes(page));
+        assertSame("search", page, TimelineItems.inSearchResults(page));
+        assertSame("an unknown page", page, TimelineFilter.filter(page));
+    }
+
+    /** Without the hook in the build, or while paused, the switch takes nothing out. */
+    @Test
+    public void hideYourOwnReblogsNeedsItsHookAndStopsWhilePaused() {
+        Settings.HIDE_OWN_REBLOGS.save(true);
+        List<Object> page = Arrays.asList(TEXT, YOUR_REBLOG);
+        PatchFamilyForTests.capabilities(EnumSet.complementOf(EnumSet.of(PatchFamily.Capability.OWN_REBLOG_POSTS)));
+        assertSame("without the patch", page, TimelineItems.onTheDashboard(page));
+        PatchFamilyForTests.capabilities(EnumSet.allOf(PatchFamily.Capability.class));
+        assertEquals(Collections.singletonList(TEXT), TimelineItems.onTheDashboard(page));
+        PauseForTests.pause(HushTumblrPause.Reason.SWITCH);
+        try {
+            assertSame("paused", page, TimelineItems.onTheDashboard(page));
+        } finally {
+            PauseForTests.resume();
+        }
     }
 
     @Test

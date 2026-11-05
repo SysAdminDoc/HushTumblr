@@ -106,6 +106,38 @@ class PostFiltersFixtureTest {
     fun `Hide reblogs bridges the post model and turns its switch on`() =
         check(hideReblogsPatch, "hideReblogs", "reblogPosts")
 
+    /**
+     * Hide your own reblogs needs both bridges: the post one to tell a reblog, and the paid one for
+     * Tumblr's can_edit. It turns on its own switch and leaves Hide ads' off.
+     */
+    @Test
+    fun `Hide your own reblogs bridges the post and its can_edit and turns its switch on`() {
+        for (build in Fixtures.declaredBuilds()) {
+            val types = POST_BRIDGES.flatMap { listOf(it.model, it.adapter) }.toSet() + setOf(POST_HEADER_CONTEXT,
+                POST_HEADER_CONTEXT.removeSuffix(";") + "JsonAdapter;", "Lcom/tumblr/rumblr/model/post/PostHeaderContext\$ContextIcon;")
+            val classes = FixtureDex.classes(build, types)
+            assertEquals("${build.name}: the models and their adapters", types, classes.keys)
+            val context = PatchContexts.of(ExtensionDex.classes() + classes.values)
+
+            postBridgePatch.execute(context)
+            postJsonPresencePatch.execute(context)
+            paidPostBridgePatch.execute(context)
+            hideOwnReblogsPatch.execute(context)
+
+            val post = context.mutableClassDefBy(POST)
+            assertTrue("${build.name}: Post is a HushPost", HUSH_POST in post.interfaces)
+            assertTrue("${build.name}: Post is a HushPaidPost", HUSH_PAID_POST in post.interfaces)
+            val canEdit = post.methods.single { it.name == "hushCanEdit" }.instructionList()
+            assertEquals(listOf(Opcode.INVOKE_VIRTUAL, Opcode.MOVE_RESULT, Opcode.RETURN), canEdit.map { it.opcode })
+            assertEquals("$POST->P()Z", canEdit[0].methodRef().toString())
+            for ((flag, on) in mapOf("hideOwnReblogs" to 1, "ownReblogPosts" to 1, "hideAds" to 0, "paidPostHeader" to 0)) {
+                val first = context.mutableClassDefBy(SETTINGS_STATUS).methods.single { it.name == flag }
+                    .implementation!!.instructions.first()
+                assertEquals("${build.name}: $flag", on, (first as NarrowLiteralInstruction).narrowLiteral)
+            }
+        }
+    }
+
     @Test
     fun `Hide video posts bridges the post model and turns its switch on`() =
         check(hideVideoPostsPatch, "hideVideoPosts", "videoPosts")

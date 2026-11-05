@@ -379,6 +379,8 @@ Keep tagged reblogs	Reblogs mit Tags behalten
 When reblogs are hidden, keep ones with tags. Other post filters still apply.	Behält Reblogs mit Tags, wenn Reblogs ausgeblendet sind. Andere Beitragsfilter gelten weiter.
 Keep reblogs with added content	Reblogs mit eigenem Inhalt behalten
 When reblogs are hidden, keep ones where the reblogger added something of their own. Other post filters still apply.	Behält Reblogs, bei denen jemand etwas Eigenes hinzugefügt hat, wenn Reblogs ausgeblendet sind. Andere Beitragsfilter gelten weiter.
+Hide your own reblogs	Eigene Reblogs ausblenden
+Takes the reblogs you made out of your dashboard and the feeds like it. Your blog still shows them.	Entfernt die Reblogs, die du gemacht hast, aus deinem Dashboard und ähnlichen Feeds. Dein Blog zeigt sie weiterhin.
 Match current post text	Aktuellen Beitragstext prüfen
 Match reblog trail text	Text der Reblog-Kette prüfen
 Match current post tags	Tags des aktuellen Beitrags prüfen

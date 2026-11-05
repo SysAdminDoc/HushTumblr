@@ -243,6 +243,8 @@ public class PausedHooksTest {
                 Collections.singletonList(BottomBarForTests::hidesTheNotificationsCount));
         // A page with a reblog comes back without it.
         probes.put(Settings.HIDE_REBLOGS, Collections.singletonList(TimelineItems::aPageLosesItsReblog));
+        // A dashboard page with a reblog of your own comes back without it.
+        probes.put(Settings.HIDE_OWN_REBLOGS, Collections.singletonList(TimelineItems::aPageLosesYourReblog));
         // A page with a video post comes back without it.
         probes.put(Settings.HIDE_VIDEO_POSTS, Collections.singletonList(TimelineItems::aPageLosesItsVideoPost));
         // A page with a photo post comes back without it.

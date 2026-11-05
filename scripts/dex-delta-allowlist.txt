@@ -30,19 +30,19 @@ method Lapp/hushtumblr/extension/tumblr/settings/SettingsHubRow;->titleOf(Ljava/
 implements Lcom/tumblr/UserInfo; Lapp/hushtumblr/extension/tumblr/rootmute/HushAccountIdentity;
 method Lcom/tumblr/UserInfo;->hushAccountId()Ljava/lang/String; 7ddf84b382aecf3aa277bbb3a89141d858d7bc1027c0ff08f4ec48bd90311fed
 
-[Hide ads | Mute posts locally]
+[Hide ads | Hide your own reblogs | Mute posts locally]
 field Lcom/tumblr/rumblr/model/post/Post;->hushPaidContextKnown:Z 65ff3748645d34f8d3dcdebe39b70efe464ec5875cb9d4e0a0f1e75310cc9884
 field Lcom/tumblr/rumblr/model/post/Post;->hushRootTrailPresent:Z 65ff3748645d34f8d3dcdebe39b70efe464ec5875cb9d4e0a0f1e75310cc9884
 method Lcom/tumblr/rumblr/model/post/Post;->hushSetJsonPresence(II)V 86723271decc7319912a31885f9fa313cd79f702c6480bbc948e15f61a685a23
 
-[Hide ads]
+[Hide ads | Hide your own reblogs]
 implements Lcom/tumblr/rumblr/model/post/Post; Lapp/hushtumblr/extension/tumblr/timeline/HushPaidPost;
 method Lcom/tumblr/rumblr/model/post/Post;->hushCanEdit()Z 76a1a339c40ab73ebaead0fd8a2d92b0bc17ecd4db9b8684b17abfa7388f2cf2
 method Lcom/tumblr/rumblr/model/post/Post;->hushFollowed()Z 5b8c5016374b67d116ea06843b204737eec793ac02ca69e6dca0a4471e5d975f
 method Lcom/tumblr/rumblr/model/post/Post;->hushHeaderIcon()Ljava/lang/String; 61d154a76d231a4e1f64a0f6b80dea1c6969336d7e4189fdf125f07b269bcb18
 method Lcom/tumblr/rumblr/model/post/Post;->hushPaidContextKnown()Z 6ddc4d8f16f370011fa2803f73833c55efeba31f1d128019db61f827f271ed4d
 
-[Hide photo posts | Hide posts with these words | Hide reblogs | Hide text posts | Hide video posts]
+[Hide photo posts | Hide posts with these words | Hide reblogs | Hide text posts | Hide video posts | Hide your own reblogs]
 implements Lcom/tumblr/rumblr/model/post/Post; Lapp/hushtumblr/extension/tumblr/timeline/HushPost;
 implements Lcom/tumblr/rumblr/model/post/ReblogTrail; Lapp/hushtumblr/extension/tumblr/timeline/HushTrail;
 implements Lcom/tumblr/rumblr/model/post/blocks/TextBlock; Lapp/hushtumblr/extension/tumblr/timeline/HushText;

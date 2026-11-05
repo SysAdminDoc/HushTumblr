@@ -176,6 +176,21 @@ public final class TimelineItems {
         }, false);
     }
 
+    /** A reblog as {@link #reblogOf} makes, on a blog of yours: Tumblr says you can edit it. */
+    public static TimelineObject yourReblogOf(List<?> original, Object... added) {
+        List<HushTrail> trail = Collections.singletonList(() -> original);
+        return new TimelineObject(new Post(Arrays.asList(added), trail, null, null, "100") {
+            @Override public boolean hushCanEdit() { return true; }
+        }, false);
+    }
+
+    /** A post of your own made of [blocks], not a reblog. */
+    public static TimelineObject yourPostWith(Object... blocks) {
+        return new TimelineObject(new Post(Arrays.asList(blocks), null, null, null, null) {
+            @Override public boolean hushCanEdit() { return true; }
+        }, false);
+    }
+
     /** A post made of [blocks], whose id is [id]. */
     public static TimelineObject postWithId(String id, Object... blocks) {
         return new TimelineObject(new Post(Arrays.asList(blocks), null, null, null, null) {
@@ -231,6 +246,11 @@ public final class TimelineItems {
     /** PausedHooksTest's probe for Hide reblogs. */
     public static boolean aPageLosesItsReblog() {
         return aPageLoses(reblogOf(Collections.singletonList(new TextBlock("first")), new TextBlock("second")));
+    }
+
+    /** PausedHooksTest's probe for Hide your own reblogs. */
+    public static boolean aPageLosesYourReblog() {
+        return aPageLoses(yourReblogOf(Collections.singletonList(new TextBlock("first")), new TextBlock("mine")));
     }
 
     /** PausedHooksTest's probe for Hide video posts. */

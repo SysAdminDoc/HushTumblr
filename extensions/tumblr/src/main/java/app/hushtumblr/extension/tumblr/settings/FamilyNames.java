@@ -65,6 +65,7 @@ public final class FamilyNames {
     public static final String HIDE_SAVE_BUTTON = "Hide the Save button";
     public static final String HIDE_UNREAD_DOTS = "Hide unread dots";
     public static final String HIDE_REBLOGS = "Hide reblogs";
+    public static final String HIDE_OWN_REBLOGS = "Hide your own reblogs";
     public static final String HIDE_VIDEO_POSTS = "Hide video posts";
     public static final String HIDE_PHOTO_POSTS = "Hide photo posts";
     public static final String HIDE_TEXT_POSTS = "Hide text posts";

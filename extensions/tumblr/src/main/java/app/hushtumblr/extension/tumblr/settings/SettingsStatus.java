@@ -110,6 +110,8 @@ public final class SettingsStatus {
     public static boolean unreadDots() { return false; }
     public static boolean hideReblogs() { return false; }
     public static boolean reblogPosts() { return false; }
+    public static boolean hideOwnReblogs() { return false; }
+    public static boolean ownReblogPosts() { return false; }
     public static boolean hideVideoPosts() { return false; }
     public static boolean videoPosts() { return false; }
     public static boolean hidePhotoPosts() { return false; }

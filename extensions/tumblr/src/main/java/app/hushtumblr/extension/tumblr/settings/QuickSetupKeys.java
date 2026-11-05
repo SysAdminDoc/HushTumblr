@@ -23,7 +23,7 @@ import app.hushtumblr.extension.shared.settings.preference.QuickSetups;
  *
  * <p>Quiet and Privacy only turn switches on, and only switches whose effect is plain from their
  * name and takes nothing away that someone would miss. Left out on purpose: the post filters and
- * Hide reblogs, which hide posts people follow; the tab switches, which take away a way around the
+ * the two reblog switches, which hide posts people follow or made; the tab switches, which take away a way around the
  * app; the post button switches, note counts, hashtags and the follow button, which are part of
  * reading a post; and the Notifications count, which is how replies and messages get noticed.
  * Back to defaults puts every switch a settings file carries back the way it started.

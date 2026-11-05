@@ -131,6 +131,7 @@ public final class SettingsBackup {
             Settings.HIDE_REBLOGS,
             Settings.KEEP_TAGGED_REBLOGS,
             Settings.KEEP_REBLOGS_WITH_CONTENT,
+            Settings.HIDE_OWN_REBLOGS,
             Settings.HIDE_NOTIFICATION_LIKES,
             Settings.HIDE_NOTIFICATION_REBLOGS,
             Settings.HIDE_NOTIFICATION_REPLIES,
