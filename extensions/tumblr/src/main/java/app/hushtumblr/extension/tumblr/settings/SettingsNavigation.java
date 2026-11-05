@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 import app.hushtumblr.extension.shared.L10n;
 import app.hushtumblr.extension.shared.Utils;
@@ -120,6 +121,18 @@ final class SettingsNavigation extends BaseAdapter {
      */
     private Preference held;
     private int heldTop;
+    /**
+     * Each row's height the last time it laid out with its own summary. A switch that's saving, or
+     * a backup row waiting on saves, shows a one-line summary for a moment. At the end of a page the
+     * shorter row let the list slide down to fill the space it left, and when the save finished the
+     * row grew back below, so the page stayed lower by the difference.
+     */
+    private final Map<Preference, Integer> restingHeights = new WeakHashMap<>();
+    /**
+     * The rows in the list made while showing their own summary. A scroll adds rows without a
+     * layout pass, so their heights are read from here before each rebuild.
+     */
+    private final Map<View, Preference> restingRows = new WeakHashMap<>();
     private final View.OnLayoutChangeListener laidOut = (v, l, t, r, b, oldL, oldT, oldR, oldB) -> held = null;
     private final Preference empty;
     /** The line a category or search page starts with while a pause applies to it. */
@@ -441,6 +454,7 @@ final class SettingsNavigation extends BaseAdapter {
     }
 
     private void rebuild() {
+        rememberRestingHeights();
         int restartWas = visible.indexOf(restart);
         boolean pageStatusWas = visible.contains(pageStatus);
         visible.clear();
@@ -544,6 +558,20 @@ final class SettingsNavigation extends BaseAdapter {
         else list.setSelectionFromTop(at, heldTop - list.getPaddingTop());
     }
 
+    private void rememberRestingHeights() {
+        for (int i = 0; i < list.getChildCount(); i++) {
+            View child = list.getChildAt(i);
+            Preference row = restingRows.get(child);
+            if (row != null && child.getHeight() > 0) restingHeights.put(row, child.getHeight());
+        }
+    }
+
+    /** Whether [row] shows a short line while saves run in place of its own summary. */
+    private static boolean showsBusyLine(Preference row) {
+        return row instanceof HushTumblrPreferenceFragment.Toggle && ((HushTumblrPreferenceFragment.Toggle) row).isSaving()
+                || row instanceof SettingsBackupPreference && ((SettingsBackupPreference) row).isBusy();
+    }
+
     private int headings() {
         int count = 0;
         for (Preference item : visible) if (item instanceof PreferenceCategory) count++;
@@ -639,6 +667,9 @@ final class SettingsNavigation extends BaseAdapter {
             row.setMinimumHeight(Math.max(row.getMinimumHeight(), pageStatusHeight));
             if (pageAction) bindAction(row, HushTumblrPause.isPaused(), HushTumblrPause.pausesNextStart(screen.getContext()), true);
         }
+        Integer resting = restingHeights.get(item);
+        if (!showsBusyLine(item)) restingRows.put(row, item);
+        else if (resting != null) row.setMinimumHeight(Math.max(row.getMinimumHeight(), resting));
         return row;
     }
 

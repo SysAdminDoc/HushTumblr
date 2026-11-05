@@ -774,6 +774,9 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
         }
     }
 
+    /** Whether the row shows a running or waiting line in place of its own summary. */
+    boolean isBusy() { return busyLine != null; }
+
     private void showBusy(int action, @Nullable String line) {
         busyLine = rowAction == action ? line : null;
         setEnabled(false);

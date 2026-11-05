@@ -812,13 +812,130 @@ public class SettingsNavigationTest {
         }
     }
 
+    /**
+     * The same taps with each save finishing on the worker after the tap's first layout, as on a
+     * phone, and each tap made with the page at its end. The restart row and the switch refresh come
+     * a frame after the tap there, and the page slid down a row and a half on the S22.
+     */
+    @Test @Config(sdk = 33) @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    public void aTapWhoseSaveFinishesAfterLayoutLeavesTheTappedRowWhereItWas() {
+        List<Runnable> writes = new ArrayList<>();
+        touchMode(true);
+        HushTumblrPreferenceFragment.editWorkerForTests = writes::add;
+        try {
+            page.navigation.navigate("Interface");
+            layout(dialog.getView());
+            BooleanSetting dark = Settings.DARK_BACKGROUND;
+            BooleanSetting wallpaper = Settings.DARK_BACKGROUND_WALLPAPER;
+            for (BooleanSetting setting : new BooleanSetting[] {dark, wallpaper, wallpaper, wallpaper, dark, dark, wallpaper, dark}) {
+                toEnd();
+                boolean was = setting.savedValue();
+                int top = rowTop(setting.key);
+                String before = children();
+                fingerTap(setting.key);
+                layout(dialog.getView());
+                for (int i = 0; i < 10 && !writes.isEmpty(); i++) {
+                    writes.remove(0).run();
+                    ShadowLooper.idleMainLooper(100, java.util.concurrent.TimeUnit.MILLISECONDS);
+                    layout(dialog.getView());
+                }
+                assertTrue("a save never finished", writes.isEmpty());
+                assertEquals(setting.key + " didn't flip", !was, setting.savedValue());
+                assertEquals(setting.key + " moved after its tap\nbefore " + before + "\nafter  " + children(),
+                        top, rowTop(setting.key));
+            }
+            assertFalse("both switches are back off, so no restart is owed", contains(SettingsNavigation.RESTART));
+        } finally {
+            for (Runnable write : writes) write.run();
+            HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
+            Settings.DARK_BACKGROUND.resetToDefault();
+            Settings.DARK_BACKGROUND_WALLPAPER.resetToDefault();
+            app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.clear();
+        }
+    }
+
+    /**
+     * On every page, scrolled to its end, the lowest switch in view is flipped and flipped back with
+     * its save finishing after layout. No row in view moves, the backup rows that say "Saving
+     * changes" meanwhile included.
+     */
+    @Test @Config(sdk = 33) @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    public void noRowMovesWhileTheLowestSwitchOnAPageSaves() {
+        List<Runnable> writes = new ArrayList<>();
+        List<Setting<?>> flipped = new ArrayList<>();
+        touchMode(true);
+        HushTumblrPreferenceFragment.editWorkerForTests = writes::add;
+        int checked = 0;
+        try {
+            for (String name : new String[] {"Feed", "Posts", "Interface", "Privacy", "Notifications", "Links",
+                    "Pause, backup and diagnostics", "About"}) {
+                while (page.navigation.back()) { }
+                page.navigation.navigate(name);
+                layout(dialog.getView());
+                toEnd();
+                String key = null;
+                for (int i = 0; i < list().getChildCount(); i++) {
+                    Object item = list().getItemAtPosition(list().getFirstVisiblePosition() + i);
+                    if (item instanceof HushTumblrPreferenceFragment.Toggle
+                            && !BaseSettings.PAUSED.key.equals(((Preference) item).getKey())) key = ((Preference) item).getKey();
+                }
+                if (key == null) continue;
+                checked++;
+                flipped.add(Setting.getSettingFromPath(key));
+                for (int tap = 0; tap < 2; tap++) {
+                    Map<String, Integer> before = tops();
+                    String shown = children();
+                    fingerTap(key);
+                    layout(dialog.getView());
+                    for (int i = 0; i < 10 && !writes.isEmpty(); i++) {
+                        writes.remove(0).run();
+                        ShadowLooper.idleMainLooper(100, java.util.concurrent.TimeUnit.MILLISECONDS);
+                        layout(dialog.getView());
+                    }
+                    Map<String, Integer> after = tops();
+                    after.keySet().retainAll(before.keySet());
+                    before.keySet().retainAll(after.keySet());
+                    assertEquals(name + ": rows moved while " + key + " saved\nbefore " + shown + "\nafter  " + children(),
+                            before, after);
+                }
+            }
+            assertTrue("too few pages had a switch at their end: " + checked, checked >= 4);
+        } finally {
+            for (Runnable write : writes) write.run();
+            HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
+            for (Setting<?> setting : flipped) setting.resetToDefault();
+            app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.clear();
+        }
+    }
+
+    /** Each row in view with a key, and its top. */
+    private Map<String, Integer> tops() {
+        Map<String, Integer> out = new java.util.LinkedHashMap<>();
+        for (int i = 0; i < list().getChildCount(); i++) {
+            Object item = list().getItemAtPosition(list().getFirstVisiblePosition() + i);
+            if (item instanceof Preference && ((Preference) item).hasKey()) out.put(((Preference) item).getKey(), list().getChildAt(i).getTop());
+        }
+        return out;
+    }
+
+    /** Scrolls the page to its end. */
+    private void toEnd() {
+        for (int i = 0; i < 20 && (list().getLastVisiblePosition() < list().getCount() - 1
+                || list().getChildAt(list().getChildCount() - 1).getBottom() > list().getHeight() - list().getPaddingBottom()); i++) {
+            list().scrollListBy(2000);
+            layout(dialog.getView());
+        }
+        assertEquals("the list isn't at its end", list().getCount() - 1, list().getLastVisiblePosition());
+    }
+
     /** The first position in view, then each row's key and top, for a failure message. */
     private String children() {
         StringBuilder out = new StringBuilder("first=" + list().getFirstVisiblePosition());
         for (int i = 0; i < list().getChildCount(); i++) {
             Object item = list().getAdapter().getItem(list().getFirstVisiblePosition() + i);
             String key = item instanceof android.preference.Preference ? ((android.preference.Preference) item).getKey() : String.valueOf(item);
-            out.append(" [").append(key).append('@').append(list().getChildAt(i).getTop()).append(']');
+            out.append(" [").append(key).append('@').append(list().getChildAt(i).getTop())
+                    .append('+').append(list().getChildAt(i).getHeight()).append(']');
         }
         return out.toString();
     }

@@ -1943,6 +1943,9 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             super.setEnabled(enabled && !saving);
         }
 
+        /** While the switch's save runs, its summary says so in place of its own. */
+        boolean isSaving() { return saving; }
+
         @Override public void setChecked(boolean checked) {
             if (!saving) super.setChecked(checked);
         }
