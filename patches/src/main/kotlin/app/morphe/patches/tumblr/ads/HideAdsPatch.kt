@@ -21,13 +21,15 @@ import app.morphe.patches.tumblr.timeline.paidPostBridgePatch
  * serves as sponsored (a paid "Sponsored with Blaze" post among them), out of a page before Tumblr
  * shows it, and the feature switch hook answers false for the
  * flags that make Tumblr ask its ad networks for ads (the rule's flag list is in `FeatureSwitches`).
+ * The launch guards ([AD_SDK_STARTUP_GUARDS]) keep the ad SDKs' own manifest entries from starting
+ * them before any of that runs.
  */
 @Suppress("unused")
 val hideAdsPatch = bytecodePatch(
     name = "Hide ads",
     description = "Takes ad cards and paid Blaze posts out of your dashboard and other feeds. Tumblr stops asking its" +
-        " ad networks for more and stops showing a full-screen ad when you open a blog. On by default. Turn it off" +
-        " in Tumblr settings > HushTumblr > Feed.",
+        " ad networks for more and stops showing a full-screen ad when you open a blog, and the ad networks" +
+        " don't start when Tumblr launches. On by default. Turn it off in Tumblr settings > HushTumblr > Feed.",
     default = true,
 ) {
     category("Ads")
@@ -38,8 +40,10 @@ val hideAdsPatch = bytecodePatch(
         requireStatusMethod("hideAds")
         requireStatusMethod("timelineAds")
         requireStatusMethod("paidPostHeader")
+        requireStatusMethod("adSdkStartup")
         enableCapability("timelineAds")
         enableCapability("paidPostHeader")
+        if (guardStartups("Hide ads", AD_SDK_STARTUP_GUARDS)) enableCapability("adSdkStartup")
         enableStatus("hideAds")
     }
 }

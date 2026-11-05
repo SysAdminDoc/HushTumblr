@@ -63,9 +63,21 @@ public final class FeatureDexFixture {
     // A blog's posts page is a subclass of the page every blog, likes and search page starts from.
     private static final String TIMELINE_RESPONSE = "Lcom/tumblr/rumblr/response/timeline/TimelineResponse;";
     private static final String POSTS_RESPONSE = "Lcom/tumblr/rumblr/response/timeline/PostsResponse;";
+    // The SDK launch providers, held to ContentProvider like the real ones, since each hook takes one.
+    private static final String PROVIDER = "Landroid/content/ContentProvider;";
+    private static final String AUDIENCE = "Lcom/facebook/ads/internal/dynamicloading/DynamicLoaderFactory;";
+    private static final String AUDIENCE_FALLBACK = "Lcom/facebook/ads/internal/dynamicloading/DynamicLoaderFallback;";
+    private static final String AUDIENCE_LOADER = "Lcom/facebook/ads/internal/dynamicloading/DynamicLoader;";
+    private static final String MOBILE_ADS = "Lcom/google/android/gms/ads/MobileAdsInitProvider;";
+    private static final String MOBILE_ADS_START = "Lcom/google/android/gms/ads/MobileAds;";
+    private static final String VUNGLE = "Lcom/vungle/ads/VungleProvider;";
+    private static final String LIVERAMP = "Lcom/liveramp/ats/LRInitProvider;";
+    private static final String NIMBUS = "Lcom/tumblr/startup/NimbusStartupInitializer;";
+    private static final String SDK_STARTUP = BASE + "privacy/SdkStartup;";
     private static final Map<String, String> SUPERCLASSES = Map.of(APP, CORE_APP, ACTIVITY, COMPONENT_ACTIVITY,
             CORE_APP, "Landroid/app/Application;", COMPONENT_ACTIVITY, "Landroid/app/Activity;", POSTS_RESPONSE, TIMELINE_RESPONSE,
-            "Lfixture/PostSpacing;", "Landroidx/recyclerview/widget/RecyclerView$o;");
+            "Lfixture/PostSpacing;", "Landroidx/recyclerview/widget/RecyclerView$o;", MOBILE_ADS, PROVIDER,
+            VUNGLE, PROVIDER, LIVERAMP, PROVIDER);
     private static final String VOID = "V";
     private static final String OBJECT = "Ljava/lang/Object;";
     private static final String LIST = "Ljava/util/List;";
@@ -1130,6 +1142,119 @@ public final class FeatureDexFixture {
                 List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN, 0)))));
     }
 
+    /** A provider hook asked with this (v[self]), its answer in v[answer], returned at once when true. */
+    private static List<Instruction> answerGuard(String hook, int self, int answer, boolean wrongReturn) {
+        List<Instruction> guard = new ArrayList<>(List.of(invoke(Opcode.INVOKE_STATIC, ref(SDK_STARTUP, hook, "Z", PROVIDER), self),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT, answer)));
+        // The wrong return hands back a constant false, so what the provider returns no longer comes from the hook.
+        if (wrongReturn) guard.addAll(List.of(new ImmutableInstruction21t(Opcode.IF_EQZ, answer, 4),
+                new ImmutableInstruction11n(Opcode.CONST_4, answer, 0), new ImmutableInstruction11x(Opcode.RETURN, answer)));
+        else guard.addAll(List.of(new ImmutableInstruction21t(Opcode.IF_EQZ, answer, 3), new ImmutableInstruction11x(Opcode.RETURN, answer)));
+        return guard;
+    }
+
+    /** A context hook asked with the context parameter v[context], which takes its answer back. */
+    private static List<Instruction> contextGuard(String hook, int context, boolean inverted, Instruction... exit) {
+        int skip = 2;
+        for (Instruction i : exit) skip += i.getCodeUnits();
+        List<Instruction> guard = new ArrayList<>(List.of(invoke(Opcode.INVOKE_STATIC, ref(SDK_STARTUP, hook, CONTEXT, CONTEXT), context),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, context),
+                new ImmutableInstruction21t(inverted ? Opcode.IF_EQZ : Opcode.IF_NEZ, context, skip)));
+        guard.addAll(Arrays.asList(exit));
+        return guard;
+    }
+
+    /**
+     * The SDK launch entries the way Tumblr's build has them: Audience Network's static
+     * DynamicLoaderFactory initialize (v0 and v1 free, the context in v2) and its static code
+     * loader doMakeLoader (v0 and v1 free, the context in v2), which hands out the SDK's own
+     * fallback loader when guarded (or null in fallback-null), Vungle's and LiveRamp's
+     * providers (v0 free), Google Mobile Ads' attachInfo with no local and its static MobileAds
+     * initialize (the context in v2), and the Nimbus initializer's bridge create with no local.
+     * Unless clean, Hide ads guards the ad SDKs and Disable analytics LiveRamp, each first thing,
+     * by the flags set.
+     */
+    private static void sdkStartup(Map<String, List<Method>> classes, String variant) {
+        boolean clean = variant.equals("clean");
+        boolean ads = !clean && Boolean.TRUE.equals(FLAGS.get("hideAds"));
+        boolean liveRamp = !clean && Boolean.TRUE.equals(FLAGS.get("disableAnalytics"));
+        Map<String, String> hooks = Map.of(VUNGLE, "vungle", LIVERAMP, "liveRamp");
+        for (String owner : List.of(VUNGLE, LIVERAMP)) {
+            boolean guarded = owner.equals(LIVERAMP) ? liveRamp && !variant.equals("liveramp-missing")
+                    : ads && !variant.equals("missing");
+            List<Instruction> original = List.of(new ImmutableInstruction11n(Opcode.CONST_4, 0, 1), new ImmutableInstruction11x(Opcode.RETURN, 0));
+            List<Instruction> body = new ArrayList<>();
+            if (guarded && owner.equals(VUNGLE) && variant.equals("provider-not-first")) {
+                // Asked only after the provider has already set its own answer.
+                body.add(original.get(0));
+                body.addAll(answerGuard(hooks.get(owner), 1, 0, false));
+                body.add(original.get(1));
+            } else {
+                if (guarded) body.addAll(answerGuard(hooks.get(owner), 1, 0, owner.equals(VUNGLE) && variant.equals("wrong-return")));
+                body.addAll(original);
+            }
+            classes.put(owner, List.of(method(owner, "onCreate", "Z", false, 2, body)));
+        }
+        String bundle = "Lcom/facebook/ads/internal/settings/MultithreadedBundleWrapper;";
+        String listener = "Lcom/facebook/ads/AudienceNetworkAds$InitListener;";
+        List<Instruction> loader = List.of(literal("fixture-audience", 0),
+                invoke(Opcode.INVOKE_STATIC, ref("Lfixture/AudienceLoader;", "start", VOID, CONTEXT, bundle, listener, "Z"), 2, 3, 4, 5), end());
+        List<Instruction> initialize = new ArrayList<>();
+        if (ads && variant.equals("not-first")) {
+            // Asked only after Audience Network has already started on its way.
+            initialize.add(loader.get(0));
+            initialize.addAll(contextGuard("audienceNetwork", 2, false, end()));
+            initialize.addAll(loader.subList(1, loader.size()));
+        } else {
+            if (ads) initialize.addAll(contextGuard("audienceNetwork", 2, false, end()));
+            initialize.addAll(loader);
+        }
+        List<Instruction> make = new ArrayList<>();
+        // wrong-fallback hands out another of the SDK's static loaders with the same type.
+        String handedOut = variant.equals("wrong-fallback") ? "makeOtherLoader" : "makeFallbackLoader";
+        if (ads) make.addAll(variant.equals("fallback-null")
+                ? contextGuard("audienceNetwork", 2, false, new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 2))
+                : contextGuard("audienceNetwork", 2, false, invoke(Opcode.INVOKE_STATIC, ref(AUDIENCE_FALLBACK, handedOut, AUDIENCE_LOADER)),
+                        new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 2), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 2)));
+        make.addAll(List.of(invoke(Opcode.INVOKE_STATIC, ref("Lfixture/AudienceLoader;", "load", AUDIENCE_LOADER, CONTEXT, "Z"), 2, 3),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0)));
+        classes.put(AUDIENCE, List.of(method(AUDIENCE, "initialize", VOID, true, 6, initialize, CONTEXT, bundle, listener, "Z"),
+                method(AUDIENCE, "doMakeLoader", AUDIENCE_LOADER, true, 4, make, CONTEXT, "Z")));
+        List<Method> loaders = new ArrayList<>();
+        for (String name : List.of("makeFallbackLoader", "makeOtherLoader")) loaders.add(method(AUDIENCE_FALLBACK, name, AUDIENCE_LOADER, true, 1,
+                List.of(new ImmutableInstruction11n(Opcode.CONST_4, 0, 0), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0))));
+        classes.put(AUDIENCE_FALLBACK, loaders);
+        String complete = "Lcom/google/android/gms/ads/initialization/OnInitializationCompleteListener;";
+        List<Instruction> start = new ArrayList<>();
+        // context-register takes the answer into a free register, so Tumblr's code runs on the context it was handed.
+        if (ads && variant.equals("context-register")) start.addAll(List.of(
+                invoke(Opcode.INVOKE_STATIC, ref(SDK_STARTUP, "mobileAds", CONTEXT, CONTEXT), 2),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0), new ImmutableInstruction21t(Opcode.IF_NEZ, 0, 3), end()));
+        else if (ads) start.addAll(contextGuard("mobileAds", 2, false, end()));
+        start.add(invoke(Opcode.INVOKE_STATIC, ref("Lfixture/MobileAdsStart;", "start", VOID, CONTEXT, complete), 2, 3));
+        start.add(end());
+        classes.put(MOBILE_ADS_START, List.of(method(MOBILE_ADS_START, "initialize", VOID, true, 4, start, CONTEXT, complete)));
+        List<Instruction> attach = new ArrayList<>();
+        if (ads) attach.addAll(contextGuard("mobileAds", 1, variant.equals("context-inverted"), end()));
+        attach.add(invoke(Opcode.INVOKE_STATIC, ref("Lfixture/MobileAdsInit;", "attach", VOID, CONTEXT, "Landroid/content/pm/ProviderInfo;"), 1, 2));
+        attach.add(end());
+        classes.put(MOBILE_ADS, List.of(method(MOBILE_ADS, "attachInfo", VOID, false, 3, attach, CONTEXT, "Landroid/content/pm/ProviderInfo;")));
+        List<Instruction> create = new ArrayList<>();
+        if (ads) create.addAll(contextGuard("nimbus", 1, false, new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 1)));
+        create.addAll(List.of(invoke(Opcode.INVOKE_VIRTUAL, ref(NIMBUS, "b", VOID, CONTEXT), 0, 1), literal("fixture-unit", 0),
+                new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0)));
+        classes.put(NIMBUS, List.of(method(NIMBUS, "create", OBJECT, false, 2, create, CONTEXT),
+                method(NIMBUS, "b", VOID, false, 2, List.of(end()), CONTEXT)));
+        if (!ads && !liveRamp) return;
+        // Each hook is v0 then its parameter, and answers once the settings are ready.
+        List<Method> answers = new ArrayList<>();
+        for (String name : List.of("vungle", "liveRamp")) answers.add(method(SDK_STARTUP, name, "Z", true, 2,
+                List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN, 0)), PROVIDER));
+        for (String name : List.of("audienceNetwork", "mobileAds", "nimbus")) answers.add(method(SDK_STARTUP, name, CONTEXT, true, 2,
+                List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 1)), CONTEXT));
+        classes.put(SDK_STARTUP, answers);
+    }
+
     private static void optionalNudges(Map<String, List<Method>> classes, String kind, String variant) {
         String helper = BASE + "ui/OptionalNudges;", owner = "Lfixture/BlogReminder;", popup = "Lfixture/GiftPopup;";
         boolean hooked = !variant.equals("clean") && !variant.equals("missing");
@@ -1378,6 +1503,27 @@ public final class FeatureDexFixture {
             Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
             reviewPrompt(classes, variant);
             write(root, "feature-review-" + variant, classes, true, "skipReviewPrompts");
+        }
+        // The SDK launch entries have a clean APK of their own, so every other Hide ads and Disable
+        // analytics fixture stays one whose build has none of those SDKs.
+        Map<String, List<Method>> sdkClean = new LinkedHashMap<>(clean);
+        sdkStartup(sdkClean, "clean");
+        write(root, "sdk-startup-clean", sdkClean, false);
+        for (String variant : List.of("good", "ads-only", "missing", "wrong-return", "not-first", "provider-not-first",
+                "context-inverted", "context-register", "fallback-null", "wrong-fallback", "false-capability", "liveramp-missing")) {
+            reset(); enable("hideAds");
+            boolean analytics = !variant.equals("ads-only");
+            if (analytics) enable("disableAnalytics");
+            if (variant.equals("false-capability")) FLAGS.put("adSdkStartup", false);
+            Map<String, List<Method>> classes = new LinkedHashMap<>(sdkClean);
+            classes.putAll(hosts(true));
+            timeline(classes, true);
+            featureSwitch(classes, true);
+            classes.remove(POST);
+            paidPostBridge(classes, "good");
+            sdkStartup(classes, variant);
+            write(root, "feature-sdk-startup-" + variant, classes, true,
+                    analytics ? new String[]{"hideAds", "disableAnalytics"} : new String[]{"hideAds"});
         }
         for (String variant : List.of("good", "missing", "wrong-return")) {
             reset(); enable("hideBlogNotificationReminders");

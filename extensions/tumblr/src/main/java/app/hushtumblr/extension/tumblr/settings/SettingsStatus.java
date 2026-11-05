@@ -50,12 +50,14 @@ public final class SettingsStatus {
     public static boolean hideAds() { return false; }
     public static boolean timelineAds() { return false; }
     public static boolean paidPostHeader() { return false; }
+    public static boolean adSdkStartup() { return false; }
     public static boolean disableAnalytics() { return false; }
     public static boolean hideAdvertisingId() { return false; }
     public static boolean advertisingId() { return false; }
     public static boolean removeAdTrackingPermissions() { return false; }
     public static boolean spoofSignature() { return false; }
     public static boolean analyticsFlags() { return false; }
+    public static boolean liveRampStartup() { return false; }
     public static boolean hideAdFreeBanner() { return false; }
     public static boolean adFreeBannerFlags() { return false; }
     public static boolean hideTumblrTv() { return false; }

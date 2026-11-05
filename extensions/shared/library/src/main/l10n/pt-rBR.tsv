@@ -223,9 +223,9 @@ Use the email on your Tumblr account and a Tumblr password. Google sign-in may n
 # context: the Feed page and its Hide ads switch.
 Feed	Feed
 Hide ads	Ocultar anúncios
-Takes ads and paid Blaze posts out of your dashboard and other feeds. Ad requests stop after Tumblr restarts.	Tira anúncios e posts pagos com Blaze do seu painel e de outros feeds. Os pedidos de anúncios param depois que o Tumblr reinicia.
+Takes ads and paid Blaze posts out of your dashboard and other feeds. Once Tumblr restarts, it stops asking for ads and its ad networks don't start.	Tira anúncios e posts pagos com Blaze do seu painel e de outros feeds. Depois que o Tumblr reinicia, ele para de pedir anúncios e as redes de anúncios dele não iniciam.
 # context: the Disable analytics switch on the Privacy page.
-Stops Tumblr's own tracking and ad measurement. Firebase and Google's analytics collection stay off until you patch again without it.	Para o rastreamento próprio do Tumblr e a medição de anúncios. A coleta do Firebase e do Google Analytics continua desligada até você aplicar o patch de novo sem ele.
+Stops Tumblr's own tracking and ad measurement, and keeps LiveRamp's tracker from starting. Firebase and Google's analytics collection stay off until you patch again without it.	Para o rastreamento próprio do Tumblr e a medição de anúncios, e impede que o rastreador da LiveRamp inicie. A coleta do Firebase e do Google Analytics continua desligada até você aplicar o patch de novo sem ele.
 # context: the Hide the ad-free banner switch on the Feed page.
 Hide the ad-free banner	Ocultar o banner sem anúncios
 Hides the dashboard banner that asks you to pay for Ad-Free Browsing.	Esconde o banner do painel que pede para você pagar pela navegação sem anúncios.
@@ -474,3 +474,5 @@ Copy video link	Copiar link do vídeo
 Video link	Link do vídeo
 Video link copied	Link do vídeo copiado
 No app can share this link	Nenhum app pode compartilhar este link
+ad networks at launch	as redes de anúncios ao abrir
+LiveRamp at launch	o LiveRamp ao abrir

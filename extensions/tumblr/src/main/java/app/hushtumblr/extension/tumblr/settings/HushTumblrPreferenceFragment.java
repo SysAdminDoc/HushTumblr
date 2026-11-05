@@ -603,8 +603,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         if (!Collections.disjoint(build, PatchFamily.FEED_PAGE)) {
             PreferenceCategory feed = category(screen, L10n.t("Feed"));
             patchToggle(feed, context, build, PatchFamily.HIDE_ADS, Settings.HIDE_ADS, L10n.t("Hide ads"),
-                    L10n.t("Takes ads and paid Blaze posts out of your dashboard and other feeds. Ad requests stop "
-                        + "after Tumblr restarts."), SettingsIcons.BLOCK);
+                    L10n.t("Takes ads and paid Blaze posts out of your dashboard and other feeds. Once Tumblr "
+                        + "restarts, it stops asking for ads and its ad networks don't start."), SettingsIcons.BLOCK);
             patchToggle(feed, context, build, PatchFamily.HIDE_AD_FREE_BANNER, Settings.HIDE_AD_FREE_BANNER,
                     L10n.t("Hide the ad-free banner"), L10n.t("Hides the dashboard banner that asks you to pay for "
                         + "Ad-Free Browsing."), SettingsIcons.BLOCK);
@@ -807,8 +807,9 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             // The switch covers Tumblr's own tracking flags, so a change gets the shared restart line.
             // The manifest half was set when patching, and the summary says so.
             patchToggle(privacy, context, build, PatchFamily.DISABLE_ANALYTICS, Settings.DISABLE_ANALYTICS,
-                    L10n.t("Disable analytics"), L10n.t("Stops Tumblr's own tracking and ad measurement. Firebase "
-                        + "and Google's analytics collection stay off until you patch again without it."),
+                    L10n.t("Disable analytics"), L10n.t("Stops Tumblr's own tracking and ad measurement, and keeps "
+                        + "LiveRamp's tracker from starting. Firebase and Google's analytics collection stay off "
+                        + "until you patch again without it."),
                     SettingsIcons.BLOCK);
             patchToggle(privacy, context, build, PatchFamily.HIDE_ADVERTISING_ID, Settings.HIDE_ADVERTISING_ID,
                     L10n.t("Hide advertising ID"), L10n.t("Tumblr and the ad companies inside it see an empty "

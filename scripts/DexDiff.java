@@ -356,8 +356,9 @@ public class DexDiff {
                 String[] columns = line.split("\\|", -1);
                 boolean family = columns[0].equals("family");
                 int mutationValues = columns.length - 3;
-                // A post bridge rule names one bridge or several, a guard pairs of values.
-                boolean validMutation = family || (columns[2].equals("guard") ? mutationValues >= 2 && mutationValues % 2 == 0
+                // A post bridge rule names one bridge or several, a guard and an SDK launch rule pairs of values.
+                boolean validMutation = family || (columns[2].equals("guard") || columns[2].equals("sdkStartup")
+                        ? mutationValues >= 2 && mutationValues % 2 == 0
                         : columns[2].equals("postBridge") ? mutationValues >= 1
                         : MUTATION_COLUMNS.getOrDefault(columns[2], -1) == mutationValues);
                 // A family's capability column may be empty: a manifest-only patch changes no bytecode.
@@ -5062,6 +5063,72 @@ public class DexDiff {
             capability(c.callee, old != null && guardFirst(old, c.strings.get(0), List.of(), 1, RETURN_NOTHING));
         }
 
+        /**
+         * Each SDK launch entry the build has, target and hook in pairs, asks its hook first thing.
+         * A boolean hook takes the provider and the entry returns that true at once; a context hook
+         * takes the context parameter back and the entry returns at once on null. A provider entry
+         * is an instance method; a context entry may also be one of the SDK's own static start
+         * methods. A context hook written {@code hook>fallback} makes the entry return the
+         * fallback's result on null instead. A build without the SDK's class has nothing to start.
+         */
+        void sdkStartup(Contract c) {
+            boolean ok = true;
+            for (int k = 0; k + 1 < c.strings.size(); k += 2) {
+                String target = c.strings.get(k), hook = c.strings.get(k + 1), fallback = null;
+                // The fallback follows the first ">" after the hook's parameters, past its own "->".
+                int cut = hook.indexOf('>', hook.indexOf(')'));
+                if (hook.indexOf(')') >= 0 && cut >= 0) {
+                    fallback = hook.substring(cut + 1);
+                    hook = hook.substring(0, cut);
+                }
+                if (!clean.classes.containsKey(target.substring(0, target.indexOf("->")))) continue;
+                Method old = clean.methods.get(target);
+                boolean context = !hook.endsWith(")Z");
+                if (old == null || old.getImplementation() == null || !context && isStatic(old) || context
+                        && (old.getParameterTypes().isEmpty() || !old.getParameterTypes().get(0).toString().equals("Landroid/content/Context;"))) {
+                    fail("the SDK launch entry " + target + " is missing or isn't a method of that shape");
+                    ok = false;
+                    continue;
+                }
+                Tail answered = (body, from) -> movesTo(get(body, from), firstRegister(get(body, from - 2)), Opcode.RETURN);
+                ok &= context ? contextGuardFirst(old, hook, fallback) : guardFirst(old, hook, List.of(parameter(old, -1)), 1, answered);
+            }
+            capability(c.callee, ok);
+        }
+
+        /**
+         * [hook] asked first thing in [old]'s patched copy for its context parameter, which goes back
+         * into that parameter: on null the method returns at once (null for an object result, or
+         * what [fallback] makes when there is one), and otherwise Tumblr's own code runs on the
+         * context the hook handed back.
+         */
+        boolean contextGuardFirst(Method old, String hook, String fallback) {
+            Method m = actual(old);
+            List<Integer> sites = calls(m, hook, 1);
+            if (m == null || sites.size() != 1) return false;
+            List<Instruction> body = instructions(m);
+            int context = parameter(m, 0), added = fallback == null ? 4 : 6;
+            Instruction test = get(body, 2), exit = get(body, 3);
+            boolean exits = fallback == null
+                    ? old.getReturnType().equals("V") ? exit != null && exit.getOpcode() == Opcode.RETURN_VOID
+                            : movesTo(exit, context, Opcode.RETURN_OBJECT)
+                    : exit != null && exit.getOpcode() == Opcode.INVOKE_STATIC && arguments(exit).isEmpty()
+                            && reference(exit) != null && reference(exit).toString().equals(fallback)
+                            && movesTo(get(body, 4), context, Opcode.MOVE_RESULT_OBJECT)
+                            && movesTo(get(body, 5), context, Opcode.RETURN_OBJECT);
+            boolean shaped = sites.get(0) == 0 && arguments(body.get(0)).equals(List.of(context))
+                    && movesTo(get(body, 1), context, Opcode.MOVE_RESULT_OBJECT)
+                    && test != null && test.getOpcode() == Opcode.IF_NEZ && firstRegister(test) == context
+                    && target(m, 2) == added && body.size() > added && exits;
+            if (!shaped) {
+                fail(hook + " isn't asked first thing in " + m + ", with Tumblr's own code run on the context it hands back"
+                        + (fallback == null ? "" : ", and " + fallback + " returned in its place on null"));
+                return false;
+            }
+            remove(m, 0, added);
+            return true;
+        }
+
         /** The reminder preference decision may answer false first, without changing its native read or writer. */
         void blogNotificationReminder(Contract c) {
             List<Method> found = new ArrayList<>();
@@ -6230,6 +6297,7 @@ public class DexDiff {
                     case "rootPostMutes": rootPostMutes(c); break;
                     case "mutualMarkers": mutualMarkers(c); break;
                     case "reviewPrompt": reviewPrompt(c); break;
+                    case "sdkStartup": sdkStartup(c); break;
                     case "blogNotificationReminder": blogNotificationReminder(c); break;
                     case "giftMessagePopup": giftMessagePopup(c); break;
                     case "postLine": postLine(c); break;

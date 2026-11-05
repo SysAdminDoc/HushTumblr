@@ -29,8 +29,8 @@ no-call Landroid/content/pm/ShortcutManager;->removeAllDynamicShortcuts()V outsi
 # An empty capability column is a family that changes no bytecode (a manifest-only patch): only its
 # installed flag is checked against the selected patches. Every installed and capability flag
 # SettingsStatus compiles needs a line here, and every capability a mutation rule.
-family|hideAds|Hide ads|timelineAds,paidPostHeader
-family|disableAnalytics|Disable analytics|analyticsFlags
+family|hideAds|Hide ads|timelineAds,paidPostHeader,adSdkStartup
+family|disableAnalytics|Disable analytics|analyticsFlags,liveRampStartup
 family|hideAdvertisingId|Hide advertising ID|advertisingId
 family|removeAdTrackingPermissions|Remove ad tracking permissions|
 family|spoofSignature|Spoof signature for Google sign-in|
@@ -121,6 +121,13 @@ mutation|filteredPosts|postBridge|Lcom/tumblr/rumblr/model/post/Post;>Lapp/husht
 # reblogs reads can_edit here too, its capability owned by the post bridge.
 mutation|paidPostHeader|paidPostBridge|Lcom/tumblr/rumblr/model/post/Post;|Lapp/hushtumblr/extension/tumblr/timeline/HushPaidPost;|hushHeaderIcon:header_context:icon|hushFollowed:followed|hushCanEdit:can_edit|hushPaidContextKnown|hideOwnReblogs
 mutation|reviewPrompt|reviewPrompt|Lapp/hushtumblr/extension/tumblr/ui/ReviewPrompts;->skip()Z|app_review_prompt_rules_last_shown|Lcom/tumblr/rating/RatingPromptActivity;
+# SDK launch entries, each target followed by the hook asked first thing in it: the manifest's
+# providers and initializer, plus the SDKs' own start methods for Audience Network and Google
+# Mobile Ads, which Tumblr's application also calls. Audience Network's code loader returns the SDK's
+# own fallback loader, named after the hook's ">", instead of loading. A build without an SDK's
+# class skips that pair.
+mutation|adSdkStartup|sdkStartup|Lcom/facebook/ads/internal/dynamicloading/DynamicLoaderFactory;->initialize(Landroid/content/Context;Lcom/facebook/ads/internal/settings/MultithreadedBundleWrapper;Lcom/facebook/ads/AudienceNetworkAds$InitListener;Z)V|Lapp/hushtumblr/extension/tumblr/privacy/SdkStartup;->audienceNetwork(Landroid/content/Context;)Landroid/content/Context;|Lcom/facebook/ads/internal/dynamicloading/DynamicLoaderFactory;->doMakeLoader(Landroid/content/Context;Z)Lcom/facebook/ads/internal/dynamicloading/DynamicLoader;|Lapp/hushtumblr/extension/tumblr/privacy/SdkStartup;->audienceNetwork(Landroid/content/Context;)Landroid/content/Context;>Lcom/facebook/ads/internal/dynamicloading/DynamicLoaderFallback;->makeFallbackLoader()Lcom/facebook/ads/internal/dynamicloading/DynamicLoader;|Lcom/google/android/gms/ads/MobileAdsInitProvider;->attachInfo(Landroid/content/Context;Landroid/content/pm/ProviderInfo;)V|Lapp/hushtumblr/extension/tumblr/privacy/SdkStartup;->mobileAds(Landroid/content/Context;)Landroid/content/Context;|Lcom/google/android/gms/ads/MobileAds;->initialize(Landroid/content/Context;Lcom/google/android/gms/ads/initialization/OnInitializationCompleteListener;)V|Lapp/hushtumblr/extension/tumblr/privacy/SdkStartup;->mobileAds(Landroid/content/Context;)Landroid/content/Context;|Lcom/vungle/ads/VungleProvider;->onCreate()Z|Lapp/hushtumblr/extension/tumblr/privacy/SdkStartup;->vungle(Landroid/content/ContentProvider;)Z|Lcom/tumblr/startup/NimbusStartupInitializer;->create(Landroid/content/Context;)Ljava/lang/Object;|Lapp/hushtumblr/extension/tumblr/privacy/SdkStartup;->nimbus(Landroid/content/Context;)Landroid/content/Context;
+mutation|liveRampStartup|sdkStartup|Lcom/liveramp/ats/LRInitProvider;->onCreate()Z|Lapp/hushtumblr/extension/tumblr/privacy/SdkStartup;->liveRamp(Landroid/content/ContentProvider;)Z
 # Optional prompt decisions. The shared gift renderer must hand over its instance key so crab tips stay native.
 mutation|blogNotificationReminder|blogNotificationReminder|Lapp/hushtumblr/extension/tumblr/ui/OptionalNudges;->hideBlogNotificationReminder()Z|blog_notify_enabled
 mutation|giftMessagePopup|giftMessagePopup|Lapp/hushtumblr/extension/tumblr/ui/OptionalNudges;->hideGiftMessage(Ljava/lang/String;)Z|key_has_seen_ad_free_browsing_gift_popup|key_has_seen_summon_crabs_popup

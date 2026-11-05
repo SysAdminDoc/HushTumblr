@@ -198,7 +198,8 @@ public class PatchFamilyTest {
         assertEquals("disableAnalytics", family.statusMethod);
         assertEquals(permanent, family.staysWhilePaused);
         assertEquals(Collections.singletonList(Settings.DISABLE_ANALYTICS), family.switches);
-        assertEquals(EnumSet.of(PatchFamily.Capability.ANALYTICS_FLAGS), family.expectedCapabilities());
+        assertEquals(EnumSet.of(PatchFamily.Capability.ANALYTICS_FLAGS, PatchFamily.Capability.LIVERAMP_STARTUP),
+                family.expectedCapabilities());
         assertTrue("the Privacy page draws it", PatchFamily.PRIVACY_PAGE.contains(family));
         assertEquals(summary, PatchFamily.staysWhilePausedSummary(build));
         // Every other family but the two manifest-only ones, which have patch-time edits of their own.

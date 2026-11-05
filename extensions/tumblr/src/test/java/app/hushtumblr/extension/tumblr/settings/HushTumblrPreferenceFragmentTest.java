@@ -288,8 +288,9 @@ public class HushTumblrPreferenceFragmentTest {
             assertTrue(((SwitchPreference) page.findPreference(Settings.HIDE_ADVERTISING_ID.key)).isChecked());
             assertTrue(((SwitchPreference) page.findPreference(Settings.FIX_PUSH_NOTIFICATIONS.key)).isChecked());
             assertEquals("Hide ads", String.valueOf(page.findPreference(Settings.HIDE_ADS.key).getTitle()));
-            assertEquals("Takes ads and paid Blaze posts out of your dashboard and other feeds. Ad requests stop "
-                + "after Tumblr restarts.", String.valueOf(page.findPreference(Settings.HIDE_ADS.key).getSummary()));
+            assertEquals("Takes ads and paid Blaze posts out of your dashboard and other feeds. Once Tumblr restarts, it "
+                + "stops asking for ads and its ad networks don't start.",
+                String.valueOf(page.findPreference(Settings.HIDE_ADS.key).getSummary()));
             assertTrue(((SwitchPreference) page.findPreference(Settings.HIDE_ADS.key)).isChecked());
             List<Preference> rows = new ArrayList<>();
             collect(page.getPreferenceScreen(), rows);
