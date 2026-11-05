@@ -667,6 +667,154 @@ public class SettingsNavigationTest {
         assertEquals(HOME_ROWS, list().getCount());
     }
 
+    /**
+     * A change that waits for a restart says so under its own switch, which the reader is on, and
+     * is read once from there: no announcement, which Android 16 deprecates, and no toast. A screen
+     * Android rebuilds shows the note without reading it again, and the note goes with the restart
+     * row once nothing waits.
+     */
+    @Test @Config(sdk = {26, 36})
+    public void aChangeWaitingOnARestartSaysSoUnderItsSwitch() {
+        android.view.accessibility.AccessibilityManager a11y = controller.get().getSystemService(android.view.accessibility.AccessibilityManager.class);
+        org.robolectric.Shadows.shadowOf(a11y).setEnabled(true);
+        String saved = "Saved. Restart Tumblr to apply this change.";
+        String key = Settings.FIX_PUSH_NOTIFICATIONS.key;
+        try {
+            page.navigation.navigate("Notifications");
+            layout(dialog.getView());
+            tap(key);
+            layout(dialog.getView());
+            ShadowLooper.idleMainLooper();
+            assertTrue(contains(SettingsNavigation.RESTART));
+            assertEquals(saved, SettingsFeedbackTest.message(row(key)));
+            List<TextView> shown = new ArrayList<>();
+            feedbackTexts(list(), shown);
+            assertEquals(Arrays.asList(saved), texts(shown));
+            assertEquals(View.ACCESSIBILITY_LIVE_REGION_POLITE, shown.get(0).getAccessibilityLiveRegion());
+            assertNull("the restart note went to a toast", ShadowToast.getLatestToast());
+            assertEquals(0, announcements(a11y));
+
+            recreate();
+            layout(dialog.getView());
+            ShadowLooper.idleMainLooper();
+            assertEquals(saved, SettingsFeedbackTest.message(row(key)));
+            shown.clear();
+            feedbackTexts(list(), shown);
+            assertEquals(Arrays.asList(saved), texts(shown));
+            assertEquals("the note was read out again", View.ACCESSIBILITY_LIVE_REGION_NONE, shown.get(0).getAccessibilityLiveRegion());
+
+            // Put back, the switch owes nothing, and neither its note nor the restart row stays.
+            tap(key);
+            layout(dialog.getView());
+            assertFalse(contains(SettingsNavigation.RESTART));
+            assertNull(SettingsFeedbackTest.message(row(key)));
+
+            // A note left after another route took the change back goes once nothing waits.
+            tap(key);
+            assertEquals(saved, SettingsFeedbackTest.message(row(key)));
+            Settings.FIX_PUSH_NOTIFICATIONS.resetToDefault();
+            app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.clear();
+            page.onRestartPendingChanged();
+            ShadowLooper.idleMainLooper();
+            assertNull(SettingsFeedbackTest.message(row(key)));
+
+            // Its own change taken back, the note goes though another change still waits.
+            tap(key);
+            assertEquals(saved, SettingsFeedbackTest.message(row(key)));
+            app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.add(
+                    TextSettings.TAB_ORDER.key);
+            Settings.FIX_PUSH_NOTIFICATIONS.resetToDefault();
+            app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.remove(key);
+            page.onRestartPendingChanged();
+            ShadowLooper.idleMainLooper();
+            assertNull("the note outlived its change", SettingsFeedbackTest.message(row(key)));
+            assertTrue("the other change no longer shows", contains(SettingsNavigation.RESTART));
+            assertEquals(0, announcements(a11y));
+        } finally {
+            app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.clear();
+        }
+    }
+
+    /**
+     * A change the next start makes anyway owes no restart. With safe mode pausing this run and the
+     * next, turning Pause off changes nothing a restart would, so no note and no toast says one is
+     * owed. A change that does wait still says so.
+     */
+    @Test public void aChangeTheNextStartMakesAnywaySaysNoRestartIsOwed() {
+        String note = "Restart Tumblr to apply this change.";
+        try {
+            BaseSettings.SAFE_MODE.save(true);
+            PauseForTests.pause(HushTumblrPause.Reason.CRASH_LOOP);
+            recreate();
+            layout(dialog.getView());
+            app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.add(
+                    BaseSettings.PAUSED.key);
+            assertEquals(0, app.hushtumblr.extension.shared.settings.preference.ReopenSettingsAfterRestart
+                    .changesWaiting(controller.get()));
+            page.restartOwed(BaseSettings.PAUSED.key, note);
+            ShadowLooper.idleMainLooper();
+            assertNull("a restart was said to be owed in a toast", ShadowToast.getLatestToast());
+            List<TextView> shown = new ArrayList<>();
+            feedbackTexts(list(), shown);
+            assertTrue("a restart was said to be owed: " + texts(shown), shown.isEmpty());
+
+            app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.add(
+                    Settings.FIX_PUSH_NOTIFICATIONS.key);
+            page.restartOwed(Settings.FIX_PUSH_NOTIFICATIONS.key, note);
+            ShadowLooper.idleMainLooper();
+            shown.clear();
+            feedbackTexts(list(), shown);
+            String toast = ShadowToast.getTextOfLatestToast();
+            assertTrue("a change that waits said nothing", texts(shown).contains(note) || note.equals(toast));
+        } finally {
+            BaseSettings.SAFE_MODE.resetToDefault();
+            app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.clear();
+        }
+    }
+
+    /**
+     * A page that fits whole doesn't scroll, so a note going from a row there lets the row shrink
+     * back. Held at its taller height it would only leave a gap under the switch.
+     */
+    @Test @Config(sdk = 33) @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    public void aRowOnAPageThatFitsShrinksBackWhenItsNoteGoes() {
+        String key = Settings.FIX_PUSH_NOTIFICATIONS.key;
+        try {
+            page.navigation.navigate("Notifications");
+            layout(dialog.getView(), 4000);
+            assertEquals("the page doesn't fit whole: " + children(), list().getCount() - 1, list().getLastVisiblePosition());
+            int resting = rowHeight(key);
+            tap(key);
+            layout(dialog.getView(), 4000);
+            assertNotNull(SettingsFeedbackTest.message(row(key)));
+            assertTrue("the note added no height: " + children(), rowHeight(key) > resting);
+            tap(key);
+            layout(dialog.getView(), 4000);
+            layout(dialog.getView(), 4000);
+            assertNull(SettingsFeedbackTest.message(row(key)));
+            assertEquals(0, list().getFirstVisiblePosition());
+            assertEquals("the row kept the note's height: " + children(), resting, rowHeight(key));
+        } finally {
+            Settings.FIX_PUSH_NOTIFICATIONS.resetToDefault();
+            app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.clear();
+        }
+    }
+
+    /** How tall [key]'s row is in view, which fails when the row isn't on screen. */
+    private int rowHeight(String key) {
+        View row = list().getChildAt(position(key) - list().getFirstVisiblePosition());
+        assertNotNull(key + " is off screen", row);
+        return row.getHeight();
+    }
+
+    private static int announcements(android.view.accessibility.AccessibilityManager a11y) {
+        int said = 0;
+        for (android.view.accessibility.AccessibilityEvent event : org.robolectric.Shadows.shadowOf(a11y).getSentAccessibilityEvents()) {
+            if (event.getEventType() == android.view.accessibility.AccessibilityEvent.TYPE_ANNOUNCEMENT) said++;
+        }
+        return said;
+    }
+
     /** The row restarts Tumblr and leaves a marker that opens the screen again on this page. */
     @Test @Config(sdk = {30, 37})
     public void theRestartRowRestartsIntoThePageItWasTappedOn() {
@@ -973,14 +1121,16 @@ public class SettingsNavigationTest {
                     SettingsFeedbackTest.message(page.navigation.ownRow(SettingsNavigation.QUICK_SETUPS)));
             assertFalse(Settings.HIDE_WATCH_IT_ROWS.savedValue());
 
-            // Once the switch has saved, the same choice goes through and the note under the row goes.
+            // Once the switch has saved, the same choice goes through, and the note under the row
+            // says it waits for a restart in place of the refusal.
             HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
             writes.remove(0).run();
             ShadowLooper.idleMainLooper();
             page.applyQuickSetup(QuickSetupKeys.quiet());
             ShadowLooper.idleMainLooper();
             assertTrue(Settings.HIDE_WATCH_IT_ROWS.savedValue());
-            assertNull(SettingsFeedbackTest.message(page.navigation.ownRow(SettingsNavigation.QUICK_SETUPS)));
+            assertEquals("Saved. Restart Tumblr to apply this change.",
+                    SettingsFeedbackTest.message(page.navigation.ownRow(SettingsNavigation.QUICK_SETUPS)));
         } finally {
             // The worker first: the save's own refresh would otherwise queue behind it and never run.
             HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;

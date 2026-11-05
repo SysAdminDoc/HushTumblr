@@ -129,12 +129,12 @@ public class AsyncToggleTest {
         android.view.View shown = row.getView(null, new android.widget.FrameLayout(controller.get()));
         android.widget.TextView said = shown.findViewWithTag(SettingsFeedback.MESSAGE_TAG);
         assertEquals("The setting couldn't finish updating. Its saved value is shown.", said.getText().toString());
-        // The next flip that saves takes the failure away.
+        // The next flip that saves takes the failure away, and says the change waits for a restart.
         assertFalse(change(row, false));
         work.remove().run();
         ShadowLooper.idleMainLooper();
         assertFalse(Settings.HIDE_ADS.persistedValue());
-        assertNull(SettingsFeedbackTest.message(row));
+        assertEquals("Saved. Restart Tumblr to apply this change.", SettingsFeedbackTest.message(row));
     }
 
     @Test @Config(sdk = {30, 37})

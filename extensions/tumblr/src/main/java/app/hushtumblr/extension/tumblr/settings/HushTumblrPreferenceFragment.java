@@ -97,6 +97,7 @@ import app.hushtumblr.extension.shared.settings.preference.ExportDiagnosticRepor
 import app.hushtumblr.extension.shared.settings.preference.ImmediateAction;
 import app.hushtumblr.extension.shared.settings.preference.LogBufferManager;
 import app.hushtumblr.extension.shared.settings.preference.QuickSetups;
+import app.hushtumblr.extension.shared.settings.preference.ReopenSettingsAfterRestart;
 import app.hushtumblr.extension.tumblr.rootmute.RootPostMutePreference;
 import app.hushtumblr.extension.tumblr.timeline.PostRules;
 import app.hushtumblr.extension.tumblr.ui.AppFont;
@@ -1527,6 +1528,56 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         if (row instanceof Row && ((Row) row).feedback.message() != null) ((Row) row).feedback.clear();
     }
 
+    /**
+     * Says the change made from the row with [key] was saved and waits for a restart. The note
+     * goes under that row, where the reader is, and is read from there once. A row out of view, or
+     * none, leaves it under the restart row, and a page with neither says it as a toast.
+     */
+    void restartOwed(@Nullable String key, String note) {
+        // A change the next start makes anyway, like Pause while safe mode already pauses, owes nothing.
+        Context context = getContext();
+        if (context != null && ReopenSettingsAfterRestart.changesWaiting(context) <= 0) return;
+        SettingsFeedback row = isAdded() && key != null && inView(key) ? feedbackFor(key) : null;
+        if (row == null && isAdded() && navigation != null && navigation.shows(SettingsNavigation.RESTART)) {
+            row = feedbackFor(SettingsNavigation.RESTART);
+        }
+        if (row == null) Utils.showToastLong(note);
+        else row.show(note);
+    }
+
+    /** The restart line that follows what an action said about itself, such as a saved file. */
+    static String afterResult(String result) {
+        return result + "\n" + L10n.t("Restart Tumblr to apply this change.");
+    }
+
+    /** Once no change waits for a restart, what each row said about one is done with. */
+    private void clearRestartNotes(Context context) {
+        boolean nothingWaits = ReopenSettingsAfterRestart.changesWaiting(context) <= 0;
+        String alone = String.valueOf(restartMessage(context));
+        String after = "\n" + L10n.t("Restart Tumblr to apply this change.");
+        Map<SettingsFeedback, String> rows = new java.util.LinkedHashMap<>();
+        if (getPreferenceScreen() != null) forEachFeedback(getPreferenceScreen(), (key, feedback) -> rows.put(feedback, key));
+        for (String key : new String[] {SettingsNavigation.QUICK_SETUPS, SettingsNavigation.RESTART}) {
+            Row own = navigation == null ? null : navigation.ownRow(key);
+            if (own != null) rows.put(own.feedback, key);
+        }
+        for (Map.Entry<SettingsFeedback, String> row : rows.entrySet()) {
+            String said = row.getKey().message();
+            if (said == null || !(said.equals(alone) || said.endsWith(after))) continue;
+            // A row's own note goes once its change is undone, though another change still waits.
+            String waitsOn = restartKeyOf(row.getValue());
+            if (nothingWaits || (waitsOn != null && !restartPending.contains(waitsOn))) row.getKey().clear();
+        }
+    }
+
+    /** The one setting a row's restart note is about, or null for a row that speaks for several. */
+    @Nullable
+    static String restartKeyOf(@Nullable String rowKey) {
+        if (rowKey == null) return null;
+        if (FONT_FILE_ROW.equals(rowKey) || PHONE_FONT_ROW.equals(rowKey)) return TextSettings.APP_FONT_FILE.key;
+        return app.hushtumblr.extension.shared.settings.Setting.getSettingFromPath(rowKey) == null ? null : rowKey;
+    }
+
     /** Either font row's last result is about a file that a new pick or a forget replaces. */
     private void clearFontResults() {
         rowResult(FONT_FILE_ROW, null);
@@ -1538,17 +1589,23 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         if (uri == null) return; // Cancelled.
         Context app = getContext().getApplicationContext();
         String[] outcome = new String[1];
-        if (!submitEdit(() -> outcome[0] = installFontFile(app, uri), () -> showFontOutcome(FONT_FILE_ROW, outcome[0]))) {
+        boolean[] saved = new boolean[1];
+        if (!submitEdit(() -> outcome[0] = installFontFile(app, uri, saved),
+                () -> showFontOutcome(FONT_FILE_ROW, outcome[0], saved[0]))) {
             rowResult(FONT_FILE_ROW, L10n.t("Couldn't start that. Try again in a moment."));
         }
     }
 
-    /** Takes the picked file and answers the toast. A failure logs its class alone, as its message can name the file. */
-    private static String installFontFile(Context context, Uri uri) {
+    /**
+     * Takes the picked file and says how that went, with [saved] set once it's kept. A failure
+     * logs its class alone, as its message can name the file.
+     */
+    private static String installFontFile(Context context, Uri uri, boolean[] saved) {
         ContentResolver resolver = context.getContentResolver();
         try (InputStream source = resolver.openInputStream(uri)) {
             if (source == null) throw new IOException("no stream");
             saveFontFile(AppFont.install(context, source, fontFileName(resolver, uri)));
+            saved[0] = true;
             return Settings.APP_FONT.savedValue() ? L10n.t("Font file saved.") : L10n.t("Font file saved. Turn on App font to use it.");
         } catch (AppFont.Refused refused) {
             return refused.getMessage();
@@ -1572,17 +1629,19 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         clearFontResults();
         Context app = getContext().getApplicationContext();
         String[] outcome = new String[1];
+        boolean[] saved = new boolean[1];
         if (!submitEdit(() -> {
             try {
                 // An empty value stops the file being read, so a delete that fails does no harm.
                 saveFontFile("");
                 AppFont.forget(app);
+                saved[0] = true;
                 outcome[0] = L10n.t("Back to the phone's font.");
             } catch (IOException | RuntimeException failure) {
                 Logger.printInfo(() -> "Could not forget the font file: " + failure.getClass().getSimpleName());
                 outcome[0] = L10n.t("Couldn't change the font. Try again.");
             }
-        }, () -> showFontOutcome(PHONE_FONT_ROW, outcome[0]))) {
+        }, () -> showFontOutcome(PHONE_FONT_ROW, outcome[0], saved[0]))) {
             rowResult(PHONE_FONT_ROW, L10n.t("Couldn't start that. Try again in a moment."));
         }
     }
@@ -1598,12 +1657,17 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         }
     }
 
-    private void showFontOutcome(String key, @Nullable String message) {
-        if (message != null) rowResult(key, message);
+    /**
+     * Says how a font change went under its row. A saved one that waits for a restart says that
+     * after it. A refused one doesn't, even with an earlier change still waiting.
+     */
+    private void showFontOutcome(String key, @Nullable String message, boolean saved) {
+        boolean restart = isAdded() && saved && restartPending.contains(TextSettings.APP_FONT_FILE.key);
+        if (restart) restartOwed(key, message == null ? String.valueOf(restartMessage(getContext())) : afterResult(message));
+        else if (message != null) rowResult(key, message);
         if (!isAdded()) return;
         refreshSwitches();
         onRestartPendingChanged();
-        if (restartPending.contains(TextSettings.APP_FONT_FILE.key)) showRestartDialog(getContext());
     }
 
     /** The row that opens the tab order list. Its summary names the order chosen. */
@@ -1672,6 +1736,17 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         feedbackRegion.setOrientation(LinearLayout.VERTICAL);
         int inset = Math.round(24 * context.getResources().getDisplayMetrics().density);
         feedbackRegion.setPaddingRelative(inset, 0, inset, inset / 2);
+        // Room for two lines from the start, so a result coming and going under the list doesn't
+        // resize the dialog and slide the tabs out from under a finger. A longer one still fits.
+        android.widget.FrameLayout feedbackRoom = new android.widget.FrameLayout(context);
+        TextView lineProbe = new TextView(context);
+        lineProbe.setTextSize(14);
+        lineProbe.setText("A\nA");
+        lineProbe.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+        feedbackRoom.setMinimumHeight(Math.round(8 * context.getResources().getDisplayMetrics().density)
+                + lineProbe.getMeasuredHeight() + inset / 2);
+        feedbackRoom.addView(feedbackRegion, new android.widget.FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         ArrayAdapter<String> labels = new ArrayAdapter<String>(context,
                 android.R.layout.simple_list_item_1, tabLabels(order)) {
             @Override public View getView(int position, View recycled, ViewGroup parent) {
@@ -1702,7 +1777,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         if (dialog == null) return;
         // A "try again" from a tap that waited too long is done with once the list is open.
         if (row instanceof Row && ((Row) row).feedback.message() != null) ((Row) row).feedback.clear();
-        placeUnderList(dialog, feedbackRegion);
+        placeUnderList(dialog, feedbackRoom);
         tabOrderDialog = dialog;
         restoreTabOrderEditor = false;
         dialog.setOnDismissListener(closed -> {
@@ -1724,7 +1799,18 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             labels.addAll(tabLabels(order));
             row.setSummary(tabOrderSummary(TextSettings.TAB_ORDER.savedValue()));
             retry.setVisibility(tabOrderDraft == null ? View.GONE : View.VISIBLE);
-            focusTab(dialog, order, focusedTab[0], saved && moving[0]);
+            // A failure already said so under the list. A save says where the tab went and what a
+            // restart still owes, there too, and the list reads it once.
+            if (saved) {
+                String moved = moving[0] && order.contains(focusedTab[0])
+                        ? L10n.f("%1$s moved to position %2$d of %3$d.", tabLabel(focusedTab[0]),
+                        order.indexOf(focusedTab[0]) + 1, order.size()) : null;
+                boolean restart = restartPending.contains(TextSettings.TAB_ORDER.key);
+                if (moved != null) feedback.show(restart ? afterResult(moved) : moved);
+                else if (restart) feedback.show(String.valueOf(restartMessage(context)));
+                else feedback.clear();
+            }
+            focusTab(dialog, order, focusedTab[0]);
         };
         retry.setOnClickListener(ignored -> {
             if (saving[0] || tabOrderDraft == null || !dialog.isShowing() || !isAdded()) return;
@@ -1779,20 +1865,18 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         panel.addView(column, index, params);
     }
 
-    private void focusTab(AlertDialog dialog, List<String> order, String tab, boolean announce) {
+    /** Keeps focus on [tab] in its new place, where a screen reader gives its position in the list. */
+    private void focusTab(AlertDialog dialog, List<String> order, String tab) {
         ListView list = dialog.getListView();
         list.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override public void onGlobalLayout() {
                 list.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                 if (!dialog.isShowing() || !isAdded()) return;
-                int position = order.indexOf(tab);
-                View target = list.getChildAt(position - list.getFirstVisiblePosition());
+                View target = list.getChildAt(order.indexOf(tab) - list.getFirstVisiblePosition());
                 if (target != null) {
                     target.requestFocus();
                     target.performAccessibilityAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null);
                 }
-                if (announce) list.announceForAccessibility(L10n.f("%1$s moved to position %2$d of %3$d.",
-                        tabLabel(tab), position + 1, order.size()));
             }
         });
         list.setSelection(order.indexOf(tab));
@@ -1804,7 +1888,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         tabOrderDraftBase = TextSettings.TAB_ORDER.savedValue();
         setEditorBusy(dialog, true);
         dialog.getListView().setEnabled(false);
-        dialog.getListView().announceForAccessibility(L10n.t("Saving changes"));
+        // Under the list until the save answers. A save done within the frame replaces it unread.
+        feedback.show(L10n.t("Saving changes"));
         if (!submitEdit(() -> {
             boolean saved = false;
             try {
@@ -1827,11 +1912,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                 setEditorBusy(dialog, false);
                 dialog.getListView().setEnabled(true);
                 if (!outcome) feedback.show(L10n.t("Couldn't save the tab order. Your earlier order is unchanged. Try again."));
-                else {
-                    feedback.clear();
-                    onRestartPendingChanged();
-                    if (restartPending.contains(TextSettings.TAB_ORDER.key)) showRestartDialog(getContext());
-                }
+                else onRestartPendingChanged();
                 done.accept(outcome);
             });
         })) {
@@ -1960,7 +2041,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
 
     /**
      * A switch whose change waits for a restart: the card says what the next start brings, and the
-     * restart row comes, goes or counts again.
+     * restart row comes, goes or counts again. With nothing left waiting, the rows' restart notes go.
      */
     @Override
     protected void onRestartPendingChanged() {
@@ -1968,6 +2049,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         Context context = getContext();
         if (card != null && context != null) showStatus(card, context);
         if (navigation != null) navigation.restartChanged();
+        if (context != null) clearRestartNotes(context);
     }
 
     /**
@@ -2035,7 +2117,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             if (count == 0 || context == null || !isAdded()) return;
             for (BooleanSetting setting : shown.keySet()) {
                 if (restartPending.contains(setting.key)) {
-                    showRestartDialog(context);
+                    restartOwed(SettingsNavigation.QUICK_SETUPS, String.valueOf(restartMessage(context)));
                     return;
                 }
             }
@@ -2288,7 +2370,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                         owner.updateUIAvailability();
                         owner.onRestartPendingChanged();
                         if (success && restartPending.contains(setting.key)) {
-                            showRestartDialog(getContext());
+                            owner.restartOwed(getKey(), String.valueOf(restartMessage(getContext())));
                         }
                     });
                 });

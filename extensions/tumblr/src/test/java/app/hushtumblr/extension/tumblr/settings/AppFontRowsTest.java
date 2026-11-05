@@ -121,7 +121,9 @@ public class AppFontRowsTest {
 
             pick(activity, page, "a", font());
 
-            assertEquals("Font file saved.", SettingsFeedbackTest.message(page.findPreference(FILE_ROW)));
+            // The note under the row says the pick waits for a restart, where it stays to be read.
+            assertEquals("Font file saved.\nRestart Tumblr to apply this change.",
+                    SettingsFeedbackTest.message(page.findPreference(FILE_ROW)));
             assertTrue(AbstractPreferenceFragment.restartPending.contains(TextSettings.APP_FONT_FILE.key));
             assertTrue("the restart row", showsRestartRow(dialog));
         }

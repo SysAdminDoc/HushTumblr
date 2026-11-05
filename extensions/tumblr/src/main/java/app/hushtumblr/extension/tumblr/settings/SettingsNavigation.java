@@ -135,6 +135,16 @@ final class SettingsNavigation extends BaseAdapter {
      * layout pass, so their heights are read from here before each rebuild.
      */
     private final Map<View, Preference> restingRows = new WeakHashMap<>();
+    /**
+     * Rows that lost the line under them (a restart note when the switch goes back, a failure when
+     * the next save works) with the list at its end, and the height each keeps until navigation.
+     * The shorter row let the list slide every row down to fill the space, so the tapped row moved.
+     */
+    private final Map<Preference, Integer> keptHeights = new WeakHashMap<>();
+    /** The line regions already looked at for {@link #keptHeights}. A rebind makes new ones. */
+    private final Map<View, Boolean> countedLines = new WeakHashMap<>();
+    /** The row each view in the list was made for. */
+    private final Map<View, Preference> madeRows = new WeakHashMap<>();
     private final View.OnLayoutChangeListener laidOut = (v, l, t, r, b, oldL, oldT, oldR, oldB) -> held = null;
     private final Preference empty;
     /** The line a category or search page starts with while a pause applies to it. */
@@ -212,9 +222,9 @@ final class SettingsNavigation extends BaseAdapter {
             restartWhenSaved(row.getContext(), route);
             return true;
         });
-        // The row appears as the switch flips. A screen reader hears the saved message as well,
-        // since the row can land above the part of the list in view.
-        restartFeedback = (shown, message) -> list.announceForAccessibility(message);
+        // The row appears as the switch flips, and can land above the part of the list in view, so
+        // the saved message goes under the row that was changed and is read from there once.
+        restartFeedback = (shown, key, message) -> page.restartOwed(key, String.valueOf(message));
         AbstractPreferenceFragment.setRestartFeedbackPresenter(restartFeedback);
         empty = new HushTumblrPreferenceFragment.Row(context);
         empty.setTitle(L10n.t("No matching settings"));
@@ -327,7 +337,7 @@ final class SettingsNavigation extends BaseAdapter {
 
     private List<HushTumblrPreferenceFragment.Row> ownRows() {
         List<HushTumblrPreferenceFragment.Row> rows = new ArrayList<>();
-        for (Preference row : new Preference[] {support, report, quickSetups, pageStatus}) rows.add((HushTumblrPreferenceFragment.Row) row);
+        for (Preference row : new Preference[] {support, report, quickSetups, pageStatus, restart}) rows.add((HushTumblrPreferenceFragment.Row) row);
         for (Section section : sections) rows.add((HushTumblrPreferenceFragment.Row) section.link);
         return rows;
     }
@@ -360,6 +370,7 @@ final class SettingsNavigation extends BaseAdapter {
         refocus = null;
         rememberIndex();
         pageStatusHeight = 0;
+        keptHeights.clear();
         query = "";
         route = destination;
         if (selected() == null) route = "";
@@ -386,6 +397,7 @@ final class SettingsNavigation extends BaseAdapter {
         refocus = null;
         if (query.isEmpty()) rememberIndex();
         pageStatusHeight = 0;
+        keptHeights.clear();
         query = text;
         route = "";
         rebuild();
@@ -401,6 +413,7 @@ final class SettingsNavigation extends BaseAdapter {
         if (route.isEmpty()) return false;
         Section section = selected();
         pageStatusHeight = 0;
+        keptHeights.clear();
         // Every page opens from home, so Back goes home, to the place the list was left.
         route = "";
         rebuild();
@@ -628,7 +641,27 @@ final class SettingsNavigation extends BaseAdapter {
             View child = list.getChildAt(i);
             Preference row = restingRows.get(child);
             if (row != null && child.getHeight() > 0) restingHeights.put(row, child.getHeight());
+            // A line just taken away is hidden but keeps its height until the next layout, which
+            // is when its row would shrink.
+            View line = child.findViewWithTag(SettingsFeedback.REGION_TAG);
+            Preference item = madeRows.get(child);
+            if (item != null && line != null && line.getVisibility() == View.GONE && line.getHeight() > 0
+                    && countedLines.put(line, Boolean.TRUE) == null && leavesGapAtEnd(line.getHeight())) {
+                Integer kept = keptHeights.get(item);
+                keptHeights.put(item, Math.max(child.getHeight(), kept == null ? 0 : kept));
+            }
         }
+    }
+
+    /**
+     * Whether the list is scrolled to its last row and would have space under it if [shrink] went.
+     * A page that fits whole doesn't scroll, so nothing above jumps when a row there shrinks.
+     */
+    private boolean leavesGapAtEnd(int shrink) {
+        int children = list.getChildCount();
+        if (children == 0 || list.getLastVisiblePosition() < list.getCount() - 1) return false;
+        boolean scrolled = list.getFirstVisiblePosition() > 0 || list.getChildAt(0).getTop() < list.getPaddingTop();
+        return scrolled && list.getChildAt(children - 1).getBottom() - shrink < list.getHeight() - list.getPaddingBottom();
     }
 
     /** Whether [row] shows a short line while saves run in place of its own summary. */
@@ -735,6 +768,9 @@ final class SettingsNavigation extends BaseAdapter {
         Integer resting = restingHeights.get(item);
         if (!showsBusyLine(item)) restingRows.put(row, item);
         else if (resting != null) row.setMinimumHeight(Math.max(row.getMinimumHeight(), resting));
+        Integer kept = keptHeights.get(item);
+        if (kept != null) row.setMinimumHeight(Math.max(row.getMinimumHeight(), kept));
+        madeRows.put(row, item);
         return row;
     }
 

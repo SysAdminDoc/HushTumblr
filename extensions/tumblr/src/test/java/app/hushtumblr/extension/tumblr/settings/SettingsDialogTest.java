@@ -499,38 +499,148 @@ public class SettingsDialogTest {
         reopened.dismiss();
     }
 
-    /** TalkBack hears where a moved tab went, and nothing about a move when Tumblr's order is put back. */
+    /**
+     * A saved move says where the tab went under the list, read once from there with no
+     * announcement, which Android 16 deprecates. Focus stays on the moved tab, whose row gives its
+     * place in the list. Putting Tumblr's order back says nothing about a move.
+     */
     @Test @Config(sdk = {26, 36})
     public void onlyAMoveSaysWhereTheTabWent() {
         PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
         TextSettings.TAB_ORDER.save("");
         Activity host = controller.get();
-        org.robolectric.Shadows.shadowOf((android.view.accessibility.AccessibilityManager)
-                host.getSystemService(android.content.Context.ACCESSIBILITY_SERVICE)).setEnabled(true);
+        android.view.accessibility.AccessibilityManager a11y = screenReader(host);
         HushTumblrPreferenceFragment page = pageOf(show(host));
         click(page.findPreference(HushTumblrPreferenceFragment.TAB_ORDER_ROW));
         AlertDialog dialog = ShadowAlertDialog.getLatestAlertDialog();
-        dialog.getListView().performItemClick(null, 2, 2);
+        android.widget.ListView list = dialog.getListView();
+        int count = list.getAdapter().getCount();
+        String tab = String.valueOf(list.getAdapter().getItem(2));
+        list.performItemClick(null, 2, 2);
         ShadowLooper.idleMainLooper(100, TimeUnit.MILLISECONDS);
-        assertEquals(1, movedAnnouncements(host).size());
+        TextView said = underList(dialog);
+        assertNotNull("nothing said where the tab went", said);
+        assertTrue(said.getText().toString(), said.getText().toString().startsWith(
+                tab + " moved to position 2 of " + count + "."));
+        assertEquals(View.ACCESSIBILITY_LIVE_REGION_POLITE, said.getAccessibilityLiveRegion());
+        assertEquals(tab, String.valueOf(list.getAdapter().getItem(1)));
+        View moved = list.getChildAt(1 - list.getFirstVisiblePosition());
+        assertEquals(1, moved.createAccessibilityNodeInfo().getCollectionItemInfo().getRowIndex());
+        assertEquals("focus left the moved tab", tab, lastFocused(a11y));
+        assertEquals(0, announcements(a11y));
 
         dialog.getButton(AlertDialog.BUTTON_NEUTRAL).performClick();
         ShadowLooper.idleMainLooper(100, TimeUnit.MILLISECONDS);
         assertEquals("", TextSettings.TAB_ORDER.persistedValue());
-        assertEquals("putting Tumblr's order back said a tab moved", 1, movedAnnouncements(host).size());
+        said = underList(dialog);
+        assertTrue("putting Tumblr's order back said a tab moved",
+                said == null || !said.getText().toString().contains("moved to position"));
+        assertEquals(0, announcements(a11y));
         dialog.dismiss();
     }
 
-    private static List<String> movedAnnouncements(Activity host) {
-        List<String> said = new ArrayList<>();
-        for (android.view.accessibility.AccessibilityEvent event : org.robolectric.Shadows.shadowOf(
-                (android.view.accessibility.AccessibilityManager) host.getSystemService(
-                        android.content.Context.ACCESSIBILITY_SERVICE)).getSentAccessibilityEvents()) {
-            if (event.getEventType() != android.view.accessibility.AccessibilityEvent.TYPE_ANNOUNCEMENT) continue;
-            String text = String.valueOf(event.getText());
-            if (text.contains("moved to position")) said.add(text);
+    /**
+     * A save still running says so under the list, which takes no taps until it answers, and the
+     * answer replaces it there. Nothing is announced.
+     */
+    @Test @Config(sdk = {26, 36})
+    public void aTabMoveSaysItIsSavingUntilTheSaveAnswers() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        TextSettings.TAB_ORDER.save("");
+        Activity host = controller.get();
+        android.view.accessibility.AccessibilityManager a11y = screenReader(host);
+        HushTumblrPreferenceFragment page = pageOf(show(host));
+        click(page.findPreference(HushTumblrPreferenceFragment.TAB_ORDER_ROW));
+        AlertDialog dialog = ShadowAlertDialog.getLatestAlertDialog();
+        List<Runnable> queued = new ArrayList<>();
+        try {
+            HushTumblrPreferenceFragment.editWorkerForTests = queued::add;
+            dialog.getListView().performItemClick(null, 2, 2);
+            ShadowLooper.idleMainLooper(100, TimeUnit.MILLISECONDS);
+            assertEquals(1, queued.size());
+            TextView said = underList(dialog);
+            assertEquals("Saving changes", said.getText().toString());
+            assertEquals(View.ACCESSIBILITY_LIVE_REGION_POLITE, said.getAccessibilityLiveRegion());
+            assertFalse("the list took taps during the save", dialog.getListView().isEnabled());
+            HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
+            queued.remove(0).run();
+            ShadowLooper.idleMainLooper(100, TimeUnit.MILLISECONDS);
+            said = underList(dialog);
+            assertTrue(said.getText().toString(), said.getText().toString().contains(" moved to position 2 of "));
+            assertTrue(dialog.getListView().isEnabled());
+            assertEquals(0, announcements(a11y));
+        } finally {
+            HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
+            for (Runnable write : queued) write.run();
+        }
+        dialog.dismiss();
+    }
+
+    /**
+     * The words under the list come and go as a move saves, and the dialog keeps its height through
+     * them, so it doesn't re-center and slide the tabs out from under the next tap.
+     */
+    @Test @Config(sdk = {26, 36})
+    public void theTabOrderDialogKeepsItsHeightAsAMoveSaves() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        TextSettings.TAB_ORDER.save("");
+        HushTumblrPreferenceFragment page = pageOf(show(controller.get()));
+        click(page.findPreference(HushTumblrPreferenceFragment.TAB_ORDER_ROW));
+        AlertDialog dialog = ShadowAlertDialog.getLatestAlertDialog();
+        ShadowLooper.idleMainLooper();
+        View window = dialog.getWindow().getDecorView();
+        int opened = window.getHeight();
+        assertTrue("the dialog was never laid out", opened > 0);
+        assertNull(underList(dialog));
+        List<Runnable> queued = new ArrayList<>();
+        try {
+            HushTumblrPreferenceFragment.editWorkerForTests = queued::add;
+            dialog.getListView().performItemClick(null, 2, 2);
+            ShadowLooper.idleMainLooper(100, TimeUnit.MILLISECONDS);
+            assertEquals("Saving changes", underList(dialog).getText().toString());
+            assertEquals("the dialog grew for the saving line", opened, window.getHeight());
+            HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
+            queued.remove(0).run();
+            ShadowLooper.idleMainLooper(100, TimeUnit.MILLISECONDS);
+            String said = underList(dialog).getText().toString();
+            assertTrue(said, said.contains(" moved to position 2 of ") && said.contains("\n"));
+            assertEquals("the dialog grew for the result: " + said, opened, window.getHeight());
+        } finally {
+            HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
+            for (Runnable write : queued) write.run();
+            app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.clear();
+        }
+        dialog.dismiss();
+    }
+
+    private static android.view.accessibility.AccessibilityManager screenReader(Activity host) {
+        android.view.accessibility.AccessibilityManager a11y = host.getSystemService(android.view.accessibility.AccessibilityManager.class);
+        org.robolectric.Shadows.shadowOf(a11y).setEnabled(true);
+        org.robolectric.Shadows.shadowOf(a11y).setTouchExplorationEnabled(true);
+        return a11y;
+    }
+
+    /** What the dialog says under its list, or null when it says nothing. */
+    private static TextView underList(AlertDialog dialog) {
+        return dialog.getWindow().getDecorView().findViewWithTag(SettingsFeedback.MESSAGE_TAG);
+    }
+
+    private static int announcements(android.view.accessibility.AccessibilityManager a11y) {
+        int said = 0;
+        for (android.view.accessibility.AccessibilityEvent event : org.robolectric.Shadows.shadowOf(a11y).getSentAccessibilityEvents()) {
+            if (event.getEventType() == android.view.accessibility.AccessibilityEvent.TYPE_ANNOUNCEMENT) said++;
         }
         return said;
+    }
+
+    /** The first text of the last view that took accessibility focus, or null for none. */
+    private static String lastFocused(android.view.accessibility.AccessibilityManager a11y) {
+        String text = null;
+        for (android.view.accessibility.AccessibilityEvent event : org.robolectric.Shadows.shadowOf(a11y).getSentAccessibilityEvents()) {
+            if (event.getEventType() != android.view.accessibility.AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED) continue;
+            text = event.getText().isEmpty() ? null : String.valueOf(event.getText().get(0));
+        }
+        return text;
     }
 
     /**

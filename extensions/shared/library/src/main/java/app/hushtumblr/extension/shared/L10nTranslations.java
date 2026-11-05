@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(884);
+        Map<String, String> table = new HashMap<>(886);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -627,6 +627,8 @@ public final class L10nTranslations {
                 "Starte Tumblr neu, um diese Einstellungen anzuwenden.");
         table.put("Restart Tumblr to apply this change",
                 "Starte Tumblr neu, um diese \u00c4nderung zu \u00fcbernehmen");
+        table.put("Restart Tumblr to apply this change.",
+                "Starte Tumblr neu, um diese \u00c4nderung zu \u00fcbernehmen.");
         table.put("Restore the settings from before the last import. Editing a setting or restarting Tumblr ends Undo.",
                 "Stellt die Einstellungen vor dem letzten Import wieder her. Das \u00c4ndern einer Einstellung oder ein Neustart von Tumblr beendet diese M\u00f6glichkeit.");
         table.put("Resume",
@@ -673,11 +675,11 @@ public final class L10nTranslations {
                 "Einstellungen importiert. %1$d Einstellungen wurden ge\u00e4ndert.");
         table.put("Setup and backup guide",
                 "Hilfe zur Einrichtung und Sicherung");
-        table.put("Share video link",
-                "Videolink teilen");
     }
 
     private static void fillDe5(Map<String, String> table) {
+        table.put("Share video link",
+                "Videolink teilen");
         table.put("Share video links",
                 "Videolinks teilen");
         table.put("Show mutual markers",
@@ -796,11 +798,11 @@ public final class L10nTranslations {
                 "Das ist keine Schriftdatei. Nichts wurde ge\u00e4ndert.");
         table.put("That settings file holds a value HushTumblr can't read. Nothing was changed.",
                 "Diese Einstellungsdatei enth\u00e4lt einen Wert, den HushTumblr nicht lesen kann. Es wurde nichts ge\u00e4ndert.");
-        table.put("That settings file is damaged or only partly downloaded. Nothing was changed.",
-                "Diese Einstellungsdatei ist besch\u00e4digt oder nur teilweise heruntergeladen. Es wurde nichts ge\u00e4ndert.");
     }
 
     private static void fillDe6(Map<String, String> table) {
+        table.put("That settings file is damaged or only partly downloaded. Nothing was changed.",
+                "Diese Einstellungsdatei ist besch\u00e4digt oder nur teilweise heruntergeladen. Es wurde nichts ge\u00e4ndert.");
         table.put("That settings file was written by a newer HushTumblr than this one. Nothing was changed.",
                 "Diese Einstellungsdatei stammt aus einer neueren HushTumblr-Version als dieser. Es wurde nichts ge\u00e4ndert.");
         table.put("The active account changed. Reopen Manage muted posts to see its list.",
@@ -919,11 +921,11 @@ public final class L10nTranslations {
                 "Nutzt die Schriftart deines Telefons. Tippe, um eine .ttf- oder .otf-Datei auszuw\u00e4hlen.");
         table.put("Using %1$s. Tap to pick another.",
                 "%1$s wird verwendet. Tippe, um eine andere auszuw\u00e4hlen.");
-        table.put("Version",
-                "Version");
     }
 
     private static void fillDe7(Map<String, String> table) {
+        table.put("Version",
+                "Version");
         table.put("Version, help and project details",
                 "Version, Hilfe und Projektdetails");
         table.put("Video link",
@@ -971,7 +973,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(884);
+        Map<String, String> table = new HashMap<>(886);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -1548,6 +1550,8 @@ public final class L10nTranslations {
                 "Reinicia Tumblr para aplicar estos ajustes.");
         table.put("Restart Tumblr to apply this change",
                 "Reinicia Tumblr para aplicar este cambio");
+        table.put("Restart Tumblr to apply this change.",
+                "Reinicia Tumblr para aplicar este cambio.");
         table.put("Restore the settings from before the last import. Editing a setting or restarting Tumblr ends Undo.",
                 "Restaura los ajustes anteriores a la \u00faltima importaci\u00f3n. Cambiar un ajuste o reiniciar Tumblr termina la opci\u00f3n de deshacer.");
         table.put("Resume",
@@ -1594,11 +1598,11 @@ public final class L10nTranslations {
                 "Configuraci\u00f3n importada. Cambiaron %1$d ajustes.");
         table.put("Setup and backup guide",
                 "Gu\u00eda de configuraci\u00f3n y copias de seguridad");
-        table.put("Share video link",
-                "Compartir enlace del video");
     }
 
     private static void fillEs5(Map<String, String> table) {
+        table.put("Share video link",
+                "Compartir enlace del video");
         table.put("Share video links",
                 "Compartir enlaces de videos");
         table.put("Show mutual markers",
@@ -1717,11 +1721,11 @@ public final class L10nTranslations {
                 "Eso no es un archivo de fuente. No cambi\u00f3 nada.");
         table.put("That settings file holds a value HushTumblr can't read. Nothing was changed.",
                 "Ese archivo de configuraci\u00f3n contiene un valor que HushTumblr no puede leer. No se cambi\u00f3 nada.");
-        table.put("That settings file is damaged or only partly downloaded. Nothing was changed.",
-                "Ese archivo de configuraci\u00f3n est\u00e1 da\u00f1ado o solo se descarg\u00f3 en parte. No se cambi\u00f3 nada.");
     }
 
     private static void fillEs6(Map<String, String> table) {
+        table.put("That settings file is damaged or only partly downloaded. Nothing was changed.",
+                "Ese archivo de configuraci\u00f3n est\u00e1 da\u00f1ado o solo se descarg\u00f3 en parte. No se cambi\u00f3 nada.");
         table.put("That settings file was written by a newer HushTumblr than this one. Nothing was changed.",
                 "Ese archivo de configuraci\u00f3n lo escribi\u00f3 una versi\u00f3n de HushTumblr m\u00e1s reciente que esta. No se cambi\u00f3 nada.");
         table.put("The active account changed. Reopen Manage muted posts to see its list.",
@@ -1840,11 +1844,11 @@ public final class L10nTranslations {
                 "Usa la fuente de tu tel\u00e9fono. Toca para elegir un archivo .ttf u .otf.");
         table.put("Using %1$s. Tap to pick another.",
                 "Usando %1$s. Toca para elegir otro.");
-        table.put("Version",
-                "Versi\u00f3n");
     }
 
     private static void fillEs7(Map<String, String> table) {
+        table.put("Version",
+                "Versi\u00f3n");
         table.put("Version, help and project details",
                 "Versi\u00f3n, ayuda y detalles del proyecto");
         table.put("Video link",
@@ -1892,7 +1896,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(884);
+        Map<String, String> table = new HashMap<>(886);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -2469,6 +2473,8 @@ public final class L10nTranslations {
                 "Mulai ulang Tumblr untuk menerapkan pengaturan ini.");
         table.put("Restart Tumblr to apply this change",
                 "Mulai ulang Tumblr untuk menerapkan perubahan ini");
+        table.put("Restart Tumblr to apply this change.",
+                "Mulai ulang Tumblr untuk menerapkan perubahan ini.");
         table.put("Restore the settings from before the last import. Editing a setting or restarting Tumblr ends Undo.",
                 "Pulihkan pengaturan sebelum impor terakhir. Mengubah pengaturan atau memulai ulang Tumblr mengakhiri Urungkan.");
         table.put("Resume",
@@ -2515,11 +2521,11 @@ public final class L10nTranslations {
                 "Pengaturan diimpor. %1$d pengaturan berubah.");
         table.put("Setup and backup guide",
                 "Panduan penyiapan dan pencadangan");
-        table.put("Share video link",
-                "Bagikan tautan video ini");
     }
 
     private static void fillIn5(Map<String, String> table) {
+        table.put("Share video link",
+                "Bagikan tautan video ini");
         table.put("Share video links",
                 "Bagikan tautan video");
         table.put("Show mutual markers",
@@ -2638,11 +2644,11 @@ public final class L10nTranslations {
                 "Itu bukan file font. Tidak ada yang berubah.");
         table.put("That settings file holds a value HushTumblr can't read. Nothing was changed.",
                 "File pengaturan itu memuat nilai yang tidak dapat dibaca HushTumblr. Tidak ada yang diubah.");
-        table.put("That settings file is damaged or only partly downloaded. Nothing was changed.",
-                "File pengaturan itu rusak atau hanya terunduh sebagian. Tidak ada yang diubah.");
     }
 
     private static void fillIn6(Map<String, String> table) {
+        table.put("That settings file is damaged or only partly downloaded. Nothing was changed.",
+                "File pengaturan itu rusak atau hanya terunduh sebagian. Tidak ada yang diubah.");
         table.put("That settings file was written by a newer HushTumblr than this one. Nothing was changed.",
                 "File pengaturan itu dibuat oleh versi HushTumblr yang lebih baru daripada versi ini. Tidak ada yang diubah.");
         table.put("The active account changed. Reopen Manage muted posts to see its list.",
@@ -2761,11 +2767,11 @@ public final class L10nTranslations {
                 "Memakai font ponselmu. Ketuk untuk memilih file .ttf atau .otf.");
         table.put("Using %1$s. Tap to pick another.",
                 "Memakai %1$s. Ketuk untuk memilih yang lain.");
-        table.put("Version",
-                "Versi");
     }
 
     private static void fillIn7(Map<String, String> table) {
+        table.put("Version",
+                "Versi");
         table.put("Version, help and project details",
                 "Versi, bantuan, dan detail proyek");
         table.put("Video link",
@@ -2813,7 +2819,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(884);
+        Map<String, String> table = new HashMap<>(886);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -3390,6 +3396,8 @@ public final class L10nTranslations {
                 "Reinicie o Tumblr para aplicar essas configura\u00e7\u00f5es.");
         table.put("Restart Tumblr to apply this change",
                 "Reinicie o Tumblr para aplicar esta altera\u00e7\u00e3o");
+        table.put("Restart Tumblr to apply this change.",
+                "Reinicie o Tumblr para aplicar esta altera\u00e7\u00e3o.");
         table.put("Restore the settings from before the last import. Editing a setting or restarting Tumblr ends Undo.",
                 "Restaure as configura\u00e7\u00f5es anteriores \u00e0 \u00faltima importa\u00e7\u00e3o. Alterar uma configura\u00e7\u00e3o ou reiniciar o Tumblr encerra a op\u00e7\u00e3o de desfazer.");
         table.put("Resume",
@@ -3436,11 +3444,11 @@ public final class L10nTranslations {
                 "Configura\u00e7\u00f5es importadas. %1$d configura\u00e7\u00f5es foram alteradas.");
         table.put("Setup and backup guide",
                 "Guia de configura\u00e7\u00e3o e backup");
-        table.put("Share video link",
-                "Compartilhar link do v\u00eddeo");
     }
 
     private static void fillPt_rBR5(Map<String, String> table) {
+        table.put("Share video link",
+                "Compartilhar link do v\u00eddeo");
         table.put("Share video links",
                 "Compartilhar links de v\u00eddeos");
         table.put("Show mutual markers",
@@ -3559,11 +3567,11 @@ public final class L10nTranslations {
                 "Isso n\u00e3o \u00e9 um arquivo de fonte. Nada mudou.");
         table.put("That settings file holds a value HushTumblr can't read. Nothing was changed.",
                 "Esse arquivo de configura\u00e7\u00f5es tem um valor que o HushTumblr n\u00e3o consegue ler. Nada foi alterado.");
-        table.put("That settings file is damaged or only partly downloaded. Nothing was changed.",
-                "Esse arquivo de configura\u00e7\u00f5es est\u00e1 corrompido ou foi baixado apenas parcialmente. Nada foi alterado.");
     }
 
     private static void fillPt_rBR6(Map<String, String> table) {
+        table.put("That settings file is damaged or only partly downloaded. Nothing was changed.",
+                "Esse arquivo de configura\u00e7\u00f5es est\u00e1 corrompido ou foi baixado apenas parcialmente. Nada foi alterado.");
         table.put("That settings file was written by a newer HushTumblr than this one. Nothing was changed.",
                 "Esse arquivo de configura\u00e7\u00f5es foi criado por uma vers\u00e3o do HushTumblr mais nova que esta. Nada foi alterado.");
         table.put("The active account changed. Reopen Manage muted posts to see its list.",
@@ -3682,11 +3690,11 @@ public final class L10nTranslations {
                 "Usa a fonte do seu celular. Toque para escolher um arquivo .ttf ou .otf.");
         table.put("Using %1$s. Tap to pick another.",
                 "Usando %1$s. Toque para escolher outro.");
-        table.put("Version",
-                "Vers\u00e3o");
     }
 
     private static void fillPt_rBR7(Map<String, String> table) {
+        table.put("Version",
+                "Vers\u00e3o");
         table.put("Version, help and project details",
                 "Vers\u00e3o, ajuda e detalhes do projeto");
         table.put("Video link",
@@ -3734,7 +3742,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(884);
+        Map<String, String> table = new HashMap<>(886);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -4311,6 +4319,8 @@ public final class L10nTranslations {
                 "Bu ayarlar\u0131 uygulamak i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
         table.put("Restart Tumblr to apply this change",
                 "Bu de\u011fi\u015fikli\u011fi uygulamak i\u00e7in Tumblr'\u0131 yeniden ba\u015flat");
+        table.put("Restart Tumblr to apply this change.",
+                "Bu de\u011fi\u015fikli\u011fi uygulamak i\u00e7in Tumblr'\u0131 yeniden ba\u015flat.");
         table.put("Restore the settings from before the last import. Editing a setting or restarting Tumblr ends Undo.",
                 "Son i\u00e7e aktarmadan \u00f6nceki ayarlar\u0131 geri y\u00fckle. Bir ayar\u0131 de\u011fi\u015ftirmek veya Tumblr'\u0131 yeniden ba\u015flatmak geri almay\u0131 sona erdirir.");
         table.put("Resume",
@@ -4357,11 +4367,11 @@ public final class L10nTranslations {
                 "Ayarlar i\u00e7e aktar\u0131ld\u0131. %1$d ayar de\u011fi\u015fti.");
         table.put("Setup and backup guide",
                 "Kurulum ve yedekleme rehberi");
-        table.put("Share video link",
-                "Video ba\u011flant\u0131s\u0131n\u0131 payla\u015f");
     }
 
     private static void fillTr5(Map<String, String> table) {
+        table.put("Share video link",
+                "Video ba\u011flant\u0131s\u0131n\u0131 payla\u015f");
         table.put("Share video links",
                 "Video ba\u011flant\u0131lar\u0131n\u0131 payla\u015f");
         table.put("Show mutual markers",
@@ -4480,11 +4490,11 @@ public final class L10nTranslations {
                 "Bu bir yaz\u0131 tipi dosyas\u0131 de\u011fil. Hi\u00e7bir \u015fey de\u011fi\u015fmedi.");
         table.put("That settings file holds a value HushTumblr can't read. Nothing was changed.",
                 "Bu ayar dosyas\u0131nda HushTumblr'\u0131n okuyamad\u0131\u011f\u0131 bir de\u011fer var. Hi\u00e7bir \u015fey de\u011fi\u015ftirilmedi.");
-        table.put("That settings file is damaged or only partly downloaded. Nothing was changed.",
-                "Bu ayar dosyas\u0131 hasarl\u0131 ya da yaln\u0131zca bir k\u0131sm\u0131 indirilmi\u015f. Hi\u00e7bir \u015fey de\u011fi\u015ftirilmedi.");
     }
 
     private static void fillTr6(Map<String, String> table) {
+        table.put("That settings file is damaged or only partly downloaded. Nothing was changed.",
+                "Bu ayar dosyas\u0131 hasarl\u0131 ya da yaln\u0131zca bir k\u0131sm\u0131 indirilmi\u015f. Hi\u00e7bir \u015fey de\u011fi\u015ftirilmedi.");
         table.put("That settings file was written by a newer HushTumblr than this one. Nothing was changed.",
                 "Bu ayar dosyas\u0131, HushTumblr'\u0131n bu s\u00fcr\u00fcm\u00fcnden daha yeni bir s\u00fcr\u00fcm\u00fcyle olu\u015fturulmu\u015f. Hi\u00e7bir \u015fey de\u011fi\u015ftirilmedi.");
         table.put("The active account changed. Reopen Manage muted posts to see its list.",
@@ -4603,11 +4613,11 @@ public final class L10nTranslations {
                 "Telefonunun yaz\u0131 tipini kullan\u0131r. Bir .ttf veya .otf dosyas\u0131 se\u00e7mek i\u00e7in dokun.");
         table.put("Using %1$s. Tap to pick another.",
                 "%1$s kullan\u0131l\u0131yor. Ba\u015fka birini se\u00e7mek i\u00e7in dokun.");
-        table.put("Version",
-                "S\u00fcr\u00fcm");
     }
 
     private static void fillTr7(Map<String, String> table) {
+        table.put("Version",
+                "S\u00fcr\u00fcm");
         table.put("Version, help and project details",
                 "S\u00fcr\u00fcm, yard\u0131m ve proje ayr\u0131nt\u0131lar\u0131");
         table.put("Video link",

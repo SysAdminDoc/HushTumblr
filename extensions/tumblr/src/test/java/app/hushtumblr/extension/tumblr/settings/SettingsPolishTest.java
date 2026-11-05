@@ -521,6 +521,19 @@ public class SettingsPolishTest {
         app.hushtumblr.extension.shared.Utils.awaitBackgroundTasksForTests();
         settle();
         assertFalse(TextSettings.TAB_ORDER.savedValue().isEmpty());
+        // The saved move says where the tab went in the same place, whole, with the buttons in reach.
+        decor = bounded(tabs);
+        TextView moved = decor.findViewWithTag(SettingsFeedback.MESSAGE_TAG);
+        assertNotNull("the saved move said nothing under the list", moved);
+        // ar-XB mirrors each word and draws the digits its own way, so the line is read through it.
+        String said = moved.getText().toString();
+        assertTrue(said, said.contains(app.hushtumblr.extension.shared.L10n.t("moved")));
+        assertTrue("the tab order waits for a restart: " + said,
+                said.endsWith("\n" + app.hushtumblr.extension.shared.L10n.t("Restart Tumblr to apply this change.")));
+        assertWholeText(moved);
+        assertVisible(moved, decor);
+        assertButtons(tabs);
+        render("tab-order-moved-rtl", decor);
     }
 
     @Test public void inlineWordRefusalKeepsTheDraftAndEditingRecoversToASavedList() throws Exception {
