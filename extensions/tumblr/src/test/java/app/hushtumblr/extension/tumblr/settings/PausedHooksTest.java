@@ -167,10 +167,12 @@ public class PausedHooksTest {
         PatchFamily.capabilitiesForTests = EnumSet.allOf(PatchFamily.Capability.class);
         PatchFamily.inBuildForTests = EnumSet.allOf(PatchFamily.class);
         Map<BooleanSetting, List<Probe>> probes = new LinkedHashMap<>();
-        // A page with an ad comes back without it, and Tumblr's own ad requests are turned off.
+        // A page with an ad comes back without it, and Tumblr's own ad requests and its full-screen
+        // ad are turned off.
         probes.put(Settings.HIDE_ADS, Arrays.asList(
                 TimelineItems::aPageLosesItsAd,
-                () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("MAKE_ADX_REQUESTS"), true)));
+                () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("MAKE_ADX_REQUESTS"), true),
+                () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("MAKE_NIMBUS_INTERSTITIAL_CLIENT_AD_REQUESTS"), true)));
         // Both getters of Google's advertising ID info answer as if the ID were deleted.
         probes.put(Settings.HIDE_ADVERTISING_ID, Arrays.asList(
                 () -> !"real".equals(AdvertisingId.id("real")),
