@@ -3,7 +3,7 @@
 ## Unreleased
 
 * The patches move from 46.8.1.100 to Tumblr 46.9.1.100, the newest release. Every patch applies to it, so that's the version to patch.
-* The bundle is built on Morphe patcher 2.1.0 now. You'll need Morphe Manager 2.3.0 or newer, since older Manager builds can't load it.
+* The bundle is built on Morphe patcher 2.2.0 now. You'll need Morphe Manager 2.4.0 or newer, since older Manager builds can't load it.
 * Dark background color now reaches blog and tag pages. Those pages paint their owner's color, so a cream blog or a teal tag used to show through the gaps between black posts. A blog's title or link color that wouldn't show on the new background turns white or near black. The screens where you edit your own blog's colors still show the real ones.
 * New **Line between posts** switch on the Interface page, off by default. It draws a thin line in the gap between posts, so it's easier to see where one ends on a black background.
 * A post you open by itself, from a link or a notification, now loads with Hide reblogs or Hide posts with words on. Those switches clear a feed, so they took out the very post you asked for and the page stayed empty. The same post in a feed later is still hidden as usual.
