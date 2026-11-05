@@ -301,7 +301,7 @@ public class DexDiff {
     private static final Map<String, Integer> MUTATION_COLUMNS = Map.ofEntries(
             Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1), Map.entry("activityNotifications", 7),
             Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 7), Map.entry("timelinePaging", 5),
-            Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 6), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
+            Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 7), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
             Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("videoLinkPress", 6), Map.entry("fontChoice", 6),
             Map.entry("followButton", 5), Map.entry("footerButton", 3), Map.entry("postTags", 5),
             Map.entry("noteCounts", 6), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
@@ -2609,11 +2609,13 @@ public class DexDiff {
         /**
          * Families that need a shared hook without owning one of its capabilities, the rule's last
          * column: Hide ads asks the feature switch hook too, and the card and post families the
-         * timeline list hook, each owning only the capability of its own bridge.
+         * timeline list hook, each owning only the capability of its own bridge. Hide your own reblogs
+         * reads the paid-post bridge's can_edit getter.
          */
         static List<String> users(Contract rule) {
             return rule.target.equals("featureSwitch") || rule.target.equals("timelineList") || rule.target.equals("timelinePaging")
                     || rule.target.equals("accountIdentity") || rule.target.equals("postJsonPresence")
+                    || rule.target.equals("paidPostBridge")
                     ? List.of(rule.strings.get(rule.strings.size() - 1).split(",")) : List.of();
         }
 

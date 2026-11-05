@@ -117,8 +117,9 @@ mutation|reblogPosts,ownReblogPosts,videoPosts,photoPosts,textPosts,postWords|po
 # The post's filtered note, which it hands back as an object, and the note's two lists.
 mutation|filteredPosts|postBridge|Lcom/tumblr/rumblr/model/post/Post;>Lapp/hushtumblr/extension/tumblr/timeline/HushFilteredPost;>hushFiltered:filtered|Lcom/tumblr/rumblr/model/post/asset/Filtered;>Lapp/hushtumblr/extension/tumblr/timeline/HushFiltered;>hushFilteredTags:tags,hushFilteredContent:content
 # Structured header context only. The icon path returns null when header_context is absent, and
-# the two account-specific getters protect followed-blog and editable Blaze posts.
-mutation|paidPostHeader,ownReblogPosts|paidPostBridge|Lcom/tumblr/rumblr/model/post/Post;|Lapp/hushtumblr/extension/tumblr/timeline/HushPaidPost;|hushHeaderIcon:header_context:icon|hushFollowed:followed|hushCanEdit:can_edit|hushPaidContextKnown
+# the two account-specific getters protect followed-blog and editable Blaze posts. Hide your own
+# reblogs reads can_edit here too, its capability owned by the post bridge.
+mutation|paidPostHeader|paidPostBridge|Lcom/tumblr/rumblr/model/post/Post;|Lapp/hushtumblr/extension/tumblr/timeline/HushPaidPost;|hushHeaderIcon:header_context:icon|hushFollowed:followed|hushCanEdit:can_edit|hushPaidContextKnown|hideOwnReblogs
 mutation|reviewPrompt|reviewPrompt|Lapp/hushtumblr/extension/tumblr/ui/ReviewPrompts;->skip()Z|app_review_prompt_rules_last_shown|Lcom/tumblr/rating/RatingPromptActivity;
 # Optional prompt decisions. The shared gift renderer must hand over its instance key so crab tips stay native.
 mutation|blogNotificationReminder|blogNotificationReminder|Lapp/hushtumblr/extension/tumblr/ui/OptionalNudges;->hideBlogNotificationReminder()Z|blog_notify_enabled
