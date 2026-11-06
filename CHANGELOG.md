@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+* **Tooling:** The source audit reads Jman's Patch Bundle Registry through its new API and asks again with fewer rows when a page fails. It also reads every page of a GitHub code search now. Before, it stopped at the first page that came back short and missed files.
+* **Tooling:** A release checks the source census when it's cut and again before anything goes up on GitHub. A census refreshed after the cut no longer keeps the publish step from running.
+
 ## 0.0.10 (2026-11-06)
 
 * The patches move from 46.8.1.100 to Tumblr 47.0.0.108, the newest release. Every patch applies to it, so that's the version to patch.
