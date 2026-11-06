@@ -28,6 +28,7 @@
 * **Tooling:** `scripts/patch-for-device.ps1` can now sign a gate run it reuses with the BKS key Morphe makes. Plain `apksigner.bat` can't open that keystore, so the script falls back to apksigner's own jar with BouncyCastle loaded. When both fail, the error shows what each one said.
 * **Tooling:** Changelog entries don't open with a "Tumblr:" label anymore. HushTumblr only patches Tumblr, so it repeated itself on every line. The release scripts stopped adding or asking for it, and drop it from any bullet that still has one when a release is cut.
 * **Tooling:** The build signs the bundle when `MORPHE_SIGNING_KEY` holds the private key, and refuses a key that isn't the one `morphe-signing.pub` publishes. Without it the build still works and says the bundle is unsigned. `release.ps1` loads the key from `HUSHTUMBLR_BUNDLE_SIGNING_KEY` for the build alone, won't build a release without it, and checks the bundle came out signed by the published key. The release push gate signs its bundle with the same key, so the two still match byte for byte. The index now carries that key as `public_key`.
+* **Tooling:** Device patching and the release gate know the resource ids of Tumblr 47.0 now. Rebuilding Tumblr's resource table renames four ids and rewrites one string, just as it did on 46.8, but those sit at new ids in 47.0, so every patch run stopped at the resource check after the move.
 
 ## 0.0.9 (2026-10-23)
 
