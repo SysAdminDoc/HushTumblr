@@ -73,6 +73,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Locale;
 
 import app.hushtumblr.extension.shared.L10n;
@@ -117,6 +118,7 @@ public class SettingsPolishTest {
         TextSettings.HIDDEN_WORDS.resetToDefault();
         TextSettings.ALLOWED_WORDS.resetToDefault();
         TextSettings.TAB_ORDER.resetToDefault();
+        Settings.WORDS_TAGS.resetToDefault();
         PauseForTests.resume();
     }
 
@@ -277,6 +279,39 @@ public class SettingsPolishTest {
             assertFalse(editor.isShowing());
             assertEquals("", TextSettings.HIDDEN_WORDS.savedValue());
             assertEquals("", TextSettings.ALLOWED_WORDS.savedValue());
+        }
+    }
+
+    @Test public void theWordPreviewWrapsAndScrollsIntoReachAtTwiceTheTextSize() {
+        RuntimeEnvironment.setFontScale(2f);
+        TextSettings.HIDDEN_WORDS.save("cat");
+        Settings.WORDS_TAGS.save(false);
+        open();
+        for (String key : new String[]{HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW,
+                HushTumblrPreferenceFragment.ALLOWED_WORDS_ROW}) {
+            AlertDialog editor = click(page.findPreference(key));
+            List<EditText> inputs = SettingsDialogTest.previewInputs(editor);
+            inputs.get(0).setText("my cat");
+            settle();
+            assertScrollableEndAndButtons(editor);
+            View decor = editor.getWindow().getDecorView();
+            TextView result = SettingsDialogTest.previewResult(editor);
+            assertWholeText(result);
+            assertTrue("the result never wrapped at this size", result.getLineCount() > 1);
+            // The line under the Tags field that's off wraps whole, where its hint was cut to one line.
+            ViewGroup section = (ViewGroup) result.getParent();
+            TextView off = (TextView) section.getChildAt(section.indexOfChild(inputs.get(2)) + 1);
+            assertEquals(L10n.f("Not matched while %1$s is off", L10n.t("Match current post tags")), off.getText().toString());
+            assertWholeText(off);
+            assertTrue("the off line never wrapped at this size", off.getLineCount() > 1);
+            Button clear = decor.findViewWithTag(WordPreviewSection.CLEAR_TAG);
+            assertVisible(clear, decor);
+            assertWholeText(clear);
+            assertTrue("Clear is below 48dp", clear.getHeight()
+                    >= Math.round(48 * clear.getResources().getDisplayMetrics().density));
+            editor.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();
+            settle();
+            assertFalse(editor.isShowing());
         }
     }
 

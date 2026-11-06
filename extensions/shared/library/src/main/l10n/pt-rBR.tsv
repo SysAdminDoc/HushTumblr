@@ -489,3 +489,22 @@ Video saved to Downloads	Vídeo salvo em Downloads
 Couldn't save the video	Não foi possível salvar o vídeo
 ad networks at launch	as redes de anúncios ao abrir
 LiveRamp at launch	o LiveRamp ao abrir
+# context: the Try it on a post part of the Words to hide and Allowed words editors. Post text, Reblog trail text, Tags and Summary label its fields and fill the field names in the result lines (%2$s and %4$s). %1$s in the Not matched line is a Match switch's title, %1$s and %3$s in the result lines are the matched words.
+Try it on a post	Teste em um post
+Nothing you type here is saved.	Nada do que você digitar aqui é salvo.
+Post text	Texto do post
+Reblog trail text	Texto da cadeia de reblogs
+Tags	Tags
+Summary	Resumo
+Not matched while %1$s is off	Não buscado enquanto “%1$s” estiver desativado
+Split tags with commas	Separe as tags com vírgulas
+Clear the example	Limpar o exemplo
+No fields are selected to match, so the word filter keeps every post.	Nenhum campo está selecionado para busca, então o filtro de palavras mantém todos os posts.
+There are no words to hide yet, so the word filter keeps every post.	Ainda não há palavras para ocultar, então o filtro de palavras mantém todos os posts.
+Type part of a post above to see what the word filter does with it.	Digite acima parte de um post para ver o que o filtro de palavras faz com ele.
+The word filter would hide this post for “%1$s” in %2$s.	O filtro de palavras ocultaria este post por “%1$s” no campo %2$s.
+The word filter would keep this post. “%1$s” in %2$s would hide it, but the allowed word “%3$s” in %4$s keeps it.	O filtro de palavras manteria este post. “%1$s” no campo %2$s o ocultaria, mas a palavra permitida “%3$s” no campo %4$s o mantém.
+The word filter would keep this post. None of the words to hide are in the selected fields.	O filtro de palavras manteria este post. Nenhuma das palavras para ocultar está nos campos selecionados.
+Other filters can still hide it.	Outros filtros ainda podem ocultá-lo.
+Hide posts with these words is off, so the word filter hides nothing yet.	“Ocultar posts com estas palavras” está desativado, então o filtro de palavras ainda não oculta nada.
+HushTumblr is paused, so the word filter hides nothing right now.	O HushTumblr está pausado, então o filtro de palavras não oculta nada por enquanto.

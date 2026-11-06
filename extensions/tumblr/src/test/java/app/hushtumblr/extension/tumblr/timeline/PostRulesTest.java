@@ -27,8 +27,11 @@ import org.robolectric.annotation.Config;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import app.hushtumblr.extension.shared.SettingsContextRule;
 import app.hushtumblr.extension.shared.diagnostics.HookStatus;
@@ -490,6 +493,130 @@ public class PostRulesTest {
         PostRules first = PostRules.now(), second = PostRules.now();
         assertSame(first.words, second.words);
         assertSame(first.allowedWords, second.allowedWords);
+    }
+
+    private static final Set<PostRules.WordField> EVERY_FIELD = EnumSet.allOf(PostRules.WordField.class);
+
+    private static Map<PostRules.WordField, String> example(String text, String trail, String tags, String summary) {
+        Map<PostRules.WordField, String> example = new EnumMap<>(PostRules.WordField.class);
+        example.put(PostRules.WordField.CURRENT_TEXT, text);
+        example.put(PostRules.WordField.REBLOG_TRAIL, trail);
+        example.put(PostRules.WordField.TAGS, tags);
+        example.put(PostRules.WordField.SUMMARY, summary);
+        return example;
+    }
+
+    @Test @Config(sdk = {26, 36, 37})
+    public void aPreviewNamesTheFieldAndWordThatHideAnExampleAsTheFeedReadsThem() {
+        String hidden = "Cat\n big news, café";
+        WordPreview tag = WordPreview.of(hidden, "", EVERY_FIELD, example("category", "", "#Cats, my cat pics", ""));
+        assertEquals(WordPreview.Outcome.HIDDEN, tag.outcome);
+        assertEquals(PostRules.WordField.TAGS, tag.hiddenIn);
+        assertEquals("cat", tag.hiddenBy);
+        WordPreview summary = WordPreview.of(hidden, "", EVERY_FIELD, example("", "", "", "BIG NEWS!"));
+        assertEquals(PostRules.WordField.SUMMARY, summary.hiddenIn);
+        assertEquals("big news", summary.hiddenBy);
+        WordPreview trail = WordPreview.of(hidden, "", EVERY_FIELD, example("", "a CAFÉ trip", "", ""));
+        assertEquals(PostRules.WordField.REBLOG_TRAIL, trail.hiddenIn);
+        assertEquals("café", trail.hiddenBy);
+        // Fields are read in the feed's order, so the post text names a word found in both.
+        WordPreview both = WordPreview.of(hidden, "", EVERY_FIELD, example("my cat", "", "big news", ""));
+        assertEquals(PostRules.WordField.CURRENT_TEXT, both.hiddenIn);
+        for (String kept : Arrays.asList("category", "bobcat", "cat_", "cat" + (char) 0x0338, "cafe", "big newsroom")) {
+            WordPreview preview = WordPreview.of(hidden, "", EVERY_FIELD, example(kept, kept, kept, kept));
+            assertEquals(kept, WordPreview.Outcome.KEPT, preview.outcome);
+            assertNull(preview.hiddenBy);
+        }
+        // The feed takes out the posts the preview says it hides, and keeps the rest.
+        Settings.HIDE_POSTS_WITH_WORDS.save(true);
+        TextSettings.HIDDEN_WORDS.save(hidden);
+        for (String text : Arrays.asList("my cat", "category", "a CAFÉ trip", "cafe", "BIG NEWS!", "big newsroom")) {
+            assertEquals(text, hides(hidden, example(text, "", "", "")),
+                    shown(TimelineItems.postWith(new TextBlock(text))).isEmpty());
+            assertEquals(text, hides(hidden, example("", text, "", "")),
+                    shown(TimelineItems.reblogOf(Collections.singletonList(new TextBlock(text)))).isEmpty());
+            assertEquals(text, hides(hidden, example("", "", text, "")), shown(TimelineItems.postTagged("", text)).isEmpty());
+            assertEquals(text, hides(hidden, example("", "", "", text)), shown(TimelineItems.postTagged(text)).isEmpty());
+        }
+        // Tags typed the way a post shows them, each after a #, are the tags Tumblr keeps, without it.
+        TextSettings.HIDDEN_WORDS.save("#nsfw");
+        assertFalse(hides("#nsfw", example("", "", "#art #nsfw", "")));
+        // Any kind of space before a # starts a tag, a no-break or ideographic one too.
+        for (char space : new char[]{(char) 0xA0, (char) 0x3000}) {
+            assertFalse(Integer.toHexString(space), hides("#nsfw", example("", "", "#art" + space + "#nsfw", "")));
+        }
+        assertEquals(1, shown(TimelineItems.postTagged("", "art", "nsfw")).size());
+        TextSettings.HIDDEN_WORDS.save("art nsfw");
+        assertFalse(hides("art nsfw", example("", "", "#art #nsfw", "")));
+        assertEquals(1, shown(TimelineItems.postTagged("", "art", "nsfw")).size());
+        TextSettings.HIDDEN_WORDS.save("nsfw");
+        assertTrue(hides("nsfw", example("", "", "#art #nsfw", "")));
+        assertTrue(shown(TimelineItems.postTagged("", "art", "nsfw")).isEmpty());
+        // A # inside a tag stays part of it.
+        TextSettings.HIDDEN_WORDS.save("c#");
+        assertTrue(hides("c#", example("", "", "#c# #art", "")));
+        assertTrue(shown(TimelineItems.postTagged("", "c#", "art")).isEmpty());
+    }
+
+    private static boolean hides(String hidden, Map<PostRules.WordField, String> example) {
+        return WordPreview.of(hidden, "", EVERY_FIELD, example).outcome == WordPreview.Outcome.HIDDEN;
+    }
+
+    @Test
+    public void aPreviewReadsOnlyTheSelectedFields() {
+        Map<PostRules.WordField, String> everywhere = example("cat", "cat", "cat", "cat");
+        for (PostRules.WordField only : PostRules.WordField.values()) {
+            WordPreview preview = WordPreview.of("cat", "", EnumSet.of(only), everywhere);
+            assertEquals(only.name(), WordPreview.Outcome.HIDDEN, preview.outcome);
+            assertEquals(only, preview.hiddenIn);
+            Set<PostRules.WordField> others = EnumSet.complementOf(EnumSet.of(only));
+            Map<PostRules.WordField, String> onlyThere = example("", "", "", "");
+            onlyThere.put(only, "cat");
+            assertEquals(only.name(), WordPreview.Outcome.EMPTY, WordPreview.of("cat", "", others, onlyThere).outcome);
+            onlyThere.put(others.iterator().next(), "dog");
+            assertEquals(only.name(), WordPreview.Outcome.KEPT, WordPreview.of("cat", "", others, onlyThere).outcome);
+        }
+        assertEquals(WordPreview.Outcome.NO_FIELDS,
+                WordPreview.of("cat", "", EnumSet.noneOf(PostRules.WordField.class), everywhere).outcome);
+        assertEquals(WordPreview.Outcome.NO_WORDS, WordPreview.of(" ,\n ", "", EVERY_FIELD, everywhere).outcome);
+        assertEquals(WordPreview.Outcome.NO_WORDS, WordPreview.of(null, "", EVERY_FIELD, everywhere).outcome);
+        assertEquals(WordPreview.Outcome.EMPTY, WordPreview.of("cat", "", EVERY_FIELD, example(" ", "", "\n", "")).outcome);
+    }
+
+    @Test @Config(sdk = {26, 36, 37})
+    public void anAllowedWordInASelectedFieldKeepsTheExampleAndIsNamed() {
+        WordPreview kept = WordPreview.of("cat", "CAFÉ, kitten", EVERY_FIELD, example("cat", "", "kitten", ""));
+        assertEquals(WordPreview.Outcome.ALLOWED, kept.outcome);
+        assertEquals(PostRules.WordField.CURRENT_TEXT, kept.hiddenIn);
+        assertEquals("cat", kept.hiddenBy);
+        assertEquals(PostRules.WordField.TAGS, kept.allowedIn);
+        assertEquals("kitten", kept.allowedBy);
+        // A decomposed E with a combining acute is the same allowed word as the one-character form.
+        WordPreview accent = WordPreview.of("cat", "caf" + (char) 0x00E9, EVERY_FIELD, example("cat CAFE" + (char) 0x0301, "", "", ""));
+        assertEquals(WordPreview.Outcome.ALLOWED, accent.outcome);
+        assertEquals("café", accent.allowedBy);
+        // Allowed words are whole words too, and read in the selected fields only.
+        assertEquals(WordPreview.Outcome.HIDDEN,
+                WordPreview.of("cat", "kitten", EVERY_FIELD, example("cat kittens", "", "", "")).outcome);
+        assertEquals(WordPreview.Outcome.HIDDEN, WordPreview.of("cat", "kitten",
+                EnumSet.of(PostRules.WordField.CURRENT_TEXT), example("cat", "", "kitten", "")).outcome);
+        // An allowed word alone doesn't make a match.
+        assertEquals(WordPreview.Outcome.KEPT,
+                WordPreview.of("cat", "kitten", EVERY_FIELD, example("kitten", "", "", "")).outcome);
+    }
+
+    @Test
+    public void aPreviewLeavesTheSavedListsCacheAlone() {
+        TextSettings.HIDDEN_WORDS.save("cat");
+        TextSettings.ALLOWED_WORDS.save("kitten");
+        Settings.HIDE_POSTS_WITH_WORDS.save(true);
+        PostRules before = PostRules.now();
+        WordPreview.of("dog, cat", "puppy", EVERY_FIELD, example("dog", "", "", ""));
+        PostRules after = PostRules.now();
+        assertSame(before.words, after.words);
+        assertSame(before.allowedWords, after.allowedWords);
+        assertEquals("cat", TextSettings.HIDDEN_WORDS.savedValue());
+        assertEquals("kitten", TextSettings.ALLOWED_WORDS.savedValue());
     }
 
     @Test

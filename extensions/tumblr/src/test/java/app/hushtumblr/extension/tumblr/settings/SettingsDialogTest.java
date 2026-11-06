@@ -27,6 +27,7 @@ import static org.junit.Assert.assertTrue;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
+import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
 import android.graphics.Color;
@@ -45,6 +46,9 @@ import app.hushtumblr.extension.shared.L10n;
 import app.hushtumblr.extension.shared.SettingsContextRule;
 import app.hushtumblr.extension.shared.settings.Setting;
 import app.hushtumblr.extension.shared.settings.FailingStore;
+import app.hushtumblr.extension.shared.settings.HushTumblrPause;
+import app.hushtumblr.extension.shared.settings.PauseForTests;
+import app.hushtumblr.extension.tumblr.timeline.PostRules;
 
 import org.junit.After;
 import org.junit.Rule;
@@ -52,6 +56,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowLooper;
@@ -95,6 +100,11 @@ public class SettingsDialogTest {
         Settings.CHECK_FOR_RELEASES.resetToDefault();
         controller.close();
         PatchFamily.inBuildForTests = null;
+        // Setting values are static, so a list or switch a test saved stays for the tests after it.
+        Settings.HIDE_POSTS_WITH_WORDS.resetToDefault();
+        for (PostRules.WordField field : PostRules.WordField.values()) WordPreviewSection.switchFor(field).resetToDefault();
+        TextSettings.HIDDEN_WORDS.resetToDefault();
+        TextSettings.ALLOWED_WORDS.resetToDefault();
     }
 
     @Test
@@ -297,6 +307,207 @@ public class SettingsDialogTest {
         AlertDialog fresh = ShadowAlertDialog.getLatestAlertDialog();
         assertEquals("saved", ((EditText) fresh.findViewById(android.R.id.edit)).getText().toString());
         fresh.dismiss();
+    }
+
+    private static final String TRY_A_POST = "Type part of a post above to see what the word filter does with it.";
+    private static final String STILL_OFF = " Hide posts with these words is off, so the word filter hides nothing yet.";
+    private static final String NO_WORDS_YET = "There are no words to hide yet, so the word filter keeps every post.";
+
+    /** The result line under a word editor's "Try it on a post". */
+    static TextView previewResult(AlertDialog editor) {
+        TextView result = editor.getWindow().getDecorView().findViewWithTag(WordPreviewSection.RESULT_TAG);
+        assertNotNull("the word editor has no preview", result);
+        return result;
+    }
+
+    /** [result]'s line without the isolate marks around each word from the lists. */
+    private static String plain(TextView result) {
+        return result.getText().toString().replace(String.valueOf((char) 0x2068), "").replace(String.valueOf((char) 0x2069), "");
+    }
+
+    /** The example's fields, in the order the feed reads them: post text, trail, tags, summary. */
+    static List<EditText> previewInputs(AlertDialog editor) {
+        ViewGroup section = (ViewGroup) previewResult(editor).getParent();
+        List<EditText> inputs = new ArrayList<>();
+        for (int i = 0; i < section.getChildCount(); i++) {
+            if (section.getChildAt(i) instanceof EditText) inputs.add((EditText) section.getChildAt(i));
+        }
+        assertEquals(4, inputs.size());
+        return inputs;
+    }
+
+    /** Fails if [sample] is in any value of the settings store, where backups and the export read. */
+    private static void assertNotStored(String sample) {
+        for (Object value : RuntimeEnvironment.getApplication()
+                .getSharedPreferences(Setting.preferences.name, Context.MODE_PRIVATE).getAll().values()) {
+            assertFalse("an example was saved: " + value, String.valueOf(value).contains(sample));
+        }
+    }
+
+    @Test
+    public void theWordPreviewSaysWhatTheDraftListDoesToATypedPostAndKeepsNoneOfIt() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        Settings.HIDE_POSTS_WITH_WORDS.save(true);
+        TextSettings.ALLOWED_WORDS.save("kitten");
+        HushTumblrPreferenceFragment page = pageOf(show(controller.get()));
+        click(page.findPreference(HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW));
+        AlertDialog editor = ShadowAlertDialog.getLatestAlertDialog();
+        TextView result = previewResult(editor);
+        ViewGroup section = (ViewGroup) result.getParent();
+        TextView heading = (TextView) section.getChildAt(0);
+        assertEquals("Try it on a post", heading.getText().toString());
+        assertTrue(heading.isAccessibilityHeading());
+        assertEquals("Nothing you type here is saved.", ((TextView) section.getChildAt(1)).getText().toString());
+        assertEquals(NO_WORDS_YET, result.getText().toString());
+        assertEquals(View.ACCESSIBILITY_LIVE_REGION_POLITE, result.getAccessibilityLiveRegion());
+        List<EditText> inputs = previewInputs(editor);
+        String[] labels = {"Post text", "Reblog trail text", "Tags", "Summary"};
+        for (int i = 0; i < labels.length; i++) {
+            EditText input = inputs.get(i);
+            TextView label = (TextView) section.getChildAt(section.indexOfChild(input) - 1);
+            assertEquals(labels[i], label.getText().toString());
+            assertEquals(input.getId(), label.getLabelFor());
+            assertTrue(labels[i], input.isEnabled());
+            assertFalse(labels[i] + " keeps its text for a rebuild", input.isSaveEnabled());
+            assertTrue(labels[i] + " lets the keyboard learn from it", (input.getImeOptions()
+                    & android.view.inputmethod.EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING) != 0);
+        }
+        assertEquals(View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS, section.getImportantForAutofill());
+        assertEquals("Split tags with commas", inputs.get(2).getHint().toString());
+        EditText list = editor.findViewById(android.R.id.edit);
+        list.setText("Cat");
+        assertEquals(TRY_A_POST, result.getText().toString());
+        inputs.get(2).setText("#cat pics");
+        assertEquals("The word filter would hide this post for “cat” in Tags.", plain(result));
+        assertTrue("the word isn't isolated", result.getText().toString().contains(L10n.isolate("cat")));
+        // A letter that doesn't change the answer leaves the line alone, so TalkBack says it once.
+        CharSequence said = result.getText();
+        inputs.get(2).setText("#cat pics!");
+        assertSame(said, result.getText());
+        inputs.get(0).setText("a kitten zebrafinch");
+        assertEquals("The word filter would keep this post. “cat” in Tags would hide it, but the allowed word "
+                + "“kitten” in Post text keeps it. Other filters can still hide it.", plain(result));
+        inputs.get(2).setText("category nightjar");
+        assertEquals("The word filter would keep this post. None of the words to hide are in the selected fields. "
+                + "Other filters can still hide it.", plain(result));
+        assertEquals("", TextSettings.HIDDEN_WORDS.savedValue());
+        assertEquals("kitten", TextSettings.ALLOWED_WORDS.savedValue());
+
+        Button clear = editor.getWindow().getDecorView().findViewWithTag(WordPreviewSection.CLEAR_TAG);
+        assertEquals("Clear the example", clear.getText().toString());
+        // Emptied one field at a time, this example would read hidden for a moment, then empty.
+        // Clear changes the line once, so TalkBack hears only where it ends up.
+        inputs.get(2).setText("#cat");
+        int[] changes = {0};
+        result.addTextChangedListener(new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence text, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence text, int start, int before, int count) { }
+            @Override public void afterTextChanged(android.text.Editable text) { changes[0]++; }
+        });
+        clear.performClick();
+        for (EditText input : inputs) assertEquals("", input.getText().toString());
+        assertEquals(TRY_A_POST, result.getText().toString());
+        assertEquals("Clear changed the line more than once", 1, changes[0]);
+        assertEquals("Clear leaves the list alone", "Cat", list.getText().toString());
+
+        // A rebuild keeps the list's draft but not the example.
+        inputs.get(1).setText("a zebrafinch trail");
+        controller.recreate();
+        ShadowLooper.idleMainLooper();
+        AlertDialog restored = ShadowAlertDialog.getLatestAlertDialog();
+        assertNotSame(editor, restored);
+        assertEquals("Cat", ((EditText) restored.findViewById(android.R.id.edit)).getText().toString());
+        for (EditText input : previewInputs(restored)) assertEquals("", input.getText().toString());
+        assertEquals(TRY_A_POST, previewResult(restored).getText().toString());
+
+        // Cancel drops both, and the editor opens again on the saved, empty list.
+        previewInputs(restored).get(3).setText("nightjar");
+        restored.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();
+        page = pageOf((SettingsDialog) controller.get().getFragmentManager().findFragmentByTag(TAG));
+        click(page.findPreference(HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW));
+        AlertDialog fresh = ShadowAlertDialog.getLatestAlertDialog();
+        for (EditText input : previewInputs(fresh)) assertEquals("", input.getText().toString());
+        assertEquals(NO_WORDS_YET, previewResult(fresh).getText().toString());
+        assertNotStored("zebrafinch");
+        assertNotStored("nightjar");
+        fresh.dismiss();
+    }
+
+    @Test
+    public void aWordScopeThatIsOffLeavesItsExampleFieldOutAndNamesItsSwitch() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        Settings.WORDS_TAGS.save(false);
+        TextSettings.HIDDEN_WORDS.save("cat");
+        HushTumblrPreferenceFragment page = pageOf(show(controller.get()));
+        click(page.findPreference(HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW));
+        AlertDialog editor = ShadowAlertDialog.getLatestAlertDialog();
+        List<EditText> inputs = previewInputs(editor);
+        TextView result = previewResult(editor);
+        assertFalse(inputs.get(2).isEnabled());
+        assertNull(inputs.get(2).getHint());
+        ViewGroup section = (ViewGroup) result.getParent();
+        TextView off = (TextView) section.getChildAt(section.indexOfChild(inputs.get(2)) + 1);
+        assertEquals("Not matched while Match current post tags is off", off.getText().toString());
+        assertEquals(ScreenColors.DEFAULT.summary, off.getCurrentTextColor());
+        assertTrue(inputs.get(3).isEnabled());
+        // Text in a field that's off, the way a paste could put it there, still isn't read.
+        inputs.get(2).setText("cat");
+        // Nothing typed in a field it reads yet, and still it says the switch is off.
+        assertEquals(TRY_A_POST + STILL_OFF, result.getText().toString());
+        inputs.get(3).setText("a cat");
+        assertEquals("The word filter would hide this post for “cat” in Summary." + STILL_OFF, plain(result));
+        editor.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();
+
+        for (PostRules.WordField field : PostRules.WordField.values()) WordPreviewSection.switchFor(field).save(false);
+        click(page.findPreference(HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW));
+        AlertDialog none = ShadowAlertDialog.getLatestAlertDialog();
+        for (EditText input : previewInputs(none)) assertFalse(input.isEnabled());
+        assertEquals("No fields are selected to match, so the word filter keeps every post." + STILL_OFF,
+                previewResult(none).getText().toString());
+        none.dismiss();
+    }
+
+    @Test
+    public void theAllowedWordsEditorPreviewsItsDraftAgainstTheSavedWordsToHide() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        Settings.HIDE_POSTS_WITH_WORDS.save(true);
+        TextSettings.HIDDEN_WORDS.save("cat");
+        HushTumblrPreferenceFragment page = pageOf(show(controller.get()));
+        click(page.findPreference(HushTumblrPreferenceFragment.ALLOWED_WORDS_ROW));
+        AlertDialog editor = ShadowAlertDialog.getLatestAlertDialog();
+        TextView result = previewResult(editor);
+        previewInputs(editor).get(0).setText("my cat and a kitten");
+        assertEquals("The word filter would hide this post for “cat” in Post text.", plain(result));
+        ((EditText) editor.findViewById(android.R.id.edit)).setText("Kitten");
+        assertEquals("The word filter would keep this post. “cat” in Post text would hide it, but the allowed word "
+                + "“kitten” in Post text keeps it. Other filters can still hide it.", plain(result));
+        assertEquals("", TextSettings.ALLOWED_WORDS.savedValue());
+        editor.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();
+    }
+
+    @Test
+    public void whilePausedTheWordPreviewSaysTheWordFilterHidesNothing() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        Settings.HIDE_POSTS_WITH_WORDS.save(true);
+        TextSettings.HIDDEN_WORDS.save("cat");
+        PauseForTests.pause(HushTumblrPause.Reason.SWITCH);
+        try {
+            HushTumblrPreferenceFragment page = pageOf(show(controller.get()));
+            click(page.findPreference(HushTumblrPreferenceFragment.HIDDEN_WORDS_ROW));
+            AlertDialog editor = ShadowAlertDialog.getLatestAlertDialog();
+            assertEquals(TRY_A_POST + " HushTumblr is paused, so the word filter hides nothing right now.",
+                    previewResult(editor).getText().toString());
+            previewInputs(editor).get(0).setText("my cat");
+            assertEquals("The word filter would hide this post for “cat” in Post text. "
+                    + "HushTumblr is paused, so the word filter hides nothing right now.", plain(previewResult(editor)));
+            // While paused no other filter hides anything either, so a kept post doesn't hear they could.
+            previewInputs(editor).get(0).setText("my kitten");
+            assertEquals("The word filter would keep this post. None of the words to hide are in the selected fields. "
+                    + "HushTumblr is paused, so the word filter hides nothing right now.", plain(previewResult(editor)));
+            editor.dismiss();
+        } finally {
+            PauseForTests.resume();
+        }
     }
 
     @Test

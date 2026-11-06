@@ -492,3 +492,22 @@ Video saved to Downloads	Video disimpan ke Unduhan
 Couldn't save the video	Video gagal disimpan
 ad networks at launch	jaringan iklan saat dibuka
 LiveRamp at launch	LiveRamp saat dibuka
+# context: the Try it on a post part of the Words to hide and Allowed words editors. Post text, Reblog trail text, Tags and Summary label its fields and fill the field names in the result lines (%2$s and %4$s). %1$s in the Not matched line is a Match switch's title, %1$s and %3$s in the result lines are the matched words.
+Try it on a post	Coba pada sebuah postingan
+Nothing you type here is saved.	Apa pun yang Anda ketik di sini tidak disimpan.
+Post text	Teks postingan
+Reblog trail text	Teks rantai reblog
+Tags	Tag
+Summary	Ringkasan
+Not matched while %1$s is off	Tidak dicocokkan selama “%1$s” nonaktif
+Split tags with commas	Pisahkan tag dengan koma
+Clear the example	Hapus contoh
+No fields are selected to match, so the word filter keeps every post.	Tidak ada bidang yang dipilih untuk dicocokkan, jadi filter kata mempertahankan semua postingan.
+There are no words to hide yet, so the word filter keeps every post.	Belum ada kata yang disembunyikan, jadi filter kata mempertahankan semua postingan.
+Type part of a post above to see what the word filter does with it.	Ketik sebagian postingan di atas untuk melihat apa yang dilakukan filter kata padanya.
+The word filter would hide this post for “%1$s” in %2$s.	Filter kata akan menyembunyikan postingan ini karena “%1$s” di bidang %2$s.
+The word filter would keep this post. “%1$s” in %2$s would hide it, but the allowed word “%3$s” in %4$s keeps it.	Filter kata akan mempertahankan postingan ini. “%1$s” di bidang %2$s akan menyembunyikannya, tetapi kata yang diizinkan “%3$s” di bidang %4$s mempertahankannya.
+The word filter would keep this post. None of the words to hide are in the selected fields.	Filter kata akan mempertahankan postingan ini. Tidak ada kata yang disembunyikan di bidang yang dipilih.
+Other filters can still hide it.	Filter lain masih bisa menyembunyikannya.
+Hide posts with these words is off, so the word filter hides nothing yet.	“Sembunyikan postingan dengan kata ini” nonaktif, jadi filter kata belum menyembunyikan apa pun.
+HushTumblr is paused, so the word filter hides nothing right now.	HushTumblr dijeda, jadi filter kata tidak menyembunyikan apa pun untuk saat ini.

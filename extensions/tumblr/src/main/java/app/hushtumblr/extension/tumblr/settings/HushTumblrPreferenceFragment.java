@@ -1274,7 +1274,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
 
     /**
      * The list Hide posts with these words looks for. A tap opens it in a box, one entry a line, and
-     * Save keeps it for the next page that loads.
+     * Save keeps it for the next page that loads. Under the box, {@link WordPreviewSection} tries
+     * the list on a post typed there.
      */
     private Preference wordsRow(Context context) {
         Row row = new Row(context);
@@ -1356,6 +1357,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         feedback.setPaddingRelative(0, Math.round(8 * context.getResources().getDisplayMetrics().density), 0, 0);
         feedback.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         editor.addView(feedback);
+        editor.addView(WordPreviewSection.build(context, editingAllowedWords, field));
         ScreenColors.startSide(label);
         ScreenColors.startSide(field);
         ScreenColors.startSide(feedback);

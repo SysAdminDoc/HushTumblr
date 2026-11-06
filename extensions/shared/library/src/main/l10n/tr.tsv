@@ -492,3 +492,22 @@ Video saved to Downloads	Video İndirilenler'e kaydedildi
 Couldn't save the video	Video kaydedilemedi
 ad networks at launch	açılışta reklam ağları
 LiveRamp at launch	açılışta LiveRamp
+# context: the Try it on a post part of the Words to hide and Allowed words editors. Post text, Reblog trail text, Tags and Summary label its fields and fill the field names in the result lines (%2$s and %4$s). %1$s in the Not matched line is a Match switch's title, %1$s and %3$s in the result lines are the matched words.
+Try it on a post	Bir gönderide dene
+Nothing you type here is saved.	Buraya yazdıkların kaydedilmez.
+Post text	Gönderi metni
+Reblog trail text	Yeniden bloglama zinciri metni
+Tags	Etiketler
+Summary	Özet
+Not matched while %1$s is off	“%1$s” kapalıyken eşleştirilmez
+Split tags with commas	Etiketleri virgülle ayır
+Clear the example	Örneği temizle
+No fields are selected to match, so the word filter keeps every post.	Eşleştirmek için seçili alan yok, bu yüzden kelime filtresi her gönderiyi tutar.
+There are no words to hide yet, so the word filter keeps every post.	Henüz gizlenecek kelime yok, bu yüzden kelime filtresi her gönderiyi tutar.
+Type part of a post above to see what the word filter does with it.	Kelime filtresinin ne yapacağını görmek için yukarıya bir gönderinin bir kısmını yaz.
+The word filter would hide this post for “%1$s” in %2$s.	Kelime filtresi bu gönderiyi %2$s alanındaki “%1$s” yüzünden gizlerdi.
+The word filter would keep this post. “%1$s” in %2$s would hide it, but the allowed word “%3$s” in %4$s keeps it.	Kelime filtresi bu gönderiyi tutardı. %2$s alanındaki “%1$s” onu gizlerdi, ama %4$s alanındaki izin verilen “%3$s” kelimesi onu tutuyor.
+The word filter would keep this post. None of the words to hide are in the selected fields.	Kelime filtresi bu gönderiyi tutardı. Gizlenecek kelimelerin hiçbiri seçili alanlarda yok.
+Other filters can still hide it.	Diğer filtreler yine de onu gizleyebilir.
+Hide posts with these words is off, so the word filter hides nothing yet.	“Bu kelimeleri içeren gönderileri gizle” kapalı, bu yüzden kelime filtresi henüz hiçbir şeyi gizlemiyor.
+HushTumblr is paused, so the word filter hides nothing right now.	HushTumblr duraklatıldı, bu yüzden kelime filtresi şu anda hiçbir şeyi gizlemiyor.

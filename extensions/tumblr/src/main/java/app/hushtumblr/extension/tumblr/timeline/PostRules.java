@@ -164,7 +164,7 @@ public final class PostRules {
             if (photo && kind == Kind.PHOTO) return FamilyNames.HIDE_PHOTO_POSTS;
             if (text && kind == Kind.TEXT) return FamilyNames.HIDE_TEXT_POSTS;
         }
-        if (!words.isEmpty() && hasWord(post, trail, words) && !hasWord(post, trail, allowedWords))
+        if (!words.isEmpty() && wordHit(post, trail, words) != null && wordHit(post, trail, allowedWords) == null)
             return FamilyNames.HIDE_POSTS_WITH_WORDS;
         return null;
     }
@@ -286,37 +286,72 @@ public final class PostRules {
         return kind;
     }
 
-    /** Only selected fields can deny a post or make an exception to that word denial. */
-    private boolean hasWord(HushPost post, @Nullable List<?> trail, List<String> words) {
-        if (words.isEmpty()) return false;
-        if (wordsCurrentText && blocksMatch(post.hushContent(), words)) return true;
+    /** A post field the word rules can read, in the order they read them. */
+    public enum WordField { CURRENT_TEXT, REBLOG_TRAIL, TAGS, SUMMARY }
+
+    /** Where a word rule matched: the first selected field holding a phrase, and that phrase as parsed. */
+    static final class WordHit {
+        final WordField field;
+        final String phrase;
+
+        WordHit(WordField field, String phrase) {
+            this.field = field;
+            this.phrase = phrase;
+        }
+    }
+
+    /**
+     * The first of [words] in [post]'s selected fields, or null when none is there. Only selected
+     * fields can deny a post or make an exception to that word denial, and an unselected field is
+     * never read. {@link WordPreview} asks the same of a made-up post.
+     */
+    @Nullable
+    WordHit wordHit(HushPost post, @Nullable List<?> trail, List<String> words) {
+        if (words.isEmpty()) return null;
+        String phrase;
+        if (wordsCurrentText && (phrase = blocksMatch(post.hushContent(), words)) != null)
+            return new WordHit(WordField.CURRENT_TEXT, phrase);
         if (wordsReblogTrail && trail != null) {
-            for (Object entry : trail) if (entry instanceof HushTrail && blocksMatch(((HushTrail) entry).hushContent(), words)) return true;
+            for (Object entry : trail) {
+                if (entry instanceof HushTrail && (phrase = blocksMatch(((HushTrail) entry).hushContent(), words)) != null)
+                    return new WordHit(WordField.REBLOG_TRAIL, phrase);
+            }
         }
         List<?> tags = wordsTags ? post.hushTags() : null;
         if (tags != null) {
             for (Object tag : tags) {
-                if (tag != null && matches(tag.toString(), words)) return true;
+                if (tag != null && (phrase = firstMatch(tag.toString(), words)) != null)
+                    return new WordHit(WordField.TAGS, phrase);
             }
         }
-        return wordsSummary && matches(post.hushSummary(), words);
+        if (wordsSummary && (phrase = firstMatch(post.hushSummary(), words)) != null)
+            return new WordHit(WordField.SUMMARY, phrase);
+        return null;
     }
 
-    private static boolean blocksMatch(@Nullable List<?> blocks, List<String> words) {
+    @Nullable
+    private static String blocksMatch(@Nullable List<?> blocks, List<String> words) {
         if (blocks != null) for (Object block : blocks) {
-            if (block instanceof HushText && matches(((HushText) block).hushText(), words)) return true;
+            String phrase = block instanceof HushText ? firstMatch(((HushText) block).hushText(), words) : null;
+            if (phrase != null) return phrase;
         }
-        return false;
+        return null;
     }
 
     /** Whether [text] holds any of [words], canonically and ignoring case, each as whole words. */
     static boolean matches(@Nullable String text, List<String> words) {
-        if (text == null || text.isEmpty()) return false;
+        return firstMatch(text, words) != null;
+    }
+
+    /** The first of [words] that [text] holds as {@link #matches} reads it, or null. */
+    @Nullable
+    static String firstMatch(@Nullable String text, List<String> words) {
+        if (text == null || text.isEmpty()) return null;
         String lower = matchingText(text);
         for (String word : words) {
-            if (containsWord(lower, word)) return true;
+            if (containsWord(lower, word)) return word;
         }
-        return false;
+        return null;
     }
 
     /**
@@ -366,16 +401,22 @@ public final class PostRules {
         if (saved == null || saved.trim().isEmpty()) return Collections.emptyList();
         Parsed last = allow ? allowedParsed : parsed;
         if (last != null && last.saved.equals(saved)) return last.words;
+        List<String> list = parseWords(saved);
+        Parsed next = new Parsed(saved, list);
+        if (allow) allowedParsed = next;
+        else parsed = next;
+        return list;
+    }
+
+    /** [saved] parsed as {@link #wordList} does, without touching the saved lists' cache. */
+    static List<String> parseWords(@Nullable String saved) {
+        if (saved == null || saved.trim().isEmpty()) return Collections.emptyList();
         Set<String> words = new LinkedHashSet<>();
         for (String entry : saved.split("[,\\n\\r]")) {
             String word = matchingText(entry.trim());
             if (!word.isEmpty()) words.add(word);
         }
-        List<String> list = Collections.unmodifiableList(new ArrayList<>(words));
-        Parsed next = new Parsed(saved, list);
-        if (allow) allowedParsed = next;
-        else parsed = next;
-        return list;
+        return Collections.unmodifiableList(new ArrayList<>(words));
     }
 
     private static final class Parsed {
