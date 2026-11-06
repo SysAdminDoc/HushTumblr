@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(902);
+        Map<String, String> table = new HashMap<>(906);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -482,6 +482,8 @@ public final class L10nTranslations {
                 "Links");
         table.put("LiveRamp at launch",
                 "LiveRamp beim Start");
+        table.put("Loads images in posts at a higher resolution. Uses more data.",
+                "L\u00e4dt Bilder in Beitr\u00e4gen in h\u00f6herer Aufl\u00f6sung. Verbraucht mehr Daten.");
         table.put("Long-press a video in a post to share or copy its link, or save it.",
                 "Halte ein Video in einem Beitrag gedr\u00fcckt, um seinen Link zu teilen oder zu kopieren oder es zu speichern.");
         table.put("Looks for: %1$s",
@@ -550,11 +552,11 @@ public final class L10nTranslations {
                 "Ein Wort oder eine Wortgruppe pro Zeile");
         table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
                 "Nur einige Webadressen von Tumblr sind f\u00fcr diese App ausgew\u00e4hlt, und Links zu den \u00fcbrigen \u00f6ffnen sich woanders. Tippe, um sie in den Android-Einstellungen auszuw\u00e4hlen.");
-        table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
-                "\u00d6ffne Tumblrs Einstellungen \u00fcber das Zahnrad im Konto-Tab. HushTumblr \u00e4ndert keine davon.");
     }
 
     private static void fillDe4(Map<String, String> table) {
+        table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
+                "\u00d6ffne Tumblrs Einstellungen \u00fcber das Zahnrad im Konto-Tab. HushTumblr \u00e4ndert keine davon.");
         table.put("Open link settings",
                 "Linkeinstellungen \u00f6ffnen");
         table.put("Open the installation steps on GitHub.",
@@ -673,11 +675,11 @@ public final class L10nTranslations {
                 "Einstellungen lie\u00dfen sich nicht \u00f6ffnen");
         table.put("Settings couldn't refresh completely. Reopen settings and try again.",
                 "Die Einstellungen lie\u00dfen sich nicht vollst\u00e4ndig aktualisieren. \u00d6ffne sie neu und versuche es noch einmal.");
-        table.put("Settings exported.",
-                "Einstellungen exportiert.");
     }
 
     private static void fillDe5(Map<String, String> table) {
+        table.put("Settings exported.",
+                "Einstellungen exportiert.");
         table.put("Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.",
                 "Einstellungen exportiert. Die App, in der die Datei liegt, lie\u00df HushTumblr sie nicht zur\u00fccklesen, daher wurde sie nicht gepr\u00fcft.");
         table.put("Settings imported.",
@@ -692,6 +694,8 @@ public final class L10nTranslations {
                 "Videolink teilen");
         table.put("Share video links",
                 "Videolinks teilen");
+        table.put("Sharper images",
+                "Sch\u00e4rfere Bilder");
         table.put("Show mutual markers",
                 "Gegenseitige Follows markieren");
         table.put("Show post timestamps",
@@ -794,13 +798,13 @@ public final class L10nTranslations {
                 "Tippe auf einen Tab, um ihn nach oben zu schieben");
         table.put("Tap to turn it back on.",
                 "Zum Wiedereinschalten tippen.");
+    }
+
+    private static void fillDe6(Map<String, String> table) {
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
                 "Sagt Android, dass dies das originale Tumblr ist, damit die Google-Anmeldung mit microG-RE oder dem XSpoofSignatures-Modul funktionieren kann. Das normale Google Play Services ignoriert es. Das wurde beim Patchen festgelegt. Patche erneut ohne diesen Patch, um es zu entfernen.");
         table.put("That file is too big to be a font.",
                 "Diese Datei ist zu gro\u00df f\u00fcr eine Schriftart.");
-    }
-
-    private static void fillDe6(Map<String, String> table) {
         table.put("That file is too large to be a settings file. Nothing was changed.",
                 "Diese Datei ist zu gro\u00df f\u00fcr eine Einstellungsdatei. Es wurde nichts ge\u00e4ndert.");
         table.put("That file isn't readable text, so it may have been damaged on the way. Nothing was changed.",
@@ -917,13 +921,13 @@ public final class L10nTranslations {
                 "Post %1$s wieder anzeigen");
         table.put("Unmute posts or clear this account's private list",
                 "Posts wieder anzeigen oder die private Liste dieses Kontos leeren");
+    }
+
+    private static void fillDe7(Map<String, String> table) {
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
                 "Bis zum Fortsetzen verh\u00e4lt sich jeder Schalter au\u00dfer der Debug-Protokollierung, als w\u00e4re er aus. Was beim Patchen festgelegt wurde, bleibt aktiv.");
         table.put("Update instructions",
                 "Anleitung zum Aktualisieren");
-    }
-
-    private static void fillDe7(Map<String, String> table) {
         table.put("Updates",
                 "Updates");
         table.put("Updating muted posts",
@@ -989,7 +993,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(902);
+        Map<String, String> table = new HashMap<>(906);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -1421,6 +1425,8 @@ public final class L10nTranslations {
                 "Enlaces");
         table.put("LiveRamp at launch",
                 "LiveRamp al abrir");
+        table.put("Loads images in posts at a higher resolution. Uses more data.",
+                "Carga las im\u00e1genes de las publicaciones en mayor resoluci\u00f3n. Usa m\u00e1s datos.");
         table.put("Long-press a video in a post to share or copy its link, or save it.",
                 "Mant\u00e9n pulsado un video en una publicaci\u00f3n para compartir o copiar su enlace, o guardarlo.");
         table.put("Looks for: %1$s",
@@ -1489,11 +1495,11 @@ public final class L10nTranslations {
                 "Una palabra o frase por l\u00ednea");
         table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
                 "Solo algunas direcciones web de Tumblr est\u00e1n seleccionadas para esta app, y los enlaces a las dem\u00e1s se abren en otro sitio. Toca para seleccionarlas en los ajustes de Android.");
-        table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
-                "Abre la configuraci\u00f3n de Tumblr desde el engranaje de tu pesta\u00f1a de cuenta. HushTumblr no cambia ninguna de estas opciones.");
     }
 
     private static void fillEs4(Map<String, String> table) {
+        table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
+                "Abre la configuraci\u00f3n de Tumblr desde el engranaje de tu pesta\u00f1a de cuenta. HushTumblr no cambia ninguna de estas opciones.");
         table.put("Open link settings",
                 "Abrir ajustes de enlaces");
         table.put("Open the installation steps on GitHub.",
@@ -1612,11 +1618,11 @@ public final class L10nTranslations {
                 "No se pudo abrir la configuraci\u00f3n");
         table.put("Settings couldn't refresh completely. Reopen settings and try again.",
                 "No se pudo actualizar la configuraci\u00f3n por completo. Vuelve a abrirla e int\u00e9ntalo de nuevo.");
-        table.put("Settings exported.",
-                "Configuraci\u00f3n exportada.");
     }
 
     private static void fillEs5(Map<String, String> table) {
+        table.put("Settings exported.",
+                "Configuraci\u00f3n exportada.");
         table.put("Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.",
                 "Configuraci\u00f3n exportada. La app que guarda el archivo no dej\u00f3 que HushTumblr lo volviera a leer, as\u00ed que no se comprob\u00f3.");
         table.put("Settings imported.",
@@ -1631,6 +1637,8 @@ public final class L10nTranslations {
                 "Compartir enlace del video");
         table.put("Share video links",
                 "Compartir enlaces de videos");
+        table.put("Sharper images",
+                "Im\u00e1genes m\u00e1s n\u00edtidas");
         table.put("Show mutual markers",
                 "Mostrar seguidores mutuos");
         table.put("Show post timestamps",
@@ -1733,13 +1741,13 @@ public final class L10nTranslations {
                 "Toca una pesta\u00f1a para subirla");
         table.put("Tap to turn it back on.",
                 "Toca para volver a activarlo.");
+    }
+
+    private static void fillEs6(Map<String, String> table) {
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
                 "Le dice a Android que esta es la app original de Tumblr, para que el inicio de sesi\u00f3n con Google pueda funcionar con microG-RE o el m\u00f3dulo XSpoofSignatures. Google Play Services normal lo ignora. Esto se defini\u00f3 al parchear. Vuelve a parchear sin \u00e9l para quitarlo.");
         table.put("That file is too big to be a font.",
                 "Ese archivo es demasiado grande para ser una fuente.");
-    }
-
-    private static void fillEs6(Map<String, String> table) {
         table.put("That file is too large to be a settings file. Nothing was changed.",
                 "Ese archivo es demasiado grande para ser un archivo de configuraci\u00f3n. No se cambi\u00f3 nada.");
         table.put("That file isn't readable text, so it may have been damaged on the way. Nothing was changed.",
@@ -1856,13 +1864,13 @@ public final class L10nTranslations {
                 "Dejar de silenciar la publicaci\u00f3n %1$s");
         table.put("Unmute posts or clear this account's private list",
                 "Dejar de silenciar publicaciones o vaciar la lista privada de esta cuenta");
+    }
+
+    private static void fillEs7(Map<String, String> table) {
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
                 "Hasta que reanudes, todos los interruptores, salvo el Registro de depuraci\u00f3n, funcionan como si estuvieran desactivados. Lo que se aplic\u00f3 al parchear se mantiene.");
         table.put("Update instructions",
                 "Instrucciones de actualizaci\u00f3n");
-    }
-
-    private static void fillEs7(Map<String, String> table) {
         table.put("Updates",
                 "Actualizaciones");
         table.put("Updating muted posts",
@@ -1928,7 +1936,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(902);
+        Map<String, String> table = new HashMap<>(906);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -2360,6 +2368,8 @@ public final class L10nTranslations {
                 "Tautan");
         table.put("LiveRamp at launch",
                 "LiveRamp saat dibuka");
+        table.put("Loads images in posts at a higher resolution. Uses more data.",
+                "Memuat gambar di postingan dengan resolusi lebih tinggi. Memakai lebih banyak data.");
         table.put("Long-press a video in a post to share or copy its link, or save it.",
                 "Tekan lama video di postingan untuk membagikan atau menyalin tautannya, atau menyimpannya.");
         table.put("Looks for: %1$s",
@@ -2428,11 +2438,11 @@ public final class L10nTranslations {
                 "Satu kata atau frasa per baris");
         table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
                 "Hanya sebagian alamat web Tumblr yang dipilih untuk aplikasi ini, dan tautan ke alamat lainnya terbuka di tempat lain. Ketuk untuk memilihnya di pengaturan Android.");
-        table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
-                "Buka pengaturan Tumblr dari ikon roda gigi di tab akun. HushTumblr tidak mengubah satu pun pengaturan ini.");
     }
 
     private static void fillIn4(Map<String, String> table) {
+        table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
+                "Buka pengaturan Tumblr dari ikon roda gigi di tab akun. HushTumblr tidak mengubah satu pun pengaturan ini.");
         table.put("Open link settings",
                 "Buka pengaturan tautan");
         table.put("Open the installation steps on GitHub.",
@@ -2551,11 +2561,11 @@ public final class L10nTranslations {
                 "Pengaturan tidak dapat dibuka");
         table.put("Settings couldn't refresh completely. Reopen settings and try again.",
                 "Pengaturan tidak dapat dimuat ulang sepenuhnya. Buka kembali pengaturan lalu coba lagi.");
-        table.put("Settings exported.",
-                "Pengaturan diekspor.");
     }
 
     private static void fillIn5(Map<String, String> table) {
+        table.put("Settings exported.",
+                "Pengaturan diekspor.");
         table.put("Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.",
                 "Pengaturan diekspor. Aplikasi yang menyimpan file itu tidak mengizinkan HushTumblr membacanya kembali, jadi file itu tidak diperiksa.");
         table.put("Settings imported.",
@@ -2570,6 +2580,8 @@ public final class L10nTranslations {
                 "Bagikan tautan video ini");
         table.put("Share video links",
                 "Bagikan tautan video");
+        table.put("Sharper images",
+                "Gambar lebih tajam");
         table.put("Show mutual markers",
                 "Tampilkan penanda saling mengikuti");
         table.put("Show post timestamps",
@@ -2672,13 +2684,13 @@ public final class L10nTranslations {
                 "Ketuk tab untuk memindahkannya ke atas");
         table.put("Tap to turn it back on.",
                 "Ketuk untuk mengaktifkan HushTumblr lagi.");
+    }
+
+    private static void fillIn6(Map<String, String> table) {
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
                 "Memberi tahu Android bahwa ini Tumblr asli, agar masuk dengan Google bisa berfungsi dengan microG-RE atau modul XSpoofSignatures. Google Play services biasa mengabaikannya. Ini diatur saat Anda menambal. Tambal ulang tanpanya untuk menghapusnya.");
         table.put("That file is too big to be a font.",
                 "File itu terlalu besar untuk sebuah font.");
-    }
-
-    private static void fillIn6(Map<String, String> table) {
         table.put("That file is too large to be a settings file. Nothing was changed.",
                 "File itu terlalu besar untuk sebuah file pengaturan. Tidak ada yang diubah.");
         table.put("That file isn't readable text, so it may have been damaged on the way. Nothing was changed.",
@@ -2795,13 +2807,13 @@ public final class L10nTranslations {
                 "Tampilkan kembali postingan %1$s");
         table.put("Unmute posts or clear this account's private list",
                 "Tampilkan kembali postingan atau kosongkan daftar pribadi akun ini");
+    }
+
+    private static void fillIn7(Map<String, String> table) {
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
                 "Sampai Anda melanjutkan, semua sakelar kecuali Pencatatan debug dianggap nonaktif. Yang diatur saat Anda menambal tetap aktif.");
         table.put("Update instructions",
                 "Petunjuk pembaruan");
-    }
-
-    private static void fillIn7(Map<String, String> table) {
         table.put("Updates",
                 "Pembaruan");
         table.put("Updating muted posts",
@@ -2867,7 +2879,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(902);
+        Map<String, String> table = new HashMap<>(906);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -3299,6 +3311,8 @@ public final class L10nTranslations {
                 "Links");
         table.put("LiveRamp at launch",
                 "o LiveRamp ao abrir");
+        table.put("Loads images in posts at a higher resolution. Uses more data.",
+                "Carrega as imagens das publica\u00e7\u00f5es em resolu\u00e7\u00e3o maior. Usa mais dados.");
         table.put("Long-press a video in a post to share or copy its link, or save it.",
                 "Toque e segure um v\u00eddeo em uma publica\u00e7\u00e3o para compartilhar ou copiar o link, ou salv\u00e1-lo.");
         table.put("Looks for: %1$s",
@@ -3367,11 +3381,11 @@ public final class L10nTranslations {
                 "Uma palavra ou frase por linha");
         table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
                 "S\u00f3 alguns endere\u00e7os web do Tumblr est\u00e3o selecionados para este app, e os links para os outros abrem em outro lugar. Toque para selecion\u00e1-los nas configura\u00e7\u00f5es do Android.");
-        table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
-                "Abra as configura\u00e7\u00f5es do Tumblr pela engrenagem na sua aba de conta. O HushTumblr n\u00e3o muda nenhuma delas.");
     }
 
     private static void fillPt_rBR4(Map<String, String> table) {
+        table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
+                "Abra as configura\u00e7\u00f5es do Tumblr pela engrenagem na sua aba de conta. O HushTumblr n\u00e3o muda nenhuma delas.");
         table.put("Open link settings",
                 "Abrir configura\u00e7\u00f5es de links");
         table.put("Open the installation steps on GitHub.",
@@ -3490,11 +3504,11 @@ public final class L10nTranslations {
                 "N\u00e3o foi poss\u00edvel abrir as configura\u00e7\u00f5es");
         table.put("Settings couldn't refresh completely. Reopen settings and try again.",
                 "N\u00e3o foi poss\u00edvel atualizar completamente as configura\u00e7\u00f5es. Reabra as configura\u00e7\u00f5es e tente novamente.");
-        table.put("Settings exported.",
-                "Configura\u00e7\u00f5es exportadas.");
     }
 
     private static void fillPt_rBR5(Map<String, String> table) {
+        table.put("Settings exported.",
+                "Configura\u00e7\u00f5es exportadas.");
         table.put("Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.",
                 "Configura\u00e7\u00f5es exportadas. O app que guarda o arquivo n\u00e3o deixou o HushTumblr l\u00ea-lo de volta, ent\u00e3o ele n\u00e3o foi conferido.");
         table.put("Settings imported.",
@@ -3509,6 +3523,8 @@ public final class L10nTranslations {
                 "Compartilhar link do v\u00eddeo");
         table.put("Share video links",
                 "Compartilhar links de v\u00eddeos");
+        table.put("Sharper images",
+                "Imagens mais n\u00edtidas");
         table.put("Show mutual markers",
                 "Mostrar seguidores m\u00fatuos");
         table.put("Show post timestamps",
@@ -3611,13 +3627,13 @@ public final class L10nTranslations {
                 "Toque em uma aba para subi-la");
         table.put("Tap to turn it back on.",
                 "Toque para reativar.");
+    }
+
+    private static void fillPt_rBR6(Map<String, String> table) {
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
                 "Diz ao Android que este \u00e9 o Tumblr original, para que o login com Google possa funcionar com o microG-RE ou o m\u00f3dulo XSpoofSignatures. O Google Play Services normal o ignora. Isso foi definido ao aplicar os patches. Aplique de novo sem ele para remov\u00ea-lo.");
         table.put("That file is too big to be a font.",
                 "Esse arquivo \u00e9 grande demais para ser uma fonte.");
-    }
-
-    private static void fillPt_rBR6(Map<String, String> table) {
         table.put("That file is too large to be a settings file. Nothing was changed.",
                 "Esse arquivo \u00e9 grande demais para ser um arquivo de configura\u00e7\u00f5es. Nada foi alterado.");
         table.put("That file isn't readable text, so it may have been damaged on the way. Nothing was changed.",
@@ -3734,13 +3750,13 @@ public final class L10nTranslations {
                 "Reexibir o post %1$s");
         table.put("Unmute posts or clear this account's private list",
                 "Volte a mostrar posts ou limpe a lista privada desta conta");
+    }
+
+    private static void fillPt_rBR7(Map<String, String> table) {
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
                 "At\u00e9 voc\u00ea retomar, todas as op\u00e7\u00f5es, menos o Registro de depura\u00e7\u00e3o, funcionam como se estivessem desligadas. O que foi definido ao aplicar os patches continua ativo.");
         table.put("Update instructions",
                 "Instru\u00e7\u00f5es de atualiza\u00e7\u00e3o");
-    }
-
-    private static void fillPt_rBR7(Map<String, String> table) {
         table.put("Updates",
                 "Atualiza\u00e7\u00f5es");
         table.put("Updating muted posts",
@@ -3806,7 +3822,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(902);
+        Map<String, String> table = new HashMap<>(906);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -4238,6 +4254,8 @@ public final class L10nTranslations {
                 "Ba\u011flant\u0131lar");
         table.put("LiveRamp at launch",
                 "a\u00e7\u0131l\u0131\u015fta LiveRamp");
+        table.put("Loads images in posts at a higher resolution. Uses more data.",
+                "G\u00f6nderilerdeki resimleri daha y\u00fcksek \u00e7\u00f6z\u00fcn\u00fcrl\u00fckte y\u00fckler. Daha fazla veri kullan\u0131r.");
         table.put("Long-press a video in a post to share or copy its link, or save it.",
                 "Ba\u011flant\u0131s\u0131n\u0131 payla\u015fmak, kopyalamak ya da videoyu kaydetmek i\u00e7in g\u00f6nderideki bir videoya uzun bas\u0131n.");
         table.put("Looks for: %1$s",
@@ -4306,11 +4324,11 @@ public final class L10nTranslations {
                 "Her sat\u0131ra bir kelime ya da ifade");
         table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
                 "Tumblr'\u0131n web adreslerinden yaln\u0131zca baz\u0131lar\u0131 bu uygulama i\u00e7in se\u00e7ili ve di\u011ferlerinin ba\u011flant\u0131lar\u0131 ba\u015fka yerde a\u00e7\u0131l\u0131r. Android ayarlar\u0131nda se\u00e7mek i\u00e7in dokunun.");
-        table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
-                "Tumblr ayarlar\u0131n\u0131 hesap sekmenizdeki di\u015fli simgesinden a\u00e7\u0131n. HushTumblr bunlar\u0131n hi\u00e7birini de\u011fi\u015ftirmez.");
     }
 
     private static void fillTr4(Map<String, String> table) {
+        table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
+                "Tumblr ayarlar\u0131n\u0131 hesap sekmenizdeki di\u015fli simgesinden a\u00e7\u0131n. HushTumblr bunlar\u0131n hi\u00e7birini de\u011fi\u015ftirmez.");
         table.put("Open link settings",
                 "Ba\u011flant\u0131 ayarlar\u0131n\u0131 a\u00e7");
         table.put("Open the installation steps on GitHub.",
@@ -4429,11 +4447,11 @@ public final class L10nTranslations {
                 "Ayarlar a\u00e7\u0131lamad\u0131");
         table.put("Settings couldn't refresh completely. Reopen settings and try again.",
                 "Ayarlar tamamen yenilenemedi. Ayarlar\u0131 yeniden a\u00e7\u0131p tekrar dene.");
-        table.put("Settings exported.",
-                "Ayarlar d\u0131\u015fa aktar\u0131ld\u0131.");
     }
 
     private static void fillTr5(Map<String, String> table) {
+        table.put("Settings exported.",
+                "Ayarlar d\u0131\u015fa aktar\u0131ld\u0131.");
         table.put("Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.",
                 "Ayarlar d\u0131\u015fa aktar\u0131ld\u0131. Dosyay\u0131 tutan uygulama HushTumblr'\u0131n onu geri okumas\u0131na izin vermedi, bu y\u00fczden kontrol edilmedi.");
         table.put("Settings imported.",
@@ -4448,6 +4466,8 @@ public final class L10nTranslations {
                 "Video ba\u011flant\u0131s\u0131n\u0131 payla\u015f");
         table.put("Share video links",
                 "Video ba\u011flant\u0131lar\u0131n\u0131 payla\u015f");
+        table.put("Sharper images",
+                "Daha net resimler");
         table.put("Show mutual markers",
                 "Kar\u015f\u0131l\u0131kl\u0131 takip i\u015faretlerini g\u00f6ster");
         table.put("Show post timestamps",
@@ -4550,13 +4570,13 @@ public final class L10nTranslations {
                 "Yukar\u0131 ta\u015f\u0131mak i\u00e7in bir sekmeye dokun");
         table.put("Tap to turn it back on.",
                 "Yeniden a\u00e7mak i\u00e7in dokun.");
+    }
+
+    private static void fillTr6(Map<String, String> table) {
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
                 "Android'e bunun orijinal Tumblr oldu\u011funu s\u00f6yler; b\u00f6ylece Google ile giri\u015f microG-RE veya XSpoofSignatures mod\u00fcl\u00fcyle \u00e7al\u0131\u015fabilir. Normal Google Play hizmetleri bunu yok sayar. Bu, yamalarken ayarland\u0131. Kald\u0131rmak i\u00e7in bu yama olmadan yeniden yamala.");
         table.put("That file is too big to be a font.",
                 "Bu dosya yaz\u0131 tipi olamayacak kadar b\u00fcy\u00fck.");
-    }
-
-    private static void fillTr6(Map<String, String> table) {
         table.put("That file is too large to be a settings file. Nothing was changed.",
                 "Bu dosya bir ayar dosyas\u0131 olamayacak kadar b\u00fcy\u00fck. Hi\u00e7bir \u015fey de\u011fi\u015ftirilmedi.");
         table.put("That file isn't readable text, so it may have been damaged on the way. Nothing was changed.",
@@ -4673,13 +4693,13 @@ public final class L10nTranslations {
                 "%1$s g\u00f6nderisini yeniden g\u00f6ster");
         table.put("Unmute posts or clear this account's private list",
                 "G\u00f6nderilerin susturmas\u0131n\u0131 kald\u0131r\u0131n veya bu hesab\u0131n \u00f6zel listesini temizleyin");
+    }
+
+    private static void fillTr7(Map<String, String> table) {
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
                 "Devam ettirene kadar Hata ay\u0131klama g\u00fcnl\u00fc\u011f\u00fc d\u0131\u015f\u0131ndaki her anahtar kapal\u0131ym\u0131\u015f gibi davran\u0131r. Yamalad\u0131\u011f\u0131nda ayarlananlar devrede kal\u0131r.");
         table.put("Update instructions",
                 "G\u00fcncelleme talimatlar\u0131");
-    }
-
-    private static void fillTr7(Map<String, String> table) {
         table.put("Updates",
                 "G\u00fcncellemeler");
         table.put("Updating muted posts",

@@ -76,6 +76,9 @@ method Lcom/tumblr/rumblr/model/post/blocks/ImageBlock;->hushAltText()Ljava/lang
 method Lcom/tumblr/ui/widget/graywater/viewholder/PhotoContainer;->hushImageFrame()Landroid/view/View; ca84776695e72929f218a60deaa9a58b535eb61f4ab8a2078a6f27645f0d12c1
 method Ly5f;->hushImageItems()[Ljava/lang/Object; 8d6e797f41701b64f425ae2fe0cc01fd79712681388034fad04d158c1cfdceb8
 
+[Sharper images]
+implements Lcom/tumblr/imageinfo/PhotoSize; Lapp/hushtumblr/extension/tumblr/ui/HushPhotoSize;
+
 [Reveal allowed mature content]
 implements Lapp/hushtumblr/extension/tumblr/mature/NativeMatureContinuation; Lmz5;
 implements Lcom/tumblr/UserInfo; Lapp/hushtumblr/extension/tumblr/mature/HushMatureAccount;

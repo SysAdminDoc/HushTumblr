@@ -302,7 +302,7 @@ public class DexDiff {
             Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1), Map.entry("activityNotifications", 7),
             Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 7), Map.entry("timelinePaging", 5),
             Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 7), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
-            Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("videoLinkPress", 6), Map.entry("fontChoice", 6),
+            Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("videoLinkPress", 6), Map.entry("imageSizes", 4), Map.entry("fontChoice", 6),
             Map.entry("followButton", 5), Map.entry("footerButton", 3), Map.entry("postTags", 5),
             Map.entry("noteCounts", 6), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
@@ -5391,6 +5391,60 @@ public class DexDiff {
             capability(c.callee, bound && pressed);
         }
 
+        /**
+         * Each return of the image size chooser hands the image's sizes, its pick and the width
+         * asked for through the hook, whose answer is cast back to Tumblr's image size and
+         * returned, and Tumblr's image size answers the extension's bridge with its own getters.
+         */
+        void imageSizes(Contract c) {
+            String size = c.strings.get(1), info = c.strings.get(2), face = c.strings.get(3);
+            List<Method> choosers = new ArrayList<>();
+            for (Method m : tumblrMethods()) {
+                List<? extends CharSequence> p = m.getParameterTypes();
+                if (isStatic(m) && m.getReturnType().equals(size) && p.size() == 5 && p.get(1).toString().equals("I")
+                        && p.get(2).toString().equals("I") && p.get(3).toString().equals(info) && p.get(4).toString().equals("Z")) choosers.add(m);
+            }
+            Method old = unique(choosers, "the image size chooser");
+            if (old == null) { capability(c.callee, false); return; }
+            List<Instruction> was = instructions(old);
+            MethodReference listed = called(get(was, 0));
+            Instruction stored = get(was, 1);
+            int sizes = listed != null && listed.getDefiningClass().equals(info) && descriptor(listed).equals("()Ljava/util/List;")
+                    && stored != null && stored.getOpcode() == Opcode.MOVE_RESULT_OBJECT ? firstRegister(stored) : -1;
+            int width = parameter(old, 1);
+            List<Integer> returns = new ArrayList<>();
+            for (int k = 0; k < was.size(); k++) if (was.get(k).getOpcode() == Opcode.RETURN_OBJECT) returns.add(k);
+            Method m = actual(old);
+            List<Integer> hooks = calls(m, c.strings.get(0), returns.size());
+            boolean picks = m != null && sizes >= 0 && !returns.isEmpty() && hooks.size() == returns.size()
+                    && !writtenBetween(was, 2, was.size(), sizes) && !writtenBetween(was, 0, was.size(), width);
+            List<Instruction> body = picks ? instructions(m) : List.of();
+            for (int k = 0; picks && k < returns.size(); k++) {
+                int r = returns.get(k), at = r + 3 * k, pick = firstRegister(was.get(r));
+                Instruction cast = get(body, at + 2);
+                picks = hooks.get(k) == at && pick != sizes && pick != width
+                        && arguments(body.get(at)).equals(List.of(sizes, pick, width))
+                        && movesTo(get(body, at + 1), pick, Opcode.MOVE_RESULT_OBJECT)
+                        && movesTo(cast, pick, Opcode.CHECK_CAST) && reference(cast) instanceof TypeReference t && t.getType().equals(size)
+                        && movesTo(get(body, at + 3), pick, Opcode.RETURN_OBJECT);
+                if (picks) {
+                    fallthroughOnly(old, r, "the image size hook");
+                    remove(m, at, at + 3);
+                    vouch(m, at, List.of(sizes, pick, width));
+                }
+            }
+            if (!picks) fail("the image size hooks don't hand the sizes, the pick and the width through at every return of " + old);
+            ClassDef bridge = patched.classes.get(face);
+            boolean answers = implementsBridge(size, face) && bridge.getMethods().iterator().hasNext();
+            if (answers) for (Method declared : bridge.getMethods()) {
+                Method own = patched.methods.get(size + "->" + declared.getName() + descriptor(declared));
+                answers &= AccessFlags.ABSTRACT.isSet(declared.getAccessFlags()) && own != null && own.getImplementation() != null
+                        && AccessFlags.PUBLIC.isSet(own.getAccessFlags()) && !isStatic(own);
+            }
+            if (!answers) fail(size + " doesn't answer every getter of " + face + " with its own public getter");
+            capability(c.callee, picks && answers);
+        }
+
         static boolean readsContainer(Instruction i, String container) {
             return i.getOpcode() == Opcode.IGET_OBJECT && field(i) != null && field(i).getType().equals(container);
         }
@@ -6302,6 +6356,7 @@ public class DexDiff {
                     case "giftMessagePopup": giftMessagePopup(c); break;
                     case "postLine": postLine(c); break;
                     case "videoLinkPress": videoLinkPress(c); break;
+                    case "imageSizes": imageSizes(c); break;
                     case "fontChoice": fontChoice(c); break;
                     case "followButton": followButton(c); break;
                     case "footerButton": footerButton(c); break;

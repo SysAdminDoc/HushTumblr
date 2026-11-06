@@ -99,6 +99,8 @@ import app.hushtumblr.extension.tumblr.ui.AppFontForTests;
 import app.hushtumblr.extension.tumblr.ui.PostLines;
 import app.hushtumblr.extension.tumblr.ui.StoreButtons;
 import app.hushtumblr.extension.tumblr.ui.VideoLinks;
+import app.hushtumblr.extension.tumblr.ui.HushPhotoSize;
+import app.hushtumblr.extension.tumblr.ui.SharperImages;
 import app.hushtumblr.extension.tumblr.ui.HushImageContainer;
 import app.hushtumblr.extension.tumblr.ui.HushImageDescription;
 import app.hushtumblr.extension.shared.SettingsContextRule;
@@ -291,6 +293,8 @@ public class PausedHooksTest {
         probes.put(Settings.SHOW_IMAGE_DESCRIPTIONS, Arrays.asList(() -> caption(context, false), () -> caption(context, true)));
         // A long press on a video's controls opens the link menu instead of reaching Tumblr's listener.
         probes.put(Settings.SHARE_VIDEO_LINKS, Collections.singletonList(() -> videoLinkMenu(context)));
+        // Tumblr's 640 pick of an image becomes its listed 1280 copy.
+        probes.put(Settings.SHARPER_IMAGES, Collections.singletonList(PausedHooksTest::sharperPick));
         probes.put(Settings.MUTE_ROOT_POSTS, Collections.singletonList(() -> mutedRoot(context)));
         probes.put(Settings.REVEAL_ALLOWED_MATURE_CONTENT, Collections.singletonList(PausedHooksTest::matureCover));
         probes.put(Settings.SHOW_MUTUAL_MARKERS, Collections.singletonList(() -> mutualMarker(context)));
@@ -332,6 +336,19 @@ public class PausedHooksTest {
         container.addView(controls);
         VideoLinks.bind(container, "https://va.media.tumblr.com/tumblr_probe.mp4");
         return VideoLinks.press(pressed -> false).onLongClick(controls);
+    }
+
+    private static boolean sharperPick() {
+        HushPhotoSize picked = photoSize(640, 960);
+        return SharperImages.pick(Arrays.asList(photoSize(1280, 1920), picked), picked, 640) != picked;
+    }
+
+    private static HushPhotoSize photoSize(int width, int height) {
+        return new HushPhotoSize() {
+            @Override public String getUrl() { return "https://64.media.tumblr.com/probe/s" + width + "x" + height + "/probe.jpg"; }
+            @Override public int getWidth() { return width; }
+            @Override public int getHeight() { return height; }
+        };
     }
 
     private static boolean mutedRoot(Context context) {

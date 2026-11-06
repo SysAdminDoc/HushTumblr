@@ -295,6 +295,7 @@ public class SettingsBackupTest {
                 Settings.SHOW_POST_TIMESTAMPS,
                 Settings.SHOW_IMAGE_DESCRIPTIONS,
                 Settings.SHARE_VIDEO_LINKS,
+                Settings.SHARPER_IMAGES,
                 Settings.MUTE_ROOT_POSTS,
                 Settings.REVEAL_ALLOWED_MATURE_CONTENT,
                 Settings.SHOW_MUTUAL_MARKERS,

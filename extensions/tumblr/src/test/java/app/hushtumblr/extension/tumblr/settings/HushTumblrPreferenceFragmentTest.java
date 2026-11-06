@@ -136,6 +136,7 @@ public class HushTumblrPreferenceFragmentTest {
         ROW_TITLES.put(PatchFamily.SHOW_POST_TIMESTAMPS, "Show post timestamps");
         ROW_TITLES.put(PatchFamily.VISIBLE_ALT_TEXT, "Visible image descriptions");
         ROW_TITLES.put(PatchFamily.SHARE_VIDEO_LINKS, "Share video links");
+        ROW_TITLES.put(PatchFamily.SHARPER_IMAGES, "Sharper images");
         ROW_TITLES.put(PatchFamily.MUTE_ROOT_POSTS, "Mute posts locally");
         ROW_TITLES.put(PatchFamily.SHOW_MUTUAL_MARKERS, "Show mutual markers");
         ROW_TITLES.put(PatchFamily.REVEAL_ALLOWED_MATURE_CONTENT, "Reveal allowed mature content");
