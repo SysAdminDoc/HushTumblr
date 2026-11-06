@@ -285,16 +285,25 @@ public final class SelectorDexFixture {
                 body(literal(0, fault.equals("notes-tab-not-blank") ? "12" : ""), returned(0, true))));
         put(classes, tabs, List.of(method(tabs, "make", fragment, false, 3, make, "I"),
                 method(tabs, "count", "Ljava/lang/CharSequence;", false, 3, count, "I")));
-        // A comment on a post's notes writes its reply and like counts, each through its View's (I)V.
+        // A comment on a post's notes writes its reply and like counts, each through its View's (I)V,
+        // which also sets the button's spoken description from the count.
+        String chars = "Ljava/lang/CharSequence;";
         for (Map.Entry<String, String> view : List.of(Map.entry("Lcom/tumblr/ui/widget/RepliesCountView;", "comments_count"),
                 Map.entry("Lcom/tumblr/ui/widget/ReplyLikeButtonView;", "like_count_show"))) {
+            boolean replies = view.getKey().endsWith("RepliesCountView;");
             List<Instruction> render = body(field(Opcode.SGET, 0, PLURALS, view.getValue(), "I"),
-                    new ImmutableInstruction21t(Opcode.IF_LEZ, 2, 2), end());
+                    new ImmutableInstruction21t(Opcode.IF_LEZ, 2, 2), literal(0, "3"),
+                    invoke(Opcode.INVOKE_VIRTUAL, ref(VIEW, "setContentDescription", "V", chars), 1, 0), end());
+            if (patched && !replies) render.addAll(3, body(staticCall(hooks, "commentLikesDescription", chars, new String[]{chars}, 0),
+                    moved(fault.equals("notes-wrong-comment-likes") ? 2 : 0, true)));
             if (patched) render.addAll(0, body(staticCall(hooks, "commentCount", "I", new String[]{"I"}, 2),
                     moved(fault.equals("notes-wrong-comment-card") ? 0 : 2, false)));
-            put(classes, view.getKey(), List.of(method(view.getKey(), "render", "V", false, 3, render, "I")));
+            if (patched && replies) render.add(2, staticCall(hooks, "commentRepliesDescription", "V", new String[]{VIEW},
+                    fault.equals("notes-wrong-comment-replies") ? 0 : 1));
+            put(classes, view.getKey(), VIEW, List.of(method(view.getKey(), "render", "V", false, 3, render, "I")));
         }
         if (patched) put(classes, hooks, List.of(hook(hooks, "noteCount", "I", 0, "I"), hook(hooks, "commentCount", "I", 0, "I"),
+                hook(hooks, "commentRepliesDescription", "V", -1, VIEW), hook(hooks, "commentLikesDescription", chars, 0, chars),
                 hook(hooks, "communityCommentsText", STRING, 0, STRING), hook(hooks, "textCount", STRING, 0, STRING),
                 hook(hooks, "notesTitle", STRING, 0, STRING), hook(hooks, "communityReactionsText", STRING, 0, STRING, "I"),
                 hook(hooks, "hideNotesTabCounts", "Z", -1)));
@@ -551,6 +560,8 @@ public final class SelectorDexFixture {
         fixture(root, "notes-wrong-reactions", "communityReactionsText(Ljava/lang/String;I)Ljava/lang/String; doesn't take what its rule hands it", "hideNoteCounts");
         fixture(root, "notes-tab-not-blank", "hideNotesTabCounts()Z isn't asked first thing", "hideNoteCounts");
         fixture(root, "notes-wrong-comment-card", "commentCount(I)I doesn't take what its rule hands it", "hideNoteCounts");
+        fixture(root, "notes-wrong-comment-replies", "commentRepliesDescription(Landroid/view/View;)V doesn't take what its rule hands it", "hideNoteCounts");
+        fixture(root, "notes-wrong-comment-likes", "commentLikesDescription(Ljava/lang/CharSequence;)Ljava/lang/CharSequence; doesn't take what its rule hands it", "hideNoteCounts");
         String[] tabs = {"hideExploreTab", "hideNotificationsTab", "reorderTabs"};
         fixture(root, "tabs-good", "", tabs);
         fixture(root, "tabs-late-freeze", "arrangeTabs(Ljava/util/List;)V is not where its rule puts it", tabs);

@@ -25,6 +25,7 @@ import app.morphe.patches.tumblr.misc.extension.enableStatus
 import app.morphe.patches.tumblr.misc.extension.parameterRegister
 import app.morphe.patches.tumblr.misc.extension.parameterRegisterNumber
 import app.morphe.patches.tumblr.misc.extension.requireStatusMethod
+import app.morphe.patches.tumblr.misc.extension.requireThisIntact
 import app.morphe.patches.tumblr.misc.extension.returnEarlyWhen
 import app.morphe.patches.tumblr.misc.extension.tumblrExtensionPatch
 import app.morphe.patches.tumblr.misc.settings.EXTENSION_ROOT
@@ -48,6 +49,9 @@ internal const val COMMUNITY_REACTIONS_TEXT_HOOK =
     "$POST_FOOTER->communityReactionsText(Ljava/lang/String;I)Ljava/lang/String;"
 internal const val NOTES_TAB_COUNTS_HOOK = "$POST_FOOTER->hideNotesTabCounts()Z"
 internal const val COMMENT_COUNT_HOOK = "$POST_FOOTER->commentCount(I)I"
+internal const val COMMENT_REPLIES_DESCRIPTION_HOOK = "$POST_FOOTER->commentRepliesDescription(Landroid/view/View;)V"
+internal const val COMMENT_LIKES_DESCRIPTION_HOOK =
+    "$POST_FOOTER->commentLikesDescription(Ljava/lang/CharSequence;)Ljava/lang/CharSequence;"
 
 /**
  * A comment's reply count and its like count on a post's notes, by the Views Tumblr names in its
@@ -87,6 +91,17 @@ private const val CHAR_SEQUENCE = "Ljava/lang/CharSequence;"
 internal class CountTextSite(val method: MutableMethod, val at: Int, val register: Int, val count: Int? = null)
 
 /**
+ * The two methods that write a comment's counts, in [COMMENT_COUNT_VIEWS] order, and where the
+ * like count's spoken description gets its hook: in front of instruction [likesDescribed] of the
+ * second, the `setContentDescription` that sets the text in register [likesDescription].
+ */
+internal class CommentCountSites(
+    val renderers: List<MutableMethod>,
+    val likesDescribed: Int,
+    val likesDescription: Int,
+)
+
+/**
  * Where the reaction text hook goes: in front of instruction [at], the `setText` that shows the text
  * in register [text], with the reactions' total still in register [count].
  */
@@ -117,7 +132,9 @@ internal class ReactionTextSite(val method: MutableMethod, val at: Int, val text
  *
  * Each comment on a post's notes shows its own reply and like counts, which its two Views write
  * from a count handed to each ([resolveCommentCounts]). Those go to zero the same way, read each
- * time a comment is bound.
+ * time a comment is bound. Both buttons also tell TalkBack their count: the reply button keeps a
+ * description it was given for an earlier count, which goes, and the like button's "0 likes" goes
+ * to Tumblr's own "Like".
  */
 @Suppress("unused")
 val hideNoteCountsPatch = bytecodePatch(
@@ -175,13 +192,25 @@ val hideNoteCountsPatch = bytecodePatch(
             """,
         )
         tabCount.returnEarlyWhen(PATCH, NOTES_TAB_COUNTS_HOOK, "const-string v0, \"\"\nreturn-object v0")
-        for (renderer in commentCounts) {
+        val (replies, likes) = commentCounts.renderers
+        // In front of the like count's description before anything goes in at the start, which moves it.
+        likes.addInstructions(
+            commentCounts.likesDescribed,
+            """
+                invoke-static {v${commentCounts.likesDescription}}, $COMMENT_LIKES_DESCRIPTION_HOOK
+                move-result-object v${commentCounts.likesDescription}
+            """,
+        )
+        for (renderer in commentCounts.renderers) {
             val shown = renderer.parameterRegister(0)
+            // The reply count's zero branch writes over p0, so its description is cleared up front.
+            val described = if (renderer === replies) "invoke-static {p0}, $COMMENT_REPLIES_DESCRIPTION_HOOK" else ""
             renderer.addInstructions(
                 0,
                 """
                     invoke-static {$shown}, $COMMENT_COUNT_HOOK
                     move-result $shown
+                    $described
                 """,
             )
         }
@@ -388,10 +417,18 @@ internal fun BytecodePatchContext.resolveNotesTabCount(): MutableMethod {
  * `NoteReplyViewHolder`), and they hand each setter the comment's own count on every bind, so the
  * hook only changes what's drawn and the next bind with the switch off shows the real count.
  * Found by reading Tumblr 47.0.0.108 (2026-11-05).
+ *
+ * Each also sets the View's spoken description from its plural, and only from there. The reply
+ * count sets it for a count and leaves it be for zero, whose branch then writes over `this`
+ * (`V` 0x35-0x46), so the description hook takes `this` right after the count hook. The like count
+ * sets it on every bind with one `setContentDescription` on `this` (`W` 0x44, from v5), and its
+ * hook goes in front of that call, on its text.
  */
-internal fun BytecodePatchContext.resolveCommentCounts(): List<MutableMethod> {
+internal fun BytecodePatchContext.resolveCommentCounts(): CommentCountSites {
     requireExtensionHook(PATCH, COMMENT_COUNT_HOOK)
-    return COMMENT_COUNT_VIEWS.map { (type, plural) ->
+    requireExtensionHook(PATCH, COMMENT_REPLIES_DESCRIPTION_HOOK)
+    requireExtensionHook(PATCH, COMMENT_LIKES_DESCRIPTION_HOOK)
+    val renderers = COMMENT_COUNT_VIEWS.map { (type, plural) ->
         val name = type.substringAfterLast('/').removeSuffix(";")
         val view = classDefByOrNull(type)
         requireShape(PATCH, view != null, "Tumblr's notes have no $name")
@@ -410,6 +447,22 @@ internal fun BytecodePatchContext.resolveCommentCounts(): List<MutableMethod> {
         requireShape(PATCH, !renderer.isJumpTarget(0), "something jumps back to the start of the $name count")
         mutableOf(renderer)
     }
+    val (replies, likes) = renderers
+    requireShape(PATCH, replies.instructionList().any { it.setsDescription() },
+        "the RepliesCountView count doesn't set the button's spoken description")
+    val body = likes.instructionList()
+    val described = body.indices.filter { body[it].setsDescription() }
+    requireShape(PATCH, described.size == 1, "the ReplyLikeButtonView count doesn't set its spoken description once")
+    val at = described.single()
+    val registers = body[at].namedRegisters()
+    requireShape(PATCH, body[at].opcode == Opcode.INVOKE_VIRTUAL && registers.size == 2 &&
+        registers[0] == likes.parameterRegisterNumber(0) - 1,
+        "the ReplyLikeButtonView count doesn't set the description on the button itself")
+    likes.requireThisIntact(PATCH, listOf(at))
+    val text = registers[1]
+    requireShape(PATCH, text <= 15, "the ReplyLikeButtonView description is in v$text, past what the added call can name")
+    requireShape(PATCH, !likes.isJumpTarget(at), "something jumps past the hook on the ReplyLikeButtonView description")
+    return CommentCountSites(renderers, at, text)
 }
 
 /** A method answering the Fragment for a position that makes each of [NOTES_TAB_FRAGMENTS]. */
@@ -460,6 +513,12 @@ private fun Instruction.setsText(): Boolean =
     methodRef()?.let {
         it.definingClass == "Landroid/widget/TextView;" && it.name == "setText" &&
             it.parameterTypes.map(CharSequence::toString) == listOf(CHAR_SEQUENCE)
+    } == true
+
+/** A call of `View.setContentDescription(CharSequence)`. */
+private fun Instruction.setsDescription(): Boolean =
+    methodRef()?.let {
+        it.name == "setContentDescription" && it.parameterTypes.map(CharSequence::toString) == listOf(CHAR_SEQUENCE)
     } == true
 
 /** A call of `Activity.setTitle(CharSequence)`. */

@@ -228,10 +228,14 @@ public class PausedHooksTest {
         // The Premium diamond is hidden.
         probes.put(Settings.HIDE_TUMBLRMART, Collections.singletonList(() -> StoreButtons.hideDiamond(null, null)));
         // The like, reblog and comment counts under a post are blank, a community reaction keeps its
-        // emoji without its count, and a comment in a post's notes loses its own counts.
+        // emoji without its count, and a comment in a post's notes loses its own counts, the ones
+        // its buttons tell TalkBack included.
+        Context context = Utils.getContext();
         probes.put(Settings.HIDE_NOTE_COUNTS, Arrays.asList(() -> PostFooter.noteCount(5) == 0,
                 () -> "😀".equals(PostFooter.communityReactionsText("😀 5", 5)),
-                () -> PostFooter.commentCount(5) == 0));
+                () -> PostFooter.commentCount(5) == 0,
+                () -> !"5 likes".contentEquals(PostFooter.commentLikesDescription("5 likes")),
+                () -> replyDescriptionCleared(context)));
         // The footer under a post leaves out a button. Each answer is kept until Tumblr restarts, so
         // each probe asks as a fresh start would.
         probes.put(Settings.HIDE_LIKE_BUTTON,
@@ -291,7 +295,6 @@ public class PausedHooksTest {
                     Collections.singletonList((HushActivityNotification) () -> type)).isEmpty()));
         }
         probes.put(Settings.SHOW_POST_TIMESTAMPS, Collections.singletonList(() -> PostTimestamps.show(false)));
-        Context context = Utils.getContext();
         probes.put(Settings.SHOW_IMAGE_DESCRIPTIONS, Arrays.asList(() -> caption(context, false), () -> caption(context, true)));
         // A long press on a video's controls opens the link menu instead of reaching Tumblr's listener.
         probes.put(Settings.SHARE_VIDEO_LINKS, Collections.singletonList(() -> videoLinkMenu(context)));
@@ -331,6 +334,13 @@ public class PausedHooksTest {
         HushImageDescription description = () -> "A red balloon over a lake";
         if (gallery) AltTextCaptions.gallery(holder, description); else AltTextCaptions.photo(holder, description);
         return parent.getChildCount() == 2;
+    }
+
+    private static boolean replyDescriptionCleared(Context context) {
+        View replies = new View(context);
+        replies.setContentDescription("5 replies");
+        PostFooter.commentRepliesDescription(replies);
+        return replies.getContentDescription() == null;
     }
 
     private static boolean videoLinkMenu(Context context) {

@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(910);
+        Map<String, String> table = new HashMap<>(912);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -476,6 +476,8 @@ public final class L10nTranslations {
                 "L\u00e4sst ein gepatchtes Tumblr sich f\u00fcr Push-Benachrichtigungen anmelden, wenn Google es sonst abweisen w\u00fcrde.");
         table.put("Licenses",
                 "Lizenzen");
+        table.put("Like",
+                "Liken");
         table.put("Line between posts",
                 "Linie zwischen Beitr\u00e4gen");
         table.put("Link copied",
@@ -550,11 +552,11 @@ public final class L10nTranslations {
                 "An");
         table.put("Once a day, when Tumblr starts, checks GitHub for a newer HushTumblr and tells you at the top of these settings. Nothing is downloaded.",
                 "Pr\u00fcft einmal am Tag beim Start von Tumblr auf GitHub, ob es ein neueres HushTumblr gibt, und sagt es dir oben in diesen Einstellungen. Es wird nichts heruntergeladen.");
-        table.put("One word or phrase a line",
-                "Ein Wort oder eine Wortgruppe pro Zeile");
     }
 
     private static void fillDe4(Map<String, String> table) {
+        table.put("One word or phrase a line",
+                "Ein Wort oder eine Wortgruppe pro Zeile");
         table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
                 "Nur einige Webadressen von Tumblr sind f\u00fcr diese App ausgew\u00e4hlt, und Links zu den \u00fcbrigen \u00f6ffnen sich woanders. Tippe, um sie in den Android-Einstellungen auszuw\u00e4hlen.");
         table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
@@ -673,11 +675,11 @@ public final class L10nTranslations {
                 "Links von Hand ausw\u00e4hlen");
         table.put("Set when you patched",
                 "Beim Patchen festgelegt");
-        table.put("Settings couldn't open",
-                "Einstellungen lie\u00dfen sich nicht \u00f6ffnen");
     }
 
     private static void fillDe5(Map<String, String> table) {
+        table.put("Settings couldn't open",
+                "Einstellungen lie\u00dfen sich nicht \u00f6ffnen");
         table.put("Settings couldn't refresh completely. Reopen settings and try again.",
                 "Die Einstellungen lie\u00dfen sich nicht vollst\u00e4ndig aktualisieren. \u00d6ffne sie neu und versuche es noch einmal.");
         table.put("Settings exported.",
@@ -796,11 +798,11 @@ public final class L10nTranslations {
                 "Entfernt die Tags, denen du laut Tumblr folgen sollst, samt ihren \u00dcberschriften aus deinem Dashboard und anderen Feeds.");
         table.put("Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.",
                 "Entfernt die Tags unten an Beitr\u00e4gen in deinem Dashboard und anderen Feeds und l\u00e4sst den Quellenlink stehen.");
-        table.put("Tap a tab to move it up",
-                "Tippe auf einen Tab, um ihn nach oben zu schieben");
     }
 
     private static void fillDe6(Map<String, String> table) {
+        table.put("Tap a tab to move it up",
+                "Tippe auf einen Tab, um ihn nach oben zu schieben");
         table.put("Tap to turn it back on.",
                 "Zum Wiedereinschalten tippen.");
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
@@ -919,11 +921,11 @@ public final class L10nTranslations {
                 "Import wird r\u00fcckg\u00e4ngig gemacht");
         table.put("Unmute post",
                 "Post wieder anzeigen");
-        table.put("Unmute post %1$s",
-                "Post %1$s wieder anzeigen");
     }
 
     private static void fillDe7(Map<String, String> table) {
+        table.put("Unmute post %1$s",
+                "Post %1$s wieder anzeigen");
         table.put("Unmute posts or clear this account's private list",
                 "Posts wieder anzeigen oder die private Liste dieses Kontos leeren");
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
@@ -997,7 +999,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(910);
+        Map<String, String> table = new HashMap<>(912);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -1423,6 +1425,8 @@ public final class L10nTranslations {
                 "Permite que un Tumblr parcheado se registre para recibir notificaciones push cuando Google lo rechazar\u00eda.");
         table.put("Licenses",
                 "Licencias");
+        table.put("Like",
+                "Me gusta");
         table.put("Line between posts",
                 "L\u00ednea entre publicaciones");
         table.put("Link copied",
@@ -1497,11 +1501,11 @@ public final class L10nTranslations {
                 "Activado");
         table.put("Once a day, when Tumblr starts, checks GitHub for a newer HushTumblr and tells you at the top of these settings. Nothing is downloaded.",
                 "Una vez al d\u00eda, al abrir Tumblr, busca en GitHub un HushTumblr m\u00e1s nuevo y te avisa arriba en estos ajustes. No se descarga nada.");
-        table.put("One word or phrase a line",
-                "Una palabra o frase por l\u00ednea");
     }
 
     private static void fillEs4(Map<String, String> table) {
+        table.put("One word or phrase a line",
+                "Una palabra o frase por l\u00ednea");
         table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
                 "Solo algunas direcciones web de Tumblr est\u00e1n seleccionadas para esta app, y los enlaces a las dem\u00e1s se abren en otro sitio. Toca para seleccionarlas en los ajustes de Android.");
         table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
@@ -1620,11 +1624,11 @@ public final class L10nTranslations {
                 "Seleccionar enlaces a mano");
         table.put("Set when you patched",
                 "Aplicado al parchear");
-        table.put("Settings couldn't open",
-                "No se pudo abrir la configuraci\u00f3n");
     }
 
     private static void fillEs5(Map<String, String> table) {
+        table.put("Settings couldn't open",
+                "No se pudo abrir la configuraci\u00f3n");
         table.put("Settings couldn't refresh completely. Reopen settings and try again.",
                 "No se pudo actualizar la configuraci\u00f3n por completo. Vuelve a abrirla e int\u00e9ntalo de nuevo.");
         table.put("Settings exported.",
@@ -1743,11 +1747,11 @@ public final class L10nTranslations {
                 "Quita las etiquetas que Tumblr te sugiere seguir, y sus encabezados, de tu panel y otros feeds.");
         table.put("Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.",
                 "Quita las etiquetas de la parte de abajo de las publicaciones en tu panel y otros feeds, y deja el enlace a la fuente.");
-        table.put("Tap a tab to move it up",
-                "Toca una pesta\u00f1a para subirla");
     }
 
     private static void fillEs6(Map<String, String> table) {
+        table.put("Tap a tab to move it up",
+                "Toca una pesta\u00f1a para subirla");
         table.put("Tap to turn it back on.",
                 "Toca para volver a activarlo.");
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
@@ -1866,11 +1870,11 @@ public final class L10nTranslations {
                 "Deshaciendo importaci\u00f3n");
         table.put("Unmute post",
                 "Dejar de silenciar la publicaci\u00f3n");
-        table.put("Unmute post %1$s",
-                "Dejar de silenciar la publicaci\u00f3n %1$s");
     }
 
     private static void fillEs7(Map<String, String> table) {
+        table.put("Unmute post %1$s",
+                "Dejar de silenciar la publicaci\u00f3n %1$s");
         table.put("Unmute posts or clear this account's private list",
                 "Dejar de silenciar publicaciones o vaciar la lista privada de esta cuenta");
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
@@ -1944,7 +1948,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(910);
+        Map<String, String> table = new HashMap<>(912);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -2370,6 +2374,8 @@ public final class L10nTranslations {
                 "Memungkinkan Tumblr yang ditambal mendaftar untuk notifikasi push saat Google akan menolaknya.");
         table.put("Licenses",
                 "Lisensi");
+        table.put("Like",
+                "Suka");
         table.put("Line between posts",
                 "Garis antar postingan");
         table.put("Link copied",
@@ -2444,11 +2450,11 @@ public final class L10nTranslations {
                 "Aktif");
         table.put("Once a day, when Tumblr starts, checks GitHub for a newer HushTumblr and tells you at the top of these settings. Nothing is downloaded.",
                 "Sekali sehari, saat Tumblr dibuka, memeriksa GitHub untuk HushTumblr yang lebih baru dan memberi tahu Anda di bagian atas setelan ini. Tidak ada yang diunduh.");
-        table.put("One word or phrase a line",
-                "Satu kata atau frasa per baris");
     }
 
     private static void fillIn4(Map<String, String> table) {
+        table.put("One word or phrase a line",
+                "Satu kata atau frasa per baris");
         table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
                 "Hanya sebagian alamat web Tumblr yang dipilih untuk aplikasi ini, dan tautan ke alamat lainnya terbuka di tempat lain. Ketuk untuk memilihnya di pengaturan Android.");
         table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
@@ -2567,11 +2573,11 @@ public final class L10nTranslations {
                 "Memilih tautan secara manual");
         table.put("Set when you patched",
                 "Diatur saat Anda menambal");
-        table.put("Settings couldn't open",
-                "Pengaturan tidak dapat dibuka");
     }
 
     private static void fillIn5(Map<String, String> table) {
+        table.put("Settings couldn't open",
+                "Pengaturan tidak dapat dibuka");
         table.put("Settings couldn't refresh completely. Reopen settings and try again.",
                 "Pengaturan tidak dapat dimuat ulang sepenuhnya. Buka kembali pengaturan lalu coba lagi.");
         table.put("Settings exported.",
@@ -2690,11 +2696,11 @@ public final class L10nTranslations {
                 "Menghapus tag yang disarankan Tumblr untuk kamu ikuti, beserta judulnya, dari dasbor dan feed lainnya.");
         table.put("Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.",
                 "Menghapus tag di bagian bawah postingan di dasbor dan feed lainnya, dan tetap menampilkan tautan sumber.");
-        table.put("Tap a tab to move it up",
-                "Ketuk tab untuk memindahkannya ke atas");
     }
 
     private static void fillIn6(Map<String, String> table) {
+        table.put("Tap a tab to move it up",
+                "Ketuk tab untuk memindahkannya ke atas");
         table.put("Tap to turn it back on.",
                 "Ketuk untuk mengaktifkan HushTumblr lagi.");
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
@@ -2813,11 +2819,11 @@ public final class L10nTranslations {
                 "Mengurungkan impor");
         table.put("Unmute post",
                 "Tampilkan kembali postingan");
-        table.put("Unmute post %1$s",
-                "Tampilkan kembali postingan %1$s");
     }
 
     private static void fillIn7(Map<String, String> table) {
+        table.put("Unmute post %1$s",
+                "Tampilkan kembali postingan %1$s");
         table.put("Unmute posts or clear this account's private list",
                 "Tampilkan kembali postingan atau kosongkan daftar pribadi akun ini");
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
@@ -2891,7 +2897,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(910);
+        Map<String, String> table = new HashMap<>(912);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -3317,6 +3323,8 @@ public final class L10nTranslations {
                 "Permite que um Tumblr com patches se cadastre para receber notifica\u00e7\u00f5es push quando o Google o recusaria.");
         table.put("Licenses",
                 "Licen\u00e7as");
+        table.put("Like",
+                "Curtir");
         table.put("Line between posts",
                 "Linha entre posts");
         table.put("Link copied",
@@ -3391,11 +3399,11 @@ public final class L10nTranslations {
                 "Ativado");
         table.put("Once a day, when Tumblr starts, checks GitHub for a newer HushTumblr and tells you at the top of these settings. Nothing is downloaded.",
                 "Uma vez por dia, quando o Tumblr abre, procura no GitHub um HushTumblr mais novo e avisa voc\u00ea no topo destas configura\u00e7\u00f5es. Nada \u00e9 baixado.");
-        table.put("One word or phrase a line",
-                "Uma palavra ou frase por linha");
     }
 
     private static void fillPt_rBR4(Map<String, String> table) {
+        table.put("One word or phrase a line",
+                "Uma palavra ou frase por linha");
         table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
                 "S\u00f3 alguns endere\u00e7os web do Tumblr est\u00e3o selecionados para este app, e os links para os outros abrem em outro lugar. Toque para selecion\u00e1-los nas configura\u00e7\u00f5es do Android.");
         table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
@@ -3514,11 +3522,11 @@ public final class L10nTranslations {
                 "Selecionar links manualmente");
         table.put("Set when you patched",
                 "Definido ao aplicar os patches");
-        table.put("Settings couldn't open",
-                "N\u00e3o foi poss\u00edvel abrir as configura\u00e7\u00f5es");
     }
 
     private static void fillPt_rBR5(Map<String, String> table) {
+        table.put("Settings couldn't open",
+                "N\u00e3o foi poss\u00edvel abrir as configura\u00e7\u00f5es");
         table.put("Settings couldn't refresh completely. Reopen settings and try again.",
                 "N\u00e3o foi poss\u00edvel atualizar completamente as configura\u00e7\u00f5es. Reabra as configura\u00e7\u00f5es e tente novamente.");
         table.put("Settings exported.",
@@ -3637,11 +3645,11 @@ public final class L10nTranslations {
                 "Tira do seu painel e de outros feeds as tags que o Tumblr sugere que voc\u00ea siga, junto com os t\u00edtulos delas.");
         table.put("Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.",
                 "Tira as tags do fim dos posts no seu painel e em outros feeds, e mant\u00e9m o link da fonte.");
-        table.put("Tap a tab to move it up",
-                "Toque em uma aba para subi-la");
     }
 
     private static void fillPt_rBR6(Map<String, String> table) {
+        table.put("Tap a tab to move it up",
+                "Toque em uma aba para subi-la");
         table.put("Tap to turn it back on.",
                 "Toque para reativar.");
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
@@ -3760,11 +3768,11 @@ public final class L10nTranslations {
                 "Desfazendo importa\u00e7\u00e3o");
         table.put("Unmute post",
                 "Reexibir post");
-        table.put("Unmute post %1$s",
-                "Reexibir o post %1$s");
     }
 
     private static void fillPt_rBR7(Map<String, String> table) {
+        table.put("Unmute post %1$s",
+                "Reexibir o post %1$s");
         table.put("Unmute posts or clear this account's private list",
                 "Volte a mostrar posts ou limpe a lista privada desta conta");
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
@@ -3838,7 +3846,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(910);
+        Map<String, String> table = new HashMap<>(912);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -4264,6 +4272,8 @@ public final class L10nTranslations {
                 "Google geri \u00e7evirecekken yamal\u0131 Tumblr'\u0131n anl\u0131k bildirimlere kaydolmas\u0131n\u0131 sa\u011flar.");
         table.put("Licenses",
                 "Lisanslar");
+        table.put("Like",
+                "Be\u011fen");
         table.put("Line between posts",
                 "G\u00f6nderiler aras\u0131nda \u00e7izgi");
         table.put("Link copied",
@@ -4338,11 +4348,11 @@ public final class L10nTranslations {
                 "A\u00e7\u0131k");
         table.put("Once a day, when Tumblr starts, checks GitHub for a newer HushTumblr and tells you at the top of these settings. Nothing is downloaded.",
                 "G\u00fcnde bir kez, Tumblr a\u00e7\u0131l\u0131rken GitHub'da daha yeni bir HushTumblr olup olmad\u0131\u011f\u0131na bakar ve bunu bu ayarlar\u0131n en \u00fcst\u00fcnde s\u00f6yler. Hi\u00e7bir \u015fey indirilmez.");
-        table.put("One word or phrase a line",
-                "Her sat\u0131ra bir kelime ya da ifade");
     }
 
     private static void fillTr4(Map<String, String> table) {
+        table.put("One word or phrase a line",
+                "Her sat\u0131ra bir kelime ya da ifade");
         table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
                 "Tumblr'\u0131n web adreslerinden yaln\u0131zca baz\u0131lar\u0131 bu uygulama i\u00e7in se\u00e7ili ve di\u011ferlerinin ba\u011flant\u0131lar\u0131 ba\u015fka yerde a\u00e7\u0131l\u0131r. Android ayarlar\u0131nda se\u00e7mek i\u00e7in dokunun.");
         table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
@@ -4461,11 +4471,11 @@ public final class L10nTranslations {
                 "Ba\u011flant\u0131lar\u0131 elle se\u00e7me");
         table.put("Set when you patched",
                 "Yamalad\u0131\u011f\u0131nda ayarlananlar");
-        table.put("Settings couldn't open",
-                "Ayarlar a\u00e7\u0131lamad\u0131");
     }
 
     private static void fillTr5(Map<String, String> table) {
+        table.put("Settings couldn't open",
+                "Ayarlar a\u00e7\u0131lamad\u0131");
         table.put("Settings couldn't refresh completely. Reopen settings and try again.",
                 "Ayarlar tamamen yenilenemedi. Ayarlar\u0131 yeniden a\u00e7\u0131p tekrar dene.");
         table.put("Settings exported.",
@@ -4584,11 +4594,11 @@ public final class L10nTranslations {
                 "Tumblr'\u0131n takip etmeni \u00f6nerdi\u011fi etiketleri ve ba\u015fl\u0131klar\u0131n\u0131 panondan ve di\u011fer ak\u0131\u015flardan kald\u0131r\u0131r.");
         table.put("Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.",
                 "Panondaki ve di\u011fer ak\u0131\u015flardaki g\u00f6nderilerin alt\u0131ndaki etiketleri kald\u0131r\u0131r, kaynak ba\u011flant\u0131s\u0131n\u0131 b\u0131rak\u0131r.");
-        table.put("Tap a tab to move it up",
-                "Yukar\u0131 ta\u015f\u0131mak i\u00e7in bir sekmeye dokun");
     }
 
     private static void fillTr6(Map<String, String> table) {
+        table.put("Tap a tab to move it up",
+                "Yukar\u0131 ta\u015f\u0131mak i\u00e7in bir sekmeye dokun");
         table.put("Tap to turn it back on.",
                 "Yeniden a\u00e7mak i\u00e7in dokun.");
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
@@ -4707,11 +4717,11 @@ public final class L10nTranslations {
                 "\u0130\u00e7e aktarma geri al\u0131n\u0131yor");
         table.put("Unmute post",
                 "G\u00f6nderiyi yeniden g\u00f6ster");
-        table.put("Unmute post %1$s",
-                "%1$s g\u00f6nderisini yeniden g\u00f6ster");
     }
 
     private static void fillTr7(Map<String, String> table) {
+        table.put("Unmute post %1$s",
+                "%1$s g\u00f6nderisini yeniden g\u00f6ster");
         table.put("Unmute posts or clear this account's private list",
                 "G\u00f6nderilerin susturmas\u0131n\u0131 kald\u0131r\u0131n veya bu hesab\u0131n \u00f6zel listesini temizleyin");
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",

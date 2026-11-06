@@ -296,6 +296,47 @@ public class PostFooterTest {
     }
 
     @Test
+    public void aCommentsButtonsTellTalkBackNoCountWithTheSwitchAndTumblrsOwnWithout() {
+        View replies = new View(RuntimeEnvironment.getApplication());
+        replies.setContentDescription("3 replies");
+        PostFooter.commentRepliesDescription(replies);
+        assertEquals("off, the reply button keeps Tumblr's description", "3 replies", replies.getContentDescription());
+        assertEquals("off, the like button keeps Tumblr's", "3 likes", PostFooter.commentLikesDescription("3 likes"));
+
+        Settings.HIDE_NOTE_COUNTS.save(true);
+        PostFooter.commentRepliesDescription(replies);
+        assertNull("the count it had before goes, and TalkBack reads the Reply label", replies.getContentDescription());
+        PostFooter.commentRepliesDescription(replies);
+        PostFooter.commentRepliesDescription(null);
+        assertEquals("the test app has no Tumblr word, so HushTumblr's", "Like", PostFooter.commentLikesDescription("0 likes"));
+        assertNull("nothing to swap", PostFooter.commentLikesDescription(null));
+
+        PauseForTests.pause(HushTumblrPause.Reason.SWITCH);
+        replies.setContentDescription("4 replies");
+        PostFooter.commentRepliesDescription(replies);
+        assertEquals("paused", "4 replies", replies.getContentDescription());
+        assertEquals("paused", "4 likes", PostFooter.commentLikesDescription("4 likes"));
+        PauseForTests.resume();
+        SettingsContextRule.withoutContext(() -> {
+            PostFooter.commentRepliesDescription(replies);
+            assertEquals("a cold start", "4 likes", PostFooter.commentLikesDescription("4 likes"));
+        });
+        assertEquals("a cold start", "4 replies", replies.getContentDescription());
+        PatchFamilyForTests.capabilities(EnumSet.of(PatchFamily.Capability.LIKE_BUTTON));
+        PostFooter.commentRepliesDescription(replies);
+        assertEquals("its hook isn't in this build", "4 replies", replies.getContentDescription());
+        assertEquals("its hook isn't in this build", "4 likes", PostFooter.commentLikesDescription("4 likes"));
+        PatchFamilyForTests.capabilities(EnumSet.of(PatchFamily.Capability.NOTE_COUNTS));
+
+        Settings.HIDE_NOTE_COUNTS.save(false);
+        assertEquals("read each bind", "5 likes", PostFooter.commentLikesDescription("5 likes"));
+
+        String report = String.join("\n", HookStatus.report());
+        assertTrue("only a description that was there is counted", report.contains("comment reply description cleared 1"));
+        assertTrue(report, report.contains("comment like description swapped 1"));
+    }
+
+    @Test
     public void everySwitchStartsOffSoTheFooterIsTumblrs() {
         assertEquals(7, PostFooter.noteCount(7));
         assertFalse(PostFooter.hideLikeButton());

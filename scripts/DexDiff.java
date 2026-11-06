@@ -304,7 +304,7 @@ public class DexDiff {
             Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 7), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
             Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("videoLinkPress", 6), Map.entry("imageSizes", 4), Map.entry("fontChoice", 6),
             Map.entry("followButton", 5), Map.entry("footerButton", 3), Map.entry("postTags", 6),
-            Map.entry("noteCounts", 7), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
+            Map.entry("noteCounts", 9), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
             Map.entry("matureContent", 12), Map.entry("rootPostMutes", 10), Map.entry("mutualMarkers", 13));
 
@@ -5700,7 +5700,7 @@ public class DexDiff {
             found &= notesTitle(c.strings.get(3));
             found &= reactionText(c.strings.get(4));
             found &= notesTabs(c.strings.get(5));
-            found &= commentCounts(c.strings.get(6));
+            found &= commentCounts(c.strings.get(6), c.strings.get(7), c.strings.get(8));
             capability(c.callee, found);
         }
 
@@ -5709,21 +5709,50 @@ public class DexDiff {
                 Map.entry("Lcom/tumblr/ui/widget/RepliesCountView;", "comments_count"),
                 Map.entry("Lcom/tumblr/ui/widget/ReplyLikeButtonView;", "like_count_show"));
 
-        /** Each comment's reply and like count, handed to the hook first thing in the one (I)V of its View that reads its plural. */
-        boolean commentCounts(String hook) {
+        /**
+         * Each comment's reply and like count, handed to [hook] first thing in the one (I)V of its View
+         * that reads its plural. The reply button then goes to [repliesHook] right after, and the like
+         * count's spoken description to [likesHook] in front of the one setContentDescription on the
+         * button that sets it.
+         */
+        boolean commentCounts(String hook, String repliesHook, String likesHook) {
             boolean found = true;
-            for (Map.Entry<String, String> view : COMMENT_COUNT_VIEWS) {
+            for (int n = 0; n < COMMENT_COUNT_VIEWS.size(); n++) {
+                Map.Entry<String, String> view = COMMENT_COUNT_VIEWS.get(n);
                 ClassDef cd = clean.classes.get(view.getKey());
                 List<Method> renderers = new ArrayList<>();
                 if (cd != null) for (Method m : cd.getMethods()) if (!isStatic(m) && m.getImplementation() != null
                         && descriptor(m).equals("(I)V") && instructions(m).stream().anyMatch(i -> plural(i, view.getValue()))) renderers.add(m);
                 Method old = unique(renderers, "the method that writes " + view.getKey() + "'s count");
                 if (old == null) { found = false; continue; }
-                int count = parameter(old, 0);
+                int count = parameter(old, 0), self = parameter(old, -1);
+                Method m = actual(old);
                 // The label check also catches a branch to the method's first instruction that skips the hook.
-                found &= hookAtLabel(old, actual(old), 0, hook, List.of(count), count, List.of());
+                found &= hookAtLabel(old, m, 0, hook, List.of(count), count, List.of());
+                List<Instruction> was = instructions(old);
+                List<Integer> described = new ArrayList<>();
+                for (int k = 0; k < was.size(); k++) if (setsDescription(was.get(k))) described.add(k);
+                if (n == 0) {
+                    if (described.isEmpty()) { fail("the " + view.getKey() + " count doesn't set the button's spoken description"); found = false; continue; }
+                    found &= hookAtLabel(old, m, 0, repliesHook, List.of(self), -1, List.of());
+                    continue;
+                }
+                List<Integer> args = described.size() == 1 ? arguments(was.get(described.get(0))) : List.of();
+                if (args.size() != 2 || args.get(0) != self || was.get(described.get(0)).getOpcode() != Opcode.INVOKE_VIRTUAL
+                        || overwritten(old, self, described.get(0))) {
+                    fail("the " + view.getKey() + " count doesn't set the button's spoken description once, on the button itself");
+                    found = false;
+                    continue;
+                }
+                int text = args.get(1);
+                found &= hookAt(old, m, described.get(0), likesHook, List.of(text), text, List.of(text));
             }
             return found;
+        }
+
+        static boolean setsDescription(Instruction i) {
+            MethodReference r = called(i);
+            return r != null && r.getName().equals("setContentDescription") && descriptor(r).equals("(Ljava/lang/CharSequence;)V");
         }
 
         /** The three fragments a post's notes tabs are made of, kept by name. */

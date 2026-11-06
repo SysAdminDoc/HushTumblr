@@ -364,9 +364,10 @@ Explore	Jelajahi
 Tumblr TV	Tumblr TV
 Communities	Komunitas
 Account	Akun
-# context: with Hide note counts on, these stand in for "3 comments" on a community post's comment button and for "12 notes" at the top of a post's notes. Tumblr's own word is used when the app has one; these are the fallback. Use Tumblr's own words in your language.
+# context: with Hide note counts on, these stand in for "3 comments" on a community post's comment button and for "12 notes" at the top of a post's notes, and Like is what TalkBack reads for a comment's like button in place of "5 likes". Tumblr's own word is used when the app has one; these are the fallback. Use Tumblr's own words in your language.
 Comments	Komentar
 Notes	Nota
+Like	Suka
 # context: the import preview of a settings file. The first is what an empty Words to hide list reads as; the second names Words to hide or Tab order when the file's value for it can't be used.
 None	Tidak ada
 %1$s: the value in that file can't be used, so it'll be left out.	%1$s: nilai dalam file itu tidak bisa dipakai, jadi tidak akan disertakan.
