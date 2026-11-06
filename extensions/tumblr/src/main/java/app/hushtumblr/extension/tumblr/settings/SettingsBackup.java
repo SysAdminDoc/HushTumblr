@@ -99,6 +99,7 @@ public final class SettingsBackup {
      */
     static final List<BooleanSetting> ALLOWLIST = Collections.unmodifiableList(Arrays.asList(
             Settings.HIDE_ADS,
+            Settings.KEEP_BLAZE_POSTS,
             Settings.HIDE_ADVERTISING_ID,
             Settings.DISABLE_ANALYTICS,
             Settings.HIDE_AD_FREE_BANNER,
@@ -701,6 +702,11 @@ public final class SettingsBackup {
                 if (value == null) skipped.add(setting);
                 else texts.put(setting, value);
             }
+        }
+        if (ordered.containsKey(Settings.HIDE_ADS) && !ordered.containsKey(Settings.KEEP_BLAZE_POSTS)) {
+            // Every file names each switch it knows, so one with Hide ads and no Keep Blaze posts
+            // predates the option, when Hide ads took Blaze posts too.
+            ordered.put(Settings.KEEP_BLAZE_POSTS, false);
         }
         if ((Integer) schema < 3 && ordered.containsKey(Settings.HIDE_REBLOGS)) {
             // Old Hide reblogs backups had no exceptions.

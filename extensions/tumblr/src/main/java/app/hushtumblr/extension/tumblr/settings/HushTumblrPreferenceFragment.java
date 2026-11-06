@@ -605,6 +605,12 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             patchToggle(feed, context, build, PatchFamily.HIDE_ADS, Settings.HIDE_ADS, L10n.t("Hide ads"),
                     L10n.t("Takes ads and paid Blaze posts out of your dashboard and other feeds. Once Tumblr "
                         + "restarts, it stops asking for ads and its ad networks don't start."), SettingsIcons.BLOCK);
+            // Read with each page (TimelineFilter), so it needs no restart of its own.
+            patchToggle(feed, context, build, PatchFamily.HIDE_ADS, Settings.KEEP_BLAZE_POSTS,
+                    L10n.t("Keep Blaze posts"),
+                    L10n.t("When ads are hidden, keep posts people paid to promote with Blaze. Other ads and post "
+                        + "filters still apply."),
+                    SettingsIcons.BLOCK);
             patchToggle(feed, context, build, PatchFamily.HIDE_AD_FREE_BANNER, Settings.HIDE_AD_FREE_BANNER,
                     L10n.t("Hide the ad-free banner"), L10n.t("Hides the dashboard banner that asks you to pay for "
                         + "Ad-Free Browsing."), SettingsIcons.BLOCK);

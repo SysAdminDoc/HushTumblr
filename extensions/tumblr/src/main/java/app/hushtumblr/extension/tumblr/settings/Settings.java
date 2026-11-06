@@ -74,6 +74,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_hide_ads", TRUE, true);
 
     /**
+     * Keep the posts people paid to promote with Blaze while Hide ads takes the rest, leaving the
+     * other post rules in force ({@code TimelineFilter.isPaidBlaze}).
+     * The feed filter reads it per page, so it needs no restart.
+     */
+    public static final BooleanSetting KEEP_BLAZE_POSTS =
+            new BooleanSetting("hushtumblr_keep_blaze_posts", FALSE);
+
+    /**
      * Google's advertising ID getters answer an empty ID with ad tracking limited
      * ({@link app.hushtumblr.extension.tumblr.privacy.AdvertisingId}).
      */

@@ -164,9 +164,12 @@ public final class FeatureSwitches {
         }
     }
 
-    /** Whether any of [family]'s switches answers on. Paused, every one answers off. */
+    /**
+     * Whether any switch that can turn [family] on answers on. An option such as Keep Blaze posts
+     * can't. Paused, every one answers off.
+     */
     private static boolean anyOn(PatchFamily family) {
-        for (BooleanSetting setting : family.switches) {
+        for (BooleanSetting setting : family.enablers()) {
             if (setting.get()) return true;
         }
         return false;

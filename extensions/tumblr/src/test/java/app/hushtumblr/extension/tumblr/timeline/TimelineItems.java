@@ -235,6 +235,17 @@ public final class TimelineItems {
         }, false);
     }
 
+    /**
+     * A post with [content] from a blog you don't follow, whose server header names [icon] and that
+     * the server tells Tumblr to show as [type], left out when null. A paid Blaze post carries the
+     * "blaze" icon, and can come served as sponsored too.
+     */
+    public static TimelineObject servedWithHeader(String icon, DisplayType type, Object... content) {
+        return new TimelineObject(new Post(Arrays.asList(content), null, null, null, null) {
+            @Override public String hushHeaderIcon() { return icon; }
+        }, false, null, type);
+    }
+
     /** The dismissal Tumblr's web client sends for a featured post, as XKit Rewritten #2458 shows it. */
     public static final String MARKETING_DISMISSAL = "/v2/user/dismiss/marketing_post";
 

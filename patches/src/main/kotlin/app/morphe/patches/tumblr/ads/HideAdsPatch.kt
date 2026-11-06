@@ -29,7 +29,8 @@ val hideAdsPatch = bytecodePatch(
     name = "Hide ads",
     description = "Takes ad cards and paid Blaze posts out of your dashboard and other feeds. Tumblr stops asking its" +
         " ad networks for more and stops showing a full-screen ad when you open a blog, and the ad networks" +
-        " don't start when Tumblr launches. On by default. Turn it off in Tumblr settings > HushTumblr > Feed.",
+        " don't start when Tumblr launches. Its Keep Blaze posts option leaves the Blaze posts in. On by default." +
+        " Turn it off in Tumblr settings > HushTumblr > Feed.",
     default = true,
 ) {
     category("Ads")

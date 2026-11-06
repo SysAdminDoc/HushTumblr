@@ -242,6 +242,7 @@ public class SettingsBackupTest {
                 Collections.emptyList(), notSwitches);
         assertEquals(Arrays.asList(
                 Settings.HIDE_ADS,
+                Settings.KEEP_BLAZE_POSTS,
                 Settings.HIDE_ADVERTISING_ID,
                 Settings.DISABLE_ANALYTICS,
                 Settings.HIDE_AD_FREE_BANNER,
@@ -2507,6 +2508,52 @@ public class SettingsBackupTest {
                 .put("schema", 2).put("settings", new JSONObject().put(Settings.HIDE_ADS.key, true)).toString()));
         assertTrue(Settings.KEEP_TAGGED_REBLOGS.savedValue());
         assertTrue(Settings.KEEP_REBLOGS_WITH_CONTENT.savedValue());
+    }
+
+    /**
+     * A file from before Keep Blaze posts names Hide ads without it, from back when Hide ads took
+     * Blaze posts too, so importing it turns the option off, and undo puts it back. A file that
+     * names the option keeps its value, and one without Hide ads leaves the option alone.
+     */
+    @Test
+    public void olderHideAdsBackupsTurnKeepBlazePostsOff() throws Exception {
+        for (int schema : new int[]{1, 2, SettingsBackup.SCHEMA}) {
+            Settings.KEEP_BLAZE_POSTS.save(true);
+            SettingsBackup.apply(SettingsBackup.parse(new JSONObject().put("format", SettingsBackup.FORMAT)
+                    .put("schema", schema).put("settings", new JSONObject().put(Settings.HIDE_ADS.key, true)).toString()));
+            assertTrue(Settings.HIDE_ADS.savedValue());
+            assertFalse("schema " + schema, Settings.KEEP_BLAZE_POSTS.savedValue());
+            assertEquals(SettingsBackup.UndoResult.UNDONE, SettingsBackup.undo());
+            assertTrue(Settings.KEEP_BLAZE_POSTS.savedValue());
+        }
+        // Each value a file names lands, from the other value.
+        for (boolean named : new boolean[]{true, false}) {
+            Settings.KEEP_BLAZE_POSTS.save(!named);
+            SettingsBackup.apply(SettingsBackup.parse(new JSONObject().put("format", SettingsBackup.FORMAT)
+                    .put("schema", SettingsBackup.SCHEMA).put("settings", new JSONObject()
+                            .put(Settings.HIDE_ADS.key, true).put(Settings.KEEP_BLAZE_POSTS.key, named)).toString()));
+            assertEquals(named, Settings.KEEP_BLAZE_POSTS.savedValue());
+        }
+        Settings.KEEP_BLAZE_POSTS.save(true);
+        SettingsBackup.apply(SettingsBackup.parse(new JSONObject().put("format", SettingsBackup.FORMAT)
+                .put("schema", SettingsBackup.SCHEMA).put("settings", new JSONObject()
+                        .put(Settings.HIDE_REBLOGS.key, true)).toString()));
+        assertTrue(Settings.KEEP_BLAZE_POSTS.savedValue());
+    }
+
+    @Test
+    public void keepBlazePostsRoundTripsWithItsLabel() throws Exception {
+        Settings.KEEP_BLAZE_POSTS.save(true);
+        String file = SettingsBackup.create();
+        assertTrue(new JSONObject(file).getJSONObject("settings").getBoolean(Settings.KEEP_BLAZE_POSTS.key));
+        Settings.KEEP_BLAZE_POSTS.save(false);
+        SettingsBackup.Snapshot snapshot = SettingsBackup.parse(file);
+        assertEquals(1, snapshot.switchChanges());
+        String preview = SettingsBackupPreference.previewMessage(snapshot);
+        assertTrue(preview, preview.contains(L10n.f("%1$s (%2$s to %3$s)", L10n.t("Keep Blaze posts"),
+                L10n.t("Off"), L10n.t("On"))));
+        assertEquals(1, SettingsBackup.apply(snapshot));
+        assertTrue(Settings.KEEP_BLAZE_POSTS.savedValue());
     }
 
     @Test

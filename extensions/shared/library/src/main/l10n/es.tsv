@@ -227,6 +227,8 @@ Use the email on your Tumblr account and a Tumblr password. Google sign-in may n
 Feed	Feed
 Hide ads	Ocultar anuncios
 Takes ads and paid Blaze posts out of your dashboard and other feeds. Once Tumblr restarts, it stops asking for ads and its ad networks don't start.	Quita los anuncios y las publicaciones pagadas con Blaze de tu panel y de otros feeds. Cuando Tumblr se reinicia, deja de pedir anuncios y sus redes de anuncios no se inician.
+Keep Blaze posts	Conservar publicaciones de Blaze
+When ads are hidden, keep posts people paid to promote with Blaze. Other ads and post filters still apply.	Al ocultar anuncios, conserva las publicaciones que alguien pagó para promocionar con Blaze. Los demás anuncios y filtros siguen aplicándose.
 # context: the Disable analytics switch on the Privacy page.
 Stops Tumblr's own tracking and ad measurement, and keeps LiveRamp's tracker from starting. Firebase and Google's analytics collection stay off until you patch again without it.	Detiene el seguimiento propio de Tumblr y la medición de anuncios, y no deja que se inicie el rastreador de LiveRamp. La recopilación de Firebase y Google Analytics sigue desactivada hasta que vuelvas a parchear sin él.
 # context: the Hide the ad-free banner switch on the Feed page.

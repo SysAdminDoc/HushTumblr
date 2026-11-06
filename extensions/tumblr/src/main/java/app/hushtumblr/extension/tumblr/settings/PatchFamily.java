@@ -47,7 +47,7 @@ import app.hushtumblr.extension.shared.settings.preference.LogBufferManager;
  * name the patch uses to switch that method on.
  */
 public enum PatchFamily {
-    HIDE_ADS(FamilyNames.HIDE_ADS, "hideAds", null, Settings.HIDE_ADS),
+    HIDE_ADS(FamilyNames.HIDE_ADS, "hideAds", null, Settings.HIDE_ADS, Settings.KEEP_BLAZE_POSTS),
     /**
      * Tumblr's tracking flags behind a switch, and analytics switches written into the manifest when
      * patching, which Pause can't reach.
@@ -139,6 +139,15 @@ public enum PatchFamily {
 
     /** The switches Pause turns off for this patch. Empty when it has none. */
     public final List<BooleanSetting> switches;
+
+    /**
+     * The switches that can each turn this patch on: every one of {@link #switches}, except for a
+     * patch whose later switches are options of its first, such as Keep Blaze posts under Hide ads.
+     */
+    public List<BooleanSetting> enablers() {
+        return this == HIDE_ADS || this == HIDE_REBLOGS || this == HIDE_POSTS_WITH_WORDS
+                ? switches.subList(0, 1) : switches;
+    }
 
     /**
      * The switches of the settings entry itself, which no family owns: every build with this screen
@@ -406,9 +415,7 @@ public enum PatchFamily {
             return line.append("no switch, stays in while paused: ").append(effectiveStaysWhilePaused()).toString();
         }
         boolean anyOn = false;
-        if (this == HIDE_REBLOGS) anyOn = Settings.HIDE_REBLOGS.savedValue();
-        else if (this == HIDE_POSTS_WITH_WORDS) anyOn = Settings.HIDE_POSTS_WITH_WORDS.savedValue();
-        else for (BooleanSetting setting : switches) anyOn |= setting.savedValue();
+        for (BooleanSetting setting : enablers()) anyOn |= setting.savedValue();
         line.append(paused ? "disabled while paused (saved " : anyOn ? "on (" : "disabled by its switch (");
         for (int i = 0; i < switches.size(); i++) {
             if (i > 0) line.append(", ");

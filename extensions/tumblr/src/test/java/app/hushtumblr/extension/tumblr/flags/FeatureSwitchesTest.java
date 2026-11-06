@@ -152,6 +152,27 @@ public class FeatureSwitchesTest {
         }
     }
 
+    /** Keep Blaze posts is an option of Hide ads: on alone, it turns none of Hide ads' flags off. */
+    @Test
+    public void keepBlazePostsAloneLeavesTheAdFlagsOn() {
+        try {
+            PatchFamilyForTests.inBuild(EnumSet.allOf(PatchFamily.class));
+            Settings.HIDE_ADS.save(false);
+            Settings.KEEP_BLAZE_POSTS.save(true);
+            List<String> claimed = new ArrayList<>();
+            for (String flag : FeatureSwitches.claimedFlags()) {
+                if (!PatchFamily.HIDE_ADS.name().equals(FeatureSwitches.claimOn(flag).family)) continue;
+                claimed.add(flag);
+                assertTrue(flag + " with only Keep Blaze posts on", FeatureSwitches.isEnabled(flag(flag), true));
+            }
+            assertFalse("Hide ads claims flags", claimed.isEmpty());
+        } finally {
+            Settings.HIDE_ADS.resetToDefault();
+            Settings.KEEP_BLAZE_POSTS.resetToDefault();
+            PatchFamilyForTests.inBuild(null);
+        }
+    }
+
     /**
      * A claimed flag asked before the settings are ready keeps Tumblr's answer and is counted under
      * its family, so a read that comes too early for the switch shows in the report. An answer

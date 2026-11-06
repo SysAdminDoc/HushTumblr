@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(906);
+        Map<String, String> table = new HashMap<>(910);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -466,6 +466,8 @@ public final class L10nTranslations {
                 "Es unterst\u00fctzt Tumblr %1$s.");
         table.put("Jump to a section",
                 "Zu einem Abschnitt springen");
+        table.put("Keep Blaze posts",
+                "Blaze-Beitr\u00e4ge behalten");
         table.put("Keep reblogs with added content",
                 "Reblogs mit eigenem Inhalt behalten");
         table.put("Keep tagged reblogs",
@@ -550,11 +552,11 @@ public final class L10nTranslations {
                 "Pr\u00fcft einmal am Tag beim Start von Tumblr auf GitHub, ob es ein neueres HushTumblr gibt, und sagt es dir oben in diesen Einstellungen. Es wird nichts heruntergeladen.");
         table.put("One word or phrase a line",
                 "Ein Wort oder eine Wortgruppe pro Zeile");
-        table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
-                "Nur einige Webadressen von Tumblr sind f\u00fcr diese App ausgew\u00e4hlt, und Links zu den \u00fcbrigen \u00f6ffnen sich woanders. Tippe, um sie in den Android-Einstellungen auszuw\u00e4hlen.");
     }
 
     private static void fillDe4(Map<String, String> table) {
+        table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
+                "Nur einige Webadressen von Tumblr sind f\u00fcr diese App ausgew\u00e4hlt, und Links zu den \u00fcbrigen \u00f6ffnen sich woanders. Tippe, um sie in den Android-Einstellungen auszuw\u00e4hlen.");
         table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
                 "\u00d6ffne Tumblrs Einstellungen \u00fcber das Zahnrad im Konto-Tab. HushTumblr \u00e4ndert keine davon.");
         table.put("Open link settings",
@@ -673,11 +675,11 @@ public final class L10nTranslations {
                 "Beim Patchen festgelegt");
         table.put("Settings couldn't open",
                 "Einstellungen lie\u00dfen sich nicht \u00f6ffnen");
-        table.put("Settings couldn't refresh completely. Reopen settings and try again.",
-                "Die Einstellungen lie\u00dfen sich nicht vollst\u00e4ndig aktualisieren. \u00d6ffne sie neu und versuche es noch einmal.");
     }
 
     private static void fillDe5(Map<String, String> table) {
+        table.put("Settings couldn't refresh completely. Reopen settings and try again.",
+                "Die Einstellungen lie\u00dfen sich nicht vollst\u00e4ndig aktualisieren. \u00d6ffne sie neu und versuche es noch einmal.");
         table.put("Settings exported.",
                 "Einstellungen exportiert.");
         table.put("Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.",
@@ -796,11 +798,11 @@ public final class L10nTranslations {
                 "Entfernt die Tags unten an Beitr\u00e4gen in deinem Dashboard und anderen Feeds und l\u00e4sst den Quellenlink stehen.");
         table.put("Tap a tab to move it up",
                 "Tippe auf einen Tab, um ihn nach oben zu schieben");
-        table.put("Tap to turn it back on.",
-                "Zum Wiedereinschalten tippen.");
     }
 
     private static void fillDe6(Map<String, String> table) {
+        table.put("Tap to turn it back on.",
+                "Zum Wiedereinschalten tippen.");
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
                 "Sagt Android, dass dies das originale Tumblr ist, damit die Google-Anmeldung mit microG-RE oder dem XSpoofSignatures-Modul funktionieren kann. Das normale Google Play Services ignoriert es. Das wurde beim Patchen festgelegt. Patche erneut ohne diesen Patch, um es zu entfernen.");
         table.put("That file is too big to be a font.",
@@ -919,11 +921,11 @@ public final class L10nTranslations {
                 "Post wieder anzeigen");
         table.put("Unmute post %1$s",
                 "Post %1$s wieder anzeigen");
-        table.put("Unmute posts or clear this account's private list",
-                "Posts wieder anzeigen oder die private Liste dieses Kontos leeren");
     }
 
     private static void fillDe7(Map<String, String> table) {
+        table.put("Unmute posts or clear this account's private list",
+                "Posts wieder anzeigen oder die private Liste dieses Kontos leeren");
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
                 "Bis zum Fortsetzen verh\u00e4lt sich jeder Schalter au\u00dfer der Debug-Protokollierung, als w\u00e4re er aus. Was beim Patchen festgelegt wurde, bleibt aktiv.");
         table.put("Update instructions",
@@ -952,6 +954,8 @@ public final class L10nTranslations {
                 "In Downloads gespeichert");
         table.put("Visible image descriptions",
                 "Sichtbare Bildbeschreibungen");
+        table.put("When ads are hidden, keep posts people paid to promote with Blaze. Other ads and post filters still apply.",
+                "Beh\u00e4lt Beitr\u00e4ge, f\u00fcr die jemand mit Blaze bezahlt hat, wenn Werbung ausgeblendet ist. Andere Werbung und Beitragsfilter gelten weiter.");
         table.put("When reblogs are hidden, keep ones where the reblogger added something of their own. Other post filters still apply.",
                 "Beh\u00e4lt Reblogs, bei denen jemand etwas Eigenes hinzugef\u00fcgt hat, wenn Reblogs ausgeblendet sind. Andere Beitragsfilter gelten weiter.");
         table.put("When reblogs are hidden, keep ones with tags. Other post filters still apply.",
@@ -993,7 +997,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(906);
+        Map<String, String> table = new HashMap<>(910);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -1409,6 +1413,8 @@ public final class L10nTranslations {
                 "Es compatible con Tumblr %1$s.");
         table.put("Jump to a section",
                 "Ir a una secci\u00f3n");
+        table.put("Keep Blaze posts",
+                "Conservar publicaciones de Blaze");
         table.put("Keep reblogs with added content",
                 "Conservar reblogs con contenido a\u00f1adido");
         table.put("Keep tagged reblogs",
@@ -1493,11 +1499,11 @@ public final class L10nTranslations {
                 "Una vez al d\u00eda, al abrir Tumblr, busca en GitHub un HushTumblr m\u00e1s nuevo y te avisa arriba en estos ajustes. No se descarga nada.");
         table.put("One word or phrase a line",
                 "Una palabra o frase por l\u00ednea");
-        table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
-                "Solo algunas direcciones web de Tumblr est\u00e1n seleccionadas para esta app, y los enlaces a las dem\u00e1s se abren en otro sitio. Toca para seleccionarlas en los ajustes de Android.");
     }
 
     private static void fillEs4(Map<String, String> table) {
+        table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
+                "Solo algunas direcciones web de Tumblr est\u00e1n seleccionadas para esta app, y los enlaces a las dem\u00e1s se abren en otro sitio. Toca para seleccionarlas en los ajustes de Android.");
         table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
                 "Abre la configuraci\u00f3n de Tumblr desde el engranaje de tu pesta\u00f1a de cuenta. HushTumblr no cambia ninguna de estas opciones.");
         table.put("Open link settings",
@@ -1616,11 +1622,11 @@ public final class L10nTranslations {
                 "Aplicado al parchear");
         table.put("Settings couldn't open",
                 "No se pudo abrir la configuraci\u00f3n");
-        table.put("Settings couldn't refresh completely. Reopen settings and try again.",
-                "No se pudo actualizar la configuraci\u00f3n por completo. Vuelve a abrirla e int\u00e9ntalo de nuevo.");
     }
 
     private static void fillEs5(Map<String, String> table) {
+        table.put("Settings couldn't refresh completely. Reopen settings and try again.",
+                "No se pudo actualizar la configuraci\u00f3n por completo. Vuelve a abrirla e int\u00e9ntalo de nuevo.");
         table.put("Settings exported.",
                 "Configuraci\u00f3n exportada.");
         table.put("Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.",
@@ -1739,11 +1745,11 @@ public final class L10nTranslations {
                 "Quita las etiquetas de la parte de abajo de las publicaciones en tu panel y otros feeds, y deja el enlace a la fuente.");
         table.put("Tap a tab to move it up",
                 "Toca una pesta\u00f1a para subirla");
-        table.put("Tap to turn it back on.",
-                "Toca para volver a activarlo.");
     }
 
     private static void fillEs6(Map<String, String> table) {
+        table.put("Tap to turn it back on.",
+                "Toca para volver a activarlo.");
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
                 "Le dice a Android que esta es la app original de Tumblr, para que el inicio de sesi\u00f3n con Google pueda funcionar con microG-RE o el m\u00f3dulo XSpoofSignatures. Google Play Services normal lo ignora. Esto se defini\u00f3 al parchear. Vuelve a parchear sin \u00e9l para quitarlo.");
         table.put("That file is too big to be a font.",
@@ -1862,11 +1868,11 @@ public final class L10nTranslations {
                 "Dejar de silenciar la publicaci\u00f3n");
         table.put("Unmute post %1$s",
                 "Dejar de silenciar la publicaci\u00f3n %1$s");
-        table.put("Unmute posts or clear this account's private list",
-                "Dejar de silenciar publicaciones o vaciar la lista privada de esta cuenta");
     }
 
     private static void fillEs7(Map<String, String> table) {
+        table.put("Unmute posts or clear this account's private list",
+                "Dejar de silenciar publicaciones o vaciar la lista privada de esta cuenta");
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
                 "Hasta que reanudes, todos los interruptores, salvo el Registro de depuraci\u00f3n, funcionan como si estuvieran desactivados. Lo que se aplic\u00f3 al parchear se mantiene.");
         table.put("Update instructions",
@@ -1895,6 +1901,8 @@ public final class L10nTranslations {
                 "Video guardado en Descargas");
         table.put("Visible image descriptions",
                 "Descripciones de im\u00e1genes visibles");
+        table.put("When ads are hidden, keep posts people paid to promote with Blaze. Other ads and post filters still apply.",
+                "Al ocultar anuncios, conserva las publicaciones que alguien pag\u00f3 para promocionar con Blaze. Los dem\u00e1s anuncios y filtros siguen aplic\u00e1ndose.");
         table.put("When reblogs are hidden, keep ones where the reblogger added something of their own. Other post filters still apply.",
                 "Al ocultar reblogs, conserva aquellos en los que quien rebloguea a\u00f1adi\u00f3 algo propio. Los dem\u00e1s filtros siguen aplic\u00e1ndose.");
         table.put("When reblogs are hidden, keep ones with tags. Other post filters still apply.",
@@ -1936,7 +1944,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(906);
+        Map<String, String> table = new HashMap<>(910);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -2352,6 +2360,8 @@ public final class L10nTranslations {
                 "Rilis ini mendukung Tumblr %1$s.");
         table.put("Jump to a section",
                 "Lompat ke bagian");
+        table.put("Keep Blaze posts",
+                "Pertahankan postingan Blaze");
         table.put("Keep reblogs with added content",
                 "Pertahankan reblog dengan konten tambahan");
         table.put("Keep tagged reblogs",
@@ -2436,11 +2446,11 @@ public final class L10nTranslations {
                 "Sekali sehari, saat Tumblr dibuka, memeriksa GitHub untuk HushTumblr yang lebih baru dan memberi tahu Anda di bagian atas setelan ini. Tidak ada yang diunduh.");
         table.put("One word or phrase a line",
                 "Satu kata atau frasa per baris");
-        table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
-                "Hanya sebagian alamat web Tumblr yang dipilih untuk aplikasi ini, dan tautan ke alamat lainnya terbuka di tempat lain. Ketuk untuk memilihnya di pengaturan Android.");
     }
 
     private static void fillIn4(Map<String, String> table) {
+        table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
+                "Hanya sebagian alamat web Tumblr yang dipilih untuk aplikasi ini, dan tautan ke alamat lainnya terbuka di tempat lain. Ketuk untuk memilihnya di pengaturan Android.");
         table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
                 "Buka pengaturan Tumblr dari ikon roda gigi di tab akun. HushTumblr tidak mengubah satu pun pengaturan ini.");
         table.put("Open link settings",
@@ -2559,11 +2569,11 @@ public final class L10nTranslations {
                 "Diatur saat Anda menambal");
         table.put("Settings couldn't open",
                 "Pengaturan tidak dapat dibuka");
-        table.put("Settings couldn't refresh completely. Reopen settings and try again.",
-                "Pengaturan tidak dapat dimuat ulang sepenuhnya. Buka kembali pengaturan lalu coba lagi.");
     }
 
     private static void fillIn5(Map<String, String> table) {
+        table.put("Settings couldn't refresh completely. Reopen settings and try again.",
+                "Pengaturan tidak dapat dimuat ulang sepenuhnya. Buka kembali pengaturan lalu coba lagi.");
         table.put("Settings exported.",
                 "Pengaturan diekspor.");
         table.put("Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.",
@@ -2682,11 +2692,11 @@ public final class L10nTranslations {
                 "Menghapus tag di bagian bawah postingan di dasbor dan feed lainnya, dan tetap menampilkan tautan sumber.");
         table.put("Tap a tab to move it up",
                 "Ketuk tab untuk memindahkannya ke atas");
-        table.put("Tap to turn it back on.",
-                "Ketuk untuk mengaktifkan HushTumblr lagi.");
     }
 
     private static void fillIn6(Map<String, String> table) {
+        table.put("Tap to turn it back on.",
+                "Ketuk untuk mengaktifkan HushTumblr lagi.");
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
                 "Memberi tahu Android bahwa ini Tumblr asli, agar masuk dengan Google bisa berfungsi dengan microG-RE atau modul XSpoofSignatures. Google Play services biasa mengabaikannya. Ini diatur saat Anda menambal. Tambal ulang tanpanya untuk menghapusnya.");
         table.put("That file is too big to be a font.",
@@ -2805,11 +2815,11 @@ public final class L10nTranslations {
                 "Tampilkan kembali postingan");
         table.put("Unmute post %1$s",
                 "Tampilkan kembali postingan %1$s");
-        table.put("Unmute posts or clear this account's private list",
-                "Tampilkan kembali postingan atau kosongkan daftar pribadi akun ini");
     }
 
     private static void fillIn7(Map<String, String> table) {
+        table.put("Unmute posts or clear this account's private list",
+                "Tampilkan kembali postingan atau kosongkan daftar pribadi akun ini");
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
                 "Sampai Anda melanjutkan, semua sakelar kecuali Pencatatan debug dianggap nonaktif. Yang diatur saat Anda menambal tetap aktif.");
         table.put("Update instructions",
@@ -2838,6 +2848,8 @@ public final class L10nTranslations {
                 "Video disimpan ke Unduhan");
         table.put("Visible image descriptions",
                 "Deskripsi gambar terlihat");
+        table.put("When ads are hidden, keep posts people paid to promote with Blaze. Other ads and post filters still apply.",
+                "Saat iklan disembunyikan, pertahankan postingan yang dipromosikan dengan bayaran lewat Blaze. Iklan dan filter postingan lainnya tetap berlaku.");
         table.put("When reblogs are hidden, keep ones where the reblogger added something of their own. Other post filters still apply.",
                 "Saat reblog disembunyikan, pertahankan yang diberi tambahan sendiri oleh pembuat reblog. Filter postingan lainnya tetap berlaku.");
         table.put("When reblogs are hidden, keep ones with tags. Other post filters still apply.",
@@ -2879,7 +2891,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(906);
+        Map<String, String> table = new HashMap<>(910);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -3295,6 +3307,8 @@ public final class L10nTranslations {
                 "Compat\u00edvel com o Tumblr %1$s.");
         table.put("Jump to a section",
                 "Ir para uma se\u00e7\u00e3o");
+        table.put("Keep Blaze posts",
+                "Manter posts do Blaze");
         table.put("Keep reblogs with added content",
                 "Manter reblogs com conte\u00fado adicionado");
         table.put("Keep tagged reblogs",
@@ -3379,11 +3393,11 @@ public final class L10nTranslations {
                 "Uma vez por dia, quando o Tumblr abre, procura no GitHub um HushTumblr mais novo e avisa voc\u00ea no topo destas configura\u00e7\u00f5es. Nada \u00e9 baixado.");
         table.put("One word or phrase a line",
                 "Uma palavra ou frase por linha");
-        table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
-                "S\u00f3 alguns endere\u00e7os web do Tumblr est\u00e3o selecionados para este app, e os links para os outros abrem em outro lugar. Toque para selecion\u00e1-los nas configura\u00e7\u00f5es do Android.");
     }
 
     private static void fillPt_rBR4(Map<String, String> table) {
+        table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
+                "S\u00f3 alguns endere\u00e7os web do Tumblr est\u00e3o selecionados para este app, e os links para os outros abrem em outro lugar. Toque para selecion\u00e1-los nas configura\u00e7\u00f5es do Android.");
         table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
                 "Abra as configura\u00e7\u00f5es do Tumblr pela engrenagem na sua aba de conta. O HushTumblr n\u00e3o muda nenhuma delas.");
         table.put("Open link settings",
@@ -3502,11 +3516,11 @@ public final class L10nTranslations {
                 "Definido ao aplicar os patches");
         table.put("Settings couldn't open",
                 "N\u00e3o foi poss\u00edvel abrir as configura\u00e7\u00f5es");
-        table.put("Settings couldn't refresh completely. Reopen settings and try again.",
-                "N\u00e3o foi poss\u00edvel atualizar completamente as configura\u00e7\u00f5es. Reabra as configura\u00e7\u00f5es e tente novamente.");
     }
 
     private static void fillPt_rBR5(Map<String, String> table) {
+        table.put("Settings couldn't refresh completely. Reopen settings and try again.",
+                "N\u00e3o foi poss\u00edvel atualizar completamente as configura\u00e7\u00f5es. Reabra as configura\u00e7\u00f5es e tente novamente.");
         table.put("Settings exported.",
                 "Configura\u00e7\u00f5es exportadas.");
         table.put("Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.",
@@ -3625,11 +3639,11 @@ public final class L10nTranslations {
                 "Tira as tags do fim dos posts no seu painel e em outros feeds, e mant\u00e9m o link da fonte.");
         table.put("Tap a tab to move it up",
                 "Toque em uma aba para subi-la");
-        table.put("Tap to turn it back on.",
-                "Toque para reativar.");
     }
 
     private static void fillPt_rBR6(Map<String, String> table) {
+        table.put("Tap to turn it back on.",
+                "Toque para reativar.");
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
                 "Diz ao Android que este \u00e9 o Tumblr original, para que o login com Google possa funcionar com o microG-RE ou o m\u00f3dulo XSpoofSignatures. O Google Play Services normal o ignora. Isso foi definido ao aplicar os patches. Aplique de novo sem ele para remov\u00ea-lo.");
         table.put("That file is too big to be a font.",
@@ -3748,11 +3762,11 @@ public final class L10nTranslations {
                 "Reexibir post");
         table.put("Unmute post %1$s",
                 "Reexibir o post %1$s");
-        table.put("Unmute posts or clear this account's private list",
-                "Volte a mostrar posts ou limpe a lista privada desta conta");
     }
 
     private static void fillPt_rBR7(Map<String, String> table) {
+        table.put("Unmute posts or clear this account's private list",
+                "Volte a mostrar posts ou limpe a lista privada desta conta");
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
                 "At\u00e9 voc\u00ea retomar, todas as op\u00e7\u00f5es, menos o Registro de depura\u00e7\u00e3o, funcionam como se estivessem desligadas. O que foi definido ao aplicar os patches continua ativo.");
         table.put("Update instructions",
@@ -3781,6 +3795,8 @@ public final class L10nTranslations {
                 "V\u00eddeo salvo em Downloads");
         table.put("Visible image descriptions",
                 "Descri\u00e7\u00f5es de imagens vis\u00edveis");
+        table.put("When ads are hidden, keep posts people paid to promote with Blaze. Other ads and post filters still apply.",
+                "Ao ocultar an\u00fancios, mant\u00e9m os posts que algu\u00e9m pagou para promover com o Blaze. Os outros an\u00fancios e filtros continuam valendo.");
         table.put("When reblogs are hidden, keep ones where the reblogger added something of their own. Other post filters still apply.",
                 "Ao ocultar reblogs, mant\u00e9m aqueles em que quem reblogou adicionou algo pr\u00f3prio. Os outros filtros continuam valendo.");
         table.put("When reblogs are hidden, keep ones with tags. Other post filters still apply.",
@@ -3822,7 +3838,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(906);
+        Map<String, String> table = new HashMap<>(910);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -4238,6 +4254,8 @@ public final class L10nTranslations {
                 "Tumblr %1$s s\u00fcr\u00fcmlerini destekler.");
         table.put("Jump to a section",
                 "Bir b\u00f6l\u00fcme git");
+        table.put("Keep Blaze posts",
+                "Blaze g\u00f6nderilerini tut");
         table.put("Keep reblogs with added content",
                 "Eklenen i\u00e7eri\u011fi olan yeniden bloglamalar\u0131 tut");
         table.put("Keep tagged reblogs",
@@ -4322,11 +4340,11 @@ public final class L10nTranslations {
                 "G\u00fcnde bir kez, Tumblr a\u00e7\u0131l\u0131rken GitHub'da daha yeni bir HushTumblr olup olmad\u0131\u011f\u0131na bakar ve bunu bu ayarlar\u0131n en \u00fcst\u00fcnde s\u00f6yler. Hi\u00e7bir \u015fey indirilmez.");
         table.put("One word or phrase a line",
                 "Her sat\u0131ra bir kelime ya da ifade");
-        table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
-                "Tumblr'\u0131n web adreslerinden yaln\u0131zca baz\u0131lar\u0131 bu uygulama i\u00e7in se\u00e7ili ve di\u011ferlerinin ba\u011flant\u0131lar\u0131 ba\u015fka yerde a\u00e7\u0131l\u0131r. Android ayarlar\u0131nda se\u00e7mek i\u00e7in dokunun.");
     }
 
     private static void fillTr4(Map<String, String> table) {
+        table.put("Only some of Tumblr's web addresses are selected for this app, and links to the rest open elsewhere. Tap to select them in Android's settings.",
+                "Tumblr'\u0131n web adreslerinden yaln\u0131zca baz\u0131lar\u0131 bu uygulama i\u00e7in se\u00e7ili ve di\u011ferlerinin ba\u011flant\u0131lar\u0131 ba\u015fka yerde a\u00e7\u0131l\u0131r. Android ayarlar\u0131nda se\u00e7mek i\u00e7in dokunun.");
         table.put("Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.",
                 "Tumblr ayarlar\u0131n\u0131 hesap sekmenizdeki di\u015fli simgesinden a\u00e7\u0131n. HushTumblr bunlar\u0131n hi\u00e7birini de\u011fi\u015ftirmez.");
         table.put("Open link settings",
@@ -4445,11 +4463,11 @@ public final class L10nTranslations {
                 "Yamalad\u0131\u011f\u0131nda ayarlananlar");
         table.put("Settings couldn't open",
                 "Ayarlar a\u00e7\u0131lamad\u0131");
-        table.put("Settings couldn't refresh completely. Reopen settings and try again.",
-                "Ayarlar tamamen yenilenemedi. Ayarlar\u0131 yeniden a\u00e7\u0131p tekrar dene.");
     }
 
     private static void fillTr5(Map<String, String> table) {
+        table.put("Settings couldn't refresh completely. Reopen settings and try again.",
+                "Ayarlar tamamen yenilenemedi. Ayarlar\u0131 yeniden a\u00e7\u0131p tekrar dene.");
         table.put("Settings exported.",
                 "Ayarlar d\u0131\u015fa aktar\u0131ld\u0131.");
         table.put("Settings exported. The app holding the file wouldn't let HushTumblr read it back, so it wasn't checked.",
@@ -4568,11 +4586,11 @@ public final class L10nTranslations {
                 "Panondaki ve di\u011fer ak\u0131\u015flardaki g\u00f6nderilerin alt\u0131ndaki etiketleri kald\u0131r\u0131r, kaynak ba\u011flant\u0131s\u0131n\u0131 b\u0131rak\u0131r.");
         table.put("Tap a tab to move it up",
                 "Yukar\u0131 ta\u015f\u0131mak i\u00e7in bir sekmeye dokun");
-        table.put("Tap to turn it back on.",
-                "Yeniden a\u00e7mak i\u00e7in dokun.");
     }
 
     private static void fillTr6(Map<String, String> table) {
+        table.put("Tap to turn it back on.",
+                "Yeniden a\u00e7mak i\u00e7in dokun.");
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
                 "Android'e bunun orijinal Tumblr oldu\u011funu s\u00f6yler; b\u00f6ylece Google ile giri\u015f microG-RE veya XSpoofSignatures mod\u00fcl\u00fcyle \u00e7al\u0131\u015fabilir. Normal Google Play hizmetleri bunu yok sayar. Bu, yamalarken ayarland\u0131. Kald\u0131rmak i\u00e7in bu yama olmadan yeniden yamala.");
         table.put("That file is too big to be a font.",
@@ -4691,11 +4709,11 @@ public final class L10nTranslations {
                 "G\u00f6nderiyi yeniden g\u00f6ster");
         table.put("Unmute post %1$s",
                 "%1$s g\u00f6nderisini yeniden g\u00f6ster");
-        table.put("Unmute posts or clear this account's private list",
-                "G\u00f6nderilerin susturmas\u0131n\u0131 kald\u0131r\u0131n veya bu hesab\u0131n \u00f6zel listesini temizleyin");
     }
 
     private static void fillTr7(Map<String, String> table) {
+        table.put("Unmute posts or clear this account's private list",
+                "G\u00f6nderilerin susturmas\u0131n\u0131 kald\u0131r\u0131n veya bu hesab\u0131n \u00f6zel listesini temizleyin");
         table.put("Until you resume, every switch but Debug logging acts as if it were off. Changes made when you patched stay in.",
                 "Devam ettirene kadar Hata ay\u0131klama g\u00fcnl\u00fc\u011f\u00fc d\u0131\u015f\u0131ndaki her anahtar kapal\u0131ym\u0131\u015f gibi davran\u0131r. Yamalad\u0131\u011f\u0131nda ayarlananlar devrede kal\u0131r.");
         table.put("Update instructions",
@@ -4724,6 +4742,8 @@ public final class L10nTranslations {
                 "Video \u0130ndirilenler'e kaydedildi");
         table.put("Visible image descriptions",
                 "G\u00f6r\u00fcn\u00fcr resim a\u00e7\u0131klamalar\u0131");
+        table.put("When ads are hidden, keep posts people paid to promote with Blaze. Other ads and post filters still apply.",
+                "Reklamlar gizlenirken birinin Blaze ile tan\u0131tmak i\u00e7in \u00f6deme yapt\u0131\u011f\u0131 g\u00f6nderileri tutar. Di\u011fer reklamlar ve g\u00f6nderi filtreleri uygulanmaya devam eder.");
         table.put("When reblogs are hidden, keep ones where the reblogger added something of their own. Other post filters still apply.",
                 "Yeniden bloglamalar gizlenirken, yeniden bloglayan\u0131n kendi eklemesi olanlar\u0131 tutar. Di\u011fer g\u00f6nderi filtreleri uygulanmaya devam eder.");
         table.put("When reblogs are hidden, keep ones with tags. Other post filters still apply.",

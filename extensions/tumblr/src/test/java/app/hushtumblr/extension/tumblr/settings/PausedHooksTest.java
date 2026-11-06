@@ -80,6 +80,7 @@ import app.hushtumblr.extension.tumblr.privacy.AdvertisingId;
 import app.hushtumblr.extension.tumblr.rootmute.HushAccountIdentity;
 import app.hushtumblr.extension.tumblr.rootmute.MatureAccountsForTests;
 import app.hushtumblr.extension.tumblr.rootmute.RootPostMutes;
+import app.hushtumblr.extension.tumblr.timeline.HushPaidPost;
 import app.hushtumblr.extension.tumblr.timeline.HushPost;
 import app.hushtumblr.extension.tumblr.timeline.HushRootPost;
 import app.hushtumblr.extension.tumblr.timeline.HushTrail;
@@ -303,7 +304,8 @@ public class PausedHooksTest {
     }
 
     private static List<BooleanSetting> dependentSwitches() {
-        return Arrays.asList(Settings.KEEP_TAGGED_REBLOGS, Settings.KEEP_REBLOGS_WITH_CONTENT, Settings.WORDS_CURRENT_TEXT,
+        return Arrays.asList(Settings.KEEP_BLAZE_POSTS, Settings.KEEP_TAGGED_REBLOGS, Settings.KEEP_REBLOGS_WITH_CONTENT,
+                Settings.WORDS_CURRENT_TEXT,
                 Settings.WORDS_REBLOG_TRAIL, Settings.WORDS_TAGS, Settings.WORDS_SUMMARY);
     }
 
@@ -578,8 +580,10 @@ public class PausedHooksTest {
         TextSettings.HIDDEN_WORDS.save(TimelineItems.PROBE_WORD);
         TextSettings.ALLOWED_WORDS.save("");
         for (BooleanSetting option : dependentSwitches()) {
-            boolean retention = option == Settings.KEEP_TAGGED_REBLOGS || option == Settings.KEEP_REBLOGS_WITH_CONTENT;
-            BooleanSetting parent = retention ? Settings.HIDE_REBLOGS : Settings.HIDE_POSTS_WITH_WORDS;
+            boolean retention = option == Settings.KEEP_TAGGED_REBLOGS || option == Settings.KEEP_REBLOGS_WITH_CONTENT
+                    || option == Settings.KEEP_BLAZE_POSTS;
+            BooleanSetting parent = option == Settings.KEEP_BLAZE_POSTS ? Settings.HIDE_ADS
+                    : retention ? Settings.HIDE_REBLOGS : Settings.HIDE_POSTS_WITH_WORDS;
             List<?> page = Collections.singletonList(new TimelineObject(new OptionPost(option), false));
             parent.save(true);
             assertEquals(option.key + " off", retention ? Collections.emptyList() : page, TimelineFilter.filter(page));
@@ -603,9 +607,14 @@ public class PausedHooksTest {
         }
     }
 
-    private static final class OptionPost implements Timelineable, HushPost {
+    private static final class OptionPost implements Timelineable, HushPost, HushPaidPost {
         final BooleanSetting option;
         OptionPost(BooleanSetting option) { this.option = option; }
+        /** Keep Blaze posts' post is one paid for with Blaze, from a blog you don't follow. */
+        @Override public String hushHeaderIcon() { return option == Settings.KEEP_BLAZE_POSTS ? "blaze" : null; }
+        @Override public boolean hushFollowed() { return false; }
+        @Override public boolean hushCanEdit() { return false; }
+        @Override public boolean hushPaidContextKnown() { return true; }
         @Override public String getId() { return "pause-option"; }
         @Override public TimelineObjectType getTimelineObjectType() { return TimelineObjectType.POST; }
         @Override public List<?> hushContent() {

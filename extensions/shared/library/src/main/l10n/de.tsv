@@ -227,6 +227,8 @@ Use the email on your Tumblr account and a Tumblr password. Google sign-in may n
 Feed	Feed
 Hide ads	Werbung ausblenden
 Takes ads and paid Blaze posts out of your dashboard and other feeds. Once Tumblr restarts, it stops asking for ads and its ad networks don't start.	Entfernt Werbung und bezahlte Blaze-Beiträge aus deinem Dashboard und anderen Feeds. Sobald Tumblr neu gestartet wurde, fragt es keine Werbung mehr an und seine Werbenetzwerke starten nicht.
+Keep Blaze posts	Blaze-Beiträge behalten
+When ads are hidden, keep posts people paid to promote with Blaze. Other ads and post filters still apply.	Behält Beiträge, für die jemand mit Blaze bezahlt hat, wenn Werbung ausgeblendet ist. Andere Werbung und Beitragsfilter gelten weiter.
 # context: the Disable analytics switch on the Privacy page.
 Stops Tumblr's own tracking and ad measurement, and keeps LiveRamp's tracker from starting. Firebase and Google's analytics collection stay off until you patch again without it.	Beendet Tumblrs eigenes Tracking und die Werbemessung und lässt den Tracker von LiveRamp nicht starten. Die Datenerfassung von Firebase und Google Analytics bleibt aus, bis du ohne diesen Patch neu patchst.
 # context: the Hide the ad-free banner switch on the Feed page.

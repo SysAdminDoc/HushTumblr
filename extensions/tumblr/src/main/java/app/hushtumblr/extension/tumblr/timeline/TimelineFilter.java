@@ -253,6 +253,8 @@ public final class TimelineFilter {
     /** Which switches take items out of this page, read once a page. */
     static final class Rules {
         final boolean ads;
+        /** Whether Keep Blaze posts leaves paid Blaze posts in while {@link #ads} takes the rest. */
+        final boolean keepBlaze;
         final boolean blogs;
         final boolean communities;
         final boolean tags;
@@ -272,9 +274,10 @@ public final class TimelineFilter {
         @Nullable
         private Boolean amongPosts;
 
-        private Rules(boolean ads, boolean blogs, boolean communities, boolean tags, boolean watchIt,
+        private Rules(boolean ads, boolean keepBlaze, boolean blogs, boolean communities, boolean tags, boolean watchIt,
                       boolean featured, boolean mutes, @Nullable PostRules posts) {
             this.ads = ads;
+            this.keepBlaze = keepBlaze;
             this.blogs = blogs;
             this.communities = communities;
             this.tags = tags;
@@ -291,6 +294,7 @@ public final class TimelineFilter {
             try {
                 // Each family's patch marks its timeline capability once the hook is in.
                 boolean ads = on(PatchFamily.Capability.TIMELINE_ADS, reading, Settings.HIDE_ADS);
+                boolean keepBlaze = ads && Settings.KEEP_BLAZE_POSTS.get();
                 reading = FamilyNames.HIDE_SUGGESTED_BLOGS;
                 boolean blogs = on(PatchFamily.Capability.SUGGESTED_BLOG_CARDS, reading, Settings.HIDE_SUGGESTED_BLOGS);
                 reading = FamilyNames.HIDE_SUGGESTED_COMMUNITIES;
@@ -307,7 +311,7 @@ public final class TimelineFilter {
                 reading = FamilyNames.MUTE_ROOT_POSTS;
                 boolean mutes = RootPostMutes.active();
                 return ads || blogs || communities || tags || watchIt || featured || mutes || posts != null
-                        ? new Rules(ads, blogs, communities, tags, watchIt, featured, mutes, posts) : null;
+                        ? new Rules(ads, keepBlaze, blogs, communities, tags, watchIt, featured, mutes, posts) : null;
             } catch (Throwable failure) {
                 HookStatus.threw(reading, "switch read", failure);
                 return null;
@@ -405,7 +409,20 @@ public final class TimelineFilter {
         @Nullable
         String removes(Object item) {
             if (DirectPosts.answers(item)) return null;
-            if (ads && isAd(item)) return FamilyNames.HIDE_ADS;
+            boolean keptBlaze = false;
+            if (ads && isAd(item)) {
+                if (!keepBlaze || !isPaidBlaze(item)) return FamilyNames.HIDE_ADS;
+                keptBlaze = true;
+            }
+            // A kept Blaze post still meets every other switch, and counts as kept only once they leave it in.
+            String family = removesPastAds(item);
+            if (keptBlaze && family == null) HookStatus.counted(FamilyNames.HIDE_ADS, "Blaze post kept");
+            return family;
+        }
+
+        /** The patch name of the first switch after Hide ads that takes [item] out, or null to keep it. */
+        @Nullable
+        private String removesPastAds(Object item) {
             if (featured && isFeatured(item)) return FamilyNames.HIDE_FEATURED_POSTS;
             String card = cardOwner();
             String byCard = card == null ? null : cardFamily(item, this, card);
@@ -470,7 +487,29 @@ public final class TimelineFilter {
         if (!post.hushPaidContextKnown()) return false;
         if (post.hushFollowed() || post.hushCanEdit()) return false;
         String icon = post.hushHeaderIcon();
-        return "blaze".equals(icon) || "money-alt".equals(icon);
+        return BLAZE_ICON.equals(icon) || "money-alt".equals(icon);
+    }
+
+    /** The server's header icon on a post someone paid to promote with Blaze. */
+    static final String BLAZE_ICON = "blaze";
+
+    /**
+     * True when [item], already taken for an ad, is a post whose header carries the server's
+     * {@link #BLAZE_ICON}, which Keep Blaze posts leaves in. Network ad kinds, a Sponsored label or
+     * paid placement without that icon, the "money-alt" icon and an organic post's is_blazed flag
+     * aren't this. One that can't be read isn't either.
+     */
+    static boolean isPaidBlaze(Object item) {
+        Model found = modelFor(item, FamilyNames.HIDE_ADS);
+        if (found == null) return false;
+        try {
+            Object payload = found.data.invoke(item);
+            return "POST".equals(found.kindOf(payload)) && payload instanceof HushPaidPost
+                    && BLAZE_ICON.equals(((HushPaidPost) payload).hushHeaderIcon());
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.HIDE_ADS, "timeline item", failure);
+            return false;
+        }
     }
 
     /**
