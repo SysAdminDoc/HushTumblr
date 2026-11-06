@@ -464,11 +464,16 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
     /** A text setting's name, as its row on the settings screen gives it. */
     static String textName(StringSetting setting) {
         if (setting == TextSettings.ALLOWED_WORDS) return L10n.t("Allowed words");
+        if (setting == TextSettings.LONG_POST_SIZE) return L10n.t("Collapsed post length");
         return setting == TextSettings.TAB_ORDER ? L10n.t("Tab order") : L10n.t("Words to hide");
     }
 
-    /** What [value] of [setting] reads as in the preview: the words, or the tabs in the bar's order. */
+    /**
+     * What [value] of [setting] reads as in the preview: the words, the tabs in the bar's order, or
+     * about how much of a long post stays.
+     */
     static String textShown(StringSetting setting, String value) {
+        if (setting == TextSettings.LONG_POST_SIZE) return HushTumblrPreferenceFragment.longPostSizeShown(value);
         if (setting == TextSettings.TAB_ORDER) {
             if (BottomBarTabs.parse(value).isEmpty()) return L10n.t("Tumblr's order");
             return HushTumblrPreferenceFragment.tabsShown(value);

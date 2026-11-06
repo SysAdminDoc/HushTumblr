@@ -491,7 +491,14 @@ Sharper images	Imagens mais nítidas
 Loads images in posts at a higher resolution. Uses more data.	Carrega as imagens das publicações em resolução maior. Usa mais dados.
 # context: the Collapse long posts switch on the Posts page, and its summary
 Collapse long posts	Recolher posts longos
-Cuts posts longer than about a screen with a Read more row. Tap it to open the whole post.	Corta posts com mais de uma tela com uma linha de Ler mais. Toque nela para abrir o post inteiro.
+Cuts long posts with a Read more row, at the length below. Tap it to open the whole post.	Corta posts longos no tamanho abaixo, com uma linha de Ler mais. Toque nela para abrir o post inteiro.
+# context: the Collapsed post length row under that switch: its title, the lengths a tap moves through, its summary and the note when a save fails
+Collapsed post length	Tamanho dos posts recolhidos
+About half a screen	Cerca de meia tela
+About a screen	Cerca de uma tela
+About two screens	Cerca de duas telas
+%1$s. Tap to change.	%1$s. Toque para mudar.
+Couldn't save the length. Try again.	Não deu para salvar o tamanho. Tente de novo.
 # context: the menu a long press on a video in a post opens, its clipboard label and the notes after a pick
 Share video link	Compartilhar link do vídeo
 Copy video link	Copiar link do vídeo

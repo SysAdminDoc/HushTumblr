@@ -89,7 +89,7 @@ val collapseLongPostsPatch = bytecodePatch(
     description = "Cuts long posts in your timelines to about a screen, with Tumblr's own Read more row" +
         " under them. Tap it to open the whole post. A long entry in a reblog trail gets cut the same way." +
         " Asks keep Tumblr's layout. Starts off." +
-        " Turn it on in Tumblr settings > HushTumblr > Posts.",
+        " Turn it on in Tumblr settings > HushTumblr > Posts, where you can make the cut half a screen or two screens instead.",
     default = true,
 ) {
     category("Posts")

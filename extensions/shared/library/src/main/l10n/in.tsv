@@ -494,7 +494,14 @@ Sharper images	Gambar lebih tajam
 Loads images in posts at a higher resolution. Uses more data.	Memuat gambar di postingan dengan resolusi lebih tinggi. Memakai lebih banyak data.
 # context: the Collapse long posts switch on the Posts page, and its summary
 Collapse long posts	Ciutkan postingan panjang
-Cuts posts longer than about a screen with a Read more row. Tap it to open the whole post.	Memotong postingan yang lebih panjang dari sekitar satu layar dengan baris Baca selengkapnya. Ketuk untuk membuka postingan lengkap.
+Cuts long posts with a Read more row, at the length below. Tap it to open the whole post.	Memotong postingan panjang sesuai panjang di bawah, dengan baris Baca selengkapnya. Ketuk untuk membuka postingan lengkap.
+# context: the Collapsed post length row under that switch: its title, the lengths a tap moves through, its summary and the note when a save fails
+Collapsed post length	Panjang postingan yang diciutkan
+About half a screen	Sekitar setengah layar
+About a screen	Sekitar satu layar
+About two screens	Sekitar dua layar
+%1$s. Tap to change.	%1$s. Ketuk untuk mengubah.
+Couldn't save the length. Try again.	Panjang tidak bisa disimpan. Coba lagi.
 # context: the menu a long press on a video in a post opens, its clipboard label and the notes after a pick
 Share video link	Bagikan tautan video ini
 Copy video link	Salin tautan video

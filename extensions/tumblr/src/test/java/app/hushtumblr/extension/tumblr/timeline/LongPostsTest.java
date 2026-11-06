@@ -37,6 +37,7 @@ import app.hushtumblr.extension.tumblr.settings.FamilyNames;
 import app.hushtumblr.extension.tumblr.settings.PatchFamily;
 import app.hushtumblr.extension.tumblr.settings.PatchFamilyForTests;
 import app.hushtumblr.extension.tumblr.settings.Settings;
+import app.hushtumblr.extension.tumblr.settings.TextSettings;
 
 /** A long post takes several screens in a timeline when its author didn't cut it. */
 @RunWith(RobolectricTestRunner.class)
@@ -48,12 +49,14 @@ public class LongPostsTest {
         PatchFamilyForTests.inBuild(EnumSet.allOf(PatchFamily.class));
         PatchFamilyForTests.capabilities(EnumSet.allOf(PatchFamily.Capability.class));
         Settings.COLLAPSE_LONG_POSTS.resetToDefault();
+        TextSettings.LONG_POST_SIZE.resetToDefault();
         PauseForTests.resume();
         HookStatus.clear();
     }
 
     @After public void restore() {
         Settings.COLLAPSE_LONG_POSTS.resetToDefault();
+        TextSettings.LONG_POST_SIZE.resetToDefault();
         PatchFamilyForTests.inBuild(null);
         PatchFamilyForTests.capabilities(null);
         PauseForTests.resume();
@@ -103,6 +106,22 @@ public class LongPostsTest {
         assertNull("5 lines over isn't worth a cut", LongPosts.post(true, paragraphs(9, 5)));
         assertEquals("10 lines over is", 8, LongPosts.post(true, paragraphs(10, 5)).size());
         assertTrue(report(), report().contains(LongPosts.SHORT + " 2"));
+    }
+
+    @Test public void thePickedLengthIsTheCap() {
+        Settings.COLLAPSE_LONG_POSTS.save(true);
+        List<Object> rows = paragraphs(20, 5);
+        TextSettings.LONG_POST_SIZE.save("20");
+        assertEquals("about half a screen", rows.subList(0, 4), LongPosts.post(true, rows));
+        TextSettings.LONG_POST_SIZE.save("80");
+        assertEquals("about two screens", rows.subList(0, 16), LongPosts.post(true, rows));
+        assertNull("two screens with 5 lines over stays whole", LongPosts.post(true, paragraphs(17, 5)));
+        Integer cut = LongPosts.trail(null, null, rows, blocks(rows));
+        assertEquals("a trail entry keeps the same rows", 16, tumblrKeeps(rows, blocks(rows), cut));
+        for (String never : new String[]{"", "13", "40 ", "0", "-20", "eighty"}) {
+            TextSettings.LONG_POST_SIZE.save(never);
+            assertEquals("'" + never + "' reads as about a screen", rows.subList(0, 8), LongPosts.post(true, rows));
+        }
     }
 
     @Test public void theFirstRowAlwaysStays() {

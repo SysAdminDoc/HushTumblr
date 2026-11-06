@@ -494,7 +494,14 @@ Sharper images	Daha net resimler
 Loads images in posts at a higher resolution. Uses more data.	Gönderilerdeki resimleri daha yüksek çözünürlükte yükler. Daha fazla veri kullanır.
 # context: the Collapse long posts switch on the Posts page, and its summary
 Collapse long posts	Uzun gönderileri kısalt
-Cuts posts longer than about a screen with a Read more row. Tap it to open the whole post.	Yaklaşık bir ekrandan uzun gönderileri Devamını oku satırıyla keser. Gönderinin tamamını açmak için ona dokun.
+Cuts long posts with a Read more row, at the length below. Tap it to open the whole post.	Uzun gönderileri aşağıdaki uzunlukta Devamını oku satırıyla keser. Gönderinin tamamını açmak için ona dokun.
+# context: the Collapsed post length row under that switch: its title, the lengths a tap moves through, its summary and the note when a save fails
+Collapsed post length	Kısaltılmış gönderi uzunluğu
+About half a screen	Yaklaşık yarım ekran
+About a screen	Yaklaşık bir ekran
+About two screens	Yaklaşık iki ekran
+%1$s. Tap to change.	%1$s. Değiştirmek için dokun.
+Couldn't save the length. Try again.	Uzunluk kaydedilemedi. Yeniden dene.
 # context: the menu a long press on a video in a post opens, its clipboard label and the notes after a pick
 Share video link	Video bağlantısını paylaş
 Copy video link	Video bağlantısını kopyala

@@ -18,13 +18,15 @@ import app.hushtumblr.extension.shared.diagnostics.HookStatus;
 import app.hushtumblr.extension.tumblr.settings.FamilyNames;
 import app.hushtumblr.extension.tumblr.settings.PatchFamily;
 import app.hushtumblr.extension.tumblr.settings.Settings;
+import app.hushtumblr.extension.tumblr.settings.TextSettings;
 
 /**
  * Collapse long posts. Tumblr already cuts a post short where its author put a "Read more", and
  * draws its own Read more row under the cut, whose tap opens the post by itself. A post is drawn as
  * rows, one text block, image row or video each. The patch hands the post's own rows Tumblr is
  * about to draw for a post that wasn't cut to {@link #post}. While the switch is on and the post is
- * long, it answers a new list of the first rows that fit {@link #CAP}, which Tumblr draws with its
+ * long, it answers a new list of the first rows that fit the picked length ({@link #cap}, about a
+ * screen until another is picked), which Tumblr draws with its
  * Read more row under them, as if the author had cut it there. The post and Tumblr's lists are
  * never changed, so the post opened by itself, the reblog editor and every other screen still have
  * all of it.
@@ -44,7 +46,10 @@ import app.hushtumblr.extension.tumblr.settings.Settings;
  * patch.
  */
 public final class LongPosts {
-    /** About one phone screen of text, in lines of {@link #LINE} characters. */
+    /**
+     * About one phone screen of text, in lines of {@link #LINE} characters: the cap until another
+     * length is picked ({@link TextSettings#LONG_POST_SIZE}).
+     */
     static final int CAP = 40;
     /** The fewest lines a collapse may hide, so a post that runs only a little over stays whole. */
     static final int MIN_HIDDEN = 10;
@@ -170,16 +175,17 @@ public final class LongPosts {
     }
 
     /**
-     * How many of [rows] to keep, the first ones up to {@link #CAP} lines and always at least one,
-     * or -1 when the rest would hide fewer than {@link #MIN_HIDDEN} lines or nothing at all.
+     * How many of [rows] to keep, the first ones up to the {@link #cap} in lines and always at least
+     * one, or -1 when the rest would hide fewer than {@link #MIN_HIDDEN} lines or nothing at all.
      */
     static int keep(List<?> rows) {
+        int cap = cap();
         int count = rows.size();
         int kept = 0;
         long used = 0;
         while (kept < count) {
             int lines = lines(rows.get(kept));
-            if (kept > 0 && used + lines > CAP) break;
+            if (kept > 0 && used + lines > cap) break;
             used += lines;
             kept++;
         }
@@ -187,6 +193,12 @@ public final class LongPosts {
         long hidden = 0;
         for (int at = kept; at < count && hidden < MIN_HIDDEN; at++) hidden += lines(rows.get(at));
         return hidden < MIN_HIDDEN ? -1 : kept;
+    }
+
+    /** The length picked on the Posts page, in lines, or {@link #CAP} for one its row never offers. */
+    static int cap() {
+        String size = TextSettings.LONG_POST_SIZE.get();
+        return TextSettings.LONG_POST_SIZES.contains(size) ? Integer.parseInt(size) : CAP;
     }
 
     /** About how many lines of text [row] is as tall as. */

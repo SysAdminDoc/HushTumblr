@@ -227,6 +227,7 @@ public class HushTumblrPreferenceFragmentTest {
         editors.put(HushTumblrPreferenceFragment.TAB_ORDER_ROW, PatchFamily.REORDER_TABS);
         editors.put(HushTumblrPreferenceFragment.FONT_FILE_ROW, PatchFamily.APP_FONT);
         editors.put(HushTumblrPreferenceFragment.PHONE_FONT_ROW, PatchFamily.APP_FONT);
+        editors.put(HushTumblrPreferenceFragment.LONG_POST_SIZE_ROW, PatchFamily.COLLAPSE_LONG_POSTS);
         editors.put("hushtumblr_manage_root_mutes", PatchFamily.MUTE_ROOT_POSTS);
 
         List<String> wrong = new ArrayList<>();

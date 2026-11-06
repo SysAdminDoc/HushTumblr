@@ -494,7 +494,14 @@ Sharper images	Imágenes más nítidas
 Loads images in posts at a higher resolution. Uses more data.	Carga las imágenes de las publicaciones en mayor resolución. Usa más datos.
 # context: the Collapse long posts switch on the Posts page, and its summary
 Collapse long posts	Acortar publicaciones largas
-Cuts posts longer than about a screen with a Read more row. Tap it to open the whole post.	Corta las publicaciones de más de una pantalla con una fila de Leer más. Tócala para abrir la publicación completa.
+Cuts long posts with a Read more row, at the length below. Tap it to open the whole post.	Corta las publicaciones largas a la longitud de abajo, con una fila de Leer más. Tócala para abrir la publicación completa.
+# context: the Collapsed post length row under that switch: its title, the lengths a tap moves through, its summary and the note when a save fails
+Collapsed post length	Longitud de las publicaciones acortadas
+About half a screen	Más o menos media pantalla
+About a screen	Más o menos una pantalla
+About two screens	Más o menos dos pantallas
+%1$s. Tap to change.	%1$s. Toca para cambiarla.
+Couldn't save the length. Try again.	No se pudo guardar la longitud. Inténtalo de nuevo.
 # context: the menu a long press on a video in a post opens, its clipboard label and the notes after a pick
 Share video link	Compartir enlace del video
 Copy video link	Copiar enlace del video

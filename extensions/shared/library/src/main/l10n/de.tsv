@@ -494,7 +494,14 @@ Sharper images	Schärfere Bilder
 Loads images in posts at a higher resolution. Uses more data.	Lädt Bilder in Beiträgen in höherer Auflösung. Verbraucht mehr Daten.
 # context: the Collapse long posts switch on the Posts page, and its summary
 Collapse long posts	Lange Beiträge kürzen
-Cuts posts longer than about a screen with a Read more row. Tap it to open the whole post.	Kürzt Beiträge, die länger als etwa ein Bildschirm sind, mit einer Weiterlesen-Zeile. Tippe darauf, um den ganzen Beitrag zu öffnen.
+Cuts long posts with a Read more row, at the length below. Tap it to open the whole post.	Kürzt lange Beiträge auf die Länge darunter, mit einer Weiterlesen-Zeile. Tippe darauf, um den ganzen Beitrag zu öffnen.
+# context: the Collapsed post length row under that switch: its title, the lengths a tap moves through, its summary and the note when a save fails
+Collapsed post length	Länge gekürzter Beiträge
+About half a screen	Etwa ein halber Bildschirm
+About a screen	Etwa ein Bildschirm
+About two screens	Etwa zwei Bildschirme
+%1$s. Tap to change.	%1$s. Tippe zum Ändern.
+Couldn't save the length. Try again.	Länge nicht gespeichert. Versuche es erneut.
 # context: the menu a long press on a video in a post opens, its clipboard label and the notes after a pick
 Share video link	Videolink teilen
 Copy video link	Videolink kopieren

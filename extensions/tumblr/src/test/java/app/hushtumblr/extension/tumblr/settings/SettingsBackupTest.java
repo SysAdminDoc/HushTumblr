@@ -506,6 +506,76 @@ public class SettingsBackupTest {
         assertEquals("Account", TextSettings.TAB_ORDER.persistedValue());
     }
 
+    /**
+     * The collapsed post length goes out and comes back, reads in the preview by its row's words,
+     * and only a length its row offers imports. A file from before it leaves the length as it is.
+     */
+    @Test
+    public void theCollapsedPostLengthGoesOutAndComesBackAndOnlyItsLengthsImport() throws Exception {
+        TextSettings.LONG_POST_SIZE.save("80");
+        String file = SettingsBackup.create();
+        assertEquals("80", new JSONObject(file).getJSONObject("text").get(TextSettings.LONG_POST_SIZE.key));
+        TextSettings.LONG_POST_SIZE.save("20");
+        SettingsBackup.Snapshot snapshot = SettingsBackup.parse(file);
+        assertEquals(0, snapshot.unknown);
+        assertEquals(1, snapshot.switchChanges());
+        String preview = SettingsBackupPreference.previewMessage(snapshot);
+        assertTrue(preview, preview.contains(L10n.f("%1$s (%2$s to %3$s)", L10n.t("Collapsed post length"),
+                L10n.t("About half a screen"), L10n.t("About two screens"))));
+        assertEquals(1, SettingsBackup.apply(snapshot));
+        assertEquals("80", TextSettings.LONG_POST_SIZE.persistedValue());
+        SettingsBackup.discardUndo();
+
+        String leftOut = L10n.f("%1$s: the value in that file can't be used, so it'll be left out.", L10n.t("Collapsed post length"));
+        for (Object never : new Object[]{"", "13", " 40", "40.0", "eighty", 40, true, JSONObject.NULL, new JSONObject()}) {
+            JSONObject bad = new JSONObject(file);
+            bad.getJSONObject("text").put(TextSettings.LONG_POST_SIZE.key, never);
+            snapshot = SettingsBackup.parse(bad.toString());
+            assertEquals(String.valueOf(never), Collections.singletonList(TextSettings.LONG_POST_SIZE), snapshot.skipped);
+            assertTrue(SettingsBackupPreference.previewMessage(snapshot), SettingsBackupPreference.previewMessage(snapshot).endsWith(leftOut));
+            SettingsBackup.apply(snapshot);
+            assertEquals("a length its row never offers was written", "80", TextSettings.LONG_POST_SIZE.persistedValue());
+            SettingsBackup.discardUndo();
+        }
+
+        JSONObject older = new JSONObject(file);
+        older.getJSONObject("text").remove(TextSettings.LONG_POST_SIZE.key);
+        TextSettings.LONG_POST_SIZE.save("20");
+        snapshot = SettingsBackup.parse(older.toString());
+        assertFalse(snapshot.texts.containsKey(TextSettings.LONG_POST_SIZE));
+        SettingsBackup.apply(snapshot);
+        assertEquals("20", TextSettings.LONG_POST_SIZE.persistedValue());
+    }
+
+    /**
+     * A length its row never offers, left by another build or a hand edit, doesn't stop an export.
+     * The file carries it as about a screen, the length Collapse long posts reads it as, and the
+     * saved value stays until a length is picked.
+     */
+    @Test
+    public void aLengthTheRowNeverOffersExportsAsAboutAScreen() throws Exception {
+        for (String odd : new String[]{"13", "", " 80"}) {
+            TextSettings.LONG_POST_SIZE.save(odd);
+            String file = SettingsBackup.create();
+            assertEquals(odd, "40", new JSONObject(file).getJSONObject("text").get(TextSettings.LONG_POST_SIZE.key));
+            assertEquals(odd, TextSettings.LONG_POST_SIZE.persistedValue());
+        }
+    }
+
+    /**
+     * That export read back over the same odd length changes nothing, since both read as about a
+     * screen, and a file with another length still changes it.
+     */
+    @Test
+    public void aLengthTheRowNeverOffersTakesItsOwnExportAsNoChange() throws Exception {
+        TextSettings.LONG_POST_SIZE.save("13");
+        String file = SettingsBackup.create();
+        assertEquals(0, SettingsBackup.parse(file).switchChanges());
+        JSONObject longer = new JSONObject(file);
+        longer.getJSONObject("text").put(TextSettings.LONG_POST_SIZE.key, "80");
+        assertEquals(1, SettingsBackup.parse(longer.toString()).switchChanges());
+    }
+
     /** A list of words longer than any one switch name still reads back: the parser's string cap is the file's. */
     @Test
     public void aLongWordListStillImports() throws Exception {
