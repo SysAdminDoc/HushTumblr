@@ -84,7 +84,13 @@ method Ly5f;->hushImageItems()[Ljava/lang/Object; 8d6e797f41701b64f425ae2fe0cc01
 implements Lcom/tumblr/imageinfo/PhotoSize; Lapp/hushtumblr/extension/tumblr/ui/HushPhotoSize;
 
 [Collapse long posts]
+implements La2k; Lapp/hushtumblr/extension/tumblr/timeline/HushTimelineItem;
+implements Lcom/tumblr/ui/fragment/TimelineFragment; Lapp/hushtumblr/extension/tumblr/timeline/HushExpandingTimeline;
+implements Lr0h; Lapp/hushtumblr/extension/tumblr/timeline/HushReadMoreBinder;
 implements Ltj2; Lapp/hushtumblr/extension/tumblr/timeline/HushBlockRow;
+method La2k;->hushPost()Ljava/lang/Object; 2e6deaec816df4ea3f38157fa2870e53919491e3bcc3436e49170e0b73e37388
+method Lcom/tumblr/ui/fragment/TimelineFragment;->hushExpandPost(Ljava/lang/Object;)Z 53cb3d9570088dec9f759b39145f6ad782737a157c156de05abf63bb82a93cdd
+method Lr0h;->hushReadMoreScreen()Ljava/lang/Object; 515924abddc80ea0eda607a746657196bbb05ec72e9abd4bdabee0d101683eb5
 method Ltj2;->hushBlocks()Ljava/util/List; c14c68bb99846bfa6a5d4a797fcd29d6e669532f555ae401212110ae26433d78
 
 [Reveal allowed mature content]

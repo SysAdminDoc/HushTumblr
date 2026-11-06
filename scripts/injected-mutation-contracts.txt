@@ -40,7 +40,7 @@ family|showPostTimestamps|Show post timestamps|nativePostTimestamps
 family|visibleAltText|Visible image descriptions|photoAltTextCaptions,galleryAltTextCaptions
 family|shareVideoLinks|Share video links|videoLinkPress
 family|sharperImages|Sharper images|imageSizes
-family|collapseLongPosts|Collapse long posts|longPostRows,longTrailRows
+family|collapseLongPosts|Collapse long posts|longPostRows,longTrailRows,longPostExpand
 family|muteRootPosts|Mute posts locally|rootPostMutes
 family|revealAllowedMatureContent|Reveal allowed mature content|accountSafeMatureReveal
 family|hideAdFreeBanner|Hide the ad-free banner|adFreeBannerFlags
@@ -151,11 +151,15 @@ mutation|videoLinkPress|videoLinkPress|Lapp/hushtumblr/extension/tumblr/ui/Video
 mutation|imageSizes|imageSizes|Lapp/hushtumblr/extension/tumblr/ui/SharperImages;->pick(Ljava/util/List;Ljava/lang/Object;I)Ljava/lang/Object;|Lcom/tumblr/imageinfo/PhotoSize;|Lcom/tumblr/imageinfo/PhotoInfo;|Lapp/hushtumblr/extension/tumblr/ui/HushPhotoSize;
 # The post row hook, the post row composer, the post as it holds it, the block row and the screen's
 # timeline, then the extension's block row bridge.
-mutation|longPostRows|longPostRows|Lapp/hushtumblr/extension/tumblr/timeline/LongPosts;->post(ZLjava/util/List;)Ljava/util/List;|Lfmf;|Ljm2;|Ltj2;|Ljtl;|Lapp/hushtumblr/extension/tumblr/timeline/HushBlockRow;
+mutation|longPostRows|longPostRows|Lapp/hushtumblr/extension/tumblr/timeline/LongPosts;->post(Ljava/lang/Object;ZLjava/util/List;)Ljava/util/List;|Lfmf;|Ljm2;|Ltj2;|Ljtl;|Lapp/hushtumblr/extension/tumblr/timeline/HushBlockRow;
 # The Explore header hook, the fetched header's type, and the presenter's two failed-load log lines.
 mutation|exploreHeaderAd|exploreHeaderAd|Lapp/hushtumblr/extension/tumblr/timeline/ExploreHeader;->hideSponsored(Ljava/lang/Object;)Z|Lcom/tumblr/rumblr/response/RadarHeaderResponse;|ExploreHeaderPresenter|Failed to retrieve header
 # The trail hook, the reblog trail entry, the trail item its constructor takes and the entry's ask layout.
 mutation|longTrailRows|longTrailRows|Lapp/hushtumblr/extension/tumblr/timeline/LongPosts;->trail(Ljava/lang/Integer;Ljava/lang/Object;Ljava/util/List;Ljava/util/List;)Ljava/lang/Integer;|Ln6h;|Lcom/tumblr/rumblr/model/post/ReblogTrail;|Lcom/tumblr/rumblr/model/post/blocks/BlockAskLayout;
+# The Read more row's bind hook and the tap's question, the post's own Read more binder, the screen
+# it hands taps to, the row, a timeline item and its base class, the timeline screen, its adapter and
+# the two adapters above it, then the binder's, the item's and the timeline's bridges.
+mutation|longPostExpand|longPostExpand|Lapp/hushtumblr/extension/tumblr/timeline/LongPosts;->readMoreShown(Landroid/view/View;Ljava/lang/Object;)V|Lapp/hushtumblr/extension/tumblr/timeline/LongPosts;->readMore(Ljava/lang/Object;Landroid/view/View;)Z|Lr0h;|Lqfe;|Lcom/tumblr/ui/widget/graywater/viewholder/ReadMoreViewHolder;|Lr4g;|La2k;|Lcom/tumblr/ui/fragment/TimelineFragment;|Lw4a;|Lzx9;|Landroidx/recyclerview/widget/RecyclerView$h;|Lapp/hushtumblr/extension/tumblr/timeline/HushReadMoreBinder;|Lapp/hushtumblr/extension/tumblr/timeline/HushTimelineItem;|Lapp/hushtumblr/extension/tumblr/timeline/HushExpandingTimeline;
 mutation|fontChoice|fontChoice|Lapp/hushtumblr/extension/tumblr/ui/AppFont;->replacement(Landroid/content/Context;I)Landroid/graphics/Typeface;|Lapp/hushtumblr/extension/tumblr/ui/AppFont;->provided(Landroid/graphics/Typeface;)Landroid/graphics/Typeface;|Font resource ID #0x|sans-serif-medium|Returning pre-inflated View for resId: |Lapp/hushtumblr/extension/tumblr/ui/AppFont;->preinflated(Landroid/view/View;)V
 mutation|followButton|followButton|Lapp/hushtumblr/extension/tumblr/ui/PostParts;->hideFollowButton()Z|Lcom/tumblr/ui/widget/PostCardHeader;|Lcom/tumblr/rumblr/model/post/PostHeaderAction$ActionType;->FOLLOW|Lapp/hushtumblr/extension/tumblr/ui/PostParts;->trailFollow(Ljava/lang/Object;)Ljava/lang/Object;|Lcom/tumblr/ui/widget/graywater/viewholder/ReblogHeaderViewHolder;
 # A footer button's question, the Compose function it guards (by its source note) and the

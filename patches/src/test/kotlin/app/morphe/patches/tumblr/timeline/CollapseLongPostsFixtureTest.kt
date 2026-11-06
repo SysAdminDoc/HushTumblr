@@ -58,7 +58,7 @@ class CollapseLongPostsFixtureTest {
             val postAfter = post.method.instructionList()
             hook(postAfter, post.at, post.scratch, post.rows, post.cut)
             assertEquals(build.name, listOf(post.scratch, post.composer), postAfter[post.at].namedRegisters())
-            assertEquals(build.name, listOf(post.scratch, post.rows), postAfter[post.at + 3].namedRegisters())
+            assertEquals(build.name, listOf(post.post, post.scratch, post.rows), postAfter[post.at + 3].namedRegisters())
             assertEquals(build.name, LONG_POSTS_POST_HOOK, postAfter[post.at + 3].methodRef().toString())
             assertOnlyHook(postClean, postAfter, post.at)
 

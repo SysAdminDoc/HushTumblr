@@ -119,3 +119,16 @@ patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/CollapseLongPostsPatc
 # Ln6h is the reblog trail entry: its constructor splits the entry's blocks into rows (field l), then
 # reads its author's cut (field j), an index into its blocks (field h). Field o is its ask layout.
 patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/CollapseLongTrails.kt|Ln6h;
+# Read more in place. Lr0h is the post row composer's d row, the Read more under a post's own rows:
+# i(Lr4g;,ReadMoreViewHolder,List,I) takes the row's Button with f1() and sets its tap to a listener
+# calling the static h(Lr0h;,View), which calls m(View). m reads field b, the Lqfe screen, and hands
+# the button and field d, a trail entry's id, to its x3. A trail entry's copy of the binder sets d.
+# Lr4g is a timeline item and La2k its base class, whose l() is the item's post. The timeline screen
+# implements Lqfe. Its z5() is the list's adapter Lw4a, a Graywater adapter Lzx9 whose y0 and U take
+# an item out and back in, and RecyclerView$h.x() redraws.
+patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/ExpandLongPosts.kt|Lr0h;
+patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/ExpandLongPosts.kt|Lqfe;
+patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/ExpandLongPosts.kt|Lr4g;
+patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/ExpandLongPosts.kt|La2k;
+patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/ExpandLongPosts.kt|Lw4a;
+patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/ExpandLongPosts.kt|Lzx9;

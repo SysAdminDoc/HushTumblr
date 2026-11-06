@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(994);
+        Map<String, String> table = new HashMap<>(996);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -1078,6 +1078,8 @@ public final class L10nTranslations {
                 "Bildbeschreibungen in Galerien");
         table.put("long reblog trail entries",
                 "lange Eintr\u00e4ge in Reblog-Ketten");
+        table.put("opening a cut post in place",
+                "das \u00d6ffnen gek\u00fcrzter Beitr\u00e4ge an Ort und Stelle");
         table.put("photo image descriptions",
                 "Bildbeschreibungen von Fotos");
         table.put("the Premium diamond",
@@ -1085,7 +1087,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(994);
+        Map<String, String> table = new HashMap<>(996);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -2113,6 +2115,8 @@ public final class L10nTranslations {
                 "descripciones de galer\u00edas");
         table.put("long reblog trail entries",
                 "las entradas largas de la cadena de reblogs");
+        table.put("opening a cut post in place",
+                "la apertura en su sitio de publicaciones recortadas");
         table.put("photo image descriptions",
                 "descripciones de fotos");
         table.put("the Premium diamond",
@@ -2120,7 +2124,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(994);
+        Map<String, String> table = new HashMap<>(996);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -3148,6 +3152,8 @@ public final class L10nTranslations {
                 "deskripsi galeri");
         table.put("long reblog trail entries",
                 "entri panjang dalam rantai reblog");
+        table.put("opening a cut post in place",
+                "membuka postingan yang dipotong di tempatnya");
         table.put("photo image descriptions",
                 "deskripsi foto");
         table.put("the Premium diamond",
@@ -3155,7 +3161,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(994);
+        Map<String, String> table = new HashMap<>(996);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -4183,6 +4189,8 @@ public final class L10nTranslations {
                 "descri\u00e7\u00f5es de galerias");
         table.put("long reblog trail entries",
                 "as entradas longas da cadeia de reblogs");
+        table.put("opening a cut post in place",
+                "a abertura no lugar de publica\u00e7\u00f5es cortadas");
         table.put("photo image descriptions",
                 "descri\u00e7\u00f5es de fotos");
         table.put("the Premium diamond",
@@ -4190,7 +4198,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(994);
+        Map<String, String> table = new HashMap<>(996);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -5218,6 +5226,8 @@ public final class L10nTranslations {
                 "galeri a\u00e7\u0131klamalar\u0131");
         table.put("long reblog trail entries",
                 "yeniden bloglama zincirindeki uzun girdiler");
+        table.put("opening a cut post in place",
+                "k\u0131salt\u0131lm\u0131\u015f g\u00f6nderileri yerinde a\u00e7ma");
         table.put("photo image descriptions",
                 "foto\u011fraf a\u00e7\u0131klamalar\u0131");
         table.put("the Premium diamond",

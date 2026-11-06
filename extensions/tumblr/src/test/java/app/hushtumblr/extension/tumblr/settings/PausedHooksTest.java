@@ -308,7 +308,7 @@ public class PausedHooksTest {
         // Tumblr's 640 pick of an image becomes its listed 1280 copy.
         probes.put(Settings.SHARPER_IMAGES, Collections.singletonList(PausedHooksTest::sharperPick));
         // A long post keeps its first rows above Tumblr's Read more row, and a long trail entry gets a cut.
-        probes.put(Settings.COLLAPSE_LONG_POSTS, Arrays.asList(() -> LongPosts.post(true, longRows()) != null,
+        probes.put(Settings.COLLAPSE_LONG_POSTS, Arrays.asList(() -> LongPosts.post(new Object(), true, longRows()) != null,
                 PausedHooksTest::trailCut));
         probes.put(Settings.MUTE_ROOT_POSTS, Collections.singletonList(() -> mutedRoot(context)));
         probes.put(Settings.REVEAL_ALLOWED_MATURE_CONTENT, Collections.singletonList(PausedHooksTest::matureCover));

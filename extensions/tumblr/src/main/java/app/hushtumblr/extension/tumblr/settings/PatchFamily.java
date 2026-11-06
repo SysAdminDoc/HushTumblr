@@ -208,6 +208,7 @@ public enum PatchFamily {
         IMAGE_SIZES(SHARPER_IMAGES, "imageSizes", "Sharper images"),
         LONG_POST_ROWS(COLLAPSE_LONG_POSTS, "longPostRows", "Collapse long posts"),
         LONG_TRAIL_ROWS(COLLAPSE_LONG_POSTS, "longTrailRows", "long reblog trail entries"),
+        LONG_POST_EXPAND(COLLAPSE_LONG_POSTS, "longPostExpand", "opening a cut post in place"),
         NATIVE_POST_TIMESTAMPS(SHOW_POST_TIMESTAMPS, "nativePostTimestamps", "Show post timestamps"),
         ACTIVITY_NOTIFICATION_LIST(FILTER_ACTIVITY_NOTIFICATIONS, "activityNotificationList", "Filter activity notifications"),
         PAID_POST_HEADER(HIDE_ADS, "paidPostHeader", "Hide ads"),

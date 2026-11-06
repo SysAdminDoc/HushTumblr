@@ -44,7 +44,7 @@ import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 
 private const val PATCH = "Collapse long posts"
 internal const val LONG_POSTS_POST_HOOK =
-    "$EXTENSION_PACKAGE/timeline/LongPosts;->post(ZLjava/util/List;)Ljava/util/List;"
+    "$EXTENSION_PACKAGE/timeline/LongPosts;->post(Ljava/lang/Object;ZLjava/util/List;)Ljava/util/List;"
 internal const val HUSH_BLOCK_ROW = "$EXTENSION_PACKAGE/timeline/HushBlockRow;"
 private const val LIST = "Ljava/util/List;"
 private const val IMMUTABLE_LIST = "Lcom/google/common/collect/ImmutableList;"
@@ -62,8 +62,19 @@ private const val TIMELINE_FIELD = "m"
 private const val READ_MORE_FIELD = "d"
 private const val DRAWS_CUTS = "n"
 
-/** The hook's place: in front of [at], Tumblr's call that appends [rows] for a post it didn't cut. */
-internal class PostSite(val method: MutableMethod, val at: Int, val composer: Int, val rows: Int, val cut: Int, val scratch: Int)
+/**
+ * The hook's place: in front of [at], Tumblr's call that appends [rows] for a post it didn't cut,
+ * with [post] still holding the post they came from.
+ */
+internal class PostSite(
+    val method: MutableMethod,
+    val at: Int,
+    val composer: Int,
+    val post: Int,
+    val rows: Int,
+    val cut: Int,
+    val scratch: Int,
+)
 
 internal class CollapseLongPostsPlan(val post: PostSite)
 
@@ -72,9 +83,10 @@ internal class CollapseLongPostsPlan(val post: PostSite)
  * author cut a post with a Read more, it appends only the post's own rows above the cut and then
  * its own Read more row, whose tap opens the post by itself. For a post the author didn't cut, the
  * hook goes in front of the call that appends every one of the post's own rows. It hands them to
- * the extension, and when it answers a shorter list, Tumblr draws that list as its cut, Read more
- * row and all. Tumblr's block row answers the extension's [HUSH_BLOCK_ROW] with its blocks, so the
- * extension can tell how tall each row is. The post is never changed.
+ * the extension with the post, and when it answers a shorter list, Tumblr draws that list as its
+ * cut, Read more row and all. Tumblr's block row answers the extension's [HUSH_BLOCK_ROW] with its
+ * blocks, so the extension can tell how tall each row is. The post is never changed. Read more under
+ * a post this cut opens it where it is ([expandLongPostsInPlace]).
  *
  * This hook cuts only the post's own rows. Tumblr's block binders find their row by counting the
  * rows drawn before them and reading that index from a list it built with the post (`jm2`'s trail
@@ -87,7 +99,8 @@ internal class CollapseLongPostsPlan(val post: PostSite)
 val collapseLongPostsPatch = bytecodePatch(
     name = PATCH,
     description = "Cuts long posts in your timelines to about a screen, with Tumblr's own Read more row" +
-        " under them. Tap it to open the whole post. A long entry in a reblog trail gets cut the same way." +
+        " under them. Tap it and the whole post opens right there in the timeline. A long entry in a reblog trail gets cut" +
+        " the same way, and its Read more opens the post." +
         " Asks keep Tumblr's layout. Starts off." +
         " Turn it on in Tumblr settings > HushTumblr > Posts, where you can make the cut half a screen or two screens instead.",
     default = true,
@@ -99,6 +112,7 @@ val collapseLongPostsPatch = bytecodePatch(
         requireStatusMethod("collapseLongPosts")
         requireStatusMethod("longPostRows")
         requireStatusMethod("longTrailRows")
+        requireStatusMethod("longPostExpand")
         val site = resolveCollapseLongPosts().post
         site.method.addInstructionsWithLabels(
             site.at,
@@ -106,7 +120,7 @@ val collapseLongPostsPatch = bytecodePatch(
                 iget-object v${site.scratch}, v${site.composer}, $POST_COMPOSER->$TIMELINE_FIELD:$TIMELINE_SCREEN
                 invoke-virtual { v${site.scratch} }, $TIMELINE_SCREEN->$DRAWS_CUTS()Z
                 move-result v${site.scratch}
-                invoke-static { v${site.scratch}, v${site.rows} }, $LONG_POSTS_POST_HOOK
+                invoke-static { v${site.post}, v${site.scratch}, v${site.rows} }, $LONG_POSTS_POST_HOOK
                 move-result-object v${site.scratch}
                 if-eqz v${site.scratch}, :hush_keep
                 const/4 v${site.cut}, 0x1
@@ -133,6 +147,8 @@ val collapseLongPostsPatch = bytecodePatch(
         enableCapability("longPostRows")
         // A soft site: without it, posts still collapse and trail entries stay whole.
         if (collapseLongTrailEntries(PATCH)) enableCapability("longTrailRows")
+        // Another: without it, Read more opens a post this cut on its own screen.
+        if (expandLongPostsInPlace(PATCH)) enableCapability("longPostExpand")
         enableStatus("collapseLongPosts")
     }
 }
@@ -195,6 +211,7 @@ private fun BytecodePatchContext.resolvePostSite(method: Method): PostSite {
             call.definingClass == COMPOSED_POST && call.name == "g" && call.hasShape(emptyList(), LIST)
         } == true
     }.only(PATCH, "the post's every-row list")
+    val read = steps[all] as FiveRegisterInstruction
     val moved = steps.getOrNull(all + 1)
     val append = steps.getOrNull(all + 2)
     requireShape(
@@ -208,6 +225,13 @@ private fun BytecodePatchContext.resolvePostSite(method: Method): PostSite {
     val call = append as FiveRegisterInstruction
     val composer = call.registerC
     requireShape(PATCH, call.registerE == rows, "the post row composer appends a different list than the post's rows")
+    // The post the rows came from: the list's read is on it, and only the rows' move lies between.
+    val post = read.registerC
+    requireShape(
+        PATCH,
+        read.registerCount == 1 && post < 16 && post != rows && post != composer,
+        "the post row composer reads the post's rows from a register the hook can't hand on",
+    )
 
     // Every row is read only when the composer's cut flag was false: the one branch there tests it.
     val flow = ControlFlow.of(method)
@@ -231,7 +255,7 @@ private fun BytecodePatchContext.resolvePostSite(method: Method): PostSite {
     )
     requireShape(
         PATCH,
-        listOf(rows, composer, cut).all { it < 16 } && cut != rows && cut != composer,
+        listOf(rows, composer, cut).all { it < 16 } && cut != rows && cut != composer && cut != post,
         "the post row composer keeps the rows, itself or its cut flag out of the hook's reach",
     )
     // The hook rewrites both, so nothing past the append and the Read more test may read them again.
@@ -241,6 +265,6 @@ private fun BytecodePatchContext.resolvePostSite(method: Method): PostSite {
         rows !in liveness.liveInto(all + 3) && flow.normal[readMore!!].none { cut in liveness.liveInto(it) },
         "the post row composer reads the post's rows or its cut flag again further down",
     )
-    val scratch = method.freeLocalsAt(PATCH, all + 2, 1, reads = listOf(rows, composer)).single()
-    return PostSite(mutableOf(method), all + 2, composer, rows, cut, scratch)
+    val scratch = method.freeLocalsAt(PATCH, all + 2, 1, reads = listOf(rows, composer, post)).single()
+    return PostSite(mutableOf(method), all + 2, composer, post, rows, cut, scratch)
 }

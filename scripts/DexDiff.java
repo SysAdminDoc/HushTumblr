@@ -302,7 +302,7 @@ public class DexDiff {
             Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1), Map.entry("activityNotifications", 7),
             Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 7), Map.entry("timelinePaging", 5),
             Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 7), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
-            Map.entry("crashReports", 3), Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("videoLinkPress", 6), Map.entry("imageSizes", 4), Map.entry("longPostRows", 6), Map.entry("exploreHeaderAd", 4), Map.entry("longTrailRows", 4), Map.entry("fontChoice", 6),
+            Map.entry("crashReports", 3), Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("videoLinkPress", 6), Map.entry("imageSizes", 4), Map.entry("longPostRows", 6), Map.entry("exploreHeaderAd", 4), Map.entry("longTrailRows", 4), Map.entry("longPostExpand", 14), Map.entry("fontChoice", 6),
             Map.entry("followButton", 5), Map.entry("footerButton", 3), Map.entry("postTags", 6),
             Map.entry("noteCounts", 9), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
@@ -5587,9 +5587,9 @@ public class DexDiff {
         }
 
         /**
-         * Tumblr's post row composer hands the own rows of a post it didn't cut to the extension, and
-         * draws a shorter answer as its own cut with its Read more row under it. Its block row answers
-         * the extension's bridge with its blocks.
+         * Tumblr's post row composer hands a post it didn't cut and the post's own rows to the
+         * extension, and draws a shorter answer as its own cut with its Read more row under it. Its
+         * block row answers the extension's bridge with its blocks.
          */
         void longPostRows(Contract c) {
             String composer = c.strings.get(1), screen = c.strings.get(4), row = c.strings.get(3), face = c.strings.get(5);
@@ -5597,6 +5597,192 @@ public class DexDiff {
             boolean bridge = immutableBridge(row, face, "hushBlocks", "Ljava/util/List;", "a", "Lcom/google/common/collect/ImmutableList;", Opcode.IGET_OBJECT);
             if (!bridge) fail(row + " doesn't answer " + face + " with its own list of blocks");
             capability(c.callee, rows && bridge);
+        }
+
+        /**
+         * Read more under a post the post hook cut opens the post in place. The Read more binder's row
+         * bind hands its button and timeline item to the first hook right before it makes the
+         * button's listener, and the binder's tap asks the second first thing, returning on yes. The
+         * binder answers the extension's bridge with the screen it hands taps to while it has no
+         * trail entry id, the timeline item's base class answers its bridge with its post, and the
+         * timeline screen answers its bridge by taking the item out of its adapter and back in, then
+         * redrawing. The patch skips a binder, card or timeline that changed shape, so such a clean
+         * APK only requires the capability off. The shape here is every check the patch makes.
+         */
+        void longPostExpand(Contract c) {
+            List<String> s = c.strings;
+            String binder = s.get(2), screen = s.get(3), holder = s.get(4), item = s.get(5), card = s.get(6), timeline = s.get(7),
+                    adapter = s.get(8), graywater = s.get(9), recycler = s.get(10), binderFace = s.get(11), itemFace = s.get(12),
+                    timelineFace = s.get(13);
+            String view = "Landroid/view/View;", list = "Ljava/util/List;", object = "Ljava/lang/Object;", string = STRING_TYPE,
+                    timelineable = "Lcom/tumblr/rumblr/model/Timelineable;";
+            ClassDef cd = clean.classes.get(binder), host = clean.classes.get(timeline), base = clean.classes.get(card), items = clean.classes.get(item);
+            boolean classes = cd != null && host != null && base != null && items != null && !AccessFlags.INTERFACE.isSet(cd.getAccessFlags())
+                    && !AccessFlags.INTERFACE.isSet(host.getAccessFlags()) && !AccessFlags.INTERFACE.isSet(base.getAccessFlags())
+                    && card.equals(items.getSuperclass()) && host.getInterfaces().contains(screen)
+                    && !cd.getInterfaces().contains(binderFace) && !base.getInterfaces().contains(itemFace) && !host.getInterfaces().contains(timelineFace)
+                    && hasField(clean, binder, "b", screen, AccessFlags.PRIVATE.getValue() | AccessFlags.FINAL.getValue(), AccessFlags.STATIC.getValue())
+                    && hasField(clean, binder, "d", string, 0, AccessFlags.STATIC.getValue())
+                    && !declares(cd, "hushReadMoreScreen") && !declares(base, "hushPost") && !declares(host, "hushExpandPost")
+                    && hasPublic(base, "l", "()" + timelineable);
+            Method tap = classes ? single(cd, m -> !isStatic(m) && descriptor(m).equals("(" + view + ")V") && m.getImplementation() != null
+                    && instructions(m).stream().filter(i -> i.getOpcode() == Opcode.INVOKE_INTERFACE
+                            && isCall(i, screen, "x3", "(" + view + string + ")V")).count() == 1) : null;
+            Method entry = classes ? single(cd, m -> isStatic(m) && descriptor(m).equals("(" + binder + view + ")V")) : null;
+            Method bind = classes ? single(cd, m -> !isStatic(m) && descriptor(m).equals("(" + item + holder + list + "I)V")) : null;
+            if (tap == null || entry == null || bind == null) { capability(c.callee, false); return; }
+
+            // The tap: reads the binder's screen first and its entry id somewhere, with a free local for the answer.
+            List<Instruction> tapped = instructions(tap);
+            int self = parameter(tap, -1), clicked = parameter(tap, 0);
+            boolean scratch = false;
+            for (int r = 0; r < self && !scratch; r++) scratch = deadAt(tap, 0, r);
+            Instruction first = get(tapped, 0);
+            boolean tapShaped = first != null && fieldIs(first, Opcode.IGET_OBJECT, binder + "->b:" + screen, firstRegister(first), self)
+                    && tapped.stream().anyMatch(i -> i.getOpcode() == Opcode.IGET_OBJECT && (binder + "->d:" + string).equals(String.valueOf(reference(i))))
+                    && self < 16 && clicked < 16 && scratch;
+
+            // The tap's entry: the static step the button's listener calls, which only calls the tap.
+            List<Instruction> entered = instructions(entry);
+            boolean entryShaped = entered.size() == 2 && entered.get(1).getOpcode() == Opcode.RETURN_VOID
+                    && callIs(entered.get(0), Opcode.INVOKE_DIRECT, tap.toString(), parameter(entry, 0), parameter(entry, 1));
+
+            // The row bind: takes the row's button and, straight on with the button and the item untouched, makes its listener.
+            List<Instruction> bound = instructions(bind);
+            int shownItem = parameter(bind, 0);
+            List<Integer> takes = new ArrayList<>();
+            for (int k = 0; k < bound.size(); k++)
+                if (bound.get(k).getOpcode() == Opcode.INVOKE_VIRTUAL && isCall(bound.get(k), holder, "f1", "()Landroid/widget/Button;")) takes.add(k);
+            int take = takes.size() == 1 ? takes.get(0) : -1;
+            Instruction moved = take >= 0 ? get(bound, take + 1) : null;
+            int held = moved != null && moved.getOpcode() == Opcode.MOVE_RESULT_OBJECT ? firstRegister(moved) : -1;
+            int made = held >= 0 ? listenerAt(bound, held, entry.toString()) : -1;
+            boolean bindShaped = made > take + 1 && endsOnce(bound) && straight(bind, take + 1, made) && !writtenBetween(bound, take + 2, made, held)
+                    && !overwritten(bind, shownItem, made) && held < 16 && shownItem < 16 && held != shownItem;
+
+            // The timeline hands out its list's adapter, a Graywater adapter that takes an item out and back in quietly.
+            ClassDef subclass = clean.classes.get(adapter), above = clean.classes.get(graywater), recycled = clean.classes.get(recycler);
+            boolean adapterShaped = single(host, m -> m.getName().equals("z5") && descriptor(m).equals("()" + adapter) && !isStatic(m)
+                            && !AccessFlags.PRIVATE.isSet(m.getAccessFlags()) && !AccessFlags.ABSTRACT.isSet(m.getAccessFlags())) != null
+                    && subclass != null && graywater.equals(subclass.getSuperclass()) && above != null && recycler.equals(above.getSuperclass())
+                    && hasPublic(above, "f0", "()" + list) && hasPublic(above, "y0", "(IZ)" + object)
+                    && hasPublic(above, "U", "(I" + object + "Z)V") && recycled != null && hasPublic(recycled, "x", "()V");
+            if (!tapShaped || !entryShaped || !bindShaped || !adapterShaped) { capability(c.callee, false); return; }
+
+            boolean shown = hookAt(bind, actual(bind), made, s.get(0), List.of(held, shownItem), -1, List.of(held));
+            if (!shown) fail("the Read more row's bind doesn't hand its button and item to " + s.get(0) + " right before the button's listener");
+            boolean asked = guardFirst(tap, s.get(1), List.of(self, clicked), 1, RETURN_NOTHING);
+            boolean screens = answersScreen(binder, binderFace, screen);
+            if (!screens) fail(binder + " doesn't answer " + binderFace + " with the screen it hands a tap to, and null for a trail entry");
+            boolean posts = covariantBridge(card, itemFace, "hushPost", object, clean.methods.get(card + "->l()" + timelineable));
+            if (!posts) fail(card + " doesn't answer " + itemFace + " with its post");
+            boolean expands = implementsBridge(timeline, timelineFace) && expandsInPlace(timeline, adapter, graywater, recycler);
+            if (!expands) fail(timeline + " doesn't answer " + timelineFace + " by building the item again where it is in its adapter");
+            capability(c.callee, shown && asked && screens && posts && expands);
+        }
+
+        /**
+         * The binder's bridge: its entry id, and when that's null its screen, else null. Both fields
+         * are the binder's own, as the clean binder declares them.
+         */
+        boolean answersScreen(String binder, String face, String screen) {
+            String key = binder + "->hushReadMoreScreen()Ljava/lang/Object;";
+            Method m = clean.methods.containsKey(key) ? null : actual(key);
+            List<Instruction> b = m == null ? List.of() : instructions(m);
+            int self = m == null ? -1 : parameter(m, -1);
+            return implementsBridge(binder, face) && m != null && !isStatic(m) && AccessFlags.PUBLIC.isSet(m.getAccessFlags())
+                    && m.getImplementation().getTryBlocks().isEmpty() && b.size() == 6
+                    && hasField(patched, binder, "b", screen, AccessFlags.PRIVATE.getValue() | AccessFlags.FINAL.getValue(), AccessFlags.STATIC.getValue())
+                    && hasField(patched, binder, "d", STRING_TYPE, 0, AccessFlags.STATIC.getValue())
+                    && fieldIs(b.get(0), Opcode.IGET_OBJECT, binder + "->d:" + STRING_TYPE, 0, self)
+                    && movesTo(b.get(1), 0, Opcode.IF_NEZ) && target(m, 1) == 4
+                    && fieldIs(b.get(2), Opcode.IGET_OBJECT, binder + "->b:" + screen, 0, self) && movesTo(b.get(3), 0, Opcode.RETURN_OBJECT)
+                    && literalIs(b.get(4), Opcode.CONST_4, 0, 0) && movesTo(b.get(5), 0, Opcode.RETURN_OBJECT);
+        }
+
+        /**
+         * The timeline's bridge: its adapter's items, the item's place in them, then the item taken out
+         * and put back at that place without telling the list, and the list redrawn. False when there's
+         * no adapter or the item isn't in it.
+         */
+        boolean expandsInPlace(String timeline, String adapter, String graywater, String recycler) {
+            String key = timeline + "->hushExpandPost(Ljava/lang/Object;)Z";
+            Method m = clean.methods.containsKey(key) ? null : actual(key);
+            List<Instruction> b = m == null ? List.of() : instructions(m);
+            return m != null && !isStatic(m) && AccessFlags.PUBLIC.isSet(m.getAccessFlags()) && m.getImplementation().getRegisterCount() == 5
+                    && m.getImplementation().getTryBlocks().isEmpty() && b.size() == 16 && parameter(m, -1) == 3
+                    && callIs(b.get(0), Opcode.INVOKE_VIRTUAL, timeline + "->z5()" + adapter, 3)
+                    && movesTo(b.get(1), 0, Opcode.MOVE_RESULT_OBJECT) && movesTo(b.get(2), 0, Opcode.IF_EQZ) && target(m, 2) == 14
+                    && callIs(b.get(3), Opcode.INVOKE_VIRTUAL, graywater + "->f0()Ljava/util/List;", 0)
+                    && movesTo(b.get(4), 1, Opcode.MOVE_RESULT_OBJECT)
+                    && callIs(b.get(5), Opcode.INVOKE_INTERFACE, "Ljava/util/List;->indexOf(Ljava/lang/Object;)I", 1, 4)
+                    && movesTo(b.get(6), 1, Opcode.MOVE_RESULT) && movesTo(b.get(7), 1, Opcode.IF_LTZ) && target(m, 7) == 14
+                    && literalIs(b.get(8), Opcode.CONST_4, 2, 0)
+                    && callIs(b.get(9), Opcode.INVOKE_VIRTUAL, graywater + "->y0(IZ)Ljava/lang/Object;", 0, 1, 2)
+                    && callIs(b.get(10), Opcode.INVOKE_VIRTUAL, graywater + "->U(ILjava/lang/Object;Z)V", 0, 1, 4, 2)
+                    && callIs(b.get(11), Opcode.INVOKE_VIRTUAL, recycler + "->x()V", 0)
+                    && literalIs(b.get(12), Opcode.CONST_4, 0, 1) && movesTo(b.get(13), 0, Opcode.RETURN)
+                    && literalIs(b.get(14), Opcode.CONST_4, 0, 0) && movesTo(b.get(15), 0, Opcode.RETURN);
+        }
+
+        /** The one method of [cd] with code that passes [test], or null. */
+        static Method single(ClassDef cd, java.util.function.Predicate<Method> test) {
+            Method found = null;
+            int count = 0;
+            for (Method m : cd.getMethods()) if (test.test(m)) { found = m; count++; }
+            return count == 1 && found.getImplementation() != null ? found : null;
+        }
+
+        /** Whether [cd] declares any method named [name]. */
+        static boolean declares(ClassDef cd, String name) {
+            for (Method m : cd.getMethods()) if (m.getName().equals(name)) return true;
+            return false;
+        }
+
+        /** Whether [cd] declares a public instance [name] with code, of [shape]. */
+        static boolean hasPublic(ClassDef cd, String name, String shape) {
+            for (Method m : cd.getMethods())
+                if (m.getName().equals(name) && descriptor(m).equals(shape) && !isStatic(m) && AccessFlags.PUBLIC.isSet(m.getAccessFlags())
+                        && !AccessFlags.ABSTRACT.isSet(m.getAccessFlags())) return true;
+            return false;
+        }
+
+        /** Whether [body] leaves only through the return-void at its end. */
+        static boolean endsOnce(List<Instruction> body) {
+            Set<Opcode> exits = Set.of(Opcode.RETURN_VOID, Opcode.RETURN, Opcode.RETURN_WIDE, Opcode.RETURN_OBJECT, Opcode.THROW);
+            return body.size() > 1 && body.get(body.size() - 1).getOpcode() == Opcode.RETURN_VOID
+                    && body.stream().filter(i -> exits.contains(i.getOpcode())).count() == 1;
+        }
+
+        /** Whether each instruction of [m] after [from] up to [to] is reached only by stepping from the one before it. */
+        boolean straight(Method m, int from, int to) {
+            if (from < 0) return false;
+            for (int k = from + 1; k <= to; k++) if (!onlyFrom(m, k, k - 1)) return false;
+            return true;
+        }
+
+        /**
+         * Where [body] makes the listener it sets as [button]'s tap, once, when that listener's
+         * onClick calls [tap] once, or -1. Mirrors the patch, which doesn't care whose
+         * setOnClickListener it is.
+         */
+        int listenerAt(List<Instruction> body, int button, String tap) {
+            List<Integer> sets = new ArrayList<>();
+            for (int k = 0; k < body.size(); k++) {
+                MethodReference r = body.get(k).getOpcode() == Opcode.INVOKE_VIRTUAL ? called(body.get(k)) : null;
+                if (r != null && r.getName().equals("setOnClickListener") && descriptor(r).equals("(Landroid/view/View$OnClickListener;)V")) sets.add(k);
+            }
+            if (sets.size() != 1) return -1;
+            int set = sets.get(0);
+            List<Integer> args = arguments(body.get(set));
+            if (args.size() != 2 || args.get(0) != button) return -1;
+            int made = -1;
+            for (int k = 0; k < set; k++) if (writes(body.get(k), args.get(1))) made = k;
+            if (made < 0 || body.get(made).getOpcode() != Opcode.NEW_INSTANCE || !(reference(body.get(made)) instanceof TypeReference type)) return -1;
+            ClassDef listener = clean.classes.get(type.getType());
+            Method click = listener == null ? null : single(listener, m -> m.getName().equals("onClick") && descriptor(m).equals("(Landroid/view/View;)V"));
+            return click != null && instructions(click).stream().filter(i -> i.getOpcode() == Opcode.INVOKE_STATIC
+                    && tap.equals(String.valueOf(reference(i)))).count() == 1 ? made : -1;
         }
 
         /**
@@ -5758,10 +5944,10 @@ public class DexDiff {
         }
 
         /**
-         * The post hook in front of the call appending every row of a post Tumblr didn't cut. The
-         * one way into the read of every row tests the cut flag, which the next test of it after the
-         * append puts Tumblr's Read more row under the rows on. The author's own cut jumps straight
-         * to the append, so it must land past the hook.
+         * The post hook in front of the call appending every row of a post Tumblr didn't cut, handed
+         * the post the rows were read from. The one way into the read of every row tests the cut
+         * flag, which the next test of it after the append puts Tumblr's Read more row under the rows
+         * on. The author's own cut jumps straight to the append, so it must land past the hook.
          */
         boolean postRows(String hook, String composer, String post, String screen) {
             String list = "Ljava/util/List;";
@@ -5784,17 +5970,21 @@ public class DexDiff {
             int cut = branch >= 0 && branch != all - 1 && was.get(branch).getOpcode() == Opcode.IF_EQZ ? firstRegister(was.get(branch)) : -1;
             int test = shaped && cut >= 0 ? firstIndex(was, all + 3, i -> namesRegister(i, cut)) : -1;
             Instruction readMore = get(was, test + 1);
+            // The post the rows came from: the read is on it, and only the rows' move lies between it and the append.
+            List<Integer> source = all >= 0 ? arguments(was.get(all)) : List.of();
+            int held = source.size() == 1 ? source.get(0) : -1;
             shaped &= test >= 0 && movesTo(was.get(test), cut, Opcode.IF_EQZ) && readMore != null && readMore.getOpcode() == Opcode.IGET_OBJECT
                     && names(field(readMore), composer + "->d") && readMore instanceof TwoRegisterInstruction t && t.getRegisterB() == self
                     && rows < 16 && self < 16 && cut < 16 && cut != rows && cut != self
+                    && held >= 0 && held < 16 && held != rows && held != self && cut != held
                     && deadAt(old, all + 3, rows) && deadAt(old, test + 1, cut) && deadAt(old, target(old, test), cut);
             Method m = actual(old);
             List<Integer> sites = calls(m, hook, 1);
             if (!shaped) fail("the post row composer " + old + " no longer appends every row of a post it didn't cut where the post hook goes");
             if (m == null || sites.size() != 1 || !shaped) return false;
             int start = sites.get(0) - 3;
-            boolean injected = rowHook(old, m, start, all + 2, hook, composer, screen, self, cut, rows, -1, rows) >= 0 && onlyFrom(m, start, start - 1);
-            if (!injected) fail("the post hook doesn't hand every row of a post Tumblr didn't cut through in front of their append, past the author's own cut, in " + m);
+            boolean injected = rowHook(old, m, start, all + 2, hook, composer, screen, self, cut, rows, held, -1, rows) >= 0 && onlyFrom(m, start, start - 1);
+            if (!injected) fail("the post hook doesn't hand the post and every row of it Tumblr didn't cut through in front of their append, past the author's own cut, in " + m);
             return injected;
         }
 
@@ -6826,6 +7016,7 @@ public class DexDiff {
                     case "longPostRows": longPostRows(c); break;
                     case "exploreHeaderAd": exploreHeaderAd(c); break;
                     case "longTrailRows": longTrailRows(c); break;
+                    case "longPostExpand": longPostExpand(c); break;
                     case "fontChoice": fontChoice(c); break;
                     case "followButton": followButton(c); break;
                     case "footerButton": footerButton(c); break;

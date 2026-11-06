@@ -10,6 +10,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import android.view.View;
+
 import com.tumblr.rumblr.model.post.blocks.ImageBlock;
 import com.tumblr.rumblr.model.post.blocks.TextBlock;
 import com.tumblr.rumblr.model.post.blocks.VideoBlock;
@@ -20,6 +22,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 import java.util.ArrayList;
@@ -87,14 +90,14 @@ public class LongPostsTest {
 
     @Test public void startsOffSoTumblrsRowsStay() {
         assertFalse(Settings.COLLAPSE_LONG_POSTS.get());
-        assertNull(LongPosts.post(true, paragraphs(20, 5)));
+        assertNull(LongPosts.post(new Object(), true, paragraphs(20, 5)));
         assertFalse(report(), report().contains("Counted"));
     }
 
     @Test public void aLongPostKeepsItsFirstScreen() {
         Settings.COLLAPSE_LONG_POSTS.save(true);
         List<Object> rows = paragraphs(20, 5);
-        List<Object> shown = LongPosts.post(true, rows);
+        List<Object> shown = LongPosts.post(new Object(), true, rows);
         assertEquals("eight five line paragraphs fill the cap", rows.subList(0, 8), shown);
         assertEquals("Tumblr's own list is left alone", 20, rows.size());
         assertTrue(report(), report().contains(LongPosts.COLLAPSED + " 1"));
@@ -102,9 +105,9 @@ public class LongPostsTest {
 
     @Test public void aShortPostOrOneJustOverTheCapStaysWhole() {
         Settings.COLLAPSE_LONG_POSTS.save(true);
-        assertNull("40 lines fit", LongPosts.post(true, paragraphs(8, 5)));
-        assertNull("5 lines over isn't worth a cut", LongPosts.post(true, paragraphs(9, 5)));
-        assertEquals("10 lines over is", 8, LongPosts.post(true, paragraphs(10, 5)).size());
+        assertNull("40 lines fit", LongPosts.post(new Object(), true, paragraphs(8, 5)));
+        assertNull("5 lines over isn't worth a cut", LongPosts.post(new Object(), true, paragraphs(9, 5)));
+        assertEquals("10 lines over is", 8, LongPosts.post(new Object(), true, paragraphs(10, 5)).size());
         assertTrue(report(), report().contains(LongPosts.SHORT + " 2"));
     }
 
@@ -112,15 +115,15 @@ public class LongPostsTest {
         Settings.COLLAPSE_LONG_POSTS.save(true);
         List<Object> rows = paragraphs(20, 5);
         TextSettings.LONG_POST_SIZE.save("20");
-        assertEquals("about half a screen", rows.subList(0, 4), LongPosts.post(true, rows));
+        assertEquals("about half a screen", rows.subList(0, 4), LongPosts.post(new Object(), true, rows));
         TextSettings.LONG_POST_SIZE.save("80");
-        assertEquals("about two screens", rows.subList(0, 16), LongPosts.post(true, rows));
-        assertNull("two screens with 5 lines over stays whole", LongPosts.post(true, paragraphs(17, 5)));
+        assertEquals("about two screens", rows.subList(0, 16), LongPosts.post(new Object(), true, rows));
+        assertNull("two screens with 5 lines over stays whole", LongPosts.post(new Object(), true, paragraphs(17, 5)));
         Integer cut = LongPosts.trail(null, null, rows, blocks(rows));
         assertEquals("a trail entry keeps the same rows", 16, tumblrKeeps(rows, blocks(rows), cut));
         for (String never : new String[]{"", "13", "40 ", "0", "-20", "eighty"}) {
             TextSettings.LONG_POST_SIZE.save(never);
-            assertEquals("'" + never + "' reads as about a screen", rows.subList(0, 8), LongPosts.post(true, rows));
+            assertEquals("'" + never + "' reads as about a screen", rows.subList(0, 8), LongPosts.post(new Object(), true, rows));
         }
     }
 
@@ -128,8 +131,8 @@ public class LongPostsTest {
         Settings.COLLAPSE_LONG_POSTS.save(true);
         List<Object> rows = new ArrayList<>(paragraphs(1, 60));
         rows.addAll(paragraphs(3, 5));
-        assertEquals(rows.subList(0, 1), LongPosts.post(true, rows));
-        assertNull("a single block can't be cut inside", LongPosts.post(true, paragraphs(1, 200)));
+        assertEquals(rows.subList(0, 1), LongPosts.post(new Object(), true, rows));
+        assertNull("a single block can't be cut inside", LongPosts.post(new Object(), true, paragraphs(1, 200)));
     }
 
     @Test public void imagesAndVideosCountByTheirHeight() {
@@ -145,13 +148,13 @@ public class LongPostsTest {
         Settings.COLLAPSE_LONG_POSTS.save(true);
         List<Object> photoset = new ArrayList<>();
         for (int i = 0; i < 10; i++) photoset.add(row(new ImageBlock()));
-        assertEquals("two full width images fit", 2, LongPosts.post(true, photoset).size());
+        assertEquals("two full width images fit", 2, LongPosts.post(new Object(), true, photoset).size());
     }
 
     @Test public void whereTumblrDrawsNoCutsTheRowsStay() {
         Settings.COLLAPSE_LONG_POSTS.save(true);
-        assertNull("the post opened by itself", LongPosts.post(false, paragraphs(20, 5)));
-        assertNull(LongPosts.post(true, null));
+        assertNull("the post opened by itself", LongPosts.post(new Object(), false, paragraphs(20, 5)));
+        assertNull(LongPosts.post(new Object(), true, null));
         assertFalse(report(), report().contains("Counted"));
     }
 
@@ -160,12 +163,12 @@ public class LongPostsTest {
         for (HushTumblrPause.Reason reason : HushTumblrPause.Reason.values()) {
             if (reason == HushTumblrPause.Reason.NONE) continue;
             PauseForTests.pause(reason);
-            assertNull(reason.name(), LongPosts.post(true, paragraphs(20, 5)));
+            assertNull(reason.name(), LongPosts.post(new Object(), true, paragraphs(20, 5)));
             PauseForTests.resume();
         }
-        SettingsContextRule.withoutContext(() -> assertNull(LongPosts.post(true, paragraphs(20, 5))));
+        SettingsContextRule.withoutContext(() -> assertNull(LongPosts.post(new Object(), true, paragraphs(20, 5))));
         PatchFamilyForTests.capabilities(EnumSet.noneOf(PatchFamily.Capability.class));
-        assertNull(LongPosts.post(true, paragraphs(20, 5)));
+        assertNull(LongPosts.post(new Object(), true, paragraphs(20, 5)));
     }
 
     /** Every block of [rows], in order, the way a trail entry keeps them. */
@@ -309,9 +312,9 @@ public class LongPostsTest {
         SettingsContextRule.withoutContext(() -> assertNull(LongPosts.trail(null, null, rows, blocks)));
         PatchFamilyForTests.capabilities(EnumSet.of(PatchFamily.Capability.LONG_POST_ROWS));
         assertNull("a build without the trail hook", LongPosts.trail(null, null, rows, blocks));
-        assertEquals("the post's own rows still collapse there", 8, LongPosts.post(true, rows).size());
+        assertEquals("the post's own rows still collapse there", 8, LongPosts.post(new Object(), true, rows).size());
         PatchFamilyForTests.capabilities(EnumSet.of(PatchFamily.Capability.LONG_TRAIL_ROWS));
-        assertNull("and the other way round", LongPosts.post(true, rows));
+        assertNull("and the other way round", LongPosts.post(new Object(), true, rows));
         assertEquals(Integer.valueOf(7), LongPosts.trail(null, null, rows, blocks));
     }
 
@@ -330,9 +333,153 @@ public class LongPostsTest {
         Settings.COLLAPSE_LONG_POSTS.save(true);
         List<Object> rows = paragraphs(20, 5);
         rows.add(0, (HushBlockRow) () -> { throw new IllegalStateException("parcel"); });
-        assertNull(LongPosts.post(true, rows));
+        assertNull(LongPosts.post(new Object(), true, rows));
         List<String> missing = HookStatus.missing(FamilyNames.COLLAPSE_LONG_POSTS);
         assertEquals(missing.toString(), 1, missing.size());
         assertTrue(missing.get(0), missing.get(0).contains(LongPosts.STEP));
+    }
+
+    /** A timeline screen that builds an item again when it holds it, and the items it was asked about. */
+    private static final class Timeline implements HushExpandingTimeline {
+        final List<Object> asked = new ArrayList<>();
+        final Set<Object> holds = new java.util.HashSet<>();
+        RuntimeException failure;
+
+        @Override public boolean hushExpandPost(Object item) {
+            asked.add(item);
+            if (failure != null) throw failure;
+            return holds.contains(item);
+        }
+    }
+
+    private static HushReadMoreBinder binder(Object screen) {
+        return () -> screen;
+    }
+
+    /** A timeline item showing [post], the way the patch bridges Tumblr's item base class. */
+    private static HushTimelineItem item(Object post) {
+        return () -> post;
+    }
+
+    /** What Tumblr does for a Read more row under [item]: binds the row and hands over its button. */
+    private static View readMoreUnder(Object item) {
+        View button = new View(RuntimeEnvironment.getApplication());
+        LongPosts.readMoreShown(button, item);
+        return button;
+    }
+
+    /** A post the switch cut and its timeline item. */
+    private Object[] cutPost() {
+        Object post = new Object();
+        assertEquals(8, LongPosts.post(post, true, paragraphs(20, 5)).size());
+        return new Object[]{post, item(post)};
+    }
+
+    @Test public void readMoreUnderAPostItCutOpensThePostWhereItIs() {
+        Settings.COLLAPSE_LONG_POSTS.save(true);
+        Object[] cut = cutPost();
+        View button = readMoreUnder(cut[1]);
+        Timeline timeline = new Timeline();
+        timeline.holds.add(cut[1]);
+        assertTrue(LongPosts.readMore(binder(timeline), button));
+        assertEquals("the timeline builds that item again", List.of(cut[1]), timeline.asked);
+        assertNull("and this time every row stays", LongPosts.post(cut[0], true, paragraphs(20, 5)));
+        assertNull("for good", LongPosts.post(cut[0], true, paragraphs(20, 5)));
+        assertFalse("its button is done", LongPosts.readMore(binder(timeline), button));
+        assertFalse("a Read more bound to it again opens it by itself",
+                LongPosts.readMore(binder(timeline), readMoreUnder(cut[1])));
+        assertEquals(1, timeline.asked.size());
+        assertTrue(report(), report().contains(LongPosts.OPENED_HERE + " 1"));
+        assertTrue(report(), report().contains(LongPosts.KEPT_OPEN + " 2"));
+        assertEquals(8, LongPosts.post(new Object(), true, paragraphs(20, 5)).size());
+    }
+
+    @Test public void anAuthorsCutOrATrailEntryOpensThePostByItself() {
+        Settings.COLLAPSE_LONG_POSTS.save(true);
+        Timeline timeline = new Timeline();
+        Object post = new Object();
+        HushTimelineItem whole = item(post);
+        timeline.holds.add(whole);
+        assertNull("a post the switch left whole", LongPosts.post(post, true, paragraphs(8, 5)));
+        assertFalse("its Read more is the author's cut", LongPosts.readMore(binder(timeline), readMoreUnder(whole)));
+        Object[] cut = cutPost();
+        timeline.holds.add(cut[1]);
+        assertFalse("a trail entry's binder answers no screen", LongPosts.readMore(binder(null), readMoreUnder(cut[1])));
+        assertFalse("a row under something that isn't a timeline item",
+                LongPosts.readMore(binder(timeline), readMoreUnder(new Object())));
+        assertFalse("an item with no post", LongPosts.readMore(binder(timeline), readMoreUnder(item(null))));
+        View recycled = readMoreUnder(cut[1]);
+        LongPosts.readMoreShown(recycled, whole);
+        assertFalse("a button Tumblr bound under another post since", LongPosts.readMore(binder(timeline), recycled));
+        LongPosts.readMoreShown(null, cut[1]);
+        assertTrue("timeline " + timeline.asked, timeline.asked.isEmpty());
+        assertTrue("the positive control", LongPosts.readMore(binder(timeline), readMoreUnder(cut[1])));
+    }
+
+    @Test public void aScreenThatCantBuildThePostAgainOpensItByItself() {
+        Settings.COLLAPSE_LONG_POSTS.save(true);
+        Object[] cut = cutPost();
+        View button = readMoreUnder(cut[1]);
+        assertFalse("a screen that isn't a timeline", LongPosts.readMore(binder(new Object()), button));
+        assertFalse(LongPosts.readMore(binder(null), button));
+        assertFalse("a binder without the bridge", LongPosts.readMore(new Object(), button));
+        assertFalse(LongPosts.readMore(null, button));
+        Timeline timeline = new Timeline();
+        assertFalse(LongPosts.readMore(binder(timeline), null));
+        assertFalse("a post no longer in the list", LongPosts.readMore(binder(timeline), button));
+        assertEquals(List.of(cut[1]), timeline.asked);
+        assertEquals("so it stays cut", 8, LongPosts.post(cut[0], true, paragraphs(20, 5)).size());
+        assertFalse(report(), report().contains(LongPosts.OPENED_HERE));
+        timeline.holds.add(cut[1]);
+        assertTrue("the same button once the list holds it", LongPosts.readMore(binder(timeline), button));
+    }
+
+    @Test public void aTimelineThatThrowsOpensThePostByItselfAndIsReported() {
+        Settings.COLLAPSE_LONG_POSTS.save(true);
+        Object[] cut = cutPost();
+        Timeline timeline = new Timeline();
+        timeline.holds.add(cut[1]);
+        timeline.failure = new IllegalStateException("adapter");
+        assertFalse(LongPosts.readMore(binder(timeline), readMoreUnder(cut[1])));
+        assertEquals("the post stays cut", 8, LongPosts.post(cut[0], true, paragraphs(20, 5)).size());
+        List<String> missing = HookStatus.missing(FamilyNames.COLLAPSE_LONG_POSTS);
+        assertEquals(missing.toString(), 1, missing.size());
+        assertTrue(missing.get(0), missing.get(0).contains(LongPosts.READ_MORE_STEP));
+        HushReadMoreBinder broken = () -> { throw new IllegalStateException("binder"); };
+        assertFalse(LongPosts.readMore(broken, readMoreUnder(cut[1])));
+
+        HookStatus.clear();
+        timeline.failure = null;
+        HushTimelineItem throwing = () -> { throw new IllegalStateException("item"); };
+        assertFalse("an item that throws leaves its button with Tumblr",
+                LongPosts.readMore(binder(timeline), readMoreUnder(throwing)));
+        missing = HookStatus.missing(FamilyNames.COLLAPSE_LONG_POSTS);
+        assertEquals(missing.toString(), 1, missing.size());
+        assertTrue(missing.get(0), missing.get(0).contains(LongPosts.READ_MORE_STEP));
+    }
+
+    @Test public void offPausedOrWithoutItsHookReadMoreOpensThePostByItself() {
+        Settings.COLLAPSE_LONG_POSTS.save(true);
+        Object[] cut = cutPost();
+        View button = readMoreUnder(cut[1]);
+        Timeline timeline = new Timeline();
+        timeline.holds.add(cut[1]);
+        Settings.COLLAPSE_LONG_POSTS.save(false);
+        assertFalse("off", LongPosts.readMore(binder(timeline), button));
+        View boundOff = readMoreUnder(cut[1]);
+        Settings.COLLAPSE_LONG_POSTS.save(true);
+        assertFalse("a button bound while off", LongPosts.readMore(binder(timeline), boundOff));
+        for (HushTumblrPause.Reason reason : HushTumblrPause.Reason.values()) {
+            if (reason == HushTumblrPause.Reason.NONE) continue;
+            PauseForTests.pause(reason);
+            assertFalse(reason.name(), LongPosts.readMore(binder(timeline), button));
+            PauseForTests.resume();
+        }
+        SettingsContextRule.withoutContext(() -> assertFalse(LongPosts.readMore(binder(timeline), button)));
+        PatchFamilyForTests.capabilities(EnumSet.of(PatchFamily.Capability.LONG_POST_ROWS, PatchFamily.Capability.LONG_TRAIL_ROWS));
+        assertFalse("a build without the Read more hooks", LongPosts.readMore(binder(timeline), button));
+        assertTrue("timeline " + timeline.asked, timeline.asked.isEmpty());
+        PatchFamilyForTests.capabilities(EnumSet.allOf(PatchFamily.Capability.class));
+        assertTrue(LongPosts.readMore(binder(timeline), button));
     }
 }

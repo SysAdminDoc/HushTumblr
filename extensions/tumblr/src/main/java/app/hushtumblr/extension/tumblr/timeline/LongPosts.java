@@ -5,13 +5,18 @@
  */
 package app.hushtumblr.extension.tumblr.timeline;
 
+import android.view.View;
+
 import androidx.annotation.Nullable;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 import app.hushtumblr.extension.shared.Utils;
 import app.hushtumblr.extension.shared.diagnostics.HookStatus;
@@ -39,6 +44,12 @@ import app.hushtumblr.extension.tumblr.settings.TextSettings;
  * <p>A reblog trail entry is cut a different way, see {@link #trail}: Tumblr builds each entry once,
  * with its author's cut, and every screen reads that cut, so the extension answers the cut instead.
  *
+ * <p>Read more under a post this switch cut opens the post where it is ({@link #readMore}): the
+ * timeline builds the post's rows again, and {@link #post} answers null for it from then on. An
+ * author's own cut and a trail entry's Read more still open the post by itself, as does any tap
+ * the timeline can't take. A post opened this way stays whole until Tumblr loads it again, on a
+ * refresh or a new screen.
+ *
  * <p>Tumblr's rows stay while the switch is off, HushTumblr is paused, the settings aren't ready,
  * where Tumblr doesn't draw Read more cuts (the post opened by itself), for a post or entry Tumblr
  * already cut, for an ask, and when anything throws. While the switch is on, each post and trail
@@ -65,6 +76,7 @@ public final class LongPosts {
     /** The steps a failure is reported under. */
     static final String STEP = "post rows";
     static final String TRAIL_STEP = "trail rows";
+    static final String READ_MORE_STEP = "read more";
 
     // What the diagnostic report counts for each post and trail entry while the switch is on.
     static final String COLLAPSED = "post collapsed";
@@ -72,26 +84,108 @@ public final class LongPosts {
     static final String TRAIL_COLLAPSED = "trail entry collapsed";
     static final String TRAIL_SHORT = "trail entry short enough";
     static final String TRAIL_WHOLE = "trail entry left whole";
+    static final String OPENED_HERE = "post opened in place";
+    static final String KEPT_OPEN = "post kept open";
+
+    /**
+     * The posts {@link #post} cut and the ones Read more opened in place since. Tumblr's posts
+     * compare as themselves, so these are identity sets that let a post go once Tumblr drops it.
+     */
+    private static final Set<Object> CUT = Collections.synchronizedSet(Collections.newSetFromMap(new WeakHashMap<>()));
+    private static final Set<Object> OPENED = Collections.synchronizedSet(Collections.newSetFromMap(new WeakHashMap<>()));
+
+    /** Each Read more button bound under a post this switch cut, with that post and its timeline item. */
+    private static final Map<View, Bound> SHOWN = Collections.synchronizedMap(new WeakHashMap<>());
+
+    /** A Read more button's post and timeline item, held weakly so the button doesn't keep them. */
+    private static final class Bound {
+        final WeakReference<Object> post;
+        final WeakReference<Object> item;
+
+        Bound(Object post, Object item) {
+            this.post = new WeakReference<>(post);
+            this.item = new WeakReference<>(item);
+        }
+    }
 
     private LongPosts() {
     }
 
     /**
-     * Injected where Tumblr is about to draw every row of a post it didn't cut, with Tumblr's own
-     * answer for whether this screen draws an author's Read more cut (false on the post opened by
-     * itself) and the rows. Answers the rows to draw instead, with Tumblr's Read more row to follow,
-     * or null to draw Tumblr's own. Never throws.
+     * Injected where Tumblr is about to draw every row of a post it didn't cut, with the post,
+     * Tumblr's own answer for whether this screen draws an author's Read more cut (false on the post
+     * opened by itself) and the rows. Answers the rows to draw instead, with Tumblr's Read more row
+     * to follow, or null to draw Tumblr's own, as it does for a post Read more opened in place.
+     * Never throws.
      */
     @Nullable
-    public static List<Object> post(boolean drawsCuts, @Nullable List<?> rows) {
+    public static List<Object> post(@Nullable Object post, boolean drawsCuts, @Nullable List<?> rows) {
         try {
             if (!drawsCuts || rows == null || !on(PatchFamily.Capability.LONG_POST_ROWS)) return null;
+            if (post != null && OPENED.contains(post)) {
+                HookStatus.counted(FamilyNames.COLLAPSE_LONG_POSTS, KEPT_OPEN);
+                return null;
+            }
             int keep = keep(rows);
             HookStatus.counted(FamilyNames.COLLAPSE_LONG_POSTS, keep < 0 ? SHORT : COLLAPSED);
-            return keep < 0 ? null : new ArrayList<>(rows.subList(0, keep));
+            if (keep < 0) return null;
+            if (post != null) CUT.add(post);
+            return new ArrayList<>(rows.subList(0, keep));
         } catch (Throwable failure) {
             HookStatus.threw(FamilyNames.COLLAPSE_LONG_POSTS, STEP, failure);
             return null;
+        }
+    }
+
+    /**
+     * Injected where Tumblr's Read more binder binds a Read more row in a timeline, with the row's
+     * button and the timeline item the row sits under, before the button gets its tap. Forgets what
+     * an earlier bind of the button left, since a reused row now sits under something else, and
+     * while the switch is on keeps the button for {@link #readMore} when this switch cut the item's
+     * post. A trail entry's Read more under that post is kept too, and its tap still opens the post
+     * by itself, since its binder has no screen for {@link #readMore}. Never throws.
+     */
+    public static void readMoreShown(@Nullable View button, @Nullable Object item) {
+        try {
+            if (button == null) return;
+            SHOWN.remove(button);
+            if (!(item instanceof HushTimelineItem) || !on(PatchFamily.Capability.LONG_POST_EXPAND)) return;
+            Object post = ((HushTimelineItem) item).hushPost();
+            if (post != null && CUT.contains(post) && !OPENED.contains(post)) SHOWN.put(button, new Bound(post, item));
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.COLLAPSE_LONG_POSTS, READ_MORE_STEP, failure);
+        }
+    }
+
+    /**
+     * Injected first thing in Tumblr's Read more tap, with its binder and the button tapped. When
+     * the button is under a post this switch cut, asks the binder's timeline to build the post's
+     * rows again where it is, which {@link #post} then leaves whole, and answers true. False lets
+     * Tumblr open the post by itself: an author's cut, a trail entry, a screen that isn't a timeline,
+     * a post no longer in the list, the switch off, and anything that throws. Never throws.
+     */
+    public static boolean readMore(@Nullable Object binder, @Nullable View button) {
+        Object post = null;
+        try {
+            if (button == null || !(binder instanceof HushReadMoreBinder)
+                    || !on(PatchFamily.Capability.LONG_POST_EXPAND)) return false;
+            Bound bound = SHOWN.get(button);
+            post = bound == null ? null : bound.post.get();
+            Object item = bound == null ? null : bound.item.get();
+            Object screen = ((HushReadMoreBinder) binder).hushReadMoreScreen();
+            if (post == null || item == null || !(screen instanceof HushExpandingTimeline)) return false;
+            OPENED.add(post);
+            if (!((HushExpandingTimeline) screen).hushExpandPost(item)) {
+                OPENED.remove(post);
+                return false;
+            }
+            SHOWN.remove(button);
+            HookStatus.counted(FamilyNames.COLLAPSE_LONG_POSTS, OPENED_HERE);
+            return true;
+        } catch (Throwable failure) {
+            if (post != null) OPENED.remove(post);
+            HookStatus.threw(FamilyNames.COLLAPSE_LONG_POSTS, READ_MORE_STEP, failure);
+            return false;
         }
     }
 
