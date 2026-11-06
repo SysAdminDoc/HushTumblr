@@ -132,3 +132,10 @@ patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/ExpandLongPosts.kt|Lr
 patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/ExpandLongPosts.kt|La2k;
 patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/ExpandLongPosts.kt|Lw4a;
 patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/ExpandLongPosts.kt|Lzx9;
+# Tumblr's own cut on tag pages. Laf1 is the post base class a timeline item's post extends: l2(Z)
+# marks the post opened, g2() reads that back the way Tumblr's inline View post does, and C1() is
+# the server's force_truncate. Lkjh is the capped card item, a Lr4g subclass cut to its own height
+# either way. The preflight refuses a build where the post doesn't extend Laf1 or Lkjh doesn't
+# extend Lr4g.
+patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/ExpandLongPosts.kt|Laf1;
+patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/ExpandLongPosts.kt|Lkjh;
