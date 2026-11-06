@@ -410,7 +410,7 @@ Shows author-provided image descriptions below images.	Zeigt Bildbeschreibungen 
 photo image descriptions	Bildbeschreibungen von Fotos
 gallery image descriptions	Bildbeschreibungen in Galerien
 Mute posts locally	Posts lokal stummschalten
-Add posts to a private list from their menu. Originals and their reblogs stay hidden for this account.	Füge Posts über ihr Menü einer privaten Liste hinzu. Originale und ihre Reblogs bleiben für dieses Konto ausgeblendet.
+Add posts to a private list from their menu. Originals and their reblogs stay hidden for this account. On the dashboard, the menu can also hide one blog's reblogs or originals.	Füge Posts über ihr Menü einer privaten Liste hinzu. Originale und ihre Reblogs bleiben für dieses Konto ausgeblendet. Auf dem Dashboard kann das Menü auch die Reblogs oder die Originale eines Blogs ausblenden.
 Mute this post locally	Diesen Post lokal stummschalten
 Manage muted posts	Stummgeschaltete Posts verwalten
 Unmute posts or clear this account's private list	Posts wieder anzeigen oder die private Liste dieses Kontos leeren
@@ -418,7 +418,7 @@ Couldn't update muted posts	Stummgeschaltete Posts konnten nicht aktualisiert we
 Post muted locally	Post lokal stummgeschaltet
 Muted posts restored	Stummgeschaltete Posts wiederhergestellt
 Muted posts aren't available for this account yet	Stummgeschaltete Posts sind für dieses Konto noch nicht verfügbar
-Stored only on this device for this Tumblr account. Tap a post to unmute it. Up to 500 posts are kept per account.	Nur auf diesem Gerät für dieses Tumblr-Konto gespeichert. Tippe auf einen Post, um ihn wieder anzuzeigen. Pro Konto werden bis zu 500 Posts gespeichert.
+Stored only on this device for this Tumblr account. Tap a row to remove it. Up to 500 posts and blog rules are kept per account.	Nur auf diesem Gerät für dieses Tumblr-Konto gespeichert. Tippe auf eine Zeile, um sie zu entfernen. Pro Konto werden bis zu 500 Posts und Blog-Regeln gespeichert.
 This device keeps muted post lists for eight accounts. When a ninth account mutes a post, the list that's gone longest without a change is deleted.	Dieses Gerät speichert Listen stummgeschalteter Posts für acht Konten. Wenn ein neuntes Konto einen Post stummschaltet, wird die Liste gelöscht, die am längsten unverändert ist.
 Post	Post
 Clear muted posts	Stummgeschaltete Posts löschen
@@ -430,7 +430,7 @@ Show mutual markers	Gegenseitige Follows markieren
 Marks blogs that follow your primary blog when you follow them.	Markiert Blogs, die deinem Hauptblog folgen und denen du folgst.
 Mutual	Gegenseitig
 Done	Fertig
-No muted posts. Use a post's menu to mute it on this device.	Keine stummgeschalteten Posts. Nutze das Menü eines Posts, um ihn auf diesem Gerät stummzuschalten.
+No muted posts or blog rules. Use a post's menu to add one on this device.	Keine stummgeschalteten Posts oder Blog-Regeln. Nutze das Menü eines Posts, um ihn auf diesem Gerät stummzuschalten oder eine Blog-Regel hinzuzufügen.
 Updating muted posts	Stummgeschaltete Posts werden aktualisiert
 Couldn't restore muted posts. Try again.	Stummgeschaltete Posts konnten nicht wiederhergestellt werden. Versuche es noch einmal.
 Couldn't read this account's muted posts. Nothing was changed or deleted.	Die stummgeschalteten Posts dieses Kontos konnten nicht gelesen werden. Es wurde nichts geändert oder gelöscht.
@@ -443,6 +443,16 @@ Clearing diagnostic data	Diagnosedaten werden gelöscht
 Putting diagnostic data back	Diagnosedaten werden wiederhergestellt
 Couldn't clear the diagnostic data. Try again.	Die Diagnosedaten konnten nicht gelöscht werden. Versuch es erneut.
 Couldn't update this feed. The post is still muted locally.	Dieser Feed konnte nicht aktualisiert werden. Der Beitrag bleibt lokal stummgeschaltet.
+Hide reblogs from %1$s	Reblogs von %1$s ausblenden
+Hide originals from %1$s	Originale von %1$s ausblenden
+Hiding reblogs from %1$s	Reblogs von %1$s werden ausgeblendet
+Hiding originals from %1$s	Originale von %1$s werden ausgeblendet
+Blog rule removed	Blog-Regel entfernt
+Reblogs from %1$s	Reblogs von %1$s
+Originals from %1$s	Originale von %1$s
+Show reblogs from %1$s again	Reblogs von %1$s wieder anzeigen
+Show originals from %1$s again	Originale von %1$s wieder anzeigen
+Couldn't update this feed. The blog rule is still saved.	Dieser Feed konnte nicht aktualisiert werden. Die Blog-Regel bleibt gespeichert.
 Unmute post	Post wieder anzeigen
 HushTumblr	HushTumblr
 Your settings	Deine Einstellungen

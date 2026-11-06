@@ -4341,6 +4341,31 @@ public class DexDiff {
             if (!canonicalGood) fail(rootReason);
             boolean found = canonicalGood;
 
+            // The posting blog and the same proofs, for a rule that hides one half of a blog.
+            String blogFace = root.substring(0, root.lastIndexOf('/') + 1) + "HushBlogRulePost;", blogField = wrapper + "->hushBlogRule:" + STRING_TYPE;
+            String blogHook = root + "->blogRule(" + STRING_TYPE + STRING_TYPE + STRING_TYPE + list + "Z)" + STRING_TYPE, blogReason = "root blog rule bridge changed";
+            MethodReference blogName = canonicalGetter(post, "blog_name", STRING_TYPE);
+            List<MethodReference> blogReads = java.util.Arrays.asList(blogName, getters.get(0), getters.get(1), getters.get(3));
+            Method blogBridge = actual(post + "->hushBlogRule()" + STRING_TYPE);
+            List<Instruction> bb = blogBridge == null ? List.of() : instructions(blogBridge);
+            boolean blogGood = implementsBridge(post, blogFace) && blogBridge != null && !isStatic(blogBridge) && AccessFlags.PUBLIC.isSet(blogBridge.getAccessFlags())
+                    && blogBridge.getImplementation().getRegisterCount() == 6 && bb.size() == 12 && blogReads.stream().noneMatch(java.util.Objects::isNull);
+            for (int k = 0; blogGood && k < 4; k++) blogGood &= callIs(bb.get(2 * k), Opcode.INVOKE_VIRTUAL, blogReads.get(k).toString(), 5)
+                    && movesTo(bb.get(2 * k + 1), k, Opcode.MOVE_RESULT_OBJECT);
+            blogGood &= bb.size() == 12 && fieldIs(bb.get(8), Opcode.IGET_BOOLEAN, presenceField, 4, 5)
+                    && callIs(bb.get(9), Opcode.INVOKE_STATIC, blogHook, 0, 1, 2, 3, 4) && movesTo(bb.get(10), 0, Opcode.MOVE_RESULT_OBJECT) && movesTo(bb.get(11), 0, Opcode.RETURN_OBJECT);
+            featureControls = false; // Like the canonicalizer, the rule reads only its arguments.
+            List<Integer> blogSites = calls(blogBridge, blogHook, 1);
+            featureControls = true;
+            if (blogGood && blogSites.size() == 1) vouch(blogBridge, blogSites.get(0), List.of(0, 1, 2, 3, 4));
+            Method wrappedBlog = actual(wrapper + "->hushBlogRule()" + STRING_TYPE);
+            List<Instruction> wbb = wrappedBlog == null ? List.of() : instructions(wrappedBlog);
+            blogGood &= implementsBridge(wrapper, blogFace) && hasField(patched, wrapper, "hushBlogRule", STRING_TYPE, AccessFlags.PRIVATE.getValue() | AccessFlags.FINAL.getValue(), AccessFlags.STATIC.getValue())
+                    && !hasField(clean, wrapper, "hushBlogRule", STRING_TYPE, 0, 0) && wrappedBlog != null && !isStatic(wrappedBlog) && AccessFlags.PUBLIC.isSet(wrappedBlog.getAccessFlags())
+                    && wbb.size() == 2 && fieldIs(wbb.get(0), Opcode.IGET_OBJECT, blogField, 0, parameter(wrappedBlog, -1)) && movesTo(wbb.get(1), 0, Opcode.RETURN_OBJECT);
+            if (!blogGood) fail(blogReason);
+            found &= blogGood;
+
             if (!hasField(patched, post, "hushRootTrailPresent", "Z", AccessFlags.PRIVATE.getValue(), AccessFlags.STATIC.getValue()) || actual(post + "->hushSetJsonPresence(II)V") == null) { fail(rootReason); found = false; }
 
             Method wrapped = actual(wrapper + "->hushRootId()" + STRING_TYPE);
@@ -4359,13 +4384,16 @@ public class DexDiff {
                         && callIs(get(before, 0), Opcode.INVOKE_DIRECT, "Ljava/lang/Object;-><init>()V", 7)
                         && callIs(get(body, 1), Opcode.INVOKE_INTERFACE_RANGE, face + "->hushRootId()" + STRING_TYPE, 8)
                         && movesTo(get(body, 2), scratch, Opcode.MOVE_RESULT_OBJECT) && scratch >= 0 && scratch < 7 && deadAt(constructor, 1, scratch)
-                        && fieldIs(get(body, 3), Opcode.IPUT_OBJECT, captureField, scratch, 7);
-                if (injected) { claimed.add(m + "@1"); remove(m, 1, 4); anchor(m, 1, 1, captureReason); fallthroughOnly(constructor, 1, captureReason); }
+                        && fieldIs(get(body, 3), Opcode.IPUT_OBJECT, captureField, scratch, 7)
+                        && callIs(get(body, 4), Opcode.INVOKE_INTERFACE_RANGE, blogFace + "->hushBlogRule()" + STRING_TYPE, 8)
+                        && movesTo(get(body, 5), scratch, Opcode.MOVE_RESULT_OBJECT) && fieldIs(get(body, 6), Opcode.IPUT_OBJECT, blogField, scratch, 7);
+                if (injected) { claimed.add(m + "@1"); claimed.add(m + "@4"); remove(m, 1, 7); anchor(m, 1, 1, captureReason); fallthroughOnly(constructor, 1, captureReason); }
                 capture &= injected;
             }
             ClassDef wrapperClass = patched.classes.get(wrapper);
             if (wrapperClass != null) for (Method m : wrapperClass.getMethods()) for (Instruction i : instructions(m))
-                if (i.getOpcode() == Opcode.IPUT_OBJECT && captureField.equals(String.valueOf(reference(i))) && (constructor == null || !m.toString().equals(constructor.toString()))) capture = false;
+                if (i.getOpcode() == Opcode.IPUT_OBJECT && List.of(captureField, blogField).contains(String.valueOf(reference(i)))
+                        && (constructor == null || !m.toString().equals(constructor.toString()))) capture = false;
             if (!capture) fail(captureReason);
             found &= capture;
 
@@ -4417,6 +4445,9 @@ public class DexDiff {
             boolean localGood = localTimeline(timeline, local, mode, list);
             if (!localGood) fail(localReason);
             found &= localGood;
+            boolean pageGood = dashboardPage(timeline, root, list);
+            if (!pageGood) fail("root dashboard page hook changed");
+            found &= pageGood;
 
             ClassDef callbackClass = clean.classes.get(callback), actionClass = patched.classes.get(action);
             List<Method> declarations = new ArrayList<>();
@@ -4437,10 +4468,42 @@ public class DexDiff {
             callbackGood &= add != null && isStatic(add) && ab.size() == 3 && movesTo(ab.get(0), parameter(add, 0), Opcode.CHECK_CAST) && builder.equals(String.valueOf(reference(ab.get(0))))
                     && callIs(ab.get(1), Opcode.INVOKE_VIRTUAL, builder + "->c(" + STRING_TYPE + callback + ")" + builder, parameter(add, 0), parameter(add, 1), parameter(add, 2)) && ab.get(2).getOpcode() == Opcode.RETURN_VOID
                     && nativeUnit != null && isStatic(nativeUnit) && ub.size() == 2 && fieldIs(ub.get(0), Opcode.SGET_OBJECT, unit + "->a:" + unit, 0, -1) && movesTo(ub.get(1), 0, Opcode.RETURN_OBJECT);
-            callbackGood &= rootCardStub(menu, face, timelineObject, payload);
+            callbackGood &= rootCardStub(menu, timelineObject, payload);
             if (!callbackGood) fail(callbackReason);
             found &= callbackGood;
             capability(c.callee, found);
+        }
+
+        /**
+         * Blog rules hide posts on the dashboard only, and parsing can't tell which screen a page is
+         * for. So the page delivery hands each page and its fragment to the extension first thing and
+         * goes on with the list it gets back. Nothing of Tumblr's runs before it, and no branch of
+         * Tumblr's lands past it.
+         */
+        boolean dashboardPage(String timeline, String root, String list) {
+            String hook = root + "->dashboardPage(Ljava/lang/Object;" + list + ")" + list, reason = "root dashboard page hook";
+            ClassDef owner = clean.classes.get(timeline);
+            List<Method> deliveries = new ArrayList<>();
+            if (owner != null) for (Method candidate : owner.getMethods()) {
+                List<? extends CharSequence> p = candidate.getParameterTypes();
+                if (!isStatic(candidate) && candidate.getImplementation() != null && candidate.getReturnType().equals("V") && p.size() == 5
+                        && p.get(1).toString().equals(list) && p.get(2).toString().equals("Lcom/tumblr/timeline/model/link/TimelinePaginationLink;")
+                        && p.get(3).toString().equals("Ljava/util/Map;") && p.get(4).toString().equals("Z")) deliveries.add(candidate);
+            }
+            Method old = unique(deliveries, "timeline page delivery");
+            if (old == null) return false;
+            int self = parameter(old, -1), items = parameter(old, 1);
+            Method m = actual(old);
+            List<Integer> sites = calls(m, hook, 1);
+            if (m == null || sites.size() != 1) return false;
+            List<Instruction> body = instructions(m);
+            boolean injected = sites.get(0) == 0 && callIs(get(body, 0), Opcode.INVOKE_STATIC, hook, self, items)
+                    && movesTo(get(body, 1), items, Opcode.MOVE_RESULT_OBJECT);
+            if (!injected) return false;
+            remove(m, 0, 2);
+            anchor(m, 0, 0, reason);
+            labelAnchors.add(new Anchor(m, 0, 0, reason));
+            return true;
         }
 
         /** The native callback exposes only the final owner assigned from its constructor argument. */
@@ -4560,21 +4623,19 @@ public class DexDiff {
             return true;
         }
 
-        boolean rootCardStub(String menu, String face, String timelineObject, String payload) {
+        /** A card or timeline object hands back its payload. The extension reads the bridges from it. */
+        boolean rootCardStub(String menu, String timelineObject, String payload) {
             Method cardGetter = clean.methods.get("La2k;->l()" + payload), timelineGetter = clean.methods.get(timelineObject + "->getData()" + payload);
-            Method m = actual(menu + "->cardRoot(Ljava/lang/Object;)" + STRING_TYPE);
+            Method m = actual(menu + "->cardPayload(Ljava/lang/Object;)Ljava/lang/Object;");
             List<Instruction> b = m == null ? List.of() : instructions(m);
-            return publicGetter(cardGetter, payload) & publicGetter(timelineGetter, payload) && m != null && isStatic(m) && b.size() == 19 && m.getImplementation().getRegisterCount() == 3
-                    && fieldIsType(b.get(0), Opcode.INSTANCE_OF, "Lr4g;", 0, 2) && movesTo(b.get(1), 0, Opcode.IF_EQZ) && target(m, 1) == 6
-                    && movesTo(b.get(2), 2, Opcode.CHECK_CAST) && "Lr4g;".equals(String.valueOf(reference(b.get(2))))
-                    && callIs(b.get(3), Opcode.INVOKE_VIRTUAL, cardGetter.toString(), 2) && movesTo(b.get(4), 0, Opcode.MOVE_RESULT_OBJECT) && b.get(5).getOpcode() == Opcode.GOTO && target(m, 5) == 11
-                    && fieldIsType(b.get(6), Opcode.INSTANCE_OF, timelineObject, 0, 2) && movesTo(b.get(7), 0, Opcode.IF_EQZ) && target(m, 7) == 17
-                    && movesTo(b.get(8), 2, Opcode.CHECK_CAST) && timelineObject.equals(String.valueOf(reference(b.get(8))))
-                    && callIs(b.get(9), Opcode.INVOKE_VIRTUAL, timelineGetter.toString(), 2) && movesTo(b.get(10), 0, Opcode.MOVE_RESULT_OBJECT)
-                    && fieldIsType(b.get(11), Opcode.INSTANCE_OF, face, 1, 0) && movesTo(b.get(12), 1, Opcode.IF_EQZ) && target(m, 12) == 17
-                    && movesTo(b.get(13), 0, Opcode.CHECK_CAST) && face.equals(String.valueOf(reference(b.get(13))))
-                    && callIs(b.get(14), Opcode.INVOKE_INTERFACE, face + "->hushRootId()" + STRING_TYPE, 0) && movesTo(b.get(15), 0, Opcode.MOVE_RESULT_OBJECT)
-                    && movesTo(b.get(16), 0, Opcode.RETURN_OBJECT) && literalIs(b.get(17), Opcode.CONST_4, 0, 0) && movesTo(b.get(18), 0, Opcode.RETURN_OBJECT);
+            return publicGetter(cardGetter, payload) & publicGetter(timelineGetter, payload) && m != null && isStatic(m) && b.size() == 14 && m.getImplementation().getRegisterCount() == 2
+                    && fieldIsType(b.get(0), Opcode.INSTANCE_OF, "Lr4g;", 0, 1) && movesTo(b.get(1), 0, Opcode.IF_EQZ) && target(m, 1) == 6
+                    && movesTo(b.get(2), 1, Opcode.CHECK_CAST) && "Lr4g;".equals(String.valueOf(reference(b.get(2))))
+                    && callIs(b.get(3), Opcode.INVOKE_VIRTUAL, cardGetter.toString(), 1) && movesTo(b.get(4), 0, Opcode.MOVE_RESULT_OBJECT) && movesTo(b.get(5), 0, Opcode.RETURN_OBJECT)
+                    && fieldIsType(b.get(6), Opcode.INSTANCE_OF, timelineObject, 0, 1) && movesTo(b.get(7), 0, Opcode.IF_EQZ) && target(m, 7) == 12
+                    && movesTo(b.get(8), 1, Opcode.CHECK_CAST) && timelineObject.equals(String.valueOf(reference(b.get(8))))
+                    && callIs(b.get(9), Opcode.INVOKE_VIRTUAL, timelineGetter.toString(), 1) && movesTo(b.get(10), 0, Opcode.MOVE_RESULT_OBJECT)
+                    && movesTo(b.get(11), 0, Opcode.RETURN_OBJECT) && literalIs(b.get(12), Opcode.CONST_4, 0, 0) && movesTo(b.get(13), 0, Opcode.RETURN_OBJECT);
         }
 
         static boolean fieldIsType(Instruction i, Opcode op, String type, int value, int receiver) {

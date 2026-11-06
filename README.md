@@ -87,7 +87,7 @@ There are 53 patches.
 | `Hide unread dots` | Hides the unread dots and counts on the bottom bar's Dashboard, Communities and Notifications tabs, with a switch for each tab. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `Hide video posts` | Takes video posts out of your dashboard and other feeds as each page loads. A post with a video anywhere in it, its reblog trail included, counts as a video post. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
 | `Hide your own reblogs` | Takes the reblogs you made out of your dashboard and the feeds like it as each page loads. Your blog still shows them. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
-| `Mute posts locally` | Adds a local mute action to post menus. Originals and their reblogs stay hidden for this account. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
+| `Mute posts locally` | Adds a local mute action to post menus. Originals and their reblogs stay hidden for this account. On the dashboard the menu can also hide one blog's reblogs or its originals. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
 | `Reorder the bottom bar` | Puts the bottom bar's tabs in an order you pick, from a list in its settings. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `Reveal allowed mature content` | Removes mature-content covers only when Tumblr explicitly allows them for the signed-in adult account. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Share video links` | Long-press a video in a post to share or copy its direct link, or save the video to your phone. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |

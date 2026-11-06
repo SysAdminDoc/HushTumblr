@@ -1617,7 +1617,7 @@
     },
     {
       "name": "Mute posts locally",
-      "description": "Adds a local mute action to post menus. Originals and their reblogs stay hidden for this account. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed.",
+      "description": "Adds a local mute action to post menus. Originals and their reblogs stay hidden for this account. On the dashboard the menu can also hide one blog's reblogs or its originals. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed.",
       "category": "Feed",
       "use": true,
       "dependencies": [

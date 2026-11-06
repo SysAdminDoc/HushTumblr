@@ -653,7 +653,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                         + "and the feeds like it. Your likes and blogs still show them."), SettingsIcons.BLOCK);
             patchToggle(feed, context, build, PatchFamily.MUTE_ROOT_POSTS, Settings.MUTE_ROOT_POSTS,
                     L10n.t("Mute posts locally"),
-                    L10n.t("Add posts to a private list from their menu. Originals and their reblogs stay hidden for this account."),
+                    L10n.t("Add posts to a private list from their menu. Originals and their reblogs stay hidden for this account. "
+                        + "On the dashboard, the menu can also hide one blog's reblogs or originals."),
                     SettingsIcons.BLOCK);
             if (build.contains(PatchFamily.MUTE_ROOT_POSTS)) {
                 manageMutedPosts = new ManageMuteRow(context);

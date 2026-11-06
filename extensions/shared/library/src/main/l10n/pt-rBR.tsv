@@ -407,7 +407,7 @@ Shows author-provided image descriptions below images.	Mostra abaixo das imagens
 photo image descriptions	descrições de fotos
 gallery image descriptions	descrições de galerias
 Mute posts locally	Silenciar posts localmente
-Add posts to a private list from their menu. Originals and their reblogs stay hidden for this account.	Adicione posts a uma lista privada pelo menu deles. Os originais e seus reblogs ficam ocultos nesta conta.
+Add posts to a private list from their menu. Originals and their reblogs stay hidden for this account. On the dashboard, the menu can also hide one blog's reblogs or originals.	Adicione posts a uma lista privada pelo menu deles. Os originais e seus reblogs ficam ocultos nesta conta. No painel, o menu também pode ocultar os reblogs ou os originais de um blog.
 Mute this post locally	Silenciar este post localmente
 Manage muted posts	Gerenciar posts silenciados
 Unmute posts or clear this account's private list	Volte a mostrar posts ou limpe a lista privada desta conta
@@ -415,7 +415,7 @@ Couldn't update muted posts	Não foi possível atualizar os posts silenciados
 Post muted locally	Post silenciado localmente
 Muted posts restored	Posts silenciados restaurados
 Muted posts aren't available for this account yet	Os posts silenciados ainda não estão disponíveis nesta conta
-Stored only on this device for this Tumblr account. Tap a post to unmute it. Up to 500 posts are kept per account.	Armazenados apenas neste dispositivo para esta conta do Tumblr. Toque em um post para voltar a mostrá-lo. Até 500 posts são mantidos por conta.
+Stored only on this device for this Tumblr account. Tap a row to remove it. Up to 500 posts and blog rules are kept per account.	Armazenados apenas neste dispositivo para esta conta do Tumblr. Toque em uma linha para removê-la. Até 500 posts e regras de blog são mantidos por conta.
 This device keeps muted post lists for eight accounts. When a ninth account mutes a post, the list that's gone longest without a change is deleted.	Este dispositivo mantém listas de posts silenciados para oito contas. Quando uma nona conta silencia um post, a lista que está há mais tempo sem mudanças é apagada.
 Post	Post
 Clear muted posts	Limpar posts silenciados
@@ -427,7 +427,7 @@ Show mutual markers	Mostrar seguidores mútuos
 Marks blogs that follow your primary blog when you follow them.	Marca os blogs que seguem seu blog principal e que você segue.
 Mutual	Mútuos
 Done	Concluído
-No muted posts. Use a post's menu to mute it on this device.	Nenhum post silenciado. Use o menu de um post para silenciá-lo neste dispositivo.
+No muted posts or blog rules. Use a post's menu to add one on this device.	Nenhum post silenciado ou regra de blog. Use o menu de um post para silenciá-lo ou criar uma regra de blog neste dispositivo.
 Updating muted posts	Atualizando posts silenciados
 Couldn't restore muted posts. Try again.	Não foi possível restaurar os posts silenciados. Tente de novo.
 Couldn't read this account's muted posts. Nothing was changed or deleted.	Não foi possível ler os posts silenciados desta conta. Nada foi alterado nem apagado.
@@ -440,6 +440,16 @@ Clearing diagnostic data	Limpando dados de diagnóstico
 Putting diagnostic data back	Restaurando dados de diagnóstico
 Couldn't clear the diagnostic data. Try again.	Não foi possível limpar os dados de diagnóstico. Tente novamente.
 Couldn't update this feed. The post is still muted locally.	Não foi possível atualizar este feed. O post continua silenciado localmente.
+Hide reblogs from %1$s	Ocultar reblogs de %1$s
+Hide originals from %1$s	Ocultar originais de %1$s
+Hiding reblogs from %1$s	Ocultando reblogs de %1$s
+Hiding originals from %1$s	Ocultando originais de %1$s
+Blog rule removed	Regra do blog removida
+Reblogs from %1$s	Reblogs de %1$s
+Originals from %1$s	Originais de %1$s
+Show reblogs from %1$s again	Mostrar os reblogs de %1$s de novo
+Show originals from %1$s again	Mostrar os originais de %1$s de novo
+Couldn't update this feed. The blog rule is still saved.	Não foi possível atualizar este feed. A regra do blog continua salva.
 Unmute post	Reexibir post
 HushTumblr	HushTumblr
 Your settings	Suas configurações

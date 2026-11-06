@@ -410,7 +410,7 @@ Shows author-provided image descriptions below images.	Menampilkan deskripsi gam
 photo image descriptions	deskripsi foto
 gallery image descriptions	deskripsi galeri
 Mute posts locally	Bisukan postingan secara lokal
-Add posts to a private list from their menu. Originals and their reblogs stay hidden for this account.	Tambahkan postingan ke daftar pribadi melalui menunya. Postingan asli dan reblognya tetap tersembunyi untuk akun ini.
+Add posts to a private list from their menu. Originals and their reblogs stay hidden for this account. On the dashboard, the menu can also hide one blog's reblogs or originals.	Tambahkan postingan ke daftar pribadi melalui menunya. Postingan asli dan reblognya tetap tersembunyi untuk akun ini. Di dasbor, menu juga bisa menyembunyikan reblog atau postingan asli dari satu blog.
 Mute this post locally	Bisukan postingan ini secara lokal
 Manage muted posts	Kelola postingan yang dibisukan
 Unmute posts or clear this account's private list	Tampilkan kembali postingan atau kosongkan daftar pribadi akun ini
@@ -418,7 +418,7 @@ Couldn't update muted posts	Tidak dapat memperbarui postingan yang dibisukan
 Post muted locally	Postingan dibisukan secara lokal
 Muted posts restored	Postingan yang dibisukan dipulihkan
 Muted posts aren't available for this account yet	Postingan yang dibisukan belum tersedia untuk akun ini
-Stored only on this device for this Tumblr account. Tap a post to unmute it. Up to 500 posts are kept per account.	Disimpan hanya di perangkat ini untuk akun Tumblr ini. Ketuk postingan untuk menampilkannya kembali. Maksimal 500 postingan disimpan per akun.
+Stored only on this device for this Tumblr account. Tap a row to remove it. Up to 500 posts and blog rules are kept per account.	Disimpan hanya di perangkat ini untuk akun Tumblr ini. Ketuk baris untuk menghapusnya. Maksimal 500 postingan dan aturan blog disimpan per akun.
 This device keeps muted post lists for eight accounts. When a ninth account mutes a post, the list that's gone longest without a change is deleted.	Perangkat ini menyimpan daftar postingan yang dibisukan untuk delapan akun. Saat akun kesembilan membisukan postingan, daftar yang paling lama tidak berubah akan dihapus.
 Post	Postingan
 Clear muted posts	Hapus postingan yang dibisukan
@@ -430,7 +430,7 @@ Show mutual markers	Tampilkan penanda saling mengikuti
 Marks blogs that follow your primary blog when you follow them.	Menandai blog yang mengikuti blog utama Anda dan Anda ikuti.
 Mutual	Saling mengikuti
 Done	Selesai
-No muted posts. Use a post's menu to mute it on this device.	Tidak ada postingan yang dibisukan. Gunakan menu postingan untuk membisukannya di perangkat ini.
+No muted posts or blog rules. Use a post's menu to add one on this device.	Tidak ada postingan yang dibisukan atau aturan blog. Gunakan menu postingan untuk menambahkannya di perangkat ini.
 Updating muted posts	Memperbarui postingan yang dibisukan
 Couldn't restore muted posts. Try again.	Tidak dapat memulihkan postingan yang dibisukan. Coba lagi.
 Couldn't read this account's muted posts. Nothing was changed or deleted.	Tidak dapat membaca postingan yang dibisukan untuk akun ini. Tidak ada yang diubah atau dihapus.
@@ -443,6 +443,16 @@ Clearing diagnostic data	Menghapus data diagnostik
 Putting diagnostic data back	Memulihkan data diagnostik
 Couldn't clear the diagnostic data. Try again.	Tidak dapat menghapus data diagnostik. Coba lagi.
 Couldn't update this feed. The post is still muted locally.	Tidak dapat memperbarui feed ini. Postingan masih dibisukan secara lokal.
+Hide reblogs from %1$s	Sembunyikan reblog dari %1$s
+Hide originals from %1$s	Sembunyikan postingan asli dari %1$s
+Hiding reblogs from %1$s	Menyembunyikan reblog dari %1$s
+Hiding originals from %1$s	Menyembunyikan postingan asli dari %1$s
+Blog rule removed	Aturan blog dihapus
+Reblogs from %1$s	Reblog dari %1$s
+Originals from %1$s	Postingan asli dari %1$s
+Show reblogs from %1$s again	Tampilkan lagi reblog dari %1$s
+Show originals from %1$s again	Tampilkan lagi postingan asli dari %1$s
+Couldn't update this feed. The blog rule is still saved.	Tidak dapat memperbarui feed ini. Aturan blog masih tersimpan.
 Unmute post	Tampilkan kembali postingan
 HushTumblr	HushTumblr
 Your settings	Pengaturanmu
