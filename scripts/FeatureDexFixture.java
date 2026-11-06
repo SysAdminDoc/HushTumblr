@@ -141,6 +141,8 @@ public final class FeatureDexFixture {
     private static final List<String> SHORTCUTS = List.of("pushDynamicShortcut", "addDynamicShortcuts", "setDynamicShortcuts", "updateShortcuts", "removeAllDynamicShortcuts");
     private static final Map<String, String[]> FAMILIES = new LinkedHashMap<>();
     private static final Map<String, Boolean> FLAGS = new LinkedHashMap<>();
+    /** No fixture dex carries Explore's header presenter, so the patch leaves that capability off. */
+    private static final Set<String> ABSENT = Set.of("exploreHeaderAd");
     private static final List<String> SMALL_CASES = new ArrayList<>();
 
     private static ImmutableMethodReference ref(String type, String name, String result, String... parameters) {
@@ -302,7 +304,7 @@ public final class FeatureDexFixture {
 
     static void enable(String name) {
         FLAGS.put(name, true);
-        for (String cap : capabilities(name)) FLAGS.put(cap, true);
+        for (String cap : capabilities(name)) FLAGS.put(cap, !ABSENT.contains(cap));
     }
 
     /** A family's capability flags; none for a manifest-only family, whose contract column is empty. */

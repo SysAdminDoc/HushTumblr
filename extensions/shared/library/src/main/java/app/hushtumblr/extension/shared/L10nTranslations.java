@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(978);
+        Map<String, String> table = new HashMap<>(980);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -289,6 +289,8 @@ public final class L10nTranslations {
                 "Jeder Schalter hier gilt f\u00fcr alle Konten in dieser Tumblr-App, nicht nur f\u00fcr das gerade ge\u00f6ffnete.");
         table.put("Explore",
                 "Entdecken");
+        table.put("Explore's sponsored header",
+                "den gesponserten Kopfbereich in Entdecken");
         table.put("Export diagnostic report",
                 "Diagnosebericht exportieren");
         table.put("Export settings",
@@ -305,11 +307,11 @@ public final class L10nTranslations {
                 "So findest du sie");
         table.put("Firebase and Google Analytics collection is turned off",
                 "Die Datenerfassung von Firebase und Google Analytics ist ausgeschaltet");
-        table.put("Fix push notifications",
-                "Push-Benachrichtigungen reparieren");
     }
 
     private static void fillDe2(Map<String, String> table) {
+        table.put("Fix push notifications",
+                "Push-Benachrichtigungen reparieren");
         table.put("Font file saved.",
                 "Schriftdatei gespeichert.");
         table.put("Font file saved. Turn on App font to use it.",
@@ -428,11 +430,11 @@ public final class L10nTranslations {
                 "Blendet Werbung, Vorschl\u00e4ge, Hinweise und Z\u00e4hler f\u00fcr Ungelesenes aus.");
         table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. The Blaze item in a post's menu stays.",
                 "Blendet die Blaze-Schaltfl\u00e4chen, -Banner und den Hinweis aus, einen Beitrag nach dem Teilen zu bewerben. Der Blaze-Eintrag im Men\u00fc eines Beitrags bleibt.");
-        table.put("Hides the Premium diamond on your dashboard, Explore and notifications when you return to them. Open screens keep their TumblrMart button until Tumblr restarts.",
-                "Blendet den Premium-Diamanten auf Dashboard, Entdecken und Benachrichtigungen aus, wenn du dorthin zur\u00fcckkehrst. Offene Bildschirme behalten ihren TumblrMart-Button bis zum Neustart von Tumblr.");
     }
 
     private static void fillDe3(Map<String, String> table) {
+        table.put("Hides the Premium diamond on your dashboard, Explore and notifications when you return to them. Open screens keep their TumblrMart button until Tumblr restarts.",
+                "Blendet den Premium-Diamanten auf Dashboard, Entdecken und Benachrichtigungen aus, wenn du dorthin zur\u00fcckkehrst. Offene Bildschirme behalten ihren TumblrMart-Button bis zum Neustart von Tumblr.");
         table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing.",
                 "Blendet das Banner im Dashboard aus, das dich bittet, f\u00fcr werbefreies Surfen zu bezahlen.");
         table.put("Hides the pop-up suggesting you buy a gift for a blog. You can still open gifting yourself.",
@@ -551,11 +553,11 @@ public final class L10nTranslations {
                 "Stummgeschaltete Posts gel\u00f6scht");
         table.put("Muted posts restored",
                 "Stummgeschaltete Posts wiederhergestellt");
-        table.put("Mutual",
-                "Gegenseitig");
     }
 
     private static void fillDe4(Map<String, String> table) {
+        table.put("Mutual",
+                "Gegenseitig");
         table.put("No HushTumblr release is out yet.",
                 "Es gibt noch keine Version von HushTumblr.");
         table.put("No app can share this link",
@@ -674,11 +676,11 @@ public final class L10nTranslations {
                 "Untere Leiste neu ordnen");
         table.put("Replaces Tumblr's own font with your phone's font, or a font file you choose below. Fonts a post's author picked stay as they are.",
                 "Ersetzt Tumblrs eigene Schriftart durch die deines Telefons oder durch eine Schriftdatei, die du unten ausw\u00e4hlst. Schriftarten, die der Autor eines Beitrags gew\u00e4hlt hat, bleiben unver\u00e4ndert.");
-        table.put("Report a problem",
-                "Problem melden");
     }
 
     private static void fillDe5(Map<String, String> table) {
+        table.put("Report a problem",
+                "Problem melden");
         table.put("Restart Tumblr to apply %1$d changes",
                 "Starte Tumblr neu, um %1$d \u00c4nderungen zu \u00fcbernehmen");
         table.put("Restart Tumblr to apply these settings.",
@@ -797,11 +799,11 @@ public final class L10nTranslations {
                 "Tabs, Z\u00e4hler und Aussehen");
         table.put("Tags",
                 "Tags");
-        table.put("Tags and post content Tumblr hides for your account on every device, and its mature content choices.",
-                "Tags und Inhalte, die Tumblr f\u00fcr dein Konto auf jedem Ger\u00e4t ausblendet, und die Einstellungen f\u00fcr Inhalte f\u00fcr Erwachsene.");
     }
 
     private static void fillDe6(Map<String, String> table) {
+        table.put("Tags and post content Tumblr hides for your account on every device, and its mature content choices.",
+                "Tags und Inhalte, die Tumblr f\u00fcr dein Konto auf jedem Ger\u00e4t ausblendet, und die Einstellungen f\u00fcr Inhalte f\u00fcr Erwachsene.");
         table.put("Takes Tumblr TV's Watch it rows and video hub cards, and their headings, out of your dashboard and other feeds.",
                 "Entfernt die Watch-it-Reihen und Video-Hub-Karten von Tumblr TV samt ihren \u00dcberschriften aus deinem Dashboard und anderen Feeds.");
         table.put("Takes ads and paid Blaze posts out of your dashboard and other feeds. Once Tumblr restarts, it stops asking for ads and its ad networks don't start.",
@@ -920,11 +922,11 @@ public final class L10nTranslations {
                 "Es gibt keine Diagnosedaten zum Wiederherstellen.");
         table.put("There's no import to undo.",
                 "Es gibt keinen Import zum R\u00fcckg\u00e4ngigmachen.");
-        table.put("This build doesn't include the parts that handle %1$s.",
-                "Dieser Build enth\u00e4lt die Teile nicht, die %1$s behandeln.");
     }
 
     private static void fillDe7(Map<String, String> table) {
+        table.put("This build doesn't include the parts that handle %1$s.",
+                "Dieser Build enth\u00e4lt die Teile nicht, die %1$s behandeln.");
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
                 "Dieser Build behandelt %1$s. Es fehlen die Teile f\u00fcr %2$s.");
         table.put("This device keeps muted post lists for eight accounts. When a ninth account mutes a post, the list that's gone longest without a change is deleted.",
@@ -1043,11 +1045,11 @@ public final class L10nTranslations {
                 "Du hast die neueste Version von HushTumblr.");
         table.put("You paused HushTumblr.",
                 "Du hast HushTumblr pausiert.");
-        table.put("Your choice is saved, but this build doesn't include the patch for it.",
-                "Deine Auswahl ist gespeichert, aber dieser Build enth\u00e4lt den Patch daf\u00fcr nicht.");
     }
 
     private static void fillDe8(Map<String, String> table) {
+        table.put("Your choice is saved, but this build doesn't include the patch for it.",
+                "Deine Auswahl ist gespeichert, aber dieser Build enth\u00e4lt den Patch daf\u00fcr nicht.");
         table.put("Your choices are saved. Tap Resume, then restart Tumblr.",
                 "Deine Auswahl bleibt gespeichert. Tippe auf Fortsetzen und starte Tumblr dann neu.");
         table.put("Your saved lists are too large for a settings backup. Shorten them before exporting. The existing file wasn't changed.",
@@ -1069,7 +1071,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(978);
+        Map<String, String> table = new HashMap<>(980);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -1308,6 +1310,8 @@ public final class L10nTranslations {
                 "Cada interruptor de aqu\u00ed se aplica a todas las cuentas de esta app de Tumblr, no solo a la que tienes abierta.");
         table.put("Explore",
                 "Explorar");
+        table.put("Explore's sponsored header",
+                "el encabezado patrocinado de Explorar");
         table.put("Export diagnostic report",
                 "Exportar informe de diagn\u00f3stico");
         table.put("Export settings",
@@ -1324,11 +1328,11 @@ public final class L10nTranslations {
                 "D\u00f3nde encontrarlas");
         table.put("Firebase and Google Analytics collection is turned off",
                 "La recopilaci\u00f3n de Firebase y Google Analytics est\u00e1 desactivada");
-        table.put("Fix push notifications",
-                "Arreglar notificaciones push");
     }
 
     private static void fillEs2(Map<String, String> table) {
+        table.put("Fix push notifications",
+                "Arreglar notificaciones push");
         table.put("Font file saved.",
                 "Archivo de fuente guardado.");
         table.put("Font file saved. Turn on App font to use it.",
@@ -1447,11 +1451,11 @@ public final class L10nTranslations {
                 "Oculta anuncios, sugerencias, avisos y contadores de no le\u00eddos.");
         table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. The Blaze item in a post's menu stays.",
                 "Oculta los botones y banners de Blaze y el aviso para promocionar una publicaci\u00f3n despu\u00e9s de compartirla. La opci\u00f3n Blaze del men\u00fa de una publicaci\u00f3n se queda.");
-        table.put("Hides the Premium diamond on your dashboard, Explore and notifications when you return to them. Open screens keep their TumblrMart button until Tumblr restarts.",
-                "Oculta el diamante Premium en tu escritorio, Explorar y notificaciones al volver a esas pantallas. Las pantallas abiertas conservan su bot\u00f3n de TumblrMart hasta que reinicies Tumblr.");
     }
 
     private static void fillEs3(Map<String, String> table) {
+        table.put("Hides the Premium diamond on your dashboard, Explore and notifications when you return to them. Open screens keep their TumblrMart button until Tumblr restarts.",
+                "Oculta el diamante Premium en tu escritorio, Explorar y notificaciones al volver a esas pantallas. Las pantallas abiertas conservan su bot\u00f3n de TumblrMart hasta que reinicies Tumblr.");
         table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing.",
                 "Oculta el banner del panel que te pide pagar por navegar sin anuncios.");
         table.put("Hides the pop-up suggesting you buy a gift for a blog. You can still open gifting yourself.",
@@ -1570,11 +1574,11 @@ public final class L10nTranslations {
                 "Publicaciones silenciadas borradas");
         table.put("Muted posts restored",
                 "Publicaciones silenciadas restauradas");
-        table.put("Mutual",
-                "Mutuos");
     }
 
     private static void fillEs4(Map<String, String> table) {
+        table.put("Mutual",
+                "Mutuos");
         table.put("No HushTumblr release is out yet.",
                 "Todav\u00eda no hay ninguna versi\u00f3n de HushTumblr.");
         table.put("No app can share this link",
@@ -1693,11 +1697,11 @@ public final class L10nTranslations {
                 "Reordenar la barra inferior");
         table.put("Replaces Tumblr's own font with your phone's font, or a font file you choose below. Fonts a post's author picked stay as they are.",
                 "Cambia la fuente de Tumblr por la de tu tel\u00e9fono o por un archivo de fuente que elijas abajo. Las fuentes que eligi\u00f3 el autor de una publicaci\u00f3n se quedan como est\u00e1n.");
-        table.put("Report a problem",
-                "Informar de un problema");
     }
 
     private static void fillEs5(Map<String, String> table) {
+        table.put("Report a problem",
+                "Informar de un problema");
         table.put("Restart Tumblr to apply %1$d changes",
                 "Reinicia Tumblr para aplicar %1$d cambios");
         table.put("Restart Tumblr to apply these settings.",
@@ -1816,11 +1820,11 @@ public final class L10nTranslations {
                 "Pesta\u00f1as, contadores y apariencia");
         table.put("Tags",
                 "Etiquetas");
-        table.put("Tags and post content Tumblr hides for your account on every device, and its mature content choices.",
-                "Las etiquetas y el contenido que Tumblr oculta para tu cuenta en todos los dispositivos, y sus opciones de contenido para adultos.");
     }
 
     private static void fillEs6(Map<String, String> table) {
+        table.put("Tags and post content Tumblr hides for your account on every device, and its mature content choices.",
+                "Las etiquetas y el contenido que Tumblr oculta para tu cuenta en todos los dispositivos, y sus opciones de contenido para adultos.");
         table.put("Takes Tumblr TV's Watch it rows and video hub cards, and their headings, out of your dashboard and other feeds.",
                 "Quita las filas de Watch it y las tarjetas de video de Tumblr TV, y sus encabezados, de tu panel y otros feeds.");
         table.put("Takes ads and paid Blaze posts out of your dashboard and other feeds. Once Tumblr restarts, it stops asking for ads and its ad networks don't start.",
@@ -1939,11 +1943,11 @@ public final class L10nTranslations {
                 "No hay datos de diagn\u00f3stico que restaurar.");
         table.put("There's no import to undo.",
                 "No hay ninguna importaci\u00f3n que deshacer.");
-        table.put("This build doesn't include the parts that handle %1$s.",
-                "Esta versi\u00f3n no incluye las partes que se encargan de %1$s.");
     }
 
     private static void fillEs7(Map<String, String> table) {
+        table.put("This build doesn't include the parts that handle %1$s.",
+                "Esta versi\u00f3n no incluye las partes que se encargan de %1$s.");
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
                 "Esta versi\u00f3n se encarga de %1$s. Faltan las partes para %2$s.");
         table.put("This device keeps muted post lists for eight accounts. When a ninth account mutes a post, the list that's gone longest without a change is deleted.",
@@ -2062,11 +2066,11 @@ public final class L10nTranslations {
                 "Tienes la versi\u00f3n m\u00e1s reciente de HushTumblr.");
         table.put("You paused HushTumblr.",
                 "Pausaste HushTumblr.");
-        table.put("Your choice is saved, but this build doesn't include the patch for it.",
-                "Tu elecci\u00f3n est\u00e1 guardada, pero esta versi\u00f3n no incluye el parche para ella.");
     }
 
     private static void fillEs8(Map<String, String> table) {
+        table.put("Your choice is saved, but this build doesn't include the patch for it.",
+                "Tu elecci\u00f3n est\u00e1 guardada, pero esta versi\u00f3n no incluye el parche para ella.");
         table.put("Your choices are saved. Tap Resume, then restart Tumblr.",
                 "Tus preferencias est\u00e1n guardadas. Toca Reanudar y luego reinicia Tumblr.");
         table.put("Your saved lists are too large for a settings backup. Shorten them before exporting. The existing file wasn't changed.",
@@ -2088,7 +2092,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(978);
+        Map<String, String> table = new HashMap<>(980);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -2327,6 +2331,8 @@ public final class L10nTranslations {
                 "Setiap sakelar di sini berlaku untuk semua akun di aplikasi Tumblr ini, bukan hanya akun yang sedang Anda buka.");
         table.put("Explore",
                 "Jelajahi");
+        table.put("Explore's sponsored header",
+                "header bersponsor di Jelajahi");
         table.put("Export diagnostic report",
                 "Ekspor laporan diagnostik");
         table.put("Export settings",
@@ -2343,11 +2349,11 @@ public final class L10nTranslations {
                 "Cara menemukannya");
         table.put("Firebase and Google Analytics collection is turned off",
                 "Pengumpulan data Firebase dan Google Analytics dinonaktifkan");
-        table.put("Fix push notifications",
-                "Perbaiki notifikasi push");
     }
 
     private static void fillIn2(Map<String, String> table) {
+        table.put("Fix push notifications",
+                "Perbaiki notifikasi push");
         table.put("Font file saved.",
                 "File font disimpan.");
         table.put("Font file saved. Turn on App font to use it.",
@@ -2466,11 +2472,11 @@ public final class L10nTranslations {
                 "Menyembunyikan iklan, saran, ajakan, dan penghitung belum dibaca.");
         table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. The Blaze item in a post's menu stays.",
                 "Menyembunyikan tombol dan banner Blaze serta ajakan untuk mempromosikan postingan setelah kamu membagikannya. Pilihan Blaze di menu postingan tetap ada.");
-        table.put("Hides the Premium diamond on your dashboard, Explore and notifications when you return to them. Open screens keep their TumblrMart button until Tumblr restarts.",
-                "Menyembunyikan berlian Premium di dasbor, Jelajahi, dan notifikasi saat kamu kembali ke layar tersebut. Layar yang terbuka tetap menampilkan tombol TumblrMart sampai Tumblr dimulai ulang.");
     }
 
     private static void fillIn3(Map<String, String> table) {
+        table.put("Hides the Premium diamond on your dashboard, Explore and notifications when you return to them. Open screens keep their TumblrMart button until Tumblr restarts.",
+                "Menyembunyikan berlian Premium di dasbor, Jelajahi, dan notifikasi saat kamu kembali ke layar tersebut. Layar yang terbuka tetap menampilkan tombol TumblrMart sampai Tumblr dimulai ulang.");
         table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing.",
                 "Menyembunyikan banner di dasbor yang memintamu membayar untuk menjelajah tanpa iklan.");
         table.put("Hides the pop-up suggesting you buy a gift for a blog. You can still open gifting yourself.",
@@ -2589,11 +2595,11 @@ public final class L10nTranslations {
                 "Postingan yang dibisukan dihapus");
         table.put("Muted posts restored",
                 "Postingan yang dibisukan dipulihkan");
-        table.put("Mutual",
-                "Saling mengikuti");
     }
 
     private static void fillIn4(Map<String, String> table) {
+        table.put("Mutual",
+                "Saling mengikuti");
         table.put("No HushTumblr release is out yet.",
                 "Belum ada rilis HushTumblr.");
         table.put("No app can share this link",
@@ -2712,11 +2718,11 @@ public final class L10nTranslations {
                 "Atur ulang bilah bawah");
         table.put("Replaces Tumblr's own font with your phone's font, or a font file you choose below. Fonts a post's author picked stay as they are.",
                 "Mengganti font bawaan Tumblr dengan font ponselmu atau file font yang kamu pilih di bawah. Font yang dipilih penulis postingan tetap seperti aslinya.");
-        table.put("Report a problem",
-                "Laporkan masalah");
     }
 
     private static void fillIn5(Map<String, String> table) {
+        table.put("Report a problem",
+                "Laporkan masalah");
         table.put("Restart Tumblr to apply %1$d changes",
                 "Mulai ulang Tumblr untuk menerapkan %1$d perubahan");
         table.put("Restart Tumblr to apply these settings.",
@@ -2835,11 +2841,11 @@ public final class L10nTranslations {
                 "Tab, jumlah, dan tampilan");
         table.put("Tags",
                 "Tag");
-        table.put("Tags and post content Tumblr hides for your account on every device, and its mature content choices.",
-                "Tag dan isi postingan yang disembunyikan Tumblr untuk akunmu di semua perangkat, serta pilihan konten dewasanya.");
     }
 
     private static void fillIn6(Map<String, String> table) {
+        table.put("Tags and post content Tumblr hides for your account on every device, and its mature content choices.",
+                "Tag dan isi postingan yang disembunyikan Tumblr untuk akunmu di semua perangkat, serta pilihan konten dewasanya.");
         table.put("Takes Tumblr TV's Watch it rows and video hub cards, and their headings, out of your dashboard and other feeds.",
                 "Menghapus baris Watch it dan kartu video hub dari Tumblr TV, beserta judulnya, dari dasbor dan feed lainnya.");
         table.put("Takes ads and paid Blaze posts out of your dashboard and other feeds. Once Tumblr restarts, it stops asking for ads and its ad networks don't start.",
@@ -2958,11 +2964,11 @@ public final class L10nTranslations {
                 "Tidak ada data diagnostik yang dapat dikembalikan.");
         table.put("There's no import to undo.",
                 "Tidak ada impor untuk diurungkan.");
-        table.put("This build doesn't include the parts that handle %1$s.",
-                "Build ini tidak menyertakan bagian yang menangani %1$s.");
     }
 
     private static void fillIn7(Map<String, String> table) {
+        table.put("This build doesn't include the parts that handle %1$s.",
+                "Build ini tidak menyertakan bagian yang menangani %1$s.");
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
                 "Build ini menangani %1$s. Bagian untuk %2$s tidak ada.");
         table.put("This device keeps muted post lists for eight accounts. When a ninth account mutes a post, the list that's gone longest without a change is deleted.",
@@ -3081,11 +3087,11 @@ public final class L10nTranslations {
                 "Anda sudah memakai rilis HushTumblr terbaru.");
         table.put("You paused HushTumblr.",
                 "Anda menjeda HushTumblr.");
-        table.put("Your choice is saved, but this build doesn't include the patch for it.",
-                "Pilihan Anda tersimpan, tetapi build ini tidak menyertakan patch-nya.");
     }
 
     private static void fillIn8(Map<String, String> table) {
+        table.put("Your choice is saved, but this build doesn't include the patch for it.",
+                "Pilihan Anda tersimpan, tetapi build ini tidak menyertakan patch-nya.");
         table.put("Your choices are saved. Tap Resume, then restart Tumblr.",
                 "Pilihan Anda tersimpan. Ketuk Lanjutkan, lalu mulai ulang Tumblr.");
         table.put("Your saved lists are too large for a settings backup. Shorten them before exporting. The existing file wasn't changed.",
@@ -3107,7 +3113,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(978);
+        Map<String, String> table = new HashMap<>(980);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -3346,6 +3352,8 @@ public final class L10nTranslations {
                 "Cada op\u00e7\u00e3o aqui vale para todas as contas deste app do Tumblr, n\u00e3o s\u00f3 para a que est\u00e1 aberta.");
         table.put("Explore",
                 "Explorar");
+        table.put("Explore's sponsored header",
+                "o cabe\u00e7alho patrocinado do Explorar");
         table.put("Export diagnostic report",
                 "Exportar relat\u00f3rio de diagn\u00f3stico");
         table.put("Export settings",
@@ -3362,11 +3370,11 @@ public final class L10nTranslations {
                 "Como encontrar");
         table.put("Firebase and Google Analytics collection is turned off",
                 "A coleta do Firebase e do Google Analytics est\u00e1 desativada");
-        table.put("Fix push notifications",
-                "Corrigir notifica\u00e7\u00f5es push");
     }
 
     private static void fillPt_rBR2(Map<String, String> table) {
+        table.put("Fix push notifications",
+                "Corrigir notifica\u00e7\u00f5es push");
         table.put("Font file saved.",
                 "Arquivo de fonte salvo.");
         table.put("Font file saved. Turn on App font to use it.",
@@ -3485,11 +3493,11 @@ public final class L10nTranslations {
                 "Oculta an\u00fancios, sugest\u00f5es, avisos e contadores de n\u00e3o lidos.");
         table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. The Blaze item in a post's menu stays.",
                 "Esconde os bot\u00f5es e banners do Blaze e o aviso para promover um post depois que voc\u00ea o compartilha. A op\u00e7\u00e3o Blaze no menu de um post continua l\u00e1.");
-        table.put("Hides the Premium diamond on your dashboard, Explore and notifications when you return to them. Open screens keep their TumblrMart button until Tumblr restarts.",
-                "Oculta o diamante Premium no painel, Explorar e notifica\u00e7\u00f5es quando voc\u00ea volta a essas telas. As telas abertas mant\u00eam o bot\u00e3o do TumblrMart at\u00e9 o Tumblr reiniciar.");
     }
 
     private static void fillPt_rBR3(Map<String, String> table) {
+        table.put("Hides the Premium diamond on your dashboard, Explore and notifications when you return to them. Open screens keep their TumblrMart button until Tumblr restarts.",
+                "Oculta o diamante Premium no painel, Explorar e notifica\u00e7\u00f5es quando voc\u00ea volta a essas telas. As telas abertas mant\u00eam o bot\u00e3o do TumblrMart at\u00e9 o Tumblr reiniciar.");
         table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing.",
                 "Esconde o banner do painel que pede para voc\u00ea pagar pela navega\u00e7\u00e3o sem an\u00fancios.");
         table.put("Hides the pop-up suggesting you buy a gift for a blog. You can still open gifting yourself.",
@@ -3608,11 +3616,11 @@ public final class L10nTranslations {
                 "Posts silenciados limpos");
         table.put("Muted posts restored",
                 "Posts silenciados restaurados");
-        table.put("Mutual",
-                "M\u00fatuos");
     }
 
     private static void fillPt_rBR4(Map<String, String> table) {
+        table.put("Mutual",
+                "M\u00fatuos");
         table.put("No HushTumblr release is out yet.",
                 "Ainda n\u00e3o h\u00e1 nenhuma vers\u00e3o do HushTumblr.");
         table.put("No app can share this link",
@@ -3731,11 +3739,11 @@ public final class L10nTranslations {
                 "Reordenar a barra de baixo");
         table.put("Replaces Tumblr's own font with your phone's font, or a font file you choose below. Fonts a post's author picked stay as they are.",
                 "Troca a fonte pr\u00f3pria do Tumblr pela fonte do seu celular ou por um arquivo de fonte que voc\u00ea escolher abaixo. As fontes que o autor de um post escolheu continuam como est\u00e3o.");
-        table.put("Report a problem",
-                "Relatar um problema");
     }
 
     private static void fillPt_rBR5(Map<String, String> table) {
+        table.put("Report a problem",
+                "Relatar um problema");
         table.put("Restart Tumblr to apply %1$d changes",
                 "Reinicie o Tumblr para aplicar %1$d altera\u00e7\u00f5es");
         table.put("Restart Tumblr to apply these settings.",
@@ -3854,11 +3862,11 @@ public final class L10nTranslations {
                 "Abas, contadores e apar\u00eancia");
         table.put("Tags",
                 "Tags");
-        table.put("Tags and post content Tumblr hides for your account on every device, and its mature content choices.",
-                "As tags e o conte\u00fado que o Tumblr oculta para a sua conta em todos os aparelhos, e as op\u00e7\u00f5es de conte\u00fado adulto.");
     }
 
     private static void fillPt_rBR6(Map<String, String> table) {
+        table.put("Tags and post content Tumblr hides for your account on every device, and its mature content choices.",
+                "As tags e o conte\u00fado que o Tumblr oculta para a sua conta em todos os aparelhos, e as op\u00e7\u00f5es de conte\u00fado adulto.");
         table.put("Takes Tumblr TV's Watch it rows and video hub cards, and their headings, out of your dashboard and other feeds.",
                 "Tira do seu painel e de outros feeds as linhas do Watch it e os cards de v\u00eddeo do Tumblr TV, junto com os t\u00edtulos deles.");
         table.put("Takes ads and paid Blaze posts out of your dashboard and other feeds. Once Tumblr restarts, it stops asking for ads and its ad networks don't start.",
@@ -3977,11 +3985,11 @@ public final class L10nTranslations {
                 "N\u00e3o h\u00e1 dados de diagn\u00f3stico para restaurar.");
         table.put("There's no import to undo.",
                 "N\u00e3o h\u00e1 importa\u00e7\u00e3o para desfazer.");
-        table.put("This build doesn't include the parts that handle %1$s.",
-                "Esta vers\u00e3o n\u00e3o inclui as partes que cuidam de %1$s.");
     }
 
     private static void fillPt_rBR7(Map<String, String> table) {
+        table.put("This build doesn't include the parts that handle %1$s.",
+                "Esta vers\u00e3o n\u00e3o inclui as partes que cuidam de %1$s.");
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
                 "Esta vers\u00e3o cuida de %1$s. Faltam as partes para %2$s.");
         table.put("This device keeps muted post lists for eight accounts. When a ninth account mutes a post, the list that's gone longest without a change is deleted.",
@@ -4100,11 +4108,11 @@ public final class L10nTranslations {
                 "Voc\u00ea j\u00e1 est\u00e1 usando a vers\u00e3o mais nova do HushTumblr.");
         table.put("You paused HushTumblr.",
                 "Voc\u00ea pausou o HushTumblr.");
-        table.put("Your choice is saved, but this build doesn't include the patch for it.",
-                "Sua escolha est\u00e1 salva, mas esta vers\u00e3o n\u00e3o inclui o patch para ela.");
     }
 
     private static void fillPt_rBR8(Map<String, String> table) {
+        table.put("Your choice is saved, but this build doesn't include the patch for it.",
+                "Sua escolha est\u00e1 salva, mas esta vers\u00e3o n\u00e3o inclui o patch para ela.");
         table.put("Your choices are saved. Tap Resume, then restart Tumblr.",
                 "Suas escolhas est\u00e3o salvas. Toque em Retomar e depois reinicie o Tumblr.");
         table.put("Your saved lists are too large for a settings backup. Shorten them before exporting. The existing file wasn't changed.",
@@ -4126,7 +4134,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(978);
+        Map<String, String> table = new HashMap<>(980);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -4365,6 +4373,8 @@ public final class L10nTranslations {
                 "Buradaki her anahtar yaln\u0131zca a\u00e7\u0131k olan hesap i\u00e7in de\u011fil, bu Tumblr uygulamas\u0131ndaki t\u00fcm hesaplar i\u00e7in ge\u00e7erlidir.");
         table.put("Explore",
                 "Ke\u015ffet");
+        table.put("Explore's sponsored header",
+                "Ke\u015ffet'teki sponsorlu ba\u015fl\u0131k");
         table.put("Export diagnostic report",
                 "Tan\u0131lama raporunu d\u0131\u015fa aktar");
         table.put("Export settings",
@@ -4381,11 +4391,11 @@ public final class L10nTranslations {
                 "Nerede bulunur");
         table.put("Firebase and Google Analytics collection is turned off",
                 "Firebase ve Google Analytics veri toplama kapal\u0131");
-        table.put("Fix push notifications",
-                "Anl\u0131k bildirimleri d\u00fczelt");
     }
 
     private static void fillTr2(Map<String, String> table) {
+        table.put("Fix push notifications",
+                "Anl\u0131k bildirimleri d\u00fczelt");
         table.put("Font file saved.",
                 "Yaz\u0131 tipi dosyas\u0131 kaydedildi.");
         table.put("Font file saved. Turn on App font to use it.",
@@ -4504,11 +4514,11 @@ public final class L10nTranslations {
                 "Reklamlar\u0131, \u00f6nerileri, hat\u0131rlatmalar\u0131 ve okunmam\u0131\u015f say\u0131lar\u0131n\u0131 gizler.");
         table.put("Hides the Blaze buttons, banners and the nudge to promote a post after you share it. The Blaze item in a post's menu stays.",
                 "Blaze d\u00fc\u011fmelerini, banner'lar\u0131n\u0131 ve bir g\u00f6nderiyi payla\u015ft\u0131ktan sonra tan\u0131tman\u0131 \u00f6neren uyar\u0131y\u0131 gizler. Bir g\u00f6nderinin men\u00fcs\u00fcndeki Blaze se\u00e7ene\u011fi kal\u0131r.");
-        table.put("Hides the Premium diamond on your dashboard, Explore and notifications when you return to them. Open screens keep their TumblrMart button until Tumblr restarts.",
-                "Panoya, Ke\u015ffet ekran\u0131na ve bildirimlere d\u00f6nd\u00fc\u011f\u00fcn\u00fczde Premium elmas\u0131n\u0131 gizler. A\u00e7\u0131k ekranlar Tumblr yeniden ba\u015flat\u0131lana kadar TumblrMart d\u00fc\u011fmesini korur.");
     }
 
     private static void fillTr3(Map<String, String> table) {
+        table.put("Hides the Premium diamond on your dashboard, Explore and notifications when you return to them. Open screens keep their TumblrMart button until Tumblr restarts.",
+                "Panoya, Ke\u015ffet ekran\u0131na ve bildirimlere d\u00f6nd\u00fc\u011f\u00fcn\u00fczde Premium elmas\u0131n\u0131 gizler. A\u00e7\u0131k ekranlar Tumblr yeniden ba\u015flat\u0131lana kadar TumblrMart d\u00fc\u011fmesini korur.");
         table.put("Hides the dashboard banner that asks you to pay for Ad-Free Browsing.",
                 "Panoda reklams\u0131z gezinme i\u00e7in \u00f6deme yapman\u0131 isteyen banner'\u0131 gizler.");
         table.put("Hides the pop-up suggesting you buy a gift for a blog. You can still open gifting yourself.",
@@ -4627,11 +4637,11 @@ public final class L10nTranslations {
                 "Susturulan g\u00f6nderiler temizlendi");
         table.put("Muted posts restored",
                 "Susturulan g\u00f6nderiler geri y\u00fcklendi");
-        table.put("Mutual",
-                "Kar\u015f\u0131l\u0131kl\u0131");
     }
 
     private static void fillTr4(Map<String, String> table) {
+        table.put("Mutual",
+                "Kar\u015f\u0131l\u0131kl\u0131");
         table.put("No HushTumblr release is out yet.",
                 "Hen\u00fcz bir HushTumblr s\u00fcr\u00fcm\u00fc yay\u0131nlanmad\u0131.");
         table.put("No app can share this link",
@@ -4750,11 +4760,11 @@ public final class L10nTranslations {
                 "Alt \u00e7ubu\u011fu yeniden s\u0131rala");
         table.put("Replaces Tumblr's own font with your phone's font, or a font file you choose below. Fonts a post's author picked stay as they are.",
                 "Tumblr'\u0131n kendi yaz\u0131 tipini telefonunun yaz\u0131 tipiyle veya a\u015fa\u011f\u0131dan se\u00e7ti\u011fin bir yaz\u0131 tipi dosyas\u0131yla de\u011fi\u015ftirir. G\u00f6nderi yazar\u0131n\u0131n se\u00e7ti\u011fi yaz\u0131 tipleri oldu\u011fu gibi kal\u0131r.");
-        table.put("Report a problem",
-                "Sorun bildir");
     }
 
     private static void fillTr5(Map<String, String> table) {
+        table.put("Report a problem",
+                "Sorun bildir");
         table.put("Restart Tumblr to apply %1$d changes",
                 "%1$d de\u011fi\u015fikli\u011fi uygulamak i\u00e7in Tumblr'\u0131 yeniden ba\u015flat");
         table.put("Restart Tumblr to apply these settings.",
@@ -4873,11 +4883,11 @@ public final class L10nTranslations {
                 "Sekmeler, saya\u00e7lar ve g\u00f6r\u00fcn\u00fcm");
         table.put("Tags",
                 "Etiketler");
-        table.put("Tags and post content Tumblr hides for your account on every device, and its mature content choices.",
-                "Tumblr'\u0131n hesab\u0131n i\u00e7in her cihazda gizledi\u011fi etiketler ve g\u00f6nderi i\u00e7erikleri ile yeti\u015fkin i\u00e7erik se\u00e7enekleri.");
     }
 
     private static void fillTr6(Map<String, String> table) {
+        table.put("Tags and post content Tumblr hides for your account on every device, and its mature content choices.",
+                "Tumblr'\u0131n hesab\u0131n i\u00e7in her cihazda gizledi\u011fi etiketler ve g\u00f6nderi i\u00e7erikleri ile yeti\u015fkin i\u00e7erik se\u00e7enekleri.");
         table.put("Takes Tumblr TV's Watch it rows and video hub cards, and their headings, out of your dashboard and other feeds.",
                 "Tumblr TV'nin Watch it sat\u0131rlar\u0131n\u0131 ve video kartlar\u0131n\u0131, ba\u015fl\u0131klar\u0131yla birlikte panondan ve di\u011fer ak\u0131\u015flardan kald\u0131r\u0131r.");
         table.put("Takes ads and paid Blaze posts out of your dashboard and other feeds. Once Tumblr restarts, it stops asking for ads and its ad networks don't start.",
@@ -4996,11 +5006,11 @@ public final class L10nTranslations {
                 "Geri getirilecek tan\u0131lama verisi yok.");
         table.put("There's no import to undo.",
                 "Geri al\u0131nacak i\u00e7e aktarma yok.");
-        table.put("This build doesn't include the parts that handle %1$s.",
-                "Bu s\u00fcr\u00fcm %1$s ile ilgilenen par\u00e7alar\u0131 i\u00e7ermiyor.");
     }
 
     private static void fillTr7(Map<String, String> table) {
+        table.put("This build doesn't include the parts that handle %1$s.",
+                "Bu s\u00fcr\u00fcm %1$s ile ilgilenen par\u00e7alar\u0131 i\u00e7ermiyor.");
         table.put("This build handles %1$s. It's missing the parts for %2$s.",
                 "Bu s\u00fcr\u00fcm %1$s ile ilgileniyor. %2$s i\u00e7in par\u00e7alar eksik.");
         table.put("This device keeps muted post lists for eight accounts. When a ninth account mutes a post, the list that's gone longest without a change is deleted.",
@@ -5119,11 +5129,11 @@ public final class L10nTranslations {
                 "En yeni HushTumblr s\u00fcr\u00fcm\u00fcn\u00fc kullan\u0131yorsun.");
         table.put("You paused HushTumblr.",
                 "HushTumblr'\u0131 duraklatt\u0131n.");
-        table.put("Your choice is saved, but this build doesn't include the patch for it.",
-                "Se\u00e7imin kaydedildi ama bu s\u00fcr\u00fcm onun yamas\u0131n\u0131 i\u00e7ermiyor.");
     }
 
     private static void fillTr8(Map<String, String> table) {
+        table.put("Your choice is saved, but this build doesn't include the patch for it.",
+                "Se\u00e7imin kaydedildi ama bu s\u00fcr\u00fcm onun yamas\u0131n\u0131 i\u00e7ermiyor.");
         table.put("Your choices are saved. Tap Resume, then restart Tumblr.",
                 "Tercihleriniz kay\u0131tl\u0131. Devam et'e dokunun, sonra Tumblr'\u0131 yeniden ba\u015flat\u0131n.");
         table.put("Your saved lists are too large for a settings backup. Shorten them before exporting. The existing file wasn't changed.",

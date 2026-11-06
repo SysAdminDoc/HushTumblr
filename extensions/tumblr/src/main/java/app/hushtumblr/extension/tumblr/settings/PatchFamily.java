@@ -211,6 +211,7 @@ public enum PatchFamily {
         ACTIVITY_NOTIFICATION_LIST(FILTER_ACTIVITY_NOTIFICATIONS, "activityNotificationList", "Filter activity notifications"),
         PAID_POST_HEADER(HIDE_ADS, "paidPostHeader", "Hide ads"),
         AD_SDK_STARTUP(HIDE_ADS, "adSdkStartup", "ad networks at launch"),
+        EXPLORE_HEADER_AD(HIDE_ADS, "exploreHeaderAd", "Explore's sponsored header"),
         ADVERTISING_ID(HIDE_ADVERTISING_ID, "advertisingId", "Hide advertising ID"),
         ANALYTICS_FLAGS(DISABLE_ANALYTICS, "analyticsFlags", "Disable analytics"),
         LIVERAMP_STARTUP(DISABLE_ANALYTICS, "liveRampStartup", "LiveRamp at launch"),

@@ -29,7 +29,7 @@ no-call Landroid/content/pm/ShortcutManager;->removeAllDynamicShortcuts()V outsi
 # An empty capability column is a family that changes no bytecode (a manifest-only patch): only its
 # installed flag is checked against the selected patches. Every installed and capability flag
 # SettingsStatus compiles needs a line here, and every capability a mutation rule.
-family|hideAds|Hide ads|timelineAds,paidPostHeader,adSdkStartup
+family|hideAds|Hide ads|timelineAds,paidPostHeader,adSdkStartup,exploreHeaderAd
 family|disableAnalytics|Disable analytics|analyticsFlags,liveRampStartup,crashReports
 family|hideAdvertisingId|Hide advertising ID|advertisingId
 family|removeAdTrackingPermissions|Remove ad tracking permissions|
@@ -152,6 +152,8 @@ mutation|imageSizes|imageSizes|Lapp/hushtumblr/extension/tumblr/ui/SharperImages
 # The post row hook, the post row composer, the post as it holds it, the block row and the screen's
 # timeline, then the extension's block row bridge.
 mutation|longPostRows|longPostRows|Lapp/hushtumblr/extension/tumblr/timeline/LongPosts;->post(ZLjava/util/List;)Ljava/util/List;|Lfmf;|Ljm2;|Ltj2;|Ljtl;|Lapp/hushtumblr/extension/tumblr/timeline/HushBlockRow;
+# The Explore header hook, the fetched header's type, and the presenter's two failed-load log lines.
+mutation|exploreHeaderAd|exploreHeaderAd|Lapp/hushtumblr/extension/tumblr/timeline/ExploreHeader;->hideSponsored(Ljava/lang/Object;)Z|Lcom/tumblr/rumblr/response/RadarHeaderResponse;|ExploreHeaderPresenter|Failed to retrieve header
 mutation|fontChoice|fontChoice|Lapp/hushtumblr/extension/tumblr/ui/AppFont;->replacement(Landroid/content/Context;I)Landroid/graphics/Typeface;|Lapp/hushtumblr/extension/tumblr/ui/AppFont;->provided(Landroid/graphics/Typeface;)Landroid/graphics/Typeface;|Font resource ID #0x|sans-serif-medium|Returning pre-inflated View for resId: |Lapp/hushtumblr/extension/tumblr/ui/AppFont;->preinflated(Landroid/view/View;)V
 mutation|followButton|followButton|Lapp/hushtumblr/extension/tumblr/ui/PostParts;->hideFollowButton()Z|Lcom/tumblr/ui/widget/PostCardHeader;|Lcom/tumblr/rumblr/model/post/PostHeaderAction$ActionType;->FOLLOW|Lapp/hushtumblr/extension/tumblr/ui/PostParts;->trailFollow(Ljava/lang/Object;)Ljava/lang/Object;|Lcom/tumblr/ui/widget/graywater/viewholder/ReblogHeaderViewHolder;
 # A footer button's question, the Compose function it guards (by its source note) and the

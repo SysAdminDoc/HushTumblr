@@ -55,6 +55,7 @@ public final class SettingsStatus {
     public static boolean timelineAds() { return false; }
     public static boolean paidPostHeader() { return false; }
     public static boolean adSdkStartup() { return false; }
+    public static boolean exploreHeaderAd() { return false; }
     public static boolean disableAnalytics() { return false; }
     public static boolean hideAdvertisingId() { return false; }
     public static boolean advertisingId() { return false; }

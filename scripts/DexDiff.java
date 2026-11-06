@@ -302,7 +302,7 @@ public class DexDiff {
             Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1), Map.entry("activityNotifications", 7),
             Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 7), Map.entry("timelinePaging", 5),
             Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 7), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
-            Map.entry("crashReports", 3), Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("videoLinkPress", 6), Map.entry("imageSizes", 4), Map.entry("longPostRows", 6), Map.entry("fontChoice", 6),
+            Map.entry("crashReports", 3), Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("videoLinkPress", 6), Map.entry("imageSizes", 4), Map.entry("longPostRows", 6), Map.entry("exploreHeaderAd", 4), Map.entry("fontChoice", 6),
             Map.entry("followButton", 5), Map.entry("footerButton", 3), Map.entry("postTags", 6),
             Map.entry("noteCounts", 9), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
@@ -5600,6 +5600,67 @@ public class DexDiff {
         }
 
         /**
+         * Explore's header presenter asks the hook about the radar header it fetched, right before the
+         * one static call that builds the header's model, and on yes jumps to the constant return its
+         * drawn and failed-load paths share, past the drawing, the impression and the takeover ad.
+         * The patch skips a presenter it can't find, finds twice or that changed shape, so such a
+         * clean APK only requires the capability off. The shape here is every check the patch makes.
+         */
+        void exploreHeaderAd(Contract c) {
+            String hook = c.strings.get(0), response = c.strings.get(1), failText = c.strings.get(3);
+            List<Method> found = new ArrayList<>();
+            for (Method held : clean.holding(failText)) if (clean.texts.get(held.toString()).contains(c.strings.get(2))
+                    && instructions(held).stream().anyMatch(i -> i.getOpcode() == Opcode.CHECK_CAST && response.equals(String.valueOf(reference(i)))))
+                found.add(held);
+            if (found.size() != 1) { capability(c.callee, false); return; }
+            Method old = found.get(0);
+            List<Instruction> was = instructions(old);
+            Set<Opcode> ends = Set.of(Opcode.RETURN_VOID, Opcode.RETURN, Opcode.RETURN_WIDE, Opcode.RETURN_OBJECT, Opcode.THROW);
+            List<Integer> casts = new ArrayList<>(), fails = new ArrayList<>();
+            for (int k = 0; k < was.size(); k++) {
+                if (was.get(k).getOpcode() == Opcode.CHECK_CAST && response.equals(String.valueOf(reference(was.get(k))))) casts.add(k);
+                if (failText.equals(literal(was.get(k)))) fails.add(k);
+            }
+            int cast = casts.size() == 1 ? casts.get(0) : -1;
+            int held = cast >= 0 ? firstRegister(was.get(cast)) : -1;
+            Instruction build = get(was, cast + 1);
+            MethodReference built = cast >= 0 ? called(build) : null;
+            int exit = cast >= 0 ? firstIndex(was, cast + 2, i -> i instanceof OffsetInstruction || ends.contains(i.getOpcode())) : -1;
+            Instruction jump = get(was, exit);
+            int done = jump != null && (jump.getOpcode() == Opcode.GOTO || jump.getOpcode() == Opcode.GOTO_16 || jump.getOpcode() == Opcode.GOTO_32) ? target(old, exit) : -1;
+            int fail = fails.size() == 1 ? fails.get(0) : -1;
+            int failEnd = fail > exit ? firstIndex(was, fail + 1, i -> i instanceof OffsetInstruction || ends.contains(i.getOpcode())) : -1;
+            boolean scratchFree = false;
+            for (int r = 0; r < parameter(old, -1) && !scratchFree && done > 0; r++) scratchFree = r != held && deadAt(old, cast + 1, r) && deadAt(old, done, r);
+            boolean shaped = built != null && build.getOpcode() == Opcode.INVOKE_STATIC && arguments(build).equals(List.of(held))
+                    && built.getParameterTypes().size() == 1 && response.equals(built.getParameterTypes().get(0).toString()) && held < 16
+                    && done > exit && get(was, done).getOpcode() == Opcode.SGET_OBJECT && movesTo(get(was, done + 1), firstRegister(was.get(done)), Opcode.RETURN_OBJECT)
+                    && fail > exit && fail < done && (failEnd < 0 || failEnd >= done) && scratchFree;
+            if (!shaped) { capability(c.callee, false); return; }
+            Method m = actual(old);
+            List<Integer> sites = m == null ? List.of() : callSites(instructions(m), hook);
+            if (sites.isEmpty()) { capability(c.callee, false); return; }
+            sites = calls(m, hook, 1);
+            if (sites.size() != 1) { capability(c.callee, false); return; }
+            int at = sites.get(0);
+            List<Instruction> body = instructions(m);
+            Instruction answer = get(body, at + 1);
+            int scratch = answer == null ? -1 : firstRegister(answer);
+            boolean injected = at == cast + 1 && callIs(get(body, at), Opcode.INVOKE_STATIC, hook, held)
+                    && movesTo(answer, scratch, Opcode.MOVE_RESULT) && scratch >= 0 && scratch < parameter(m, -1) && scratch != held
+                    && movesTo(get(body, at + 2), scratch, Opcode.IF_NEZ) && target(m, at + 2) == done + 3
+                    && deadAt(old, cast + 1, scratch) && deadAt(old, done, scratch);
+            if (!injected) fail("the Explore header hook doesn't ask about the radar header before its model call and jump to the presenter's end on yes in " + m);
+            else {
+                remove(m, at, at + 3);
+                anchor(m, at, cast + 1, hook);
+                fallthroughOnly(old, cast + 1, hook);
+                vouch(m, at, List.of(held));
+            }
+            capability(c.callee, injected);
+        }
+
+        /**
          * Eight steps in front of [cleanAt] of [old], at [start] of [m]: whether the screen draws a
          * Read more cut into a scratch local, [hook] on it and [args], and on a list, 1 into [cut] and the
          * list into [list]. On null they jump to Tumblr's own step. The scratch local, or -1.
@@ -6693,6 +6754,7 @@ public class DexDiff {
                     case "videoLinkPress": videoLinkPress(c); break;
                     case "imageSizes": imageSizes(c); break;
                     case "longPostRows": longPostRows(c); break;
+                    case "exploreHeaderAd": exploreHeaderAd(c); break;
                     case "fontChoice": fontChoice(c); break;
                     case "followButton": followButton(c); break;
                     case "footerButton": footerButton(c); break;

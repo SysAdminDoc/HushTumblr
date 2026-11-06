@@ -57,6 +57,7 @@ import com.tumblr.rumblr.model.TimelineObject;
 import com.tumblr.rumblr.model.TimelineObjectType;
 import com.tumblr.rumblr.model.Timelineable;
 import com.tumblr.rumblr.model.post.blocks.TextBlock;
+import com.tumblr.rumblr.response.RadarHeaderResponse;
 
 import app.hushtumblr.extension.tumblr.flags.FeatureSwitches;
 import app.hushtumblr.extension.tumblr.flags.FeatureSwitchesTest;
@@ -80,6 +81,7 @@ import app.hushtumblr.extension.tumblr.privacy.AdvertisingId;
 import app.hushtumblr.extension.tumblr.rootmute.HushAccountIdentity;
 import app.hushtumblr.extension.tumblr.rootmute.MatureAccountsForTests;
 import app.hushtumblr.extension.tumblr.rootmute.RootPostMutes;
+import app.hushtumblr.extension.tumblr.timeline.ExploreHeader;
 import app.hushtumblr.extension.tumblr.timeline.HushBlockRow;
 import app.hushtumblr.extension.tumblr.timeline.HushPaidPost;
 import app.hushtumblr.extension.tumblr.timeline.HushPost;
@@ -172,10 +174,11 @@ public class PausedHooksTest {
         PatchFamily.capabilitiesForTests = EnumSet.allOf(PatchFamily.Capability.class);
         PatchFamily.inBuildForTests = EnumSet.allOf(PatchFamily.class);
         Map<BooleanSetting, List<Probe>> probes = new LinkedHashMap<>();
-        // A page with an ad comes back without it, and Tumblr's own ad requests and its full-screen
-        // ad are turned off.
+        // A page with an ad comes back without it, Explore's sponsored header goes undrawn, and
+        // Tumblr's own ad requests and its full-screen ad are turned off.
         probes.put(Settings.HIDE_ADS, Arrays.asList(
                 TimelineItems::aPageLosesItsAd,
+                () -> ExploreHeader.hideSponsored(new RadarHeaderResponse(new RadarHeaderResponse.RadarHeader("sponsored", null, null))),
                 () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("MAKE_ADX_REQUESTS"), true),
                 () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("MAKE_NIMBUS_INTERSTITIAL_CLIENT_AD_REQUESTS"), true)));
         // Both getters of Google's advertising ID info answer as if the ID were deleted.
