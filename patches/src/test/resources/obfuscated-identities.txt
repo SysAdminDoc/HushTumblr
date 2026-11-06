@@ -116,3 +116,6 @@ patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/CollapseLongPostsPatc
 patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/CollapseLongPostsPatch.kt|Ltj2;
 patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/CollapseLongPostsPatch.kt|Ljtl;
 patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/CollapseLongPostsPatch.kt|Lr4g;
+# Ln6h is the reblog trail entry: its constructor splits the entry's blocks into rows (field l), then
+# reads its author's cut (field j), an index into its blocks (field h). Field o is its ask layout.
+patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/CollapseLongTrails.kt|Ln6h;

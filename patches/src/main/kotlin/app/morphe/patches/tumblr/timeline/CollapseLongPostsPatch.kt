@@ -76,17 +76,19 @@ internal class CollapseLongPostsPlan(val post: PostSite)
  * row and all. Tumblr's block row answers the extension's [HUSH_BLOCK_ROW] with its blocks, so the
  * extension can tell how tall each row is. The post is never changed.
  *
- * Only the post's own rows are cut, never a reblog trail entry's. Tumblr's block binders find
- * their row by counting the rows drawn before them and reading that index from a list it built
- * with the post (`jm2`'s trail rows, then its own rows). The own rows come last, so dropping the
- * end of them leaves every earlier index in place, the same as an author's cut does. Dropping rows
- * from a trail entry in the middle would shift every row after it onto the wrong block.
+ * This hook cuts only the post's own rows. Tumblr's block binders find their row by counting the
+ * rows drawn before them and reading that index from a list it built with the post (`jm2`'s trail
+ * rows, then its own rows). The own rows come last, so dropping the end of them leaves every
+ * earlier index in place, the same as an author's cut does. Dropping rows from a trail entry here
+ * would shift every row after it onto the wrong block, so a long trail entry is cut where Tumblr
+ * builds it instead ([collapseLongTrailEntries]), before `jm2` or this list reads it.
  */
 @Suppress("unused")
 val collapseLongPostsPatch = bytecodePatch(
     name = PATCH,
     description = "Cuts long posts in your timelines to about a screen, with Tumblr's own Read more row" +
-        " under them. Tap it to open the whole post. Reblog trails and asks keep Tumblr's layout. Starts off." +
+        " under them. Tap it to open the whole post. A long entry in a reblog trail gets cut the same way." +
+        " Asks keep Tumblr's layout. Starts off." +
         " Turn it on in Tumblr settings > HushTumblr > Posts.",
     default = true,
 ) {
@@ -96,6 +98,7 @@ val collapseLongPostsPatch = bytecodePatch(
     execute {
         requireStatusMethod("collapseLongPosts")
         requireStatusMethod("longPostRows")
+        requireStatusMethod("longTrailRows")
         val site = resolveCollapseLongPosts().post
         site.method.addInstructionsWithLabels(
             site.at,
@@ -128,6 +131,8 @@ val collapseLongPostsPatch = bytecodePatch(
             },
         )
         enableCapability("longPostRows")
+        // A soft site: without it, posts still collapse and trail entries stay whole.
+        if (collapseLongTrailEntries(PATCH)) enableCapability("longTrailRows")
         enableStatus("collapseLongPosts")
     }
 }

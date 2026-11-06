@@ -43,6 +43,7 @@ public final class SettingsStatus {
     public static boolean imageSizes() { return false; }
     public static boolean collapseLongPosts() { return false; }
     public static boolean longPostRows() { return false; }
+    public static boolean longTrailRows() { return false; }
     public static boolean videoLinkPress() { return false; }
     public static boolean showPostTimestamps() { return false; }
     public static boolean nativePostTimestamps() { return false; }

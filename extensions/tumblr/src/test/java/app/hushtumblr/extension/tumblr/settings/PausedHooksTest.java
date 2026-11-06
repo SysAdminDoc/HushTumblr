@@ -307,8 +307,9 @@ public class PausedHooksTest {
         probes.put(Settings.SHARE_VIDEO_LINKS, Collections.singletonList(() -> videoLinkMenu(context)));
         // Tumblr's 640 pick of an image becomes its listed 1280 copy.
         probes.put(Settings.SHARPER_IMAGES, Collections.singletonList(PausedHooksTest::sharperPick));
-        // A long post keeps its first rows above Tumblr's Read more row.
-        probes.put(Settings.COLLAPSE_LONG_POSTS, Collections.singletonList(() -> LongPosts.post(true, longRows()) != null));
+        // A long post keeps its first rows above Tumblr's Read more row, and a long trail entry gets a cut.
+        probes.put(Settings.COLLAPSE_LONG_POSTS, Arrays.asList(() -> LongPosts.post(true, longRows()) != null,
+                PausedHooksTest::trailCut));
         probes.put(Settings.MUTE_ROOT_POSTS, Collections.singletonList(() -> mutedRoot(context)));
         probes.put(Settings.REVEAL_ALLOWED_MATURE_CONTENT, Collections.singletonList(PausedHooksTest::matureCover));
         probes.put(Settings.SHOW_MUTUAL_MARKERS, Collections.singletonList(() -> mutualMarker(context)));
@@ -371,6 +372,22 @@ public class PausedHooksTest {
         String paragraph = String.join("", Collections.nCopies(40, "words "));
         for (int i = 0; i < 20; i++) rows.add((HushBlockRow) () -> Collections.singletonList(new TextBlock(paragraph)));
         return rows;
+    }
+
+    /**
+     * A trail entry its author didn't cut, of twenty different paragraphs, so each block is found in
+     * its own row the way Tumblr looks for the cut.
+     */
+    private static boolean trailCut() {
+        List<Object> rows = new ArrayList<>();
+        List<Object> blocks = new ArrayList<>();
+        String paragraph = String.join("", Collections.nCopies(40, "words "));
+        for (int i = 0; i < 20; i++) {
+            TextBlock block = new TextBlock(paragraph + i);
+            blocks.add(block);
+            rows.add((HushBlockRow) () -> Collections.singletonList(block));
+        }
+        return LongPosts.trail(null, null, rows, blocks) != null;
     }
 
     private static HushPhotoSize photoSize(int width, int height) {

@@ -141,8 +141,11 @@ public final class FeatureDexFixture {
     private static final List<String> SHORTCUTS = List.of("pushDynamicShortcut", "addDynamicShortcuts", "setDynamicShortcuts", "updateShortcuts", "removeAllDynamicShortcuts");
     private static final Map<String, String[]> FAMILIES = new LinkedHashMap<>();
     private static final Map<String, Boolean> FLAGS = new LinkedHashMap<>();
-    /** No fixture dex carries Explore's header presenter, so the patch leaves that capability off. */
-    private static final Set<String> ABSENT = Set.of("exploreHeaderAd");
+    /**
+     * No fixture dex carries Explore's header presenter or the reblog trail entry, so the patch
+     * leaves those capabilities off.
+     */
+    private static final Set<String> ABSENT = Set.of("exploreHeaderAd", "longTrailRows");
     private static final List<String> SMALL_CASES = new ArrayList<>();
 
     private static ImmutableMethodReference ref(String type, String name, String result, String... parameters) {

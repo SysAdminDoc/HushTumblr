@@ -302,7 +302,7 @@ public class DexDiff {
             Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1), Map.entry("activityNotifications", 7),
             Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 7), Map.entry("timelinePaging", 5),
             Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 7), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
-            Map.entry("crashReports", 3), Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("videoLinkPress", 6), Map.entry("imageSizes", 4), Map.entry("longPostRows", 6), Map.entry("exploreHeaderAd", 4), Map.entry("fontChoice", 6),
+            Map.entry("crashReports", 3), Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("videoLinkPress", 6), Map.entry("imageSizes", 4), Map.entry("longPostRows", 6), Map.entry("exploreHeaderAd", 4), Map.entry("longTrailRows", 4), Map.entry("fontChoice", 6),
             Map.entry("followButton", 5), Map.entry("footerButton", 3), Map.entry("postTags", 6),
             Map.entry("noteCounts", 9), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
@@ -5661,6 +5661,76 @@ public class DexDiff {
         }
 
         /**
+         * The reblog trail entry's constructor, right after building its rows and before reading its
+         * author's cut, hands the cut, the ask layout, the rows and the blocks to the hook in four free
+         * locals and stores the answer as the cut. The patch skips an entry that changed shape, so such
+         * a clean APK only requires the capability off. The shape here is every check the patch makes.
+         */
+        void longTrailRows(Contract c) {
+            String hook = c.strings.get(0), entry = c.strings.get(1), trail = c.strings.get(2), ask = c.strings.get(3);
+            String list = "Ljava/util/List;", integer = "Ljava/lang/Integer;", cutField = entry + "->j:" + integer;
+            ClassDef cd = clean.classes.get(entry);
+            Set<String> held = new HashSet<>();
+            if (cd != null) for (Field f : cd.getFields()) if (!AccessFlags.STATIC.isSet(f.getAccessFlags())) held.add(f.getName() + ":" + f.getType());
+            List<Method> built = new ArrayList<>();
+            if (cd != null && !AccessFlags.INTERFACE.isSet(cd.getAccessFlags())) for (Method m : cd.getMethods())
+                if (m.getName().equals("<init>") && descriptor(m).equals("(" + trail + ")V") && m.getImplementation() != null) built.add(m);
+            boolean fields = held.containsAll(List.of("h:" + list, "j:" + integer, "l:" + list, "o:" + ask));
+            Method old = fields && built.size() == 1 ? built.get(0) : null;
+            List<Instruction> was = old == null ? List.of() : instructions(old);
+            int read = firstIndex(was, 0, i -> i.getOpcode() == Opcode.IGET_OBJECT && cutField.equals(String.valueOf(reference(i))));
+            int self = read > 0 && was.get(read) instanceof TwoRegisterInstruction t ? t.getRegisterB() : -1;
+            Instruction rows = get(was, read - 1), tested = get(was, read + 1);
+            MethodReference made = read > 0 ? called(rows) : null;
+            boolean shaped = self >= 0 && self < 16 && rows.getOpcode() == Opcode.INVOKE_DIRECT && made != null
+                    && made.getDefiningClass().equals(entry) && !made.getName().equals("<init>") && descriptor(made).equals("()V")
+                    && arguments(rows).equals(List.of(self))
+                    && tested != null && tested.getOpcode() == Opcode.IF_EQZ && firstRegister(tested) == firstRegister(was.get(read));
+            boolean indexed = false;
+            for (int k = read + 2; shaped && k < was.size() && !indexed; k++)
+                indexed = was.get(k).getOpcode() == Opcode.INVOKE_INTERFACE && "Ljava/util/List;->indexOf(Ljava/lang/Object;)I".equals(String.valueOf(reference(was.get(k))))
+                        && fieldIs(was.get(k - 1), Opcode.IGET_OBJECT, entry + "->h:" + list, arguments(was.get(k)).get(0), -1);
+            for (int k = read; indexed && k < was.size(); k++)
+                if (was.get(k).getOpcode() == Opcode.IPUT_OBJECT && cutField.equals(String.valueOf(reference(was.get(k))))) indexed = false;
+            boolean fallsThrough = false;
+            if (indexed) {
+                FeatureFlow graph = new FeatureFlow(old);
+                fallsThrough = graph.normal.get(read - 1).contains(read);
+                for (int k = 0; fallsThrough && k < graph.normal.size(); k++)
+                    if (k != read - 1 && graph.normal.get(k).contains(read) || graph.handlers.get(k).contains(read)) fallsThrough = false;
+            }
+            int free = 0;
+            for (int r = 0; fallsThrough && r < Math.min(16, parameter(old, -1)); r++) if (r != self && deadAt(old, read, r)) free++;
+            if (free < 4) { capability(c.callee, false); return; }
+            Method m = actual(old);
+            List<Integer> sites = m == null ? List.of() : callSites(instructions(m), hook);
+            if (sites.isEmpty()) { capability(c.callee, false); return; }
+            sites = calls(m, hook, 1);
+            if (sites.size() != 1) { capability(c.callee, false); return; }
+            int call = sites.get(0), at = call - 4;
+            List<Instruction> body = instructions(m);
+            List<Integer> locals = new ArrayList<>();
+            for (int k = at; k < call; k++) locals.add(get(body, k) == null ? -1 : firstRegister(get(body, k)));
+            boolean injected = at == read && locals.size() == 4 && new HashSet<>(locals).size() == 4 && !locals.contains(self)
+                    && fieldIs(get(body, at), Opcode.IGET_OBJECT, cutField, locals.get(0), self)
+                    && fieldIs(get(body, at + 1), Opcode.IGET_OBJECT, entry + "->o:" + ask, locals.get(1), self)
+                    && fieldIs(get(body, at + 2), Opcode.IGET_OBJECT, entry + "->l:" + list, locals.get(2), self)
+                    && fieldIs(get(body, at + 3), Opcode.IGET_OBJECT, entry + "->h:" + list, locals.get(3), self)
+                    && callIs(get(body, call), Opcode.INVOKE_STATIC, hook, locals.toArray(new Integer[0]))
+                    && movesTo(get(body, call + 1), locals.get(0), Opcode.MOVE_RESULT_OBJECT)
+                    && fieldIs(get(body, call + 2), Opcode.IPUT_OBJECT, cutField, locals.get(0), self)
+                    && locals.stream().allMatch(r -> r >= 0 && r < 16 && r < parameter(m, -1) && deadAt(old, read, r));
+            if (!injected) fail("the trail hook doesn't hand the entry's cut, ask, rows and blocks through four free locals and keep its answer as the cut in " + m);
+            else {
+                remove(m, at, at + 7);
+                anchor(m, at, read, hook);
+                fallthroughOnly(old, read, hook);
+                vouch(m, call, locals);
+            }
+            capability(c.callee, injected);
+        }
+
+        /**
          * Eight steps in front of [cleanAt] of [old], at [start] of [m]: whether the screen draws a
          * Read more cut into a scratch local, [hook] on it and [args], and on a list, 1 into [cut] and the
          * list into [list]. On null they jump to Tumblr's own step. The scratch local, or -1.
@@ -6755,6 +6825,7 @@ public class DexDiff {
                     case "imageSizes": imageSizes(c); break;
                     case "longPostRows": longPostRows(c); break;
                     case "exploreHeaderAd": exploreHeaderAd(c); break;
+                    case "longTrailRows": longTrailRows(c); break;
                     case "fontChoice": fontChoice(c); break;
                     case "followButton": followButton(c); break;
                     case "footerButton": footerButton(c); break;

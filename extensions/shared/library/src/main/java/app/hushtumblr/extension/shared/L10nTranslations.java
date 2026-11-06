@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(980);
+        Map<String, String> table = new HashMap<>(982);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -1064,6 +1064,8 @@ public final class L10nTranslations {
                 "Werbenetzwerke beim Start");
         table.put("gallery image descriptions",
                 "Bildbeschreibungen in Galerien");
+        table.put("long reblog trail entries",
+                "lange Eintr\u00e4ge in Reblog-Ketten");
         table.put("photo image descriptions",
                 "Bildbeschreibungen von Fotos");
         table.put("the Premium diamond",
@@ -1071,7 +1073,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(980);
+        Map<String, String> table = new HashMap<>(982);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -2085,6 +2087,8 @@ public final class L10nTranslations {
                 "las redes de anuncios al abrir");
         table.put("gallery image descriptions",
                 "descripciones de galer\u00edas");
+        table.put("long reblog trail entries",
+                "las entradas largas de la cadena de reblogs");
         table.put("photo image descriptions",
                 "descripciones de fotos");
         table.put("the Premium diamond",
@@ -2092,7 +2096,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(980);
+        Map<String, String> table = new HashMap<>(982);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -3106,6 +3110,8 @@ public final class L10nTranslations {
                 "jaringan iklan saat dibuka");
         table.put("gallery image descriptions",
                 "deskripsi galeri");
+        table.put("long reblog trail entries",
+                "entri panjang dalam rantai reblog");
         table.put("photo image descriptions",
                 "deskripsi foto");
         table.put("the Premium diamond",
@@ -3113,7 +3119,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(980);
+        Map<String, String> table = new HashMap<>(982);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -4127,6 +4133,8 @@ public final class L10nTranslations {
                 "as redes de an\u00fancios ao abrir");
         table.put("gallery image descriptions",
                 "descri\u00e7\u00f5es de galerias");
+        table.put("long reblog trail entries",
+                "as entradas longas da cadeia de reblogs");
         table.put("photo image descriptions",
                 "descri\u00e7\u00f5es de fotos");
         table.put("the Premium diamond",
@@ -4134,7 +4142,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(980);
+        Map<String, String> table = new HashMap<>(982);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -5148,6 +5156,8 @@ public final class L10nTranslations {
                 "a\u00e7\u0131l\u0131\u015fta reklam a\u011flar\u0131");
         table.put("gallery image descriptions",
                 "galeri a\u00e7\u0131klamalar\u0131");
+        table.put("long reblog trail entries",
+                "yeniden bloglama zincirindeki uzun girdiler");
         table.put("photo image descriptions",
                 "foto\u011fraf a\u00e7\u0131klamalar\u0131");
         table.put("the Premium diamond",
