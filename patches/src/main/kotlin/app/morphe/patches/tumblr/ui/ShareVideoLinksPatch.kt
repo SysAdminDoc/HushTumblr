@@ -62,12 +62,12 @@ internal class VideoLinkPlan(
  * carry the video's address, and timeline controls (`myl`) whose long press calls back into the
  * binder, where Tumblr's callback is empty (46.9's was too). The container and the address go to the extension right
  * after the details are built, and the controls' long-press listener goes through the extension,
- * which offers the link before handing the press to Tumblr's listener.
+ * which offers the link, and a save of the file, before handing the press to Tumblr's listener.
  */
 @Suppress("unused")
 val shareVideoLinksPatch = bytecodePatch(
     name = PATCH,
-    description = "Long-press a video in a post to share or copy its direct link." +
+    description = "Long-press a video in a post to share or copy its direct link, or save the video to your phone." +
         " Starts off. Turn it on in Tumblr settings > HushTumblr > Posts.",
     default = true,
 ) {

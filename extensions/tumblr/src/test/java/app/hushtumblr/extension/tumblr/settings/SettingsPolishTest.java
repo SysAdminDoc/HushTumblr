@@ -483,6 +483,10 @@ public class SettingsPolishTest {
                     L10n.t(context, "Link copied"),
                     L10n.t(context, "Words saved"),
                     L10n.quantity(context, 12, "Changed %1$d setting", "Changed %1$d settings", 12),
+                    // Save video's, shown over a post's video, where there's no row to hold them.
+                    L10n.t(context, "Saving to Downloads"),
+                    L10n.t(context, "Video saved to Downloads"),
+                    L10n.t(context, "Couldn't save the video"),
             };
             // The width the framework's transient_notification_with_icon leaves the words: a 300dp
             // toast_width, less 16dp padding each side and the 24dp app icon with its 10dp margin.

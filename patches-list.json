@@ -1735,7 +1735,7 @@
     },
     {
       "name": "Share video links",
-      "description": "Long-press a video in a post to share or copy its direct link. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts.",
+      "description": "Long-press a video in a post to share or copy its direct link, or save the video to your phone. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts.",
       "category": "Posts",
       "use": true,
       "dependencies": [
