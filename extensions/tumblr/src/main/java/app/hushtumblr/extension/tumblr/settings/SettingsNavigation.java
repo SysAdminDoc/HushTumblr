@@ -163,6 +163,9 @@ final class SettingsNavigation extends BaseAdapter {
     private Preference refocus;
     private int homePosition;
     private int homeOffset;
+    /** The first row in view a key could land on when home was left, and its top; see showPlace. */
+    private int homeKeyPosition = -1;
+    private int homeKeyTop;
 
     private final DataSetObserver changes = new DataSetObserver() {
         @Override public void onChanged() { rebuild(); }
@@ -242,6 +245,8 @@ final class SettingsNavigation extends BaseAdapter {
             query = state.getString("query", "");
             homePosition = state.getInt("homePosition");
             homeOffset = state.getInt("homeOffset");
+            homeKeyPosition = state.getInt("homeKeyPosition", -1);
+            homeKeyTop = state.getInt("homeKeyTop");
             Bundle results = state.getBundle("feedback");
             for (HushTumblrPreferenceFragment.Row row : ownRows()) row.feedback.restore(results, row.getKey());
             // A route that names no page, such as "more" saved before More settings joined the
@@ -401,7 +406,8 @@ final class SettingsNavigation extends BaseAdapter {
         query = text;
         route = "";
         rebuild();
-        showAt(query.isEmpty() ? homePosition : 0, query.isEmpty() ? homeOffset : 0);
+        if (query.isEmpty()) showPlace(homePosition, homeOffset, homeKeyPosition, homeKeyTop);
+        else showAt(0, 0);
     }
 
     boolean back() {
@@ -418,7 +424,7 @@ final class SettingsNavigation extends BaseAdapter {
         route = "";
         rebuild();
         host.showPage(title(), true, query, description());
-        showAt(homePosition, homeOffset);
+        showPlace(homePosition, homeOffset, homeKeyPosition, homeKeyTop);
         refocus = section != null ? section.link : null;
         if (refocus != null && screenReaderOn()) bringIntoView(refocus);
         return true;
@@ -466,12 +472,47 @@ final class SettingsNavigation extends BaseAdapter {
         list.setSelectionFromTop(position, offset);
     }
 
+    /**
+     * Puts a list back at the place it was left: [position] at [offset], where [keyPosition] was
+     * the first row in view a key could land on and [keyTop] its top. Without touch,
+     * setSelectionFromTop moves to the first such row at or after [position] and pins that one at
+     * the offset, so a place left on a heading or the status card came back a row off. There that
+     * key row goes back where it was, and the rows above it fill in above it again. Only while
+     * it's still the first row a key lands on from [position], since a row can come or go while
+     * home isn't showing (the restart row, Quick setups), and only while its top still fits in
+     * the list, which can be shorter now than when it was left.
+     */
+    private void showPlace(int position, int offset, int keyPosition, int keyTop) {
+        boolean byKeyRow = !list.isInTouchMode() && (position != 0 || offset != 0)
+                && keyPosition > position && keyPosition < getCount() && isEnabled(keyPosition)
+                && keyTop < list.getHeight() - list.getListPaddingBottom();
+        for (int row = position; byKeyRow && row < keyPosition; row++) byKeyRow = !isEnabled(row);
+        if (byKeyRow) showAt(keyPosition, keyTop - list.getListPaddingTop());
+        else showAt(position, offset);
+    }
+
+    /** The first row in view a key can land on, or -1. */
+    private int keyRowInView() {
+        int first = list.getFirstVisiblePosition();
+        for (int i = 0; i < list.getChildCount(); i++) {
+            if (first + i < getCount() && isEnabled(first + i)) return first + i;
+        }
+        return -1;
+    }
+
+    private int topOf(int position) {
+        View row = position < 0 ? null : list.getChildAt(position - list.getFirstVisiblePosition());
+        return row == null ? 0 : row.getTop();
+    }
+
     private void rememberIndex() {
         View first = list.getChildAt(0);
         int offset = first == null ? 0 : first.getTop();
         if (route.isEmpty() && query.isEmpty()) {
             homePosition = list.getFirstVisiblePosition();
             homeOffset = offset;
+            homeKeyPosition = keyRowInView();
+            homeKeyTop = topOf(homeKeyPosition);
         }
     }
 
@@ -481,6 +522,8 @@ final class SettingsNavigation extends BaseAdapter {
         state.putString("query", query);
         state.putInt("homePosition", homePosition);
         state.putInt("homeOffset", homeOffset);
+        state.putInt("homeKeyPosition", homeKeyPosition);
+        state.putInt("homeKeyTop", homeKeyTop);
         state.putInt("position", list.getFirstVisiblePosition());
         View first = list.getChildAt(0);
         state.putInt("offset", first == null ? 0 : first.getTop());

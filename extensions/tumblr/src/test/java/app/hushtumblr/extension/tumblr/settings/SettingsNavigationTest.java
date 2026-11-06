@@ -364,6 +364,112 @@ public class SettingsNavigationTest {
         assertTrue("a key still lands on the first setting", list().getSelectedItemPosition() > 0);
     }
 
+    /**
+     * Without touch, home comes back with the heading or status card it was left on at the top,
+     * part-way scrolled as it was, rather than the row a key lands on after it. That row stays the
+     * one a key lands on.
+     */
+    @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(qualifiers = "w390dp-h600dp-night-xhdpi")
+    public void homeComesBackWithoutTouchOnTheHeadingItWasLeftOn() {
+        touchMode(false);
+        layout(dialog.getView(), 1200);
+        assertFalse("the list is driven by keys here", list().isInTouchMode());
+        List<Integer> unselectable = new ArrayList<>();
+        StringBuilder rows = new StringBuilder();
+        for (int i = 0; i < list().getChildCount(); i++) {
+            rows.append(i).append(list().getAdapter().isEnabled(i) ? "+" : "-").append('@').append(list().getChildAt(i).getTop()).append(' ');
+            if (i + 1 < list().getCount() && !list().getAdapter().isEnabled(i) && list().getAdapter().isEnabled(i + 1)) unselectable.add(i);
+        }
+        assertTrue("home shows the status card and a heading, each above a row a key lands on: " + rows,
+                unselectable.contains(0) && unselectable.size() >= 2);
+        for (int row : unselectable) {
+            putAtTop(row);
+
+            page.navigation.navigate("About");
+            layout(dialog.getView(), 1200);
+            assertTrue(page.navigation.back());
+            layout(dialog.getView(), 1200);
+            assertHomeAt(row, "Back");
+
+            findSearch(dialog.getView()).setText("Hide");
+            layout(dialog.getView(), 1200);
+            findSearch(dialog.getView()).setText("");
+            layout(dialog.getView(), 1200);
+            assertHomeAt(row, "a cleared search");
+
+            findSearch(dialog.getView()).setText("Hide");
+            layout(dialog.getView(), 1200);
+            assertTrue(page.navigation.back());
+            layout(dialog.getView(), 1200);
+            assertHomeAt(row, "Back from a search");
+
+            page.navigation.navigate("About");
+            layout(dialog.getView(), 1200);
+            recreate();
+            layout(dialog.getView(), 1200);
+            assertFalse(list().isInTouchMode());
+            assertTrue(page.navigation.back());
+            layout(dialog.getView(), 1200);
+            assertHomeAt(row, "Back after a recreate");
+        }
+    }
+
+    /**
+     * Without touch, a row that goes from above home's place while home isn't showing (here the
+     * restart row, once nothing waits for a restart) can't leave a key landing past the first row
+     * in view that takes one.
+     */
+    @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(qualifiers = "w390dp-h600dp-night-xhdpi")
+    public void homeWithoutTouchStillSelectsTheFirstKeyRowWhenARowAboveWentWhileAway() {
+        app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.add(
+                BaseSettings.DEBUG.key);
+        recreate();
+        touchMode(false);
+        layout(dialog.getView(), 1200);
+        assertEquals("Restart Tumblr to apply this change",
+                String.valueOf(((Preference) list().getItemAtPosition(1)).getTitle()));
+        int heading = -1;
+        for (int i = 2; i + 1 < list().getCount() && heading < 0; i++) {
+            if (!list().getAdapter().isEnabled(i) && list().getAdapter().isEnabled(i + 1)) heading = i;
+        }
+        assertTrue("home has a heading below the restart row", heading > 1);
+        putAtTop(heading);
+
+        page.navigation.navigate("About");
+        layout(dialog.getView(), 1200);
+        app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.remove(
+                BaseSettings.DEBUG.key);
+        assertTrue(page.navigation.back());
+        layout(dialog.getView(), 1200);
+        assertFalse("the restart row is gone", titles().contains("Restart Tumblr to apply this change"));
+        int firstKeyRow = -1;
+        for (int i = list().getFirstVisiblePosition(); i <= list().getLastVisiblePosition() && firstKeyRow < 0; i++) {
+            if (list().getAdapter().isEnabled(i)) firstKeyRow = i;
+        }
+        assertTrue(firstKeyRow >= 0);
+        assertEquals("a key lands on the first row in view that takes one", firstKeyRow, list().getSelectedItemPosition());
+    }
+
+    /** Scrolls home until [row] is the top row, 10 pixels above the top of the list. */
+    private void putAtTop(int row) {
+        for (int i = 0; i < 20 && (row < list().getFirstVisiblePosition() || row > list().getLastVisiblePosition()); i++) {
+            list().scrollListBy(row < list().getFirstVisiblePosition() ? -200 : 200);
+            layout(dialog.getView(), 1200);
+        }
+        list().scrollListBy(list().getChildAt(row - list().getFirstVisiblePosition()).getTop() + 10);
+        layout(dialog.getView(), 1200);
+        assertEquals(row, list().getFirstVisiblePosition());
+        assertEquals(-10, list().getChildAt(0).getTop());
+    }
+
+    private void assertHomeAt(int row, String after) {
+        assertEquals("home's top row after " + after, row, list().getFirstVisiblePosition());
+        assertEquals("home's offset after " + after, -10, list().getChildAt(0).getTop());
+        assertEquals("the row a key lands on after " + after, row + 1, list().getSelectedItemPosition());
+    }
+
     /** The Pause switch answers for the pause too, so the pause line drops what a failed Resume said. */
     @Test public void thePauseSwitchClearsWhatAFailedResumeLeftOnThePauseLine() {
         BaseSettings.PAUSED.save(true);
