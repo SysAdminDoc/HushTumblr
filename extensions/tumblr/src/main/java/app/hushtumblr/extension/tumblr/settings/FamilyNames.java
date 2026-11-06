@@ -39,6 +39,7 @@ public final class FamilyNames {
     public static final String HIDE_ADS = "Hide ads";
     public static final String DISABLE_ANALYTICS = "Disable analytics";
     public static final String HIDE_ADVERTISING_ID = "Hide advertising ID";
+    public static final String SANITIZE_SHARING_LINKS = "Sanitize sharing links";
     public static final String REMOVE_AD_TRACKING_PERMISSIONS = "Remove ad tracking permissions";
     public static final String SPOOF_SIGNATURE = "Spoof signature for Google sign-in";
     public static final String HIDE_AD_FREE_BANNER = "Hide the ad-free banner";

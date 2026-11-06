@@ -101,6 +101,7 @@ public final class SettingsBackup {
             Settings.HIDE_ADS,
             Settings.KEEP_BLAZE_POSTS,
             Settings.HIDE_ADVERTISING_ID,
+            Settings.SANITIZE_SHARING_LINKS,
             Settings.DISABLE_ANALYTICS,
             Settings.HIDE_AD_FREE_BANNER,
             Settings.HIDE_TUMBLR_TV,

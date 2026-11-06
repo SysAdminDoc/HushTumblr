@@ -160,6 +160,7 @@ Privacy	Gizlilik
 Disable analytics	Analizleri devre dışı bırak
 Firebase and Google Analytics collection is turned off	Firebase ve Google Analytics veri toplama kapalı
 Hide advertising ID	Reklam kimliğini gizle
+Sanitize sharing links	Paylaşılan bağlantıları temizle
 Remove ad tracking permissions	Reklam izleme izinlerini kaldır
 Tumblr can no longer use Google's ad ID permission or Android's ad services. This was set when you patched. Patch again without it to bring them back.	Tumblr artık Google'ın reklam kimliği iznini veya Android'in reklam hizmetlerini kullanamaz. Bu, yamalarken ayarlandı. Geri getirmek için bu yama olmadan yeniden yamala.
 Tumblr's access to the ad ID and Android's ad services is removed	Tumblr'ın reklam kimliğine ve Android reklam hizmetlerine erişimi kaldırıldı
@@ -222,6 +223,7 @@ Lets a patched Tumblr sign up for push notifications when Google would turn it a
 Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.	Tumblr ayarlarını hesap sekmenizdeki dişli simgesinden açın. HushTumblr bunların hiçbirini değiştirmez.
 Push alerts	Anlık uyarılar
 Tumblr and the ad companies inside it see an empty advertising ID with ad tracking limited, as if you deleted your ad ID in Android settings.	Tumblr ve içindeki reklam şirketleri, reklam takibi sınırlı olarak boş bir reklam kimliği görür. Reklam kimliğini Android ayarlarından silmişsin gibi olur.
+Links you share or copy leave out the share tag Tumblr adds to them. They still open the same post.	Paylaştığın veya kopyaladığın bağlantılar, Tumblr'ın eklediği paylaşım etiketini taşımaz. Yine aynı gönderiyi açarlar.
 Use the email on your Tumblr account and a Tumblr password. Google sign-in may not work, because this patched app is signed with a different key. Push notifications haven't been tested.	Tumblr hesabındaki e-postayı ve bir Tumblr parolasını kullan. Bu yamalı uygulama farklı bir anahtarla imzalandığı için Google ile giriş çalışmayabilir. Anlık bildirimler test edilmedi.
 # context: the Feed page and its Hide ads switch.
 Feed	Akış
@@ -480,7 +482,7 @@ Hidden. Tap to show it again.	Gizli. Yeniden göstermek için dokun.
 Quick setups hidden. Bring it back from %1$s.	Hızlı kurulumlar gizlendi. %1$s sayfasından geri getirebilirsin.
 Quiet	Sessiz
 Hides ads, suggestions, prompts and unread counts.	Reklamları, önerileri, hatırlatmaları ve okunmamış sayılarını gizler.
-Stops Tumblr's tracking and screenshot watching, and hides your advertising ID.	Tumblr'ın izlemesini ve ekran görüntüsü takibini durdurur, reklam kimliğini gizler.
+Stops Tumblr's tracking and screenshot watching. Hides your advertising ID and the share tag on links.	Tumblr'ın izlemesini ve ekran görüntüsü takibini durdurur. Reklam kimliğini ve bağlantılardaki paylaşım etiketini gizler.
 Back to defaults	Varsayılanlara dön
 Puts every feature switch back the way it started.	Her özellik anahtarını başlangıçtaki hâline döndürür.
 Changed %1$d setting	%1$d ayar değiştirildi

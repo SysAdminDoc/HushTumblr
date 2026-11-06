@@ -43,7 +43,7 @@ Long-press the Tumblr logo at the top of your dashboard. You can also tap **Hush
 
 ## Patches
 
-There are 54 patches.
+There are 55 patches.
 
 | Patch | What it does |
 |---|---|
@@ -91,6 +91,7 @@ There are 54 patches.
 | `Mute posts locally` | Adds a local mute action to post menus. Originals and their reblogs stay hidden for this account. On the dashboard the menu can also hide one blog's reblogs or its originals. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
 | `Reorder the bottom bar` | Puts the bottom bar's tabs in an order you pick, from a list in its settings. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `Reveal allowed mature content` | Removes mature-content covers only when Tumblr explicitly allows them for the signed-in adult account. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
+| `Sanitize sharing links` | Links you share or copy from Tumblr leave out the ?source=share tag Tumblr adds to them, and still open the same post or blog. On by default. Turn it off in Tumblr settings > HushTumblr > Privacy. |
 | `Share video links` | Long-press a video in a post to share or copy its direct link, or save the video to your phone. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Sharper images` | Loads images in posts at a higher resolution when Tumblr has a larger copy, up to twice the width Tumblr shows them at, even on a slow connection. GIFs keep Tumblr's size. Uses more data. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Show post timestamps` | Shows when posts were made using Tumblr's own timestamp layout. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |

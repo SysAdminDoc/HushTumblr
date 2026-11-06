@@ -840,6 +840,9 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                     L10n.t("Hide advertising ID"), L10n.t("Tumblr and the ad companies inside it see an empty "
                         + "advertising ID with ad tracking limited, as if you deleted your ad ID in Android "
                         + "settings."), SettingsIcons.BLOCK);
+            patchToggle(privacy, context, build, PatchFamily.SANITIZE_SHARING_LINKS, Settings.SANITIZE_SHARING_LINKS,
+                    L10n.t("Sanitize sharing links"), L10n.t("Links you share or copy leave out the share tag "
+                        + "Tumblr adds to them. They still open the same post."), SettingsIcons.LINKS);
             if (build.contains(PatchFamily.REMOVE_AD_TRACKING_PERMISSIONS)) {
                 privacy.addPreference(info(context, L10n.t("Remove ad tracking permissions"),
                         L10n.t("Tumblr can no longer use Google's ad ID permission or Android's ad services. "
@@ -2153,7 +2156,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         CharSequence[] names = {L10n.t("Quiet"), L10n.t("Privacy"), L10n.t("Back to defaults")};
         CharSequence[] details = {
                 L10n.t("Hides ads, suggestions, prompts and unread counts."),
-                L10n.t("Stops Tumblr's tracking and screenshot watching, and hides your advertising ID."),
+                L10n.t("Stops Tumblr's tracking and screenshot watching. Hides your advertising ID and the share tag on links."),
                 L10n.t("Puts every feature switch back the way it started.")};
         AlertDialog dialog = show(new AlertDialog.Builder(themed(context))
                 .setTitle(L10n.t("Quick setups"))

@@ -55,6 +55,8 @@ public enum PatchFamily {
     DISABLE_ANALYTICS(FamilyNames.DISABLE_ANALYTICS, "disableAnalytics",
             "Firebase and Google Analytics collection is turned off", Settings.DISABLE_ANALYTICS),
     HIDE_ADVERTISING_ID(FamilyNames.HIDE_ADVERTISING_ID, "hideAdvertisingId", null, Settings.HIDE_ADVERTISING_ID),
+    SANITIZE_SHARING_LINKS(FamilyNames.SANITIZE_SHARING_LINKS, "sanitizeSharingLinks", null,
+            Settings.SANITIZE_SHARING_LINKS),
     /** Manifest permissions removed when patching: no switch, so Pause can't reach it. */
     REMOVE_AD_TRACKING_PERMISSIONS(FamilyNames.REMOVE_AD_TRACKING_PERMISSIONS, "removeAdTrackingPermissions",
             "Tumblr's access to the ad ID and Android's ad services is removed"),
@@ -194,7 +196,7 @@ public enum PatchFamily {
 
     /** The families the Privacy page holds. The page and its home row both read this. */
     static final Set<PatchFamily> PRIVACY_PAGE = Collections.unmodifiableSet(EnumSet.of(DISABLE_ANALYTICS,
-            HIDE_ADVERTISING_ID, REMOVE_AD_TRACKING_PERMISSIONS, SPOOF_SIGNATURE));
+            HIDE_ADVERTISING_ID, SANITIZE_SHARING_LINKS, REMOVE_AD_TRACKING_PERMISSIONS, SPOOF_SIGNATURE));
 
     /** Each independent hook, its owning family and the flag set only after it was inserted. */
     public enum Capability {
@@ -215,6 +217,7 @@ public enum PatchFamily {
         AD_SDK_STARTUP(HIDE_ADS, "adSdkStartup", "ad networks at launch"),
         EXPLORE_HEADER_AD(HIDE_ADS, "exploreHeaderAd", "Explore's sponsored header"),
         ADVERTISING_ID(HIDE_ADVERTISING_ID, "advertisingId", "Hide advertising ID"),
+        SHARE_LINK_TAG(SANITIZE_SHARING_LINKS, "shareLinkTag", "Sanitize sharing links"),
         ANALYTICS_FLAGS(DISABLE_ANALYTICS, "analyticsFlags", "Disable analytics"),
         LIVERAMP_STARTUP(DISABLE_ANALYTICS, "liveRampStartup", "LiveRamp at launch"),
         CRASH_REPORTS(DISABLE_ANALYTICS, "crashReports", "Crashlytics at launch"),

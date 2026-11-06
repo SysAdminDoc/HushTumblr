@@ -90,6 +90,13 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_hide_ad_id", TRUE);
 
     /**
+     * Shared and copied links leave out the {@code source=share} tag Tumblr adds
+     * ({@link app.hushtumblr.extension.tumblr.privacy.ShareLinks}).
+     */
+    public static final BooleanSetting SANITIZE_SHARING_LINKS =
+            new BooleanSetting("hushtumblr_sanitize_sharing_links", TRUE);
+
+    /**
      * Firebase gets Tumblr's own certificate fingerprint when it signs this install up for push
      * notifications ({@link app.hushtumblr.extension.tumblr.notifications.PushNotifications}). On to
      * start: a patched build can get no push notifications at all without it.

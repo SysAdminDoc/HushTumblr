@@ -78,6 +78,7 @@ import app.hushtumblr.extension.tumblr.mutual.HushMutualSource;
 import app.hushtumblr.extension.tumblr.mutual.HushPrimaryBlog;
 import app.hushtumblr.extension.tumblr.mutual.MutualMarkers;
 import app.hushtumblr.extension.tumblr.privacy.AdvertisingId;
+import app.hushtumblr.extension.tumblr.privacy.ShareLinks;
 import app.hushtumblr.extension.tumblr.rootmute.HushAccountIdentity;
 import app.hushtumblr.extension.tumblr.rootmute.MatureAccountsForTests;
 import app.hushtumblr.extension.tumblr.rootmute.RootPostMutes;
@@ -185,6 +186,8 @@ public class PausedHooksTest {
         probes.put(Settings.HIDE_ADVERTISING_ID, Arrays.asList(
                 () -> !"real".equals(AdvertisingId.id("real")),
                 () -> AdvertisingId.limitTracking(false)));
+        // A shared or copied link leaves out Tumblr's share tag.
+        probes.put(Settings.SANITIZE_SHARING_LINKS, Collections.singletonList(ShareLinks::dropShareTag));
         // Tumblr's own tracking flags answer off.
         probes.put(Settings.DISABLE_ANALYTICS, Collections.singletonList(
                 () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("LIVERAMP_ATS"), true)));

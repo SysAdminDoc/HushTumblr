@@ -115,6 +115,7 @@ body:
         - Remove ad tracking permissions
         - Reorder the bottom bar
         - Reveal allowed mature content
+        - Sanitize sharing links
         - Share video links
         - Sharper images
         - Show mutual markers

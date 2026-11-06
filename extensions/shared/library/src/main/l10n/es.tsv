@@ -160,6 +160,7 @@ Privacy	Privacidad
 Disable analytics	Desactivar estadísticas
 Firebase and Google Analytics collection is turned off	La recopilación de Firebase y Google Analytics está desactivada
 Hide advertising ID	Ocultar el ID de publicidad
+Sanitize sharing links	Limpiar enlaces compartidos
 Remove ad tracking permissions	Quitar permisos de seguimiento publicitario
 Tumblr can no longer use Google's ad ID permission or Android's ad services. This was set when you patched. Patch again without it to bring them back.	Tumblr ya no puede usar el permiso de ID de publicidad de Google ni los servicios de anuncios de Android. Esto se definió al parchear. Vuelve a parchear sin él para recuperarlos.
 Tumblr's access to the ad ID and Android's ad services is removed	el acceso de Tumblr al ID de publicidad y a los servicios de publicidad de Android está eliminado
@@ -222,6 +223,7 @@ Lets a patched Tumblr sign up for push notifications when Google would turn it a
 Open Tumblr's settings from the gear on your account tab. HushTumblr doesn't change any of these.	Abre la configuración de Tumblr desde el engranaje de tu pestaña de cuenta. HushTumblr no cambia ninguna de estas opciones.
 Push alerts	Alertas push
 Tumblr and the ad companies inside it see an empty advertising ID with ad tracking limited, as if you deleted your ad ID in Android settings.	Tumblr y las empresas de publicidad que lleva dentro ven un ID de publicidad vacío con el seguimiento de anuncios limitado, como si hubieras borrado tu ID de publicidad en los ajustes de Android.
+Links you share or copy leave out the share tag Tumblr adds to them. They still open the same post.	Los enlaces que compartes o copias no llevan la etiqueta de compartir que Tumblr les añade. Siguen abriendo la misma publicación.
 Use the email on your Tumblr account and a Tumblr password. Google sign-in may not work, because this patched app is signed with a different key. Push notifications haven't been tested.	Usa el correo de tu cuenta de Tumblr y una contraseña de Tumblr. Puede que el inicio de sesión con Google no funcione porque esta app parcheada está firmada con otra clave. No se han probado las notificaciones push.
 # context: the Feed page and its Hide ads switch.
 Feed	Feed
@@ -480,7 +482,7 @@ Hidden. Tap to show it again.	Oculta. Toca para mostrarla de nuevo.
 Quick setups hidden. Bring it back from %1$s.	Configuración rápida oculta. Vuelve a mostrarla desde %1$s.
 Quiet	Tranquilo
 Hides ads, suggestions, prompts and unread counts.	Oculta anuncios, sugerencias, avisos y contadores de no leídos.
-Stops Tumblr's tracking and screenshot watching, and hides your advertising ID.	Detiene el rastreo de Tumblr y la vigilancia de capturas de pantalla, y oculta tu ID de publicidad.
+Stops Tumblr's tracking and screenshot watching. Hides your advertising ID and the share tag on links.	Detiene el rastreo de Tumblr y la vigilancia de capturas de pantalla. Oculta tu ID de publicidad y la etiqueta de compartir de los enlaces.
 Back to defaults	Volver a los valores predeterminados
 Puts every feature switch back the way it started.	Devuelve cada interruptor de función a como estaba al principio.
 Changed %1$d setting	Se cambió %1$d ajuste

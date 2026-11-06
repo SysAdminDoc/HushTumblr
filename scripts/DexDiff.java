@@ -302,7 +302,7 @@ public class DexDiff {
             Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1), Map.entry("activityNotifications", 7),
             Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 7), Map.entry("timelinePaging", 5),
             Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 7), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
-            Map.entry("crashReports", 3), Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("videoLinkPress", 6), Map.entry("imageSizes", 4), Map.entry("longPostRows", 6), Map.entry("exploreHeaderAd", 4), Map.entry("longTrailRows", 4), Map.entry("longPostExpand", 14), Map.entry("fontChoice", 6),
+            Map.entry("crashReports", 3), Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("videoLinkPress", 6), Map.entry("imageSizes", 4), Map.entry("longPostRows", 6), Map.entry("exploreHeaderAd", 4), Map.entry("shareLinkTag", 5), Map.entry("longTrailRows", 4), Map.entry("longPostExpand", 14), Map.entry("fontChoice", 6),
             Map.entry("followButton", 5), Map.entry("footerButton", 3), Map.entry("postTags", 6),
             Map.entry("noteCounts", 9), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
@@ -5847,6 +5847,72 @@ public class DexDiff {
         }
 
         /**
+         * Tumblr's share link builder, the one static void method of two parameters holding "source"
+         * and "share" that appends them in one call, asks the hook right before the tag's name and on
+         * yes jumps to its MalformedURLException handler, which reads the link again without the tag
+         * and meets the tagged path at one step. The patch refuses a builder it can't find or that
+         * changed shape, so each check it makes is a failure here.
+         */
+        void shareLinkTag(Contract c) {
+            String hook = c.strings.get(0), name = c.strings.get(1), value = c.strings.get(2), append = c.strings.get(3), guard = c.strings.get(4);
+            List<Method> builders = new ArrayList<>();
+            for (Method held : clean.holding(name)) if (isStatic(held) && held.getReturnType().equals("V") && held.getParameterTypes().size() == 2
+                    && clean.texts.get(held.toString()).contains(value) && !callSites(instructions(held), append).isEmpty()) builders.add(held);
+            Method old = unique(builders, "Tumblr's share link builder");
+            if (old == null) { capability(c.callee, false); return; }
+            List<Instruction> was = instructions(old);
+            List<Integer> names = new ArrayList<>(), parses = new ArrayList<>();
+            for (int k = 0; k < was.size(); k++) {
+                if (name.equals(literal(was.get(k)))) names.add(k);
+                if (isCall(was.get(k), "Landroid/net/Uri;", "parse", "(Ljava/lang/String;)Landroid/net/Uri;")) parses.add(k);
+            }
+            int at = names.size() == 1 ? names.get(0) : -1, owner = parameter(old, 0);
+            Instruction tagValue = get(was, at + 1), add = get(was, at + 2);
+            boolean shaped = at >= 0 && value.equals(literal(tagValue)) && callIs(add, Opcode.INVOKE_VIRTUAL, append,
+                    add == null ? -1 : firstRegister(add), firstRegister(was.get(at)), firstRegister(tagValue));
+            int parse = parses.size() == 1 && parses.get(0) < at ? parses.get(0) : -1, read = parse - 2;
+            MethodReference linkRead = called(get(was, read));
+            shaped &= linkRead != null && was.get(read).getOpcode() == Opcode.INVOKE_VIRTUAL && linkRead.getParameterTypes().isEmpty()
+                    && linkRead.getReturnType().equals(STRING_TYPE) && arguments(was.get(read)).equals(List.of(owner))
+                    && movesTo(get(was, read + 1), arguments(was.get(parse)).get(0), Opcode.MOVE_RESULT_OBJECT);
+            Layout layout = new Layout(old.getImplementation());
+            List<? extends TryBlock<? extends ExceptionHandler>> tries = old.getImplementation().getTryBlocks();
+            int untagged = -1;
+            if (shaped && tries.size() == 1 && tries.get(0).getExceptionHandlers().size() == 1
+                    && guard.equals(tries.get(0).getExceptionHandlers().get(0).getExceptionType())) {
+                int start = tries.get(0).getStartCodeAddress(), end = start + tries.get(0).getCodeUnitCount();
+                if (layout.addresses.get(read) >= start && layout.addresses.get(at + 2) < end)
+                    untagged = layout.addresses.indexOf(tries.get(0).getExceptionHandlers().get(0).getHandlerCodeAddress());
+            }
+            Instruction again = get(was, untagged), link = get(was, untagged + 1), tagged = get(was, untagged - 2), jump = get(was, untagged - 1);
+            Set<Opcode> ends = Set.of(Opcode.RETURN_VOID, Opcode.RETURN, Opcode.RETURN_WIDE, Opcode.RETURN_OBJECT, Opcode.THROW);
+            shaped &= untagged > at + 2 && callIs(again, Opcode.INVOKE_VIRTUAL, String.valueOf(linkRead), owner)
+                    && link != null && link.getOpcode() == Opcode.MOVE_RESULT_OBJECT && untagged - 2 > at + 2
+                    && movesTo(tagged, firstRegister(link), Opcode.MOVE_RESULT_OBJECT)
+                    && jump.getOpcode() == Opcode.GOTO && target(old, untagged - 1) == untagged + 2
+                    && firstIndex(was, at + 3, i -> i instanceof OffsetInstruction || ends.contains(i.getOpcode())) == untagged - 1;
+            if (!shaped) { fail("Tumblr's share link builder " + old + " no longer reads, tags and hands on its link the way the hook expects"); return; }
+            Method m = actual(old);
+            List<Integer> sites = calls(m, hook, 1);
+            if (m == null || sites.size() != 1) return;
+            int hookAt = sites.get(0);
+            List<Instruction> body = instructions(m);
+            Instruction answer = get(body, hookAt + 1);
+            int scratch = answer == null ? -1 : firstRegister(answer);
+            boolean injected = hookAt == at && callIs(get(body, hookAt), Opcode.INVOKE_STATIC, hook)
+                    && movesTo(answer, scratch, Opcode.MOVE_RESULT) && scratch >= 0 && scratch < parameter(m, -1)
+                    && movesTo(get(body, hookAt + 2), scratch, Opcode.IF_NEZ) && target(m, hookAt + 2) == untagged + 3
+                    && deadAt(old, at, scratch) && deadAt(old, untagged, scratch);
+            if (!injected) fail("the share link hook doesn't ask before the tag's name and jump to the untagged link on yes in " + m);
+            else {
+                remove(m, hookAt, hookAt + 3);
+                anchor(m, hookAt, at, hook);
+                fallthroughOnly(old, at, hook);
+            }
+            capability(c.callee, injected);
+        }
+
+        /**
          * The reblog trail entry's constructor, right after building its rows and before reading its
          * author's cut, hands the cut, the ask layout, the rows and the blocks to the hook in four free
          * locals and stores the answer as the cut. The patch skips an entry that changed shape, so such
@@ -7015,6 +7081,7 @@ public class DexDiff {
                     case "imageSizes": imageSizes(c); break;
                     case "longPostRows": longPostRows(c); break;
                     case "exploreHeaderAd": exploreHeaderAd(c); break;
+                    case "shareLinkTag": shareLinkTag(c); break;
                     case "longTrailRows": longTrailRows(c); break;
                     case "longPostExpand": longPostExpand(c); break;
                     case "fontChoice": fontChoice(c); break;

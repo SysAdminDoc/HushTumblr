@@ -32,6 +32,7 @@ no-call Landroid/content/pm/ShortcutManager;->removeAllDynamicShortcuts()V outsi
 family|hideAds|Hide ads|timelineAds,paidPostHeader,adSdkStartup,exploreHeaderAd
 family|disableAnalytics|Disable analytics|analyticsFlags,liveRampStartup,crashReports
 family|hideAdvertisingId|Hide advertising ID|advertisingId
+family|sanitizeSharingLinks|Sanitize sharing links|shareLinkTag
 family|removeAdTrackingPermissions|Remove ad tracking permissions|
 family|spoofSignature|Spoof signature for Google sign-in|
 family|fixPushNotifications|Fix push notifications|firebaseCertificate
@@ -154,6 +155,9 @@ mutation|imageSizes|imageSizes|Lapp/hushtumblr/extension/tumblr/ui/SharperImages
 mutation|longPostRows|longPostRows|Lapp/hushtumblr/extension/tumblr/timeline/LongPosts;->post(Ljava/lang/Object;ZLjava/util/List;)Ljava/util/List;|Lfmf;|Ljm2;|Ltj2;|Ljtl;|Lapp/hushtumblr/extension/tumblr/timeline/HushBlockRow;
 # The Explore header hook, the fetched header's type, and the presenter's two failed-load log lines.
 mutation|exploreHeaderAd|exploreHeaderAd|Lapp/hushtumblr/extension/tumblr/timeline/ExploreHeader;->hideSponsored(Ljava/lang/Object;)Z|Lcom/tumblr/rumblr/response/RadarHeaderResponse;|ExploreHeaderPresenter|Failed to retrieve header
+# The share link hook, the tag's name and value, the builder call that appends them and the guard
+# whose handler hands the link on untagged.
+mutation|shareLinkTag|shareLinkTag|Lapp/hushtumblr/extension/tumblr/privacy/ShareLinks;->dropShareTag()Z|source|share|Landroid/net/Uri$Builder;->appendQueryParameter(Ljava/lang/String;Ljava/lang/String;)Landroid/net/Uri$Builder;|Ljava/net/MalformedURLException;
 # The trail hook, the reblog trail entry, the trail item its constructor takes and the entry's ask layout.
 mutation|longTrailRows|longTrailRows|Lapp/hushtumblr/extension/tumblr/timeline/LongPosts;->trail(Ljava/lang/Integer;Ljava/lang/Object;Ljava/util/List;Ljava/util/List;)Ljava/lang/Integer;|Ln6h;|Lcom/tumblr/rumblr/model/post/ReblogTrail;|Lcom/tumblr/rumblr/model/post/blocks/BlockAskLayout;
 # The Read more row's bind hook and the tap's question, the post's own Read more binder, the screen

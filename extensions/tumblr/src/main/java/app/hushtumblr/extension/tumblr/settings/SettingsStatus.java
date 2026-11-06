@@ -61,6 +61,8 @@ public final class SettingsStatus {
     public static boolean disableAnalytics() { return false; }
     public static boolean hideAdvertisingId() { return false; }
     public static boolean advertisingId() { return false; }
+    public static boolean sanitizeSharingLinks() { return false; }
+    public static boolean shareLinkTag() { return false; }
     public static boolean removeAdTrackingPermissions() { return false; }
     public static boolean spoofSignature() { return false; }
     public static boolean analyticsFlags() { return false; }
