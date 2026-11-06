@@ -122,6 +122,7 @@ public class HushTumblrPreferenceFragmentTest {
         ROW_TITLES.put(PatchFamily.HIDE_UNREAD_DOTS, "Hide the Dashboard count");
         ROW_TITLES.put(PatchFamily.HIDE_REBLOGS, "Hide reblogs");
         ROW_TITLES.put(PatchFamily.HIDE_OWN_REBLOGS, "Hide your own reblogs");
+        ROW_TITLES.put(PatchFamily.HIDE_LIKED_POSTS, "Hide liked posts");
         ROW_TITLES.put(PatchFamily.HIDE_VIDEO_POSTS, "Hide video posts");
         ROW_TITLES.put(PatchFamily.HIDE_PHOTO_POSTS, "Hide photo posts");
         ROW_TITLES.put(PatchFamily.HIDE_TEXT_POSTS, "Hide text posts");

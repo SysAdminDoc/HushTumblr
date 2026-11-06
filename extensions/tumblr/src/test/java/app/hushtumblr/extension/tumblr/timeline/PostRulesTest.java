@@ -63,6 +63,7 @@ public class PostRulesTest {
         Settings.HIDE_ADS.resetToDefault();
         Settings.HIDE_REBLOGS.resetToDefault();
         Settings.HIDE_OWN_REBLOGS.resetToDefault();
+        Settings.HIDE_LIKED_POSTS.resetToDefault();
         Settings.KEEP_TAGGED_REBLOGS.resetToDefault();
         Settings.KEEP_REBLOGS_WITH_CONTENT.resetToDefault();
         Settings.HIDE_VIDEO_POSTS.resetToDefault();
@@ -195,6 +196,60 @@ public class PostRulesTest {
         Settings.HIDE_OWN_REBLOGS.save(true);
         List<Object> page = Arrays.asList(TEXT, YOUR_REBLOG);
         PatchFamilyForTests.capabilities(EnumSet.complementOf(EnumSet.of(PatchFamily.Capability.OWN_REBLOG_POSTS)));
+        assertSame("without the patch", page, TimelineItems.onTheDashboard(page));
+        PatchFamilyForTests.capabilities(EnumSet.allOf(PatchFamily.Capability.class));
+        assertEquals(Collections.singletonList(TEXT), TimelineItems.onTheDashboard(page));
+        PauseForTests.pause(HushTumblrPause.Reason.SWITCH);
+        try {
+            assertSame("paused", page, TimelineItems.onTheDashboard(page));
+        } finally {
+            PauseForTests.resume();
+        }
+    }
+
+    private static final TimelineObject LIKED = TimelineItems.likedPostWith(new TextBlock("liked already"));
+
+    /**
+     * Hide liked posts starts off. Turned on, a post Tumblr sent already liked leaves a dashboard
+     * page, and the posts around it stay.
+     */
+    @Test
+    public void hideLikedPostsTakesLikedPostsOffTheDashboard() {
+        List<Object> page = Arrays.asList(TEXT, LIKED, PHOTO);
+        assertFalse(Settings.HIDE_LIKED_POSTS.get());
+        assertSame(page, TimelineItems.onTheDashboard(page));
+        Settings.HIDE_LIKED_POSTS.save(true);
+        HookStatus.clear();
+        assertEquals(Arrays.asList(TEXT, PHOTO), TimelineItems.onTheDashboard(page));
+        String line = "";
+        for (String each : HookStatus.report()) {
+            if (each.startsWith(FamilyNames.HIDE_LIKED_POSTS + ":")) line = each;
+        }
+        assertTrue(String.join(" | ", HookStatus.report()), line.contains("post removed 1"));
+    }
+
+    /** A blog, your likes, a search and a page from a response it doesn't know all keep liked posts. */
+    @Test
+    public void likedPostsStayEverywhereButTheDashboard() {
+        Settings.HIDE_LIKED_POSTS.save(true);
+        List<Object> page = Arrays.asList(TEXT, LIKED);
+        assertSame("a blog", page, TimelineItems.onABlog(page));
+        assertSame("likes", page, TimelineItems.inLikes(page));
+        assertSame("search", page, TimelineItems.inSearchResults(page));
+        assertSame("an unknown page", page, TimelineFilter.filter(page));
+    }
+
+    /**
+     * Without the bridge in the build, or while paused, the switch takes nothing out. A post the
+     * bridge didn't reach answers nothing about likes, so it's kept.
+     */
+    @Test
+    public void hideLikedPostsNeedsItsBridgeAndStopsWhilePaused() {
+        Settings.HIDE_LIKED_POSTS.save(true);
+        assertFalse("a model without the liked bridge", PostRules.isLiked(new Object()));
+        assertFalse("no model", PostRules.isLiked(null));
+        List<Object> page = Arrays.asList(TEXT, LIKED);
+        PatchFamilyForTests.capabilities(EnumSet.complementOf(EnumSet.of(PatchFamily.Capability.LIKED_POSTS)));
         assertSame("without the patch", page, TimelineItems.onTheDashboard(page));
         PatchFamilyForTests.capabilities(EnumSet.allOf(PatchFamily.Capability.class));
         assertEquals(Collections.singletonList(TEXT), TimelineItems.onTheDashboard(page));

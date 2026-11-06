@@ -195,6 +195,13 @@ public final class TimelineItems {
         }, false);
     }
 
+    /** A post made of [blocks] that Tumblr sent already liked by the signed-in account. */
+    public static TimelineObject likedPostWith(Object... blocks) {
+        return new TimelineObject(new Post(Arrays.asList(blocks), null, null, null, null) {
+            @Override public boolean hushLiked() { return true; }
+        }, false);
+    }
+
     /** A post made of [blocks], whose id is [id]. */
     public static TimelineObject postWithId(String id, Object... blocks) {
         return new TimelineObject(new Post(Arrays.asList(blocks), null, null, null, null) {
@@ -295,6 +302,11 @@ public final class TimelineItems {
         return aPageLoses(yourReblogOf(Collections.singletonList(new TextBlock("first")), new TextBlock("mine")));
     }
 
+    /** PausedHooksTest's probe for Hide liked posts. */
+    public static boolean aPageLosesItsLikedPost() {
+        return aPageLoses(likedPostWith(new TextBlock("liked already")));
+    }
+
     /** PausedHooksTest's probe for Hide video posts. */
     public static boolean aPageLosesItsVideoPost() {
         return aPageLoses(postWith(new TextBlock("look"), new VideoBlock()));
@@ -324,7 +336,7 @@ public final class TimelineItems {
     }
 
     /** A post Tumblr's model would carry, as the post bridge patches make it. */
-    static class Post extends Item implements HushPost, HushPaidPost, HushFilteredPost {
+    static class Post extends Item implements HushPost, HushPaidPost, HushFilteredPost, HushLikedPost {
         private final List<?> content;
         private final List<?> trail;
         private final List<?> tags;
@@ -350,6 +362,7 @@ public final class TimelineItems {
         @Override public boolean hushCanEdit() { return false; }
         @Override public boolean hushPaidContextKnown() { return true; }
         @Override public Object hushFiltered() { return null; }
+        @Override public boolean hushLiked() { return false; }
     }
 
     private static final class Carousel extends Item {

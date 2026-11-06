@@ -392,6 +392,8 @@ Keep reblogs with added content	Pertahankan reblog dengan konten tambahan
 When reblogs are hidden, keep ones where the reblogger added something of their own. Other post filters still apply.	Saat reblog disembunyikan, pertahankan yang diberi tambahan sendiri oleh pembuat reblog. Filter postingan lainnya tetap berlaku.
 Hide your own reblogs	Sembunyikan reblog milikmu
 Takes the reblogs you made out of your dashboard and the feeds like it. Your blog still shows them.	Menghapus reblog yang kamu buat dari dasbor dan feed sejenisnya. Blogmu tetap menampilkannya.
+Hide liked posts	Sembunyikan postingan yang disukai
+Takes the posts you've already liked out of your dashboard and the feeds like it. Your likes and blogs still show them.	Menghapus postingan yang sudah kamu sukai dari dasbor dan feed sejenisnya. Daftar sukamu dan blog tetap menampilkannya.
 Match current post text	Cocokkan teks postingan saat ini
 Match reblog trail text	Cocokkan teks rantai reblog
 Match current post tags	Cocokkan tag postingan saat ini

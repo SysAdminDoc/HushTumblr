@@ -84,6 +84,7 @@ body:
         - Line between posts
         - App font
         - Hide hashtags
+        - Hide liked posts
         - Hide note counts
         - Hide photo posts
         - Hide posts with these words

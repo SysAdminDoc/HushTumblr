@@ -392,6 +392,8 @@ Keep reblogs with added content	Conservar reblogs con contenido añadido
 When reblogs are hidden, keep ones where the reblogger added something of their own. Other post filters still apply.	Al ocultar reblogs, conserva aquellos en los que quien rebloguea añadió algo propio. Los demás filtros siguen aplicándose.
 Hide your own reblogs	Ocultar tus propios reblogs
 Takes the reblogs you made out of your dashboard and the feeds like it. Your blog still shows them.	Quita los reblogs que hiciste de tu panel y de los feeds parecidos. Tu blog los sigue mostrando.
+Hide liked posts	Ocultar publicaciones que te gustan
+Takes the posts you've already liked out of your dashboard and the feeds like it. Your likes and blogs still show them.	Quita de tu panel y de los feeds parecidos las publicaciones que ya te gustaron. Tus Me gusta y los blogs las siguen mostrando.
 Match current post text	Buscar en el texto de la publicación actual
 Match reblog trail text	Buscar en el texto de la cadena de reblogs
 Match current post tags	Buscar en las etiquetas de la publicación actual

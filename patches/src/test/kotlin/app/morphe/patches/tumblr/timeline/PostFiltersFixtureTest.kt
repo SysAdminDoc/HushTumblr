@@ -227,6 +227,34 @@ class PostFiltersFixtureTest {
         }
     }
 
+    /** Hide liked posts bridges the getter Post's adapter writes under "liked" and turns its switch on. */
+    @Test
+    fun `Hide liked posts bridges the post's liked state and turns its switch on`() {
+        for (build in Fixtures.declaredBuilds()) {
+            val types = setOf(LIKED_POST_BRIDGE.model, LIKED_POST_BRIDGE.adapter)
+            val classes = FixtureDex.classes(build, types)
+            assertEquals("${build.name}: Post and its adapter", types, classes.keys)
+            val context = PatchContexts.of(ExtensionDex.classes() + classes.values)
+
+            likedPostBridgePatch.execute(context)
+            hideLikedPostsPatch.execute(context)
+
+            val post = context.mutableClassDefBy(POST)
+            assertTrue("${build.name}: Post is a HushLikedPost", HUSH_LIKED_POST in post.interfaces)
+            val liked = post.methods.single { it.name == "hushLiked" && it.parameterTypes.isEmpty() }
+            assertEquals("${build.name}: hushLiked returns a boolean", "Z", liked.returnType)
+            assertTrue("${build.name}: hushLiked is public", AccessFlags.PUBLIC.isSet(liked.accessFlags))
+            val body = liked.instructionList()
+            assertEquals(listOf(Opcode.INVOKE_VIRTUAL, Opcode.MOVE_RESULT, Opcode.RETURN), body.map { it.opcode })
+            assertEquals("${build.name}: the liked getter", "$POST->y1()Z", body[0].methodRef().toString())
+            for (flag in listOf("hideLikedPosts", "likedPosts")) {
+                val first = context.mutableClassDefBy(SETTINGS_STATUS).methods.single { it.name == flag }
+                    .implementation!!.instructions.first()
+                assertEquals("${build.name}: $flag", 1, (first as NarrowLiteralInstruction).narrowLiteral)
+            }
+        }
+    }
+
     private fun check(patch: BytecodePatch, status: String, capability: String) {
         for (build in Fixtures.declaredBuilds()) {
             val types = POST_BRIDGES.flatMap { listOf(it.model, it.adapter) }.toSet()

@@ -43,7 +43,7 @@ Long-press the Tumblr logo at the top of your dashboard. You can also tap **Hush
 
 ## Patches
 
-There are 52 patches.
+There are 53 patches.
 
 | Patch | What it does |
 |---|---|
@@ -64,6 +64,7 @@ There are 52 patches.
 | `Line between posts` | Draws a thin line in the gap between posts, so it's easier to see where one ends and the next begins. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `App font` | Replaces Tumblr's own font with your phone's font, or a font file you choose in settings. Fonts a post's author picked stay as they are. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `Hide hashtags` | Takes the tags off the bottom of posts in your dashboard, other feeds and Tumblr TV, and keeps the source link. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
+| `Hide liked posts` | Takes the posts you've already liked out of your dashboard and the feeds like it as each page loads. Your likes and blogs still show them. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
 | `Hide note counts` | Takes the like, reblog and comment counts off the footer under posts, community posts included, and the counts off a post's notes, from the top and its tabs to each comment's likes and replies. The buttons stay and still work. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Hide photo posts` | Takes photo posts out of your dashboard and other feeds as each page loads. A post with pictures and no video, its reblog trail included, counts as a photo post. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
 | `Hide posts with these words` | Hides posts matching your word list. Choose whether to check current text, the reblog trail, tags or summaries. Allowed words can keep a matching post, but other enabled filters still apply. Both word editors let you type a made-up post and see what the word filter would do with it. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |

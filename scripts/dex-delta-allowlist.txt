@@ -61,6 +61,10 @@ method Lcom/tumblr/rumblr/model/post/Post;->hushFiltered()Ljava/lang/Object; 074
 method Lcom/tumblr/rumblr/model/post/asset/Filtered;->hushFilteredContent()Ljava/util/List; ed795cdfaa71d86145ae42a48258012ca9a3cf7960a1d1ad514674573b6390fa
 method Lcom/tumblr/rumblr/model/post/asset/Filtered;->hushFilteredTags()Ljava/util/List; 675a397245038dedffc47bb2f60e3d55640602d13bfcbfb4757d9a2ff8723fb8
 
+[Hide liked posts]
+implements Lcom/tumblr/rumblr/model/post/Post; Lapp/hushtumblr/extension/tumblr/timeline/HushLikedPost;
+method Lcom/tumblr/rumblr/model/post/Post;->hushLiked()Z b46508ac7839e43be1b88acd71d672605653d0abc5b8ee7caf87436faac5b666
+
 [Hide suggested blogs | Hide suggested communities | Hide suggested tags | Hide Watch it rows]
 method Lapp/hushtumblr/extension/tumblr/timeline/TimelineFilter;->carouselItems(Ljava/lang/Object;)Ljava/util/List; 2dc1b723104c35f6e3838b1abf38b7a3b90fed8a1f8a66d9c763620f651fffee
 

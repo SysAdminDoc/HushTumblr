@@ -312,6 +312,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_hide_own_reblogs", FALSE);
 
     /**
+     * Posts the signed-in account had liked when Tumblr sent them leave each page of the dashboard
+     * and the feeds that load like it. Likes and blog pages keep them
+     * ({@link app.hushtumblr.extension.tumblr.timeline.PostRules}).
+     */
+    public static final BooleanSetting HIDE_LIKED_POSTS =
+            new BooleanSetting("hushtumblr_hide_liked_posts", FALSE);
+
+    /**
      * Posts with a video anywhere in them, the reblog trail included, leave each page of posts
      * Tumblr loads ({@link app.hushtumblr.extension.tumblr.timeline.PostRules}).
      */
