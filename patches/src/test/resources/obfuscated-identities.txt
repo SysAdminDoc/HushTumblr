@@ -82,12 +82,20 @@ patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt
 patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lii9;
 patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lflh;
 patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Laf1;
-patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|La2k;
 patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lki9;
 patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Ljlh;
 patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lzsl;
 patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lcyl;
 patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/MuteRootPostsPatch.kt|Lr4g;
+
+# Dashboard page, shared by Mute posts locally, Hide liked posts and Hide your own reblogs.
+# TimelineFragment.p4(Luxl;List;TimelinePaginationLink;Map;Z)V is found by its kept owner and
+# exact parameter list, Luxl being the page type enum whose <clinit> names PAGINATION. A page's
+# post cards are Lr4g, which extends La2k, whose l() returns the Timelineable the card wraps;
+# the cardPayload stub reads it through those two only after an instance-of check.
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/DashboardPagePatch.kt|Luxl;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/DashboardPagePatch.kt|La2k;
+patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/DashboardPagePatch.kt|Lr4g;
 
 # Shared Post JSON presence. Ladb's 178-register reader has exactly one successful Post
 # allocation/constructor/return path and one null missing-fields return through Lbbb.a(String).

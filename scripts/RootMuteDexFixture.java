@@ -28,6 +28,7 @@ public final class RootMuteDexFixture {
     private static final String ROOT = BASE + "rootmute/RootPostMutes;", MENU = BASE + "rootmute/RootPostMenu;";
     private static final String ACTION = BASE + "rootmute/RootPostMuteAction;", ROOT_BRIDGE = BASE + "timeline/HushRootPost;";
     private static final String BLOG_BRIDGE = BASE + "rootmute/HushBlogRulePost;";
+    private static final String FACTS_OWNER = BASE + "timeline/DashboardPosts;", FACTS_FACE = BASE + "timeline/HushPostFacts;";
     private static final String LOCAL_BRIDGE = BASE + "rootmute/HushLocalTimeline;", LOCAL = "Lcom/tumblr/ui/fragment/TimelineFragment;";
     private static final String MENU_HOST = BASE + "rootmute/HushRootMenuHost;", MENU_OWNER = "Lcom/tumblr/ui/fragment/TimelineFragment$a;";
     private static final String HEADER = "Lcom/tumblr/ui/widget/PostCardHeader;";
@@ -137,16 +138,22 @@ public final class RootMuteDexFixture {
                             fault.equals("wrapper-current-id") ? "z0" : "hushRootId", STRING)), result(0),
                     field(Opcode.IPUT_OBJECT, 0, fault.equals("wrapper-wrong-receiver") ? 8 : 7, "Laf1;", "hushCanonicalRoot", STRING),
                     new ImmutableInstruction3rc(Opcode.INVOKE_INTERFACE_RANGE, 8, 1, AccountDexFixture.ref(BLOG_BRIDGE, "hushBlogRule", STRING)), result(0),
-                    field(Opcode.IPUT_OBJECT, 0, 7, "Laf1;", "hushBlogRule", STRING)));
+                    field(Opcode.IPUT_OBJECT, 0, 7, "Laf1;", "hushBlogRule", STRING),
+                    // The dashboard page's liked and own-reblog facts, captured after the mute's.
+                    call(Opcode.INVOKE_STATIC, FACTS_OWNER, "facts", "I", new int[]{8}, OBJECT), AccountDexFixture.result(0, false),
+                    field(Opcode.IPUT, 0, fault.equals("wrong-facts-receiver") ? 8 : 7, "Laf1;", "hushPostFacts", "I")));
             wrapped.add(method("Laf1;", "hushRootId", STRING, PUBLIC, 2,
                     code(field(Opcode.IGET_OBJECT, 0, 1, "Laf1;", "hushCanonicalRoot", STRING), returns(0))));
             wrapped.add(method("Laf1;", "hushBlogRule", STRING, PUBLIC, 2,
                     code(field(Opcode.IGET_OBJECT, 0, 1, "Laf1;", "hushBlogRule", STRING), returns(0))));
+            wrapped.add(method("Laf1;", "hushPostFacts", "I", PUBLIC, 2,
+                    code(field(Opcode.IGET, 0, 1, "Laf1;", "hushPostFacts", "I"), AccountDexFixture.returns(0, false))));
         }
         wrapped.add(method("Laf1;", "<init>", "V", PUBLIC | AccessFlags.CONSTRUCTOR.getValue(), 9, constructor, POST));
         int captured = AccessFlags.PRIVATE.getValue() | AccessFlags.FINAL.getValue();
-        classes.put("Laf1;", clazz("Laf1;", patched ? List.of(TIMELINEABLE, ROOT_BRIDGE, BLOG_BRIDGE) : List.of(TIMELINEABLE), patched
-                ? List.of(member("Laf1;", "hushCanonicalRoot", STRING, captured), member("Laf1;", "hushBlogRule", STRING, captured)) : List.of(), wrapped));
+        classes.put("Laf1;", clazz("Laf1;", patched ? List.of(TIMELINEABLE, ROOT_BRIDGE, BLOG_BRIDGE, FACTS_FACE) : List.of(TIMELINEABLE), patched
+                ? List.of(member("Laf1;", "hushCanonicalRoot", STRING, captured), member("Laf1;", "hushBlogRule", STRING, captured),
+                        member("Laf1;", "hushPostFacts", "I", captured)) : List.of(), wrapped));
         classes.put(ITEM, clazz(ITEM, List.of(), List.of(), List.of(method(ITEM, "getData", TIMELINEABLE, PUBLIC, 2,
                 code(integer(0, 0), returns(0))), method(ITEM, "getName", STRING, PUBLIC, 2, code(integer(0, 0), returns(0))))));
         classes.put("La2k;", clazz("La2k;", List.of(), List.of(), List.of(method("La2k;", "l", TIMELINEABLE, PUBLIC, 2,
@@ -312,6 +319,9 @@ public final class RootMuteDexFixture {
         if (!patched) return classes;
         classes.put(ROOT_BRIDGE, contract(ROOT_BRIDGE, new String[]{"hushRootId"}, new String[]{STRING}, new String[][]{new String[0]}));
         classes.put(BLOG_BRIDGE, contract(BLOG_BRIDGE, new String[]{"hushBlogRule"}, new String[]{STRING}, new String[][]{new String[0]}));
+        classes.put(FACTS_FACE, contract(FACTS_FACE, new String[]{"hushPostFacts"}, new String[]{"I"}, new String[][]{new String[0]}));
+        classes.put(FACTS_OWNER, clazz(FACTS_OWNER, List.of(), List.of(), List.of(
+                method(FACTS_OWNER, "facts", "I", PUBLIC | STATIC, 2, code(integer(0, 0), AccountDexFixture.returns(0, false)), OBJECT))));
         classes.put(LOCAL_BRIDGE, contract(LOCAL_BRIDGE, new String[]{"hushTimelineItems", "hushApplyTimelineItems"}, new String[]{LIST, "V"},
                 new String[][]{new String[0], new String[]{LIST}}));
         ClassDef root = classes.get(ROOT); List<Method> hooks = new ArrayList<>(); root.getMethods().forEach(hooks::add);
@@ -362,6 +372,7 @@ public final class RootMuteDexFixture {
         fixture(root, "missing-error-return", "Post JSON presence proof changed");
         fixture(root, "wrapper-current-id", "root wrapper capture changed");
         fixture(root, "wrapper-wrong-receiver", "root wrapper capture changed");
+        fixture(root, "wrong-facts-receiver", "dashboard post facts changed");
         fixture(root, "wrong-menu-card", "root menu hook changed");
         fixture(root, "wrong-menu-builder", "root menu hook changed");
         fixture(root, "late-menu-hook", "root menu hook changed");

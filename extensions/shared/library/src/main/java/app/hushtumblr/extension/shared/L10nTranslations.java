@@ -840,12 +840,12 @@ public final class L10nTranslations {
                 "Entfernt die Beitr\u00e4ge, die Tumblr wegen deiner gefilterten Tags und W\u00f6rter verdeckt, aus deinen Feeds.");
         table.put("Takes the posts Tumblr's staff feature under a Featured header out of your dashboard and other feeds.",
                 "Entfernt die Beitr\u00e4ge, die das Tumblr-Team unter der \u00dcberschrift Hervorgehoben zeigt, aus deinem Dashboard und anderen Feeds.");
-        table.put("Takes the posts you've already liked out of your dashboard and the feeds like it. Your likes and blogs still show them.",
-                "Entfernt Beitr\u00e4ge, die du schon geliked hast, aus deinem Dashboard und \u00e4hnlichen Feeds. Deine Likes und Blogs zeigen sie weiterhin.");
+        table.put("Takes the posts you've already liked out of your dashboard. Your likes and the rest of Tumblr still show them.",
+                "Entfernt Beitr\u00e4ge, die du schon geliked hast, aus deinem Dashboard. Deine Likes und der Rest von Tumblr zeigen sie weiterhin.");
         table.put("Takes the reblog button out of the footer under posts.",
                 "Nimmt den Reblog-Button aus der Leiste unter Beitr\u00e4gen.");
-        table.put("Takes the reblogs you made out of your dashboard and the feeds like it. Your blog still shows them.",
-                "Entfernt die Reblogs, die du gemacht hast, aus deinem Dashboard und \u00e4hnlichen Feeds. Dein Blog zeigt sie weiterhin.");
+        table.put("Takes the reblogs you made out of your dashboard. Your blog and the rest of Tumblr still show them.",
+                "Entfernt die Reblogs, die du gemacht hast, aus deinem Dashboard. Dein Blog und der Rest von Tumblr zeigen sie weiterhin.");
         table.put("Takes the share button out of the footer under posts.",
                 "Nimmt den Teilen-Button aus der Leiste unter Beitr\u00e4gen.");
         table.put("Takes the tags Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.",
@@ -1855,12 +1855,12 @@ public final class L10nTranslations {
                 "Quita de tus feeds las publicaciones que Tumblr tapa por tus etiquetas y palabras filtradas.");
         table.put("Takes the posts Tumblr's staff feature under a Featured header out of your dashboard and other feeds.",
                 "Quita de tu panel y otros feeds las publicaciones que el equipo de Tumblr muestra bajo el encabezado Destacado.");
-        table.put("Takes the posts you've already liked out of your dashboard and the feeds like it. Your likes and blogs still show them.",
-                "Quita de tu panel y de los feeds parecidos las publicaciones que ya te gustaron. Tus Me gusta y los blogs las siguen mostrando.");
+        table.put("Takes the posts you've already liked out of your dashboard. Your likes and the rest of Tumblr still show them.",
+                "Quita de tu panel las publicaciones que ya te gustaron. Tus Me gusta y el resto de Tumblr las siguen mostrando.");
         table.put("Takes the reblog button out of the footer under posts.",
                 "Quita el bot\u00f3n de reblogueo del pie de las publicaciones.");
-        table.put("Takes the reblogs you made out of your dashboard and the feeds like it. Your blog still shows them.",
-                "Quita los reblogs que hiciste de tu panel y de los feeds parecidos. Tu blog los sigue mostrando.");
+        table.put("Takes the reblogs you made out of your dashboard. Your blog and the rest of Tumblr still show them.",
+                "Quita los reblogs que hiciste de tu panel. Tu blog y el resto de Tumblr los siguen mostrando.");
         table.put("Takes the share button out of the footer under posts.",
                 "Quita el bot\u00f3n Compartir del pie de las publicaciones.");
         table.put("Takes the tags Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.",
@@ -2870,12 +2870,12 @@ public final class L10nTranslations {
                 "Menghapus postingan yang ditutupi Tumblr karena tag dan kata yang kamu filter dari feed-mu.");
         table.put("Takes the posts Tumblr's staff feature under a Featured header out of your dashboard and other feeds.",
                 "Menghapus postingan yang ditampilkan tim Tumblr di bawah judul Unggulan dari dasbor dan feed lainnya.");
-        table.put("Takes the posts you've already liked out of your dashboard and the feeds like it. Your likes and blogs still show them.",
-                "Menghapus postingan yang sudah kamu sukai dari dasbor dan feed sejenisnya. Daftar sukamu dan blog tetap menampilkannya.");
+        table.put("Takes the posts you've already liked out of your dashboard. Your likes and the rest of Tumblr still show them.",
+                "Menghapus postingan yang sudah kamu sukai dari dasbor. Daftar sukamu dan bagian lain Tumblr tetap menampilkannya.");
         table.put("Takes the reblog button out of the footer under posts.",
                 "Menghapus tombol reblog dari bagian bawah postingan.");
-        table.put("Takes the reblogs you made out of your dashboard and the feeds like it. Your blog still shows them.",
-                "Menghapus reblog yang kamu buat dari dasbor dan feed sejenisnya. Blogmu tetap menampilkannya.");
+        table.put("Takes the reblogs you made out of your dashboard. Your blog and the rest of Tumblr still show them.",
+                "Menghapus reblog yang kamu buat dari dasbor. Blogmu dan bagian lain Tumblr tetap menampilkannya.");
         table.put("Takes the share button out of the footer under posts.",
                 "Menghapus tombol bagikan dari bagian bawah postingan.");
         table.put("Takes the tags Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.",
@@ -3885,12 +3885,12 @@ public final class L10nTranslations {
                 "Remove dos seus feeds os posts que o Tumblr cobre por causa das suas tags e palavras filtradas.");
         table.put("Takes the posts Tumblr's staff feature under a Featured header out of your dashboard and other feeds.",
                 "Tira do seu painel e de outros feeds os posts que a equipe do Tumblr mostra sob o t\u00edtulo Em destaque.");
-        table.put("Takes the posts you've already liked out of your dashboard and the feeds like it. Your likes and blogs still show them.",
-                "Tira do seu painel e dos feeds parecidos os posts que voc\u00ea j\u00e1 curtiu. Suas curtidas e os blogs continuam mostrando esses posts.");
+        table.put("Takes the posts you've already liked out of your dashboard. Your likes and the rest of Tumblr still show them.",
+                "Tira do seu painel os posts que voc\u00ea j\u00e1 curtiu. Suas curtidas e o resto do Tumblr continuam mostrando esses posts.");
         table.put("Takes the reblog button out of the footer under posts.",
                 "Tira o bot\u00e3o de reblogue do rodap\u00e9 dos posts.");
-        table.put("Takes the reblogs you made out of your dashboard and the feeds like it. Your blog still shows them.",
-                "Tira os reblogs que voc\u00ea fez do seu painel e dos feeds parecidos. Seu blog continua mostrando esses reblogs.");
+        table.put("Takes the reblogs you made out of your dashboard. Your blog and the rest of Tumblr still show them.",
+                "Tira os reblogs que voc\u00ea fez do seu painel. Seu blog e o resto do Tumblr continuam mostrando esses reblogs.");
         table.put("Takes the share button out of the footer under posts.",
                 "Tira o bot\u00e3o de compartilhar do rodap\u00e9 dos posts.");
         table.put("Takes the tags Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.",
@@ -4900,12 +4900,12 @@ public final class L10nTranslations {
                 "Tumblr'\u0131n filtreledi\u011finiz etiketler ve s\u00f6zc\u00fckler y\u00fcz\u00fcnden \u00f6rtt\u00fc\u011f\u00fc g\u00f6nderileri ak\u0131\u015flar\u0131n\u0131zdan kald\u0131r\u0131r.");
         table.put("Takes the posts Tumblr's staff feature under a Featured header out of your dashboard and other feeds.",
                 "Tumblr ekibinin \u00d6ne \u00e7\u0131kanlar ba\u015fl\u0131\u011f\u0131 alt\u0131nda g\u00f6sterdi\u011fi g\u00f6nderileri panondan ve di\u011fer ak\u0131\u015flardan kald\u0131r\u0131r.");
-        table.put("Takes the posts you've already liked out of your dashboard and the feeds like it. Your likes and blogs still show them.",
-                "Zaten be\u011fendi\u011fin g\u00f6nderileri panondan ve benzeri ak\u0131\u015flardan kald\u0131r\u0131r. Be\u011fenilerin ve bloglar onlar\u0131 g\u00f6stermeye devam eder.");
+        table.put("Takes the posts you've already liked out of your dashboard. Your likes and the rest of Tumblr still show them.",
+                "Zaten be\u011fendi\u011fin g\u00f6nderileri panondan kald\u0131r\u0131r. Be\u011fenilerin ve Tumblr'\u0131n geri kalan\u0131 onlar\u0131 g\u00f6stermeye devam eder.");
         table.put("Takes the reblog button out of the footer under posts.",
                 "G\u00f6nderilerin alt\u0131ndaki RB d\u00fc\u011fmesini kald\u0131r\u0131r.");
-        table.put("Takes the reblogs you made out of your dashboard and the feeds like it. Your blog still shows them.",
-                "Yapt\u0131\u011f\u0131n yeniden bloglar\u0131 panondan ve benzeri ak\u0131\u015flardan kald\u0131r\u0131r. Blogun onlar\u0131 g\u00f6stermeye devam eder.");
+        table.put("Takes the reblogs you made out of your dashboard. Your blog and the rest of Tumblr still show them.",
+                "Yapt\u0131\u011f\u0131n yeniden bloglar\u0131 panondan kald\u0131r\u0131r. Blogun ve Tumblr'\u0131n geri kalan\u0131 onlar\u0131 g\u00f6stermeye devam eder.");
         table.put("Takes the share button out of the footer under posts.",
                 "G\u00f6nderilerin alt\u0131ndaki payla\u015f d\u00fc\u011fmesini kald\u0131r\u0131r.");
         table.put("Takes the tags Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.",

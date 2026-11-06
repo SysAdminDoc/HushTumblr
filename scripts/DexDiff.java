@@ -306,7 +306,7 @@ public class DexDiff {
             Map.entry("followButton", 5), Map.entry("footerButton", 3), Map.entry("postTags", 6),
             Map.entry("noteCounts", 9), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
-            Map.entry("matureContent", 12), Map.entry("rootPostMutes", 10), Map.entry("mutualMarkers", 13));
+            Map.entry("matureContent", 12), Map.entry("rootPostMutes", 9), Map.entry("dashboardPage", 9), Map.entry("mutualMarkers", 13));
 
     /**
      * A start-call, next-call, sole-call or once-call line: its method reference, the next-call's
@@ -2611,12 +2611,13 @@ public class DexDiff {
          * Families that need a shared hook without owning one of its capabilities, the rule's last
          * column: Hide ads asks the feature switch hook too, and the card and post families the
          * timeline list hook, each owning only the capability of its own bridge. Hide your own reblogs
-         * reads the paid-post bridge's can_edit getter.
+         * reads the paid-post bridge's can_edit getter. The dashboard page hook serves blog rules,
+         * Hide liked posts and Hide your own reblogs.
          */
         static List<String> users(Contract rule) {
             return rule.target.equals("featureSwitch") || rule.target.equals("timelineList") || rule.target.equals("timelinePaging")
                     || rule.target.equals("accountIdentity") || rule.target.equals("postJsonPresence")
-                    || rule.target.equals("paidPostBridge")
+                    || rule.target.equals("paidPostBridge") || rule.target.equals("dashboardPage")
                     ? List.of(rule.strings.get(rule.strings.size() - 1).split(",")) : List.of();
         }
 
@@ -4316,14 +4317,14 @@ public class DexDiff {
         /** Canonical IDs, explicit JSON presence, local-only rebinds and the native menu action. */
         void rootPostMutes(Contract c) {
             String root = c.strings.get(0), menu = c.strings.get(1), post = c.strings.get(2), wrapper = c.strings.get(3), menuKey = c.strings.get(4),
-                    timeline = c.strings.get(5), face = c.strings.get(6), local = c.strings.get(7), action = c.strings.get(8), timelineObject = c.strings.get(9);
+                    timeline = c.strings.get(5), face = c.strings.get(6), local = c.strings.get(7), action = c.strings.get(8);
             String object = "Ljava/lang/Object;", list = "Ljava/util/List;", mode = "Luxl;", callback = "Lii9;", unit = "Lctm;",
-                    builder = "Lcom/tumblr/components/bottomsheet/b$b;", concrete = "Lcom/tumblr/components/bottomsheet/b$a;", payload = "Lcom/tumblr/rumblr/model/Timelineable;";
+                    builder = "Lcom/tumblr/components/bottomsheet/b$b;", concrete = "Lcom/tumblr/components/bottomsheet/b$a;";
             String canonical = root + "->canonicalRoot(" + STRING_TYPE + STRING_TYPE + STRING_TYPE + list + "Z)" + STRING_TYPE;
             String presenceField = post + "->hushRootTrailPresent:Z", captureField = wrapper + "->hushCanonicalRoot:" + STRING_TYPE;
             String rootReason = "root canonical bridge changed", captureReason = "root wrapper capture changed",
                     menuReason = "root menu hook changed", localReason = "root local timeline bridge changed", callbackReason = "root callback bridge changed";
-            for (String type : List.of(post, wrapper, timeline, mode, timelineObject, "La2k;")) preserveClass(type);
+            for (String type : List.of(post, wrapper, timeline, mode)) preserveClass(type);
             List<MethodReference> getters = new ArrayList<>();
             for (String key : List.of("reblogged_root_id", "reblogged_from_id", "id", "trail")) getters.add(canonicalGetter(post, key, key.equals("trail") ? list : STRING_TYPE));
             Method bridge = actual(post + "->hushRootId()" + STRING_TYPE);
@@ -4445,9 +4446,6 @@ public class DexDiff {
             boolean localGood = localTimeline(timeline, local, mode, list);
             if (!localGood) fail(localReason);
             found &= localGood;
-            boolean pageGood = dashboardPage(timeline, root, list);
-            if (!pageGood) fail("root dashboard page hook changed");
-            found &= pageGood;
 
             ClassDef callbackClass = clean.classes.get(callback), actionClass = patched.classes.get(action);
             List<Method> declarations = new ArrayList<>();
@@ -4468,10 +4466,59 @@ public class DexDiff {
             callbackGood &= add != null && isStatic(add) && ab.size() == 3 && movesTo(ab.get(0), parameter(add, 0), Opcode.CHECK_CAST) && builder.equals(String.valueOf(reference(ab.get(0))))
                     && callIs(ab.get(1), Opcode.INVOKE_VIRTUAL, builder + "->c(" + STRING_TYPE + callback + ")" + builder, parameter(add, 0), parameter(add, 1), parameter(add, 2)) && ab.get(2).getOpcode() == Opcode.RETURN_VOID
                     && nativeUnit != null && isStatic(nativeUnit) && ub.size() == 2 && fieldIs(ub.get(0), Opcode.SGET_OBJECT, unit + "->a:" + unit, 0, -1) && movesTo(ub.get(1), 0, Opcode.RETURN_OBJECT);
-            callbackGood &= rootCardStub(menu, timelineObject, payload);
             if (!callbackGood) fail(callbackReason);
             found &= callbackGood;
             capability(c.callee, found);
+        }
+
+        /**
+         * The dashboard's page filter, shared by blog rules, Hide liked posts and Hide your own
+         * reblogs: the dashboard fragments say they're the dashboard, the page delivery hands each
+         * page to the extension, a card hands back its payload, and the card wrapper notes what the
+         * filter needs from its post while it's built.
+         */
+        void dashboardPages(Contract c) {
+            if (users(c).stream().noneMatch(this::flag)) return;
+            String root = c.strings.get(0), menu = c.strings.get(1), post = c.strings.get(2), wrapper = c.strings.get(3),
+                    timeline = c.strings.get(4), timelineObject = c.strings.get(5), factsHook = c.strings.get(6), factsFace = c.strings.get(7);
+            String list = "Ljava/util/List;", payload = "Lcom/tumblr/rumblr/model/Timelineable;";
+            String pageReason = "root dashboard page hook changed", cardReason = "root callback bridge changed", factsReason = "dashboard post facts changed";
+            for (String type : List.of(post, wrapper, timeline, timelineObject, "La2k;")) preserveClass(type);
+            // A shared rule runs without feature controls, but the page hook decides per switch, so it must read them.
+            featureControls = true;
+            if (!dashboardPage(timeline, root, list)) fail(pageReason);
+            if (!rootCardStub(menu, timelineObject, payload)) fail(cardReason);
+
+            String factsField = wrapper + "->hushPostFacts:I";
+            Method getter = actual(wrapper + "->hushPostFacts()I");
+            List<Instruction> gb = getter == null ? List.of() : instructions(getter);
+            boolean facts = implementsBridge(wrapper, factsFace)
+                    && hasField(patched, wrapper, "hushPostFacts", "I", AccessFlags.PRIVATE.getValue() | AccessFlags.FINAL.getValue(), AccessFlags.STATIC.getValue())
+                    && !hasField(clean, wrapper, "hushPostFacts", "I", 0, 0) && getter != null && !isStatic(getter) && AccessFlags.PUBLIC.isSet(getter.getAccessFlags())
+                    && gb.size() == 2 && fieldIs(gb.get(0), Opcode.IGET, factsField, 0, parameter(getter, -1)) && movesTo(gb.get(1), 0, Opcode.RETURN);
+            Method constructor = nativeMethod(wrapper + "-><init>(" + post + ")V", factsReason);
+            if (constructor == null) facts = false;
+            else {
+                Method m = actual(constructor);
+                // The facts read only the post they're handed. The switches are read where the page is filtered.
+                featureControls = false;
+                List<Integer> sites = calls(m, factsHook, 1);
+                featureControls = true;
+                List<Instruction> body = m == null ? List.of() : instructions(m);
+                int at = sites.size() == 1 ? sites.get(0) : -1, scratch = firstRegister(get(body, at + 1));
+                boolean injected = at >= 1 && !isStatic(constructor) && constructor.getImplementation().getRegisterCount() == 9
+                        && callIs(get(instructions(constructor), 0), Opcode.INVOKE_DIRECT, "Ljava/lang/Object;-><init>()V", 7)
+                        && callIs(get(body, at), Opcode.INVOKE_STATIC, factsHook, 8)
+                        && movesTo(get(body, at + 1), scratch, Opcode.MOVE_RESULT) && scratch >= 0 && scratch < 7 && deadAt(constructor, 1, scratch)
+                        && fieldIs(get(body, at + 2), Opcode.IPUT, factsField, scratch, 7);
+                if (injected) { remove(m, at, at + 3); anchor(m, at, 1, factsReason); fallthroughOnly(constructor, 1, factsReason); }
+                facts &= injected;
+            }
+            ClassDef wrapperClass = patched.classes.get(wrapper);
+            if (wrapperClass != null) for (Method m : wrapperClass.getMethods()) for (Instruction i : instructions(m))
+                if (i.getOpcode() == Opcode.IPUT && factsField.equals(String.valueOf(reference(i)))
+                        && (constructor == null || !m.toString().equals(constructor.toString()))) facts = false;
+            if (!facts) fail(factsReason);
         }
 
         /**
@@ -6554,6 +6601,7 @@ public class DexDiff {
                     case "postJsonPresence": postJsonPresence(c); break;
                     case "matureContent": matureContent(c); break;
                     case "rootPostMutes": rootPostMutes(c); break;
+                    case "dashboardPage": dashboardPages(c); break;
                     case "mutualMarkers": mutualMarkers(c); break;
                     case "reviewPrompt": reviewPrompt(c); break;
                     case "sdkStartup": sdkStartup(c); break;

@@ -642,7 +642,7 @@
     },
     {
       "name": "Hide liked posts",
-      "description": "Takes the posts you've already liked out of your dashboard and the feeds like it as each page loads. Your likes and blogs still show them. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed.",
+      "description": "Takes the posts you've already liked out of your dashboard as each page loads. Your likes and the rest of Tumblr still show them. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed.",
       "category": "Feed",
       "use": true,
       "dependencies": [
@@ -1500,7 +1500,7 @@
     },
     {
       "name": "Hide your own reblogs",
-      "description": "Takes the reblogs you made out of your dashboard and the feeds like it as each page loads. Your blog still shows them. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed.",
+      "description": "Takes the reblogs you made out of your dashboard as each page loads. Your blog and the rest of Tumblr still show them. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed.",
       "category": "Feed",
       "use": true,
       "dependencies": [

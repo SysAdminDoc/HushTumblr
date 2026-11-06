@@ -32,6 +32,7 @@ import app.hushtumblr.extension.shared.diagnostics.HookStatus;
 import app.hushtumblr.extension.tumblr.settings.FamilyNames;
 import app.hushtumblr.extension.tumblr.settings.PatchFamily;
 import app.hushtumblr.extension.tumblr.settings.Settings;
+import app.hushtumblr.extension.tumblr.timeline.DashboardPosts;
 import app.hushtumblr.extension.tumblr.timeline.HushRootPost;
 import app.hushtumblr.extension.tumblr.timeline.TimelinePaging;
 
@@ -293,13 +294,21 @@ public final class RootPostMutes {
 
     /**
      * Injected at the head of the method every timeline screen gets its pages through. Parsing
-     * can't tell which screen asked for a page, so blog rules wait until here: on a dashboard
-     * screen they take out that half of the blog's posts, and every other screen, the blog's own
-     * page included, gets [items] back as it came. Never throws.
+     * can't tell which screen asked for a page, so the rules that only touch the dashboard wait
+     * until here: on a dashboard screen blog rules take out that half of the blog's posts, then
+     * {@link DashboardPosts} takes out liked posts and your own reblogs. Every other screen, the
+     * blog's own page included, gets [items] back as it came. Never throws.
      */
     public static List<?> dashboardPage(Object fragment, List<?> items) {
+        if (items == null || items.isEmpty()) return items;
+        List<?> kept = blogRules(fragment, items);
+        return kept == null || kept.isEmpty() ? kept : DashboardPosts.page(fragment, kept);
+    }
+
+    /** [items] without the posts a blog rule takes off a dashboard screen. Never throws. */
+    private static List<?> blogRules(Object fragment, List<?> items) {
         try {
-            if (items == null || items.isEmpty() || !active() || !onDashboard(fragment)) return items;
+            if (!active() || !onDashboard(fragment)) return items;
             Session value = capture();
             if (value == null || !RootPostMuteStore.anyBlogRule(value.roots)) return items;
             List<Object> kept = new ArrayList<>(items.size());
@@ -315,7 +324,7 @@ public final class RootPostMutes {
         }
     }
     /** A dashboard screen, asked each time: Explore's tabs share the dashboard tab's class. */
-    static boolean onDashboard(Object fragment) {
+    public static boolean onDashboard(Object fragment) {
         return fragment instanceof HushDashboardTimeline && ((HushDashboardTimeline) fragment).hushDashboard();
     }
     private static boolean ruled(Object item, Set<String> entries) {

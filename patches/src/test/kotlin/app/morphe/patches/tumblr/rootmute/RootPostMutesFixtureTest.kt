@@ -47,6 +47,9 @@ class RootPostMutesFixtureTest {
         for (build in Fixtures.declaredBuilds()) {
             val context = PatchContexts.of(ExtensionDex.classes() + FixtureDex.classes(build, owners).values)
             postJsonPresencePatch.execute(context)
+            // The shared dashboard page patch is a dependency, so the patcher applies it first.
+            val page = context.resolveDashboardPage()
+            dashboardPagePatch.execute(context)
             val plan = context.resolveRootPostMutes()
             assertEquals(listOf("$POST->K0()Ljava/lang/String;", "$POST->G0()Ljava/lang/String;", "$POST->z0()Ljava/lang/String;",
                 "$POST->B0()Ljava/util/List;"), plan.roots[0].getters)
@@ -80,6 +83,19 @@ class RootPostMutesFixtureTest {
             assertEquals(WRAPPED_BLOG_RULE, capture[6].fieldRef().toString())
             assertEquals(listOf(8, 8), listOf(capture[1], capture[4]).map { (it as RegisterRangeInstruction).startRegister })
             assertEquals("Ljava/lang/Object;-><init>()V", capture[0].methodRef().toString())
+            // The liked and own-reblog facts follow the mute capture: the post in, the answer into the wrapper.
+            assertSame(page.wrapperConstructor, plan.wrapperConstructor)
+            assertEquals(POST_FACTS, capture[7].methodRef().toString())
+            assertEquals(listOf(1, 8), (capture[7] as FiveRegisterInstruction).let { listOf(it.registerCount, it.registerC) })
+            assertEquals(Opcode.MOVE_RESULT to page.factsScratch, capture[8].opcode to (capture[8] as OneRegisterInstruction).registerA)
+            assertEquals(Opcode.IPUT, capture[9].opcode)
+            assertEquals(WRAPPED_POST_FACTS, capture[9].fieldRef().toString())
+            assertEquals(listOf(page.factsScratch, 7), (capture[9] as TwoRegisterInstruction).let { listOf(it.registerA, it.registerB) })
+            val wrapper = context.mutableClassDefBy(ROOT_POST_WRAPPER)
+            assertTrue(HUSH_POST_FACTS in wrapper.interfaces)
+            val facts = wrapper.methods.single { it.name == "hushPostFacts" }.instructionList()
+            assertEquals(listOf(Opcode.IGET, Opcode.RETURN), facts.map { it.opcode })
+            assertEquals(WRAPPED_POST_FACTS, facts[0].fieldRef().toString())
             for (dashboard in ROOT_DASHBOARDS) assertTrue(HUSH_DASHBOARD_TIMELINE in context.mutableClassDefBy(dashboard).interfaces)
             assertFalse(HUSH_DASHBOARD_TIMELINE in context.mutableClassDefBy(LOCAL_TIMELINE).interfaces)
             // Explore and Communities reuse the tab class, so a tab answers by the host whose child it is.
@@ -93,8 +109,8 @@ class RootPostMutesFixtureTest {
             assertEquals(1, (tab[0] as FiveRegisterInstruction).registerC)
             assertEquals(DASHBOARD_HOST, (tab[2] as ReferenceInstruction).reference.toString())
             // Blog rules filter the page at the head of its delivery: the fragment and the page in, the kept page back into the page's register.
-            val delivery = plan.delivery.instructionList()
-            val (self, items) = plan.delivery.implementation!!.registerCount.let { listOf(it - 6, it - 4) }
+            val delivery = page.delivery.instructionList()
+            val (self, items) = page.delivery.implementation!!.registerCount.let { listOf(it - 6, it - 4) }
             assertEquals(DASHBOARD_PAGE, delivery[0].methodRef().toString())
             assertEquals(listOf(self, items), (delivery[0] as FiveRegisterInstruction).let { listOf(it.registerC, it.registerD) })
             assertEquals(Opcode.MOVE_RESULT_OBJECT to items, delivery[1].opcode to (delivery[1] as OneRegisterInstruction).registerA)
@@ -357,7 +373,10 @@ class RootPostMutesFixtureTest {
     fun `a dashboard tab whose host is gone refuses before anything is edited`() {
         for (build in Fixtures.declaredBuilds()) {
             val context = PatchContexts.of(ExtensionDex.classes() + FixtureDex.classes(build, owners - DASHBOARD_HOST).values)
-            assertThrows(PatchException::class.java) { postJsonPresencePatch.execute(context); muteRootPostsPatch.execute(context) }
+            // The shared dashboard page patch owns the dashboard markers now and refuses before Mute runs.
+            assertThrows(PatchException::class.java) {
+                postJsonPresencePatch.execute(context); dashboardPagePatch.execute(context); muteRootPostsPatch.execute(context)
+            }
             assertUnchanged(context)
         }
     }
