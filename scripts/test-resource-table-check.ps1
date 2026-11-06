@@ -249,7 +249,7 @@ public final class TwoPackages {
     public static void main(String[] args) throws Exception {
         TableBlock table;
         try (ZipFile zip = new ZipFile(args[0]); InputStream in = new BufferedInputStream(zip.getInputStream(zip.getEntry("resources.arsc")))) {
-            table = TableBlock.load(in);
+            table = TableBlock.load(in, (read, total) -> { });
         }
         PackageBlock base = table.pickOne(0x7f);
         // ARSCLib merges only packages of one id, so the copy takes its own id afterwards.
