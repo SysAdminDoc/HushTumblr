@@ -302,7 +302,7 @@ public class DexDiff {
             Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1), Map.entry("activityNotifications", 7),
             Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 7), Map.entry("timelinePaging", 5),
             Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 7), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
-            Map.entry("crashReports", 3), Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("videoLinkPress", 6), Map.entry("imageSizes", 4), Map.entry("longPostRows", 6), Map.entry("exploreHeaderAd", 4), Map.entry("shareLinkTag", 5), Map.entry("longTrailRows", 4), Map.entry("longPostExpand", 14), Map.entry("fontChoice", 6),
+            Map.entry("crashReports", 3), Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("videoLinkPress", 6), Map.entry("imageSizes", 4), Map.entry("longPostRows", 6), Map.entry("exploreHeaderAd", 4), Map.entry("shareLinkTag", 5), Map.entry("longTrailRows", 4), Map.entry("longPostExpand", 17), Map.entry("fontChoice", 6),
             Map.entry("followButton", 5), Map.entry("footerButton", 3), Map.entry("postTags", 6),
             Map.entry("noteCounts", 9), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
@@ -5605,15 +5605,16 @@ public class DexDiff {
          * button's listener, and the binder's tap asks the second first thing, returning on yes. The
          * binder answers the extension's bridge with the screen it hands taps to while it has no
          * trail entry id, the timeline item's base class answers its bridge with its post, and the
-         * timeline screen answers its bridge by taking the item out of its adapter and back in, then
-         * redrawing. The patch skips a binder, card or timeline that changed shape, so such a clean
-         * APK only requires the capability off. The shape here is every check the patch makes.
+         * timeline screen answers its bridge by marking the item's post opened for Tumblr's own cut,
+         * taking the item out of its adapter and back in, then redrawing. The patch skips a binder,
+         * card, timeline or post that changed shape, so such a clean APK only requires the
+         * capability off. The shape here is every check the patch makes.
          */
         void longPostExpand(Contract c) {
             List<String> s = c.strings;
             String binder = s.get(2), screen = s.get(3), holder = s.get(4), item = s.get(5), card = s.get(6), timeline = s.get(7),
                     adapter = s.get(8), graywater = s.get(9), recycler = s.get(10), binderFace = s.get(11), itemFace = s.get(12),
-                    timelineFace = s.get(13);
+                    timelineFace = s.get(13), post = s.get(14), postBase = s.get(15), capped = s.get(16);
             String view = "Landroid/view/View;", list = "Ljava/util/List;", object = "Ljava/lang/Object;", string = STRING_TYPE,
                     timelineable = "Lcom/tumblr/rumblr/model/Timelineable;";
             ClassDef cd = clean.classes.get(binder), host = clean.classes.get(timeline), base = clean.classes.get(card), items = clean.classes.get(item);
@@ -5667,7 +5668,15 @@ public class DexDiff {
                     && subclass != null && graywater.equals(subclass.getSuperclass()) && above != null && recycler.equals(above.getSuperclass())
                     && hasPublic(above, "f0", "()" + list) && hasPublic(above, "y0", "(IZ)" + object)
                     && hasPublic(above, "U", "(I" + object + "Z)V") && recycled != null && hasPublic(recycled, "x", "()V");
-            if (!tapShaped || !entryShaped || !bindShaped || !adapterShaped) { capability(c.callee, false); return; }
+
+            // The item's post drops Tumblr's own cut through a plain setter of the flag its cut check reads, the base reads the server's cut, and the capped card is an item.
+            ClassDef posted = clean.classes.get(post), based = clean.classes.get(postBase), cappedItem = clean.classes.get(capped);
+            FieldReference lifted = posted == null ? null : movedFlag(posted, "l2", "(Z)V", Opcode.IPUT_BOOLEAN, Opcode.RETURN_VOID);
+            boolean cutShaped = based != null && cappedItem != null && lifted != null && postBase.equals(posted.getSuperclass())
+                    && item.equals(cappedItem.getSuperclass())
+                    && lifted.equals(movedFlag(posted, "g2", "()Z", Opcode.IGET_BOOLEAN, Opcode.RETURN))
+                    && movedFlag(based, "C1", "()Z", Opcode.IGET_BOOLEAN, Opcode.RETURN) != null;
+            if (!tapShaped || !entryShaped || !bindShaped || !adapterShaped || !cutShaped) { capability(c.callee, false); return; }
 
             boolean shown = hookAt(bind, actual(bind), made, s.get(0), List.of(held, shownItem), -1, List.of(held));
             if (!shown) fail("the Read more row's bind doesn't hand its button and item to " + s.get(0) + " right before the button's listener");
@@ -5676,7 +5685,7 @@ public class DexDiff {
             if (!screens) fail(binder + " doesn't answer " + binderFace + " with the screen it hands a tap to, and null for a trail entry");
             boolean posts = covariantBridge(card, itemFace, "hushPost", object, clean.methods.get(card + "->l()" + timelineable));
             if (!posts) fail(card + " doesn't answer " + itemFace + " with its post");
-            boolean expands = implementsBridge(timeline, timelineFace) && expandsInPlace(timeline, adapter, graywater, recycler);
+            boolean expands = implementsBridge(timeline, timelineFace) && expandsInPlace(timeline, adapter, graywater, recycler, card, post, postBase, capped);
             if (!expands) fail(timeline + " doesn't answer " + timelineFace + " by building the item again where it is in its adapter");
             capability(c.callee, shown && asked && screens && posts && expands);
         }
@@ -5701,28 +5710,49 @@ public class DexDiff {
         }
 
         /**
-         * The timeline's bridge: its adapter's items, the item's place in them, then the item taken out
-         * and put back at that place without telling the list, and the list redrawn. False when there's
-         * no adapter or the item isn't in it.
+         * The timeline's bridge: its adapter's items and the item's place in them, then, for a card
+         * item that isn't capped whose post the server didn't cut, the post marked opened so Tumblr's
+         * own cut drops, the item taken out and put back at that place without telling the list, and
+         * the list redrawn. False when there's no adapter, the item isn't in it, or it's refused.
          */
-        boolean expandsInPlace(String timeline, String adapter, String graywater, String recycler) {
+        boolean expandsInPlace(String timeline, String adapter, String graywater, String recycler, String card, String post, String postBase,
+                String capped) {
             String key = timeline + "->hushExpandPost(Ljava/lang/Object;)Z";
             Method m = clean.methods.containsKey(key) ? null : actual(key);
             List<Instruction> b = m == null ? List.of() : instructions(m);
-            return m != null && !isStatic(m) && AccessFlags.PUBLIC.isSet(m.getAccessFlags()) && m.getImplementation().getRegisterCount() == 5
-                    && m.getImplementation().getTryBlocks().isEmpty() && b.size() == 16 && parameter(m, -1) == 3
-                    && callIs(b.get(0), Opcode.INVOKE_VIRTUAL, timeline + "->z5()" + adapter, 3)
-                    && movesTo(b.get(1), 0, Opcode.MOVE_RESULT_OBJECT) && movesTo(b.get(2), 0, Opcode.IF_EQZ) && target(m, 2) == 14
+            return m != null && !isStatic(m) && AccessFlags.PUBLIC.isSet(m.getAccessFlags()) && m.getImplementation().getRegisterCount() == 6
+                    && m.getImplementation().getTryBlocks().isEmpty() && b.size() == 32 && parameter(m, -1) == 4
+                    && callIs(b.get(0), Opcode.INVOKE_VIRTUAL, timeline + "->z5()" + adapter, 4)
+                    && movesTo(b.get(1), 0, Opcode.MOVE_RESULT_OBJECT) && movesTo(b.get(2), 0, Opcode.IF_EQZ) && target(m, 2) == 30
                     && callIs(b.get(3), Opcode.INVOKE_VIRTUAL, graywater + "->f0()Ljava/util/List;", 0)
                     && movesTo(b.get(4), 1, Opcode.MOVE_RESULT_OBJECT)
-                    && callIs(b.get(5), Opcode.INVOKE_INTERFACE, "Ljava/util/List;->indexOf(Ljava/lang/Object;)I", 1, 4)
-                    && movesTo(b.get(6), 1, Opcode.MOVE_RESULT) && movesTo(b.get(7), 1, Opcode.IF_LTZ) && target(m, 7) == 14
-                    && literalIs(b.get(8), Opcode.CONST_4, 2, 0)
-                    && callIs(b.get(9), Opcode.INVOKE_VIRTUAL, graywater + "->y0(IZ)Ljava/lang/Object;", 0, 1, 2)
-                    && callIs(b.get(10), Opcode.INVOKE_VIRTUAL, graywater + "->U(ILjava/lang/Object;Z)V", 0, 1, 4, 2)
-                    && callIs(b.get(11), Opcode.INVOKE_VIRTUAL, recycler + "->x()V", 0)
-                    && literalIs(b.get(12), Opcode.CONST_4, 0, 1) && movesTo(b.get(13), 0, Opcode.RETURN)
-                    && literalIs(b.get(14), Opcode.CONST_4, 0, 0) && movesTo(b.get(15), 0, Opcode.RETURN);
+                    && callIs(b.get(5), Opcode.INVOKE_INTERFACE, "Ljava/util/List;->indexOf(Ljava/lang/Object;)I", 1, 5)
+                    && movesTo(b.get(6), 1, Opcode.MOVE_RESULT) && movesTo(b.get(7), 1, Opcode.IF_LTZ) && target(m, 7) == 30
+                    && fieldIsType(b.get(8), Opcode.INSTANCE_OF, capped, 2, 5) && movesTo(b.get(9), 2, Opcode.IF_NEZ) && target(m, 9) == 30
+                    && fieldIsType(b.get(10), Opcode.INSTANCE_OF, card, 2, 5) && movesTo(b.get(11), 2, Opcode.IF_EQZ) && target(m, 11) == 30
+                    && moveIs(b.get(12), Opcode.MOVE_OBJECT, 2, 5) && fieldIsType(b.get(13), Opcode.CHECK_CAST, card, 2, -1)
+                    && callIs(b.get(14), Opcode.INVOKE_VIRTUAL, card + "->l()Lcom/tumblr/rumblr/model/Timelineable;", 2)
+                    && movesTo(b.get(15), 2, Opcode.MOVE_RESULT_OBJECT)
+                    && fieldIsType(b.get(16), Opcode.INSTANCE_OF, post, 3, 2) && movesTo(b.get(17), 3, Opcode.IF_EQZ) && target(m, 17) == 30
+                    && fieldIsType(b.get(18), Opcode.CHECK_CAST, post, 2, -1)
+                    && callIs(b.get(19), Opcode.INVOKE_VIRTUAL, postBase + "->C1()Z", 2)
+                    && movesTo(b.get(20), 3, Opcode.MOVE_RESULT) && movesTo(b.get(21), 3, Opcode.IF_NEZ) && target(m, 21) == 30
+                    && literalIs(b.get(22), Opcode.CONST_4, 3, 1) && callIs(b.get(23), Opcode.INVOKE_VIRTUAL, post + "->l2(Z)V", 2, 3)
+                    && literalIs(b.get(24), Opcode.CONST_4, 2, 0)
+                    && callIs(b.get(25), Opcode.INVOKE_VIRTUAL, graywater + "->y0(IZ)Ljava/lang/Object;", 0, 1, 2)
+                    && callIs(b.get(26), Opcode.INVOKE_VIRTUAL, graywater + "->U(ILjava/lang/Object;Z)V", 0, 1, 5, 2)
+                    && callIs(b.get(27), Opcode.INVOKE_VIRTUAL, recycler + "->x()V", 0)
+                    && literalIs(b.get(28), Opcode.CONST_4, 0, 1) && movesTo(b.get(29), 0, Opcode.RETURN)
+                    && literalIs(b.get(30), Opcode.CONST_4, 0, 0) && movesTo(b.get(31), 0, Opcode.RETURN);
+        }
+
+        /** The one boolean of [cd] that its public [name] of [shape] only moves with [moves], then [exits], or null. */
+        static FieldReference movedFlag(ClassDef cd, String name, String shape, Opcode moves, Opcode exits) {
+            Method m = hasPublic(cd, name, shape) ? single(cd, x -> x.getName().equals(name) && descriptor(x).equals(shape)) : null;
+            List<Instruction> b = m == null ? List.of() : instructions(m);
+            return b.size() == 2 && b.get(0).getOpcode() == moves && b.get(1).getOpcode() == exits
+                    && reference(b.get(0)) instanceof FieldReference f && f.getDefiningClass().equals(cd.getType()) && f.getType().equals("Z")
+                    ? f : null;
         }
 
         /** The one method of [cd] with code that passes [test], or null. */

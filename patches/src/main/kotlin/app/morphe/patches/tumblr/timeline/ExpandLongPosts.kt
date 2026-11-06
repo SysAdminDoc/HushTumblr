@@ -39,6 +39,7 @@ import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
@@ -62,6 +63,17 @@ internal const val TIMELINE_CARD = "La2k;"
 internal const val TIMELINE_ADAPTER = "Lw4a;"
 internal const val GRAYWATER_ADAPTER = "Lzx9;"
 internal const val RECYCLER_ADAPTER = "Landroidx/recyclerview/widget/RecyclerView\$h;"
+
+// Tumblr's own cut of a long post in some feeds, tag pages among them (`mm2.j`, `km2.o`): a timeline
+// item's post ([COMPOSED_POST], from the post base class) drops the cut once its `l2(true)` marks it
+// opened, which its `g2()` then reads, the way Tumblr's inline View post does (`ykn.l`), except when
+// the server sent it with force_truncate (`af1.C1`). A capped card item is cut to its own height
+// either way.
+internal const val POST_BASE = "Laf1;"
+internal const val CAPPED_ITEM = "Lkjh;"
+private const val LIFT_CUT = "l2"
+private const val CUT_LIFTED = "g2"
+private const val FORCED_CUT = "C1"
 private const val TIMELINEABLE = "Lcom/tumblr/rumblr/model/Timelineable;"
 private const val VIEW = "Landroid/view/View;"
 private const val CLICK_LISTENER = "Landroid/view/View\$OnClickListener;"
@@ -109,8 +121,11 @@ internal class ExpandSite(
  * binder answers only without an entry id, and asks the timeline ([HUSH_EXPANDING_TIMELINE], added
  * to Tumblr's timeline screen) to build the item's rows again where it is: `zx9.y0` takes them out
  * and `zx9.U` builds them back without telling the list, then `x()` redraws it, the way Tumblr's
- * own refresh of the list does. The post hook leaves an opened post whole from then on. On any
- * other button, or when the timeline can't, Tumblr opens the post by itself as before.
+ * own refresh of the list does. First it marks the post opened for Tumblr too ([COMPOSED_POST]'s
+ * `l2`), or a feed that cuts long posts itself, like a tag page, cuts the opened post again at its
+ * own height. A post the server marked to cut, or a capped card, isn't opened here. The post hook
+ * leaves an opened post whole from then on. On any other button, or when the timeline can't,
+ * Tumblr opens the post by itself as before.
  *
  * A soft site: when one of these no longer has this shape the patch logs why and answers false,
  * so posts still collapse and Read more opens them on their own screen.
@@ -181,7 +196,7 @@ internal fun BytecodePatchContext.expandLongPostsInPlace(patch: String): Boolean
     timeline.methods.add(
         ImmutableMethod(
             TIMELINE_FRAGMENT, "hushExpandPost", listOf(ImmutableMethodParameter(OBJECT, null, null)), "Z",
-            AccessFlags.PUBLIC.value, null, null, MutableMethodImplementation(5),
+            AccessFlags.PUBLIC.value, null, null, MutableMethodImplementation(6),
         ).toMutable().apply {
             addInstructionsWithLabels(
                 0,
@@ -194,6 +209,22 @@ internal fun BytecodePatchContext.expandLongPostsInPlace(patch: String): Boolean
                     invoke-interface { v1, p1 }, $LIST->indexOf($OBJECT)I
                     move-result v1
                     if-ltz v1, :hush_no
+                    instance-of v2, p1, $CAPPED_ITEM
+                    if-nez v2, :hush_no
+                    instance-of v2, p1, $TIMELINE_CARD
+                    if-eqz v2, :hush_no
+                    move-object v2, p1
+                    check-cast v2, $TIMELINE_CARD
+                    invoke-virtual { v2 }, $TIMELINE_CARD->$POST_GETTER()$TIMELINEABLE
+                    move-result-object v2
+                    instance-of v3, v2, $COMPOSED_POST
+                    if-eqz v3, :hush_no
+                    check-cast v2, $COMPOSED_POST
+                    invoke-virtual { v2 }, $POST_BASE->$FORCED_CUT()Z
+                    move-result v3
+                    if-nez v3, :hush_no
+                    const/4 v3, 0x1
+                    invoke-virtual { v2, v3 }, $COMPOSED_POST->$LIFT_CUT(Z)V
                     const/4 v2, 0x0
                     invoke-virtual { v0, v1, v2 }, $GRAYWATER_ADAPTER->$REMOVE(IZ)$OBJECT
                     invoke-virtual { v0, v1, p1, v2 }, $GRAYWATER_ADAPTER->$INSERT(I${OBJECT}Z)V
@@ -294,6 +325,7 @@ internal fun BytecodePatchContext.resolveExpandSite(patch: String): ExpandSite {
     requireShape(patch, button < 16 && item < 16 && button != item, "the Read more row's bind keeps its button or item out of the hook's reach")
 
     requireTimelineAdapter(patch)
+    requirePostCut(patch)
     return ExpandSite(mutableOf(bind), bindAt, button, item, mutableOf(tap), scratch)
 }
 
@@ -355,6 +387,36 @@ private fun BytecodePatchContext.requireTimelineAdapter(patch: String) {
             classDefByOrNull(RECYCLER_ADAPTER)?.hasPublic(REDRAW, emptyList(), "V") == true,
         "Tumblr's Graywater adapter no longer takes an item out and back in without telling the list",
     )
+}
+
+/**
+ * Throws unless a timeline post can be marked opened for Tumblr's own cut: the post class comes from
+ * the post base class, its [LIFT_CUT] only sets the boolean its [CUT_LIFTED] only reads, the base's
+ * [FORCED_CUT] only reads one of its own, and the capped card is a timeline item.
+ */
+private fun BytecodePatchContext.requirePostCut(patch: String) {
+    val post = classDefByOrNull(COMPOSED_POST)
+    val base = classDefByOrNull(POST_BASE)
+    requireShape(
+        patch,
+        post != null && base != null && post.superclass == POST_BASE && classDefByOrNull(CAPPED_ITEM)?.superclass == TIMELINE_ITEM,
+        "Tumblr's timeline post or capped card is missing",
+    )
+    requireShape(
+        patch,
+        post!!.movedFlag(LIFT_CUT, listOf("Z"), "V", Opcode.IPUT_BOOLEAN, Opcode.RETURN_VOID)
+            ?.let { it == post.movedFlag(CUT_LIFTED, emptyList(), "Z", Opcode.IGET_BOOLEAN, Opcode.RETURN) } == true &&
+            base!!.movedFlag(FORCED_CUT, emptyList(), "Z", Opcode.IGET_BOOLEAN, Opcode.RETURN) != null,
+        "Tumblr's timeline post no longer drops its own cut or reads the server's cut",
+    )
+}
+
+/** The one boolean of this class that its public [name] of this shape only [moves], then [exits], or null. */
+private fun ClassDef.movedFlag(name: String, parameters: List<String>, result: String, moves: Opcode, exits: Opcode): FieldReference? {
+    if (!hasPublic(name, parameters, result)) return null
+    val steps = methods.single { it.name == name && it.hasShape(parameters, result) }.instructionList()
+    if (steps.size != 2 || steps[0].opcode != moves || steps[1].opcode != exits) return null
+    return steps[0].fieldRef()?.takeIf { it.definingClass == type && it.type == "Z" }
 }
 
 private fun ClassDef.instanceField(name: String) = fields.singleOrNull { it.name == name && !AccessFlags.STATIC.isSet(it.accessFlags) }

@@ -11,6 +11,7 @@ import app.morphe.FixtureTests
 import app.morphe.Fixtures
 import app.morphe.PatchContexts
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patches.tumblr.lookup.fieldRef
 import app.morphe.patches.tumblr.lookup.instructionList
@@ -22,6 +23,7 @@ import app.morphe.patches.tumblr.misc.extension.localRegisterCount
 import app.morphe.patches.tumblr.misc.extension.parameterRegisterNumber
 import app.morphe.util.RegisterLiveness
 import app.morphe.util.namedRegisters
+import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
@@ -42,6 +44,7 @@ class ExpandLongPostsFixtureTest {
     private val types = setOf(
         POST_COMPOSER, BLOCK_ROW, TIMELINE_SCREEN, READ_MORE_BINDER, READ_MORE_SCREEN, READ_MORE_HOLDER,
         TIMELINE_ITEM, TIMELINE_CARD, TIMELINE_FRAGMENT, TIMELINE_ADAPTER, GRAYWATER_ADAPTER, RECYCLER_ADAPTER,
+        COMPOSED_POST, POST_BASE, CAPPED_ITEM,
     )
 
     /** The patch's classes, and every class the binder builds, which holds the button's listener R8 names per build. */
@@ -133,15 +136,43 @@ class ExpandLongPostsFixtureTest {
             assertTrue(build.name, HUSH_EXPANDING_TIMELINE in timeline.interfaces)
             val expand = timeline.methods.single { it.toString() !in timelineMethods }
             assertEquals("$TIMELINE_FRAGMENT->hushExpandPost(Ljava/lang/Object;)Z", expand.toString())
-            val calls = expand.instructionList().mapNotNull { it.methodRef()?.toString() }
+            val steps = expand.instructionList()
+            val calls = steps.mapNotNull { it.methodRef()?.toString() }
             assertEquals(
                 listOf(
                     "$TIMELINE_FRAGMENT->z5()$TIMELINE_ADAPTER", "$GRAYWATER_ADAPTER->f0()Ljava/util/List;",
-                    "Ljava/util/List;->indexOf(Ljava/lang/Object;)I", "$GRAYWATER_ADAPTER->y0(IZ)Ljava/lang/Object;",
+                    "Ljava/util/List;->indexOf(Ljava/lang/Object;)I", "$TIMELINE_CARD->l()Lcom/tumblr/rumblr/model/Timelineable;",
+                    "$POST_BASE->C1()Z", "$COMPOSED_POST->l2(Z)V", "$GRAYWATER_ADAPTER->y0(IZ)Ljava/lang/Object;",
                     "$GRAYWATER_ADAPTER->U(ILjava/lang/Object;Z)V", "$RECYCLER_ADAPTER->x()V",
                 ),
                 calls,
             )
+            // A capped card, an item that isn't a card, a post of another kind and a post the server cut are refused before the post is marked opened.
+            assertEquals(build.name, listOf(CAPPED_ITEM, TIMELINE_CARD, COMPOSED_POST),
+                steps.filter { it.opcode == Opcode.INSTANCE_OF }.map { ((it as ReferenceInstruction).reference as TypeReference).type })
+            val refused = steps.size - 2
+            assertEquals(build.name, 0, (steps[refused] as NarrowLiteralInstruction).narrowLiteral)
+            val branches = steps.indices.filter { steps[it] is OffsetInstruction }
+            assertEquals(build.name, 6, branches.size)
+            for (k in branches) assertEquals("${build.name}: branch $k refuses", refused, target(steps, k))
+            val lift = steps.indexOfFirst { it.methodRef()?.toString() == "$COMPOSED_POST->l2(Z)V" }
+            val forced = steps.indexOfFirst { it.methodRef()?.toString() == "$POST_BASE->C1()Z" }
+            assertTrue("${build.name}: the server's cut is read and refused before the post is marked",
+                forced < lift && steps[forced + 2].opcode == Opcode.IF_NEZ && forced + 2 in branches)
+            assertEquals(build.name, 1, (steps[lift - 1] as NarrowLiteralInstruction).narrowLiteral)
+            assertEquals(build.name, steps[lift - 1].namedRegisters(), steps[lift].namedRegisters().drop(1))
+            // The server's cut is read from, and the flag set on, the post the card handed back, and nothing writes over it in between.
+            val got = steps.indexOfFirst { it.methodRef()?.toString() == "$TIMELINE_CARD->l()Lcom/tumblr/rumblr/model/Timelineable;" }
+            assertEquals(build.name, Opcode.MOVE_RESULT_OBJECT, steps[got + 1].opcode)
+            val held = steps[got + 1].namedRegisters().single()
+            assertEquals(build.name, listOf(held, held), listOf(forced, lift).map { steps[it].namedRegisters().first() })
+            val reads = setOf(Opcode.CHECK_CAST, Opcode.INVOKE_VIRTUAL, Opcode.INVOKE_INTERFACE, Opcode.IF_EQZ, Opcode.IF_NEZ)
+            for (k in got + 2 until lift) {
+                assertTrue("${build.name}: step $k leaves the post where it is",
+                    steps[k].namedRegisters().firstOrNull() != held || steps[k].opcode in reads)
+            }
+            assertTrue("${build.name}: the post is marked before its rows are built again",
+                lift < steps.indexOfFirst { it.methodRef()?.toString() == "$GRAYWATER_ADAPTER->y0(IZ)Ljava/lang/Object;" })
             for (call in calls.filter { !it.startsWith("Ljava/") }) {
                 val owner = call.substringBefore("->")
                 assertTrue("${build.name}: $call is Tumblr's", context.classDefByOrNull(owner)?.methods?.any { it.toString() == call } == true)
@@ -197,6 +228,27 @@ class ExpandLongPostsFixtureTest {
             val site = context.resolveExpandSite(patch)
             context.mutableClassDefBy(GRAYWATER_ADAPTER).methods.removeAll { it.name == "y0" }
             assertSkipped(context, site, "no longer takes an item out and back in")
+        }
+    }
+
+    @Test fun `a post that can't drop Tumblr's own cut leaves Read more opening the post by itself`() {
+        for (build in Fixtures.declaredBuilds()) {
+            val context = context(build)
+            val site = context.resolveExpandSite(patch)
+            context.mutableClassDefBy(COMPOSED_POST).methods.removeAll { it.name == "l2" && it.parameterTypes.map(CharSequence::toString) == listOf("Z") }
+            assertSkipped(context, site, "no longer drops its own cut")
+        }
+    }
+
+    @Test fun `a post whose cut check reads another flag than the one Read more sets leaves Read more opening the post by itself`() {
+        for (build in Fixtures.declaredBuilds()) {
+            val context = context(build)
+            val site = context.resolveExpandSite(patch)
+            val post = context.mutableClassDefBy(COMPOSED_POST)
+            val read = post.methods.single { it.name == "g2" && it.parameterTypes.isEmpty() && it.returnType == "Z" }
+            val other = post.fields.first { it.type == "Z" && !AccessFlags.STATIC.isSet(it.accessFlags) && it.name != "l2" }
+            read.replaceInstruction(0, "iget-boolean v0, p0, $COMPOSED_POST->${other.name}:Z")
+            assertSkipped(context, site, "no longer drops its own cut")
         }
     }
 

@@ -162,7 +162,8 @@ public final class LongPosts {
      * the button is under a post this switch cut, asks the binder's timeline to build the post's
      * rows again where it is, which {@link #post} then leaves whole, and answers true. False lets
      * Tumblr open the post by itself: an author's cut, a trail entry, a screen that isn't a timeline,
-     * a post no longer in the list, the switch off, and anything that throws. Never throws.
+     * a post no longer in the list, a capped card, a post the server marked to cut, the switch off,
+     * and anything that throws. Never throws.
      */
     public static boolean readMore(@Nullable Object binder, @Nullable View button) {
         Object post = null;

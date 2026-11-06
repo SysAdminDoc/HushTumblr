@@ -14,8 +14,9 @@ import androidx.annotation.Nullable;
  */
 public interface HushExpandingTimeline {
     /**
-     * Builds the rows of [item], one of this timeline's items, again in its place and redraws the
-     * list. False when the list isn't there yet or doesn't hold [item].
+     * Marks [item]'s post opened for Tumblr's own height cut, then builds its rows again in place
+     * and redraws the list. False when the list isn't there yet or doesn't hold [item], and for a
+     * capped card or a post the server marked to cut, which Tumblr opens on their own page.
      */
     boolean hushExpandPost(@Nullable Object item);
 }
