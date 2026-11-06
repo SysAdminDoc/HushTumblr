@@ -117,6 +117,7 @@ HushTumblr collects nothing and has no server. The release check is off until yo
 - **Android won't install it.** Uninstall stock Tumblr first. Updating a patched copy needs the same signing key.
 - **Morphe Manager says the APK isn't supported.** It has to be the Tumblr 46.8.1.100 `.apkm` bundle with version code 1460801100.
 - **A switch seems to do nothing.** Feed filters work as pages load, so scroll or refresh. Tracking and ad changes wait for Tumblr to restart.
+- **A second Tumblr next to the regular one.** Turn on Expert mode in Morphe Manager and pick Morphe's Clone app patch along with HushTumblr's. Keep its `updatePermissions` and `updateProviders` options on. The copy installs beside your regular Tumblr under its own package name. Sign in to it with your email. `Fix push notifications` only works in the regular app, so don't count on notifications in the copy.
 - **Anything else.** [Open an issue](https://github.com/SysAdminDoc/HushTumblr/issues/new/choose) with your HushTumblr and Tumblr versions.
 
 ## Supported version
