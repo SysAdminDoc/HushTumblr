@@ -303,7 +303,7 @@ public class DexDiff {
             Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 7), Map.entry("timelinePaging", 5),
             Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 7), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
             Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("videoLinkPress", 6), Map.entry("imageSizes", 4), Map.entry("fontChoice", 6),
-            Map.entry("followButton", 5), Map.entry("footerButton", 3), Map.entry("postTags", 5),
+            Map.entry("followButton", 5), Map.entry("footerButton", 3), Map.entry("postTags", 6),
             Map.entry("noteCounts", 6), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
             Map.entry("matureContent", 12), Map.entry("rootPostMutes", 10), Map.entry("mutualMarkers", 13));
@@ -3593,7 +3593,11 @@ public class DexDiff {
                 int k = work.poll();
                 if (k < 0 || k >= body.size() || seen.get(k)) continue;
                 seen.set(k);
-                if (valueReads(body.get(k)).stream().anyMatch(read -> read[0] == register || read[1] == 'W' && read[0] + 1 == register)) return false;
+                Instruction i = body.get(k);
+                if (valueReads(i).stream().anyMatch(read -> read[0] == register || read[1] == 'W' && read[0] + 1 == register)) return false;
+                // valueReads leaves a call's arguments to the signature checks, so they're read here.
+                if ((i instanceof FiveRegisterInstruction || i instanceof RegisterRangeInstruction)
+                        && Arrays.stream(invokeRegisters(i)).anyMatch(read -> read == register)) return false;
                 work.addAll(graph.handlers.get(k));
                 if (!writes(body.get(k), register)) work.addAll(graph.normal.get(k));
             }
@@ -5599,12 +5603,15 @@ public class DexDiff {
                     found = guardFirst(old, c.strings.get(0), List.of(), 2, none);
                 }
             }
-            found &= tvTags(c.strings.get(3), c.strings.get(1));
+            found &= tvTags(c.strings.get(3), c.strings.get(1), c.strings.get(5));
             capability(c.callee, found);
         }
 
-        /** The one static (String, String, boolean)List split in Tumblr TV's post text whose separator is ", ". */
-        boolean tvTags(String type, String hook) {
+        /**
+         * The one static (String, String, boolean)List split in Tumblr TV's post text whose separator
+         * is ", ", and the line's "more" label handed to [moreHook] right after the line is written.
+         */
+        boolean tvTags(String type, String hook, String moreHook) {
             ClassDef view = clean.classes.get(type);
             List<Method> owners = new ArrayList<>();
             List<Integer> splits = new ArrayList<>();
@@ -5616,7 +5623,63 @@ public class DexDiff {
             if (splits.size() != 1) { fail("Tumblr TV's tag split has " + splits.size() + " clean targets, expected 1"); return false; }
             Method old = owners.get(0);
             int split = splits.get(0), tags = arguments(instructions(old).get(split)).get(0);
-            return hookAt(old, actual(old), split, hook, List.of(tags), tags, List.of(tags));
+            boolean found = hookAt(old, actual(old), split, hook, List.of(tags), tags, List.of(tags));
+            return tvMore(view, old, split, moreHook) && found;
+        }
+
+        static final String TEXT_VIEW_TYPE = "Landroid/widget/TextView;";
+
+        /**
+         * The one setText after [split] on a text view the post text keeps in a field, read just
+         * before it. The view keeps two, the line and its "more" label, so right after that setText
+         * the other one is read from the same view into a local nothing reads from there on, and
+         * [hook] is handed it and the line that was written.
+         */
+        boolean tvMore(ClassDef view, Method old, int split, String hook) {
+            List<Instruction> was = instructions(old);
+            List<Integer> writes = new ArrayList<>();
+            for (int at = split + 1; at < was.size(); at++) if (writesLine(was, at, view.getType())) writes.add(at);
+            if (writes.size() != 1) { fail("Tumblr TV's line has " + writes.size() + " writes after its tag split, expected 1"); return false; }
+            int write = writes.get(0);
+            String line = field(was.get(write - 1)).getName();
+            List<String> labels = new ArrayList<>();
+            for (Field f : view.getFields()) if (!AccessFlags.STATIC.isSet(f.getAccessFlags()) && f.getType().equals(TEXT_VIEW_TYPE)) labels.add(f.getName());
+            if (labels.size() != 2 || labels.stream().filter(line::equals).count() != 1) {
+                fail("Tumblr TV's post text keeps " + labels.size() + " text views, not just its line and its more label");
+                return false;
+            }
+            String more = view.getType() + "->" + (labels.get(0).equals(line) ? labels.get(1) : labels.get(0)) + ":" + TEXT_VIEW_TYPE;
+            int self = ((TwoRegisterInstruction) was.get(write - 1)).getRegisterB(), written = arguments(was.get(write)).get(1);
+            Method m = actual(old);
+            boolean controlled = featureControls;
+            featureControls = false; // The label comes back while paused or switched off too; tvTags made the call.
+            List<Integer> sites = calls(m, hook, 1);
+            featureControls = controlled;
+            if (m == null || sites.size() != 1) return false;
+            int at = sites.get(0);
+            List<Instruction> body = instructions(m);
+            Instruction read = get(body, at - 1);
+            int scratch = read == null ? -1 : firstRegister(read);
+            boolean caughtDead = flow(old).handlers.get(write).stream().allMatch(handler -> deadAt(old, handler, scratch));
+            if (!fieldIs(read, Opcode.IGET_OBJECT, more, scratch, self) || scratch < 0 || scratch >= parameter(old, -1) || scratch == written
+                    || !deadAt(old, write + 1, scratch) || !caughtDead || !callIs(get(body, at), Opcode.INVOKE_STATIC, hook, scratch, written)) {
+                fail(hook + " doesn't take what its rule hands it in " + m);
+                return false;
+            }
+            remove(m, at - 1, at + 1);
+            anchor(m, at - 1, write + 1, hook);
+            fallthroughOnly(old, write + 1, hook);
+            vouch(m, at, List.of(scratch, written));
+            return true;
+        }
+
+        /** A TextView setText(CharSequence) at [at] on a text view read from a [type] field just before it. */
+        static boolean writesLine(List<Instruction> body, int at, String type) {
+            Instruction call = body.get(at), read = get(body, at - 1);
+            FieldReference f = field(read);
+            return isCall(call, TEXT_VIEW_TYPE, "setText", "(Ljava/lang/CharSequence;)V") && call.getOpcode() == Opcode.INVOKE_VIRTUAL
+                    && read != null && read.getOpcode() == Opcode.IGET_OBJECT && f != null && f.getDefiningClass().equals(type) && f.getType().equals(TEXT_VIEW_TYPE)
+                    && firstRegister(read) == arguments(call).get(0);
         }
 
         static boolean splitsTags(List<Instruction> body, int at) {

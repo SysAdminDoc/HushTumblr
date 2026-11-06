@@ -215,11 +215,21 @@ public final class SelectorDexFixture {
                         field(Opcode.SGET_OBJECT, 3, "Ljava/util/Collections;", "EMPTY_LIST", LIST))));
         put(classes, TAGS, List.of(method(TAGS, "draw", "V", false, 4, draw, STRING, LIST)));
         List<Instruction> tv = body(literal(1, ", "), constant(2, 0),
-                staticCall(FIXTURE + "Strings;", "split", LIST, new String[]{STRING, STRING, "Z"}, 4, 1, 2), moved(0, true), end());
+                staticCall(FIXTURE + "Strings;", "split", LIST, new String[]{STRING, STRING, "Z"}, 4, 1, 2), moved(0, true),
+                instanceField(Opcode.IGET_OBJECT, 1, 3, TV, "z", TEXT),
+                invoke(Opcode.INVOKE_VIRTUAL, ref(TEXT, "setText", "V", "Ljava/lang/CharSequence;"), 1, 4),
+                invoke(Opcode.INVOKE_VIRTUAL, ref(OBJECT, "getClass", "Ljava/lang/Class;"), 1), end());
+        // The label's hook goes right after the line is written, before the tag hook shifts the body.
+        // It borrows v0, which nothing reads from there on; v1 is still read and v3 is the view.
+        int label = fault.equals("tags-more-parameter-scratch") ? 3 : fault.equals("tags-more-live-scratch") ? 1 : 0;
+        if (patched) tv.addAll(fault.equals("tags-early-more") ? 5 : 6, body(instanceField(Opcode.IGET_OBJECT, label,
+                        fault.equals("tags-more-wrong-view") ? 1 : 3, TV, fault.equals("tags-more-reads-line") ? "z" : "A", TEXT),
+                staticCall(owner, "tvMore", "V", new String[]{VIEW, "Ljava/lang/CharSequence;"}, label, fault.equals("tags-wrong-more") ? 1 : 4)));
         if (patched) tv.addAll(fault.equals("tags-late-tv") ? 4 : 2, body(staticCall(owner, "tvTags", STRING, new String[]{STRING},
                 fault.equals("tags-wrong-tv") ? 1 : 4), moved(4, true)));
-        put(classes, TV, List.of(method(TV, "bind", "V", false, 5, tv, STRING)));
-        if (patched) put(classes, owner, List.of(hook(owner, "hideTags", "Z", -1), hook(owner, "tvTags", STRING, 0, STRING)));
+        put(classes, TV, List.of(method(TV, "bind", "V", false, 5, tv, STRING)), member(TV, "z", TEXT), member(TV, "A", TEXT));
+        if (patched) put(classes, owner, List.of(hook(owner, "hideTags", "Z", -1), hook(owner, "tvTags", STRING, 0, STRING),
+                hook(owner, "tvMore", "V", -1, VIEW, "Ljava/lang/CharSequence;")));
     }
 
     private static void noteCounts(Map<String, ClassDef> classes, boolean patched, String fault) {
@@ -519,6 +529,12 @@ public final class SelectorDexFixture {
         fixture(root, "tags-not-empty", "hideTags()Z isn't asked first thing", "hideHashtags");
         fixture(root, "tags-late-tv", "tvTags(Ljava/lang/String;)Ljava/lang/String; is not where its rule puts it", "hideHashtags");
         fixture(root, "tags-wrong-tv", "tvTags(Ljava/lang/String;)Ljava/lang/String; doesn't take what its rule hands it", "hideHashtags");
+        fixture(root, "tags-early-more", "tvMore(Landroid/view/View;Ljava/lang/CharSequence;)V is not where its rule puts it", "hideHashtags");
+        fixture(root, "tags-wrong-more", "tvMore(Landroid/view/View;Ljava/lang/CharSequence;)V doesn't take what its rule hands it", "hideHashtags");
+        fixture(root, "tags-more-reads-line", "tvMore(Landroid/view/View;Ljava/lang/CharSequence;)V doesn't take what its rule hands it", "hideHashtags");
+        fixture(root, "tags-more-wrong-view", "tvMore(Landroid/view/View;Ljava/lang/CharSequence;)V doesn't take what its rule hands it", "hideHashtags");
+        fixture(root, "tags-more-parameter-scratch", "tvMore(Landroid/view/View;Ljava/lang/CharSequence;)V doesn't take what its rule hands it", "hideHashtags");
+        fixture(root, "tags-more-live-scratch", "tvMore(Landroid/view/View;Ljava/lang/CharSequence;)V doesn't take what its rule hands it", "hideHashtags");
         fixture(root, "notes-good", "", "hideNoteCounts");
         fixture(root, "notes-wrong-formatter", "noteCount(I)I doesn't take what its rule hands it", "hideNoteCounts");
         fixture(root, "notes-wrong-comment-count", "communityCommentsText(Ljava/lang/String;)Ljava/lang/String; doesn't take the community comment text, then its count", "hideNoteCounts");
