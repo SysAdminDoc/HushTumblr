@@ -93,7 +93,7 @@ There are 55 patches.
 | `Reveal allowed mature content` | Removes mature-content covers only when Tumblr explicitly allows them for the signed-in adult account. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Sanitize sharing links` | Links you share or copy from Tumblr leave out the ?source=share tag Tumblr adds to them, and still open the same post or blog. On by default. Turn it off in Tumblr settings > HushTumblr > Privacy. |
 | `Share video links` | Long-press a video in a post to share or copy its direct link, or save the video to your phone. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
-| `Sharper images` | Loads images in posts at a higher resolution when Tumblr has a larger copy, up to twice the width Tumblr shows them at, even on a slow connection. GIFs keep Tumblr's size. Uses more data. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
+| `Sharper images` | Loads images in posts at a higher resolution when Tumblr has a larger copy, up to twice the width Tumblr shows them at, even on a slow connection. GIFs go up too, but never past the pixel count of a 1280 by 960 one. Uses more data. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Show post timestamps` | Shows when posts were made using Tumblr's own timestamp layout. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Show mutual markers` | Marks blogs that follow your primary blog when you follow them. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Skip review prompts` | Stops the pop-up that asks what you think of the Tumblr app and then asks you for a store rating or feedback. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
