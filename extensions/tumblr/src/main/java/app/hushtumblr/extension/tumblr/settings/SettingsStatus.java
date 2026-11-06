@@ -60,6 +60,7 @@ public final class SettingsStatus {
     public static boolean spoofSignature() { return false; }
     public static boolean analyticsFlags() { return false; }
     public static boolean liveRampStartup() { return false; }
+    public static boolean crashReports() { return false; }
     public static boolean hideAdFreeBanner() { return false; }
     public static boolean adFreeBannerFlags() { return false; }
     public static boolean hideTumblrTv() { return false; }

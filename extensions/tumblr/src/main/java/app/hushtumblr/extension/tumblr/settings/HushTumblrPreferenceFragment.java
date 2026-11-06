@@ -824,8 +824,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             // The manifest half was set when patching, and the summary says so.
             patchToggle(privacy, context, build, PatchFamily.DISABLE_ANALYTICS, Settings.DISABLE_ANALYTICS,
                     L10n.t("Disable analytics"), L10n.t("Stops Tumblr's own tracking and ad measurement, and keeps "
-                        + "LiveRamp's tracker from starting. Firebase and Google's analytics collection stay off "
-                        + "until you patch again without it."),
+                        + "LiveRamp's tracker from starting. Crashlytics crash reports stay off while this is on. "
+                        + "Firebase and Google's analytics collection stay off until you patch again without it."),
                     SettingsIcons.BLOCK);
             patchToggle(privacy, context, build, PatchFamily.HIDE_ADVERTISING_ID, Settings.HIDE_ADVERTISING_ID,
                     L10n.t("Hide advertising ID"), L10n.t("Tumblr and the ad companies inside it see an empty "

@@ -230,7 +230,7 @@ Takes ads and paid Blaze posts out of your dashboard and other feeds. Once Tumbl
 Keep Blaze posts	Blaze-Beiträge behalten
 When ads are hidden, keep posts people paid to promote with Blaze. Other ads and post filters still apply.	Behält Beiträge, für die jemand mit Blaze bezahlt hat, wenn Werbung ausgeblendet ist. Andere Werbung und Beitragsfilter gelten weiter.
 # context: the Disable analytics switch on the Privacy page.
-Stops Tumblr's own tracking and ad measurement, and keeps LiveRamp's tracker from starting. Firebase and Google's analytics collection stay off until you patch again without it.	Beendet Tumblrs eigenes Tracking und die Werbemessung und lässt den Tracker von LiveRamp nicht starten. Die Datenerfassung von Firebase und Google Analytics bleibt aus, bis du ohne diesen Patch neu patchst.
+Stops Tumblr's own tracking and ad measurement, and keeps LiveRamp's tracker from starting. Crashlytics crash reports stay off while this is on. Firebase and Google's analytics collection stay off until you patch again without it.	Beendet Tumblrs eigenes Tracking und die Werbemessung und lässt den Tracker von LiveRamp nicht starten. Crashlytics-Absturzberichte bleiben aus, solange das an ist. Die Datenerfassung von Firebase und Google Analytics bleibt aus, bis du ohne diesen Patch neu patchst.
 # context: the Hide the ad-free banner switch on the Feed page.
 Hide the ad-free banner	Werbefrei-Banner ausblenden
 Hides the dashboard banner that asks you to pay for Ad-Free Browsing.	Blendet das Banner im Dashboard aus, das dich bittet, für werbefreies Surfen zu bezahlen.
@@ -504,6 +504,7 @@ Video saved to Downloads	In Downloads gespeichert
 Couldn't save the video	Video nicht gespeichert
 ad networks at launch	Werbenetzwerke beim Start
 LiveRamp at launch	LiveRamp beim Start
+Crashlytics at launch	Crashlytics beim Start
 # context: the Try it on a post part of the Words to hide and Allowed words editors. Post text, Reblog trail text, Tags and Summary label its fields and fill the field names in the result lines (%2$s and %4$s). %1$s in the Not matched line is a Match switch's title, %1$s and %3$s in the result lines are the matched words.
 Try it on a post	An einem Beitrag ausprobieren
 Nothing you type here is saved.	Was du hier eingibst, wird nicht gespeichert.

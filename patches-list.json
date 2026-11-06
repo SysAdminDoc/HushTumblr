@@ -95,7 +95,7 @@
     },
     {
       "name": "Disable analytics",
-      "description": "Turns off Firebase crash reports and Google's analytics collection, and Tumblr's own tracking and ad measurement once it restarts. LiveRamp's identity tracker doesn't start when Tumblr launches. The Firebase and Google part stays until you patch again without it. On by default. Turn it off in Tumblr settings > HushTumblr > Privacy.",
+      "description": "Turns off Firebase and Google's analytics collection, and Tumblr's own tracking and ad measurement once it restarts. LiveRamp's identity tracker doesn't start when Tumblr launches, and Crashlytics crash reports stay off while the switch is on. The Firebase and Google analytics part stays until you patch again without it. On by default. Turn it off in Tumblr settings > HushTumblr > Privacy.",
       "category": "Privacy",
       "use": true,
       "dependencies": [

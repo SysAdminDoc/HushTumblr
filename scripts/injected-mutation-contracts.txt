@@ -30,7 +30,7 @@ no-call Landroid/content/pm/ShortcutManager;->removeAllDynamicShortcuts()V outsi
 # installed flag is checked against the selected patches. Every installed and capability flag
 # SettingsStatus compiles needs a line here, and every capability a mutation rule.
 family|hideAds|Hide ads|timelineAds,paidPostHeader,adSdkStartup
-family|disableAnalytics|Disable analytics|analyticsFlags,liveRampStartup
+family|disableAnalytics|Disable analytics|analyticsFlags,liveRampStartup,crashReports
 family|hideAdvertisingId|Hide advertising ID|advertisingId
 family|removeAdTrackingPermissions|Remove ad tracking permissions|
 family|spoofSignature|Spoof signature for Google sign-in|
@@ -134,6 +134,9 @@ mutation|reviewPrompt|reviewPrompt|Lapp/hushtumblr/extension/tumblr/ui/ReviewPro
 # class skips that pair.
 mutation|adSdkStartup|sdkStartup|Lcom/facebook/ads/internal/dynamicloading/DynamicLoaderFactory;->initialize(Landroid/content/Context;Lcom/facebook/ads/internal/settings/MultithreadedBundleWrapper;Lcom/facebook/ads/AudienceNetworkAds$InitListener;Z)V|Lapp/hushtumblr/extension/tumblr/privacy/SdkStartup;->audienceNetwork(Landroid/content/Context;)Landroid/content/Context;|Lcom/facebook/ads/internal/dynamicloading/DynamicLoaderFactory;->doMakeLoader(Landroid/content/Context;Z)Lcom/facebook/ads/internal/dynamicloading/DynamicLoader;|Lapp/hushtumblr/extension/tumblr/privacy/SdkStartup;->audienceNetwork(Landroid/content/Context;)Landroid/content/Context;>Lcom/facebook/ads/internal/dynamicloading/DynamicLoaderFallback;->makeFallbackLoader()Lcom/facebook/ads/internal/dynamicloading/DynamicLoader;|Lcom/google/android/gms/ads/MobileAdsInitProvider;->attachInfo(Landroid/content/Context;Landroid/content/pm/ProviderInfo;)V|Lapp/hushtumblr/extension/tumblr/privacy/SdkStartup;->mobileAds(Landroid/content/Context;)Landroid/content/Context;|Lcom/google/android/gms/ads/MobileAds;->initialize(Landroid/content/Context;Lcom/google/android/gms/ads/initialization/OnInitializationCompleteListener;)V|Lapp/hushtumblr/extension/tumblr/privacy/SdkStartup;->mobileAds(Landroid/content/Context;)Landroid/content/Context;|Lcom/vungle/ads/VungleProvider;->onCreate()Z|Lapp/hushtumblr/extension/tumblr/privacy/SdkStartup;->vungle(Landroid/content/ContentProvider;)Z|Lcom/tumblr/startup/NimbusStartupInitializer;->create(Landroid/content/Context;)Ljava/lang/Object;|Lapp/hushtumblr/extension/tumblr/privacy/SdkStartup;->nimbus(Landroid/content/Context;)Landroid/content/Context;
 mutation|liveRampStartup|sdkStartup|Lcom/liveramp/ats/LRInitProvider;->onCreate()Z|Lapp/hushtumblr/extension/tumblr/privacy/SdkStartup;->liveRamp(Landroid/content/ContentProvider;)Z
+# Tumblr's launch setup hands the hook the value it turns Crashlytics collection on with, found by the
+# key it tags reports with. A build without Crashlytics has nothing to keep off.
+mutation|crashReports|crashReports|Lapp/hushtumblr/extension/tumblr/privacy/SdkStartup;->crashReports(Landroid/content/Context;Z)Z|Lcom/google/firebase/crashlytics/FirebaseCrashlytics;->setCrashlyticsCollectionEnabled(Z)V|Device_Year_Class
 # Optional prompt decisions. The shared gift renderer must hand over its instance key so crab tips stay native.
 mutation|blogNotificationReminder|blogNotificationReminder|Lapp/hushtumblr/extension/tumblr/ui/OptionalNudges;->hideBlogNotificationReminder()Z|blog_notify_enabled
 mutation|giftMessagePopup|giftMessagePopup|Lapp/hushtumblr/extension/tumblr/ui/OptionalNudges;->hideGiftMessage(Ljava/lang/String;)Z|key_has_seen_ad_free_browsing_gift_popup|key_has_seen_summon_crabs_popup

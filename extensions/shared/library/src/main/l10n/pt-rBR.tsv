@@ -227,7 +227,7 @@ Takes ads and paid Blaze posts out of your dashboard and other feeds. Once Tumbl
 Keep Blaze posts	Manter posts do Blaze
 When ads are hidden, keep posts people paid to promote with Blaze. Other ads and post filters still apply.	Ao ocultar anúncios, mantém os posts que alguém pagou para promover com o Blaze. Os outros anúncios e filtros continuam valendo.
 # context: the Disable analytics switch on the Privacy page.
-Stops Tumblr's own tracking and ad measurement, and keeps LiveRamp's tracker from starting. Firebase and Google's analytics collection stay off until you patch again without it.	Para o rastreamento próprio do Tumblr e a medição de anúncios, e impede que o rastreador da LiveRamp inicie. A coleta do Firebase e do Google Analytics continua desligada até você aplicar o patch de novo sem ele.
+Stops Tumblr's own tracking and ad measurement, and keeps LiveRamp's tracker from starting. Crashlytics crash reports stay off while this is on. Firebase and Google's analytics collection stay off until you patch again without it.	Para o rastreamento próprio do Tumblr e a medição de anúncios, e impede que o rastreador da LiveRamp inicie. Os relatórios de falhas do Crashlytics ficam desligados enquanto isto estiver ativado. A coleta do Firebase e do Google Analytics continua desligada até você aplicar o patch de novo sem ele.
 # context: the Hide the ad-free banner switch on the Feed page.
 Hide the ad-free banner	Ocultar o banner sem anúncios
 Hides the dashboard banner that asks you to pay for Ad-Free Browsing.	Esconde o banner do painel que pede para você pagar pela navegação sem anúncios.
@@ -501,6 +501,7 @@ Video saved to Downloads	Vídeo salvo em Downloads
 Couldn't save the video	Não foi possível salvar o vídeo
 ad networks at launch	as redes de anúncios ao abrir
 LiveRamp at launch	o LiveRamp ao abrir
+Crashlytics at launch	o Crashlytics ao abrir
 # context: the Try it on a post part of the Words to hide and Allowed words editors. Post text, Reblog trail text, Tags and Summary label its fields and fill the field names in the result lines (%2$s and %4$s). %1$s in the Not matched line is a Match switch's title, %1$s and %3$s in the result lines are the matched words.
 Try it on a post	Teste em um post
 Nothing you type here is saved.	Nada do que você digitar aqui é salvo.

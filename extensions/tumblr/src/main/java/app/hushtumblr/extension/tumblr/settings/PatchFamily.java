@@ -212,6 +212,7 @@ public enum PatchFamily {
         ADVERTISING_ID(HIDE_ADVERTISING_ID, "advertisingId", "Hide advertising ID"),
         ANALYTICS_FLAGS(DISABLE_ANALYTICS, "analyticsFlags", "Disable analytics"),
         LIVERAMP_STARTUP(DISABLE_ANALYTICS, "liveRampStartup", "LiveRamp at launch"),
+        CRASH_REPORTS(DISABLE_ANALYTICS, "crashReports", "Crashlytics at launch"),
         AD_FREE_BANNER_FLAGS(HIDE_AD_FREE_BANNER, "adFreeBannerFlags", "Hide the ad-free banner"),
         TUMBLR_TV_FLAGS(HIDE_TUMBLR_TV, "tumblrTvFlags", "Hide Tumblr TV"),
         COMMUNITIES_TAB_FLAGS(HIDE_COMMUNITIES_TAB, "communitiesTabFlags", "Hide the Communities tab"),

@@ -302,7 +302,7 @@ public class DexDiff {
             Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1), Map.entry("activityNotifications", 7),
             Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 7), Map.entry("timelinePaging", 5),
             Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 7), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
-            Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("videoLinkPress", 6), Map.entry("imageSizes", 4), Map.entry("fontChoice", 6),
+            Map.entry("crashReports", 3), Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("videoLinkPress", 6), Map.entry("imageSizes", 4), Map.entry("fontChoice", 6),
             Map.entry("followButton", 5), Map.entry("footerButton", 3), Map.entry("postTags", 6),
             Map.entry("noteCounts", 9), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
@@ -5162,6 +5162,35 @@ public class DexDiff {
         }
 
         /**
+         * Tumblr's launch setup, the one static method taking the application that holds the setup
+         * key and turns Crashlytics collection on once, hands the hook the application and the value
+         * right before that call, and the answer goes back into the value's register, which nothing
+         * after the call may read again. A build without Crashlytics has nothing to keep off.
+         */
+        void crashReports(Contract c) {
+            String hook = c.strings.get(0), setter = c.strings.get(1);
+            if (!clean.classes.containsKey(setter.substring(0, setter.indexOf("->")))) {
+                capability(c.callee, true);
+                return;
+            }
+            List<Method> setups = new ArrayList<>();
+            for (Method m : clean.holding(c.strings.get(2))) if (isStatic(m) && descriptor(m).equals("(Landroid/app/Application;)V")
+                    && callSites(instructions(m), setter).size() == 1) setups.add(m);
+            Method old = unique(setups, "Tumblr's Crashlytics launch setup");
+            boolean found = false;
+            if (old != null) {
+                int set = callSites(instructions(old), setter).get(0);
+                List<Integer> passed = arguments(instructions(old).get(set));
+                if (passed.size() != 2) fail("Tumblr's Crashlytics launch setup doesn't pass one value to " + setter);
+                else if (!deadAt(old, set + 1, passed.get(1))
+                        || !flow(old).handlers.get(set).stream().allMatch(handler -> deadAt(old, handler, passed.get(1))))
+                    fail("Tumblr's Crashlytics launch setup reads the value it hands " + setter + " again after the call");
+                else found = hookAt(old, actual(old), set, hook, List.of(parameter(old, 0), passed.get(1)), passed.get(1), List.of(passed.get(1)));
+            }
+            capability(c.callee, found);
+        }
+
+        /**
          * [hook] asked first thing in [old]'s patched copy for its context parameter, which goes back
          * into that parameter: on null the method returns at once (null for an object result, or
          * what [fallback] makes when there is one), and otherwise Tumblr's own code runs on the
@@ -6528,6 +6557,7 @@ public class DexDiff {
                     case "mutualMarkers": mutualMarkers(c); break;
                     case "reviewPrompt": reviewPrompt(c); break;
                     case "sdkStartup": sdkStartup(c); break;
+                    case "crashReports": crashReports(c); break;
                     case "blogNotificationReminder": blogNotificationReminder(c); break;
                     case "giftMessagePopup": giftMessagePopup(c); break;
                     case "postLine": postLine(c); break;
