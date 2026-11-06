@@ -271,6 +271,31 @@ public class PostFooterTest {
     }
 
     @Test
+    public void aCommentInTheNotesLosesItsOwnCountsWithTheSwitchAndGetsThemBackWithout() {
+        assertEquals("off, the comment shows Tumblr's count", 33, PostFooter.commentCount(33));
+
+        Settings.HIDE_NOTE_COUNTS.save(true);
+        assertEquals(0, PostFooter.commentCount(33));
+        assertEquals("a liked comment's count goes too", 0, PostFooter.commentCount(34));
+        assertEquals("zero is already Tumblr's Reply label", 0, PostFooter.commentCount(0));
+
+        PauseForTests.pause(HushTumblrPause.Reason.SWITCH);
+        assertEquals("paused", 6, PostFooter.commentCount(6));
+        PauseForTests.resume();
+        SettingsContextRule.withoutContext(() -> assertEquals("a cold start", 6, PostFooter.commentCount(6)));
+        PatchFamilyForTests.capabilities(EnumSet.of(PatchFamily.Capability.LIKE_BUTTON));
+        assertEquals("its hook isn't in this build", 6, PostFooter.commentCount(6));
+        PatchFamilyForTests.capabilities(EnumSet.of(PatchFamily.Capability.NOTE_COUNTS));
+
+        Settings.HIDE_NOTE_COUNTS.save(false);
+        assertEquals("the next bind shows the real count", 33, PostFooter.commentCount(33));
+
+        String report = String.join("\n", HookStatus.report());
+        assertTrue(report, report.contains("comment card count hidden 2"));
+        assertFalse("the footer's own tally is apart", report.contains(": count hidden") || report.contains(", count hidden"));
+    }
+
+    @Test
     public void everySwitchStartsOffSoTheFooterIsTumblrs() {
         assertEquals(7, PostFooter.noteCount(7));
         assertFalse(PostFooter.hideLikeButton());

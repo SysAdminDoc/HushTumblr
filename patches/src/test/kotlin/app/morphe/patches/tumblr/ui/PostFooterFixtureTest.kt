@@ -37,8 +37,8 @@ import java.io.File
  * The footer's count formatter and each of its five buttons in each declared build. The formatter
  * gets the extension's count in place of its own first thing, the community comment text and the
  * notes title go to the extension as they're written, and a community reaction's text goes to it
- * with its count before it's shown, and a notes tab's count is asked for first and answers a blank
- * on true; each button gets the question in front
+ * with its count before it's shown, a notes tab's count is asked for first and answers a blank
+ * on true, and a comment's reply and like counts go to the extension first; each button gets the question in front
  * of its first instruction and returns at once on true, and the like, comment and share buttons'
  * community controls go to the extension at the end of the community footer's bind. Tumblr's code
  * is otherwise unchanged, and each patch turns its switch and its target on.
@@ -135,6 +135,38 @@ class PostFooterFixtureTest {
             assertEquals("$identity: the blank is what's answered",
                 (body[3] as OneRegisterInstruction).registerA, (body[4] as OneRegisterInstruction).registerA)
             assertEquals("$identity: what follows is Tumblr's own code", before, body.drop(5).map { it.opcode })
+            assertSwitchedOn(context, build.name, "hideNoteCounts", "noteCounts")
+        }
+    }
+
+    @Test
+    fun `each declared build hands a comment's reply and like counts to the extension first thing`() {
+        for (build in Fixtures.declaredBuilds()) {
+            val context = footerContext(build)
+            val formatter = context.resolveCountFormatter()
+            val renderers = context.resolveCommentCounts()
+            assertEquals("${build.name}: the reply count and the like count",
+                COMMENT_COUNT_VIEWS.map { it.first }, renderers.map { it.definingClass })
+            val before = renderers.map { renderer -> renderer.instructionList().map { it.opcode } }
+            val formatterBefore = formatter.instructionList().size
+
+            hideNoteCountsPatch.execute(context)
+
+            for ((index, renderer) in renderers.withIndex()) {
+                val identity = "${renderer.definingClass}->${renderer.name}"
+                val count = renderer.parameterRegisterNumber(0)
+                val body = context.bodyOf(renderer)
+                assertEquals("$identity: two instructions added", before[index].size + 2, body.size)
+                assertEquals("$identity: the extension is asked", COMMENT_COUNT_HOOK, body[0].call())
+                assertEquals("$identity: with the count", listOf(count), body[0].namedRegisters())
+                assertEquals(identity, Opcode.MOVE_RESULT, body[1].opcode)
+                assertEquals("$identity: its answer is the count", count, (body[1] as OneRegisterInstruction).registerA)
+                assertEquals("$identity: what follows is Tumblr's own code", before[index], body.drop(2).map { it.opcode })
+            }
+            val footer = context.bodyOf(formatter)
+            assertEquals("${build.name}: the footer's formatter keeps its own hook alone", formatterBefore + 2, footer.size)
+            assertEquals(NOTE_COUNT_HOOK, footer[0].call())
+            assertEquals("${build.name}: and no comment count", false, footer.any { it.call() == COMMENT_COUNT_HOOK })
             assertSwitchedOn(context, build.name, "hideNoteCounts", "noteCounts")
         }
     }
@@ -237,7 +269,8 @@ class PostFooterFixtureTest {
      * The footer's controls, found by their source notes, and every class with a static method
      * turning an int into a String, which takes in the class that builds the buttons' states. Also
      * the community footer and its controls, the community comment text, every reader of the notes
-     * count plural, the notes title among them, and the adapter that makes the notes tabs.
+     * count plural, the notes title among them, the adapter that makes the notes tabs, and the two
+     * Views a comment on the notes writes its own counts with.
      */
     private fun footerContext(build: File): BytecodePatchContext {
         val classes = FixtureDex.classesWhere(build, { true }) { method ->
@@ -245,7 +278,8 @@ class PostFooterFixtureTest {
                 (method.isStatic() && method.returnType == "Ljava/lang/String;" &&
                     method.parameterTypes.map { it.toString() } == listOf("I")) ||
                 method.definingClass == COMMUNITY_FOOTER || method.definingClass.startsWith(COMMUNITY_CONTROLS) ||
-                method.instructionList().any { it.fieldRef()?.name == "note_count_show" } || method.makesNotesTabs()
+                method.instructionList().any { it.fieldRef()?.name == "note_count_show" } || method.makesNotesTabs() ||
+                COMMENT_COUNT_VIEWS.any { it.first == method.definingClass }
         }
         return PatchContexts.of(ExtensionDex.classes() + classes)
     }

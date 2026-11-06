@@ -304,7 +304,7 @@ public class DexDiff {
             Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 7), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
             Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("videoLinkPress", 6), Map.entry("imageSizes", 4), Map.entry("fontChoice", 6),
             Map.entry("followButton", 5), Map.entry("footerButton", 3), Map.entry("postTags", 6),
-            Map.entry("noteCounts", 6), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
+            Map.entry("noteCounts", 7), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
             Map.entry("matureContent", 12), Map.entry("rootPostMutes", 10), Map.entry("mutualMarkers", 13));
 
@@ -5700,7 +5700,30 @@ public class DexDiff {
             found &= notesTitle(c.strings.get(3));
             found &= reactionText(c.strings.get(4));
             found &= notesTabs(c.strings.get(5));
+            found &= commentCounts(c.strings.get(6));
             capability(c.callee, found);
+        }
+
+        /** The Views of a comment on a post's notes that write its reply and like counts, with the plural each reads. */
+        static final List<Map.Entry<String, String>> COMMENT_COUNT_VIEWS = List.of(
+                Map.entry("Lcom/tumblr/ui/widget/RepliesCountView;", "comments_count"),
+                Map.entry("Lcom/tumblr/ui/widget/ReplyLikeButtonView;", "like_count_show"));
+
+        /** Each comment's reply and like count, handed to the hook first thing in the one (I)V of its View that reads its plural. */
+        boolean commentCounts(String hook) {
+            boolean found = true;
+            for (Map.Entry<String, String> view : COMMENT_COUNT_VIEWS) {
+                ClassDef cd = clean.classes.get(view.getKey());
+                List<Method> renderers = new ArrayList<>();
+                if (cd != null) for (Method m : cd.getMethods()) if (!isStatic(m) && m.getImplementation() != null
+                        && descriptor(m).equals("(I)V") && instructions(m).stream().anyMatch(i -> plural(i, view.getValue()))) renderers.add(m);
+                Method old = unique(renderers, "the method that writes " + view.getKey() + "'s count");
+                if (old == null) { found = false; continue; }
+                int count = parameter(old, 0);
+                // The label check also catches a branch to the method's first instruction that skips the hook.
+                found &= hookAtLabel(old, actual(old), 0, hook, List.of(count), count, List.of());
+            }
+            return found;
         }
 
         /** The three fragments a post's notes tabs are made of, kept by name. */

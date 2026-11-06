@@ -51,7 +51,8 @@ import app.hushtumblr.extension.tumblr.settings.Settings;
  * blanks the count Tumblr bolds in it along with it), and {@link #notesTitle} does the same for the
  * count at the top of a post's notes. Each reaction button writes its emoji and how many reacted,
  * and {@link #communityReactionsText} leaves just the emoji. The comment, reblog and like tabs on a
- * post's notes each show a count as well, which {@link #hideNotesTabCounts} leaves blank.
+ * post's notes each show a count as well, which {@link #hideNotesTabCounts} leaves blank, and each
+ * comment there writes its own reply and like counts through {@link #commentCount}.
  */
 public final class PostFooter {
     private PostFooter() {}
@@ -85,13 +86,29 @@ public final class PostFooter {
      * switch off, paused, before HushTumblr has its settings, or when anything here fails.
      */
     public static int noteCount(int count) {
+        return countOrZero(count, "count hidden");
+    }
+
+    /**
+     * Injected first thing where a comment in a post's notes writes its reply count, and where it
+     * writes its like count. Zero while Hide note counts is on, which Tumblr shows as its "Reply"
+     * label and no like count, with both buttons kept. Tumblr hands the comment's own count in on
+     * every bind, so the count is back on the next bind with the switch off. The count itself with
+     * the switch off, paused, before HushTumblr has its settings, or when anything here fails.
+     */
+    public static int commentCount(int count) {
+        return countOrZero(count, "comment card count hidden");
+    }
+
+    /** Zero while Hide note counts is on, counted under {@code counted}, and {@code count} otherwise. Never throws. */
+    private static int countOrZero(int count, String counted) {
         // Tumblr builds footers while it starts, before HushTumblr may read a switch.
         if (!Utils.settingsReady()) return count;
         try {
             if (!PatchFamily.Capability.NOTE_COUNTS.installed()) return count;
             HookStatus.invoked(FamilyNames.HIDE_NOTE_COUNTS);
             if (count == 0 || !Settings.HIDE_NOTE_COUNTS.get()) return count;
-            HookStatus.counted(FamilyNames.HIDE_NOTE_COUNTS, "count hidden");
+            HookStatus.counted(FamilyNames.HIDE_NOTE_COUNTS, counted);
             return 0;
         } catch (Throwable failure) {
             HookStatus.threw(FamilyNames.HIDE_NOTE_COUNTS, "switch read", failure);

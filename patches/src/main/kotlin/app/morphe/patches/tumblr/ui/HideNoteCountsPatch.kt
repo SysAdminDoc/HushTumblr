@@ -23,6 +23,7 @@ import app.morphe.patches.tumblr.lookup.strings
 import app.morphe.patches.tumblr.misc.extension.enableCapability
 import app.morphe.patches.tumblr.misc.extension.enableStatus
 import app.morphe.patches.tumblr.misc.extension.parameterRegister
+import app.morphe.patches.tumblr.misc.extension.parameterRegisterNumber
 import app.morphe.patches.tumblr.misc.extension.requireStatusMethod
 import app.morphe.patches.tumblr.misc.extension.returnEarlyWhen
 import app.morphe.patches.tumblr.misc.extension.tumblrExtensionPatch
@@ -46,6 +47,16 @@ internal const val TEXT_COUNT_HOOK = "$POST_FOOTER->textCount(Ljava/lang/String;
 internal const val COMMUNITY_REACTIONS_TEXT_HOOK =
     "$POST_FOOTER->communityReactionsText(Ljava/lang/String;I)Ljava/lang/String;"
 internal const val NOTES_TAB_COUNTS_HOOK = "$POST_FOOTER->hideNotesTabCounts()Z"
+internal const val COMMENT_COUNT_HOOK = "$POST_FOOTER->commentCount(I)I"
+
+/**
+ * A comment's reply count and its like count on a post's notes, by the Views Tumblr names in its
+ * layouts, so R8 keeps the names, each with the plural its renderer reads for the screen reader.
+ */
+internal val COMMENT_COUNT_VIEWS = listOf(
+    "Lcom/tumblr/ui/widget/RepliesCountView;" to "comments_count",
+    "Lcom/tumblr/ui/widget/ReplyLikeButtonView;" to "like_count_show",
+)
 
 /** The three tabs of a post's notes screen, by the fragments Tumblr makes for them, kept by name in 46.5.0.109. */
 internal val NOTES_TAB_FRAGMENTS = listOf(
@@ -103,13 +114,17 @@ internal class ReactionTextSite(val method: MutableMethod, val at: Int, val text
  * A community post's reactions stand in for likes there, and each reaction button writes its emoji,
  * a space and how many reacted ([resolveCommunityReactionsText]); the extension hands back just the
  * emoji, read each time the button is bound.
+ *
+ * Each comment on a post's notes shows its own reply and like counts, which its two Views write
+ * from a count handed to each ([resolveCommentCounts]). Those go to zero the same way, read each
+ * time a comment is bound.
  */
 @Suppress("unused")
 val hideNoteCountsPatch = bytecodePatch(
     name = PATCH,
     description = "Takes the like, reblog and comment counts off the footer under posts, community posts" +
-        " included, and the counts off the top of a post's notes and its tabs. The buttons stay and still work. Starts off." +
-        " Turn it on in Tumblr settings > HushTumblr > Posts.",
+        " included, and the counts off a post's notes, from the top and its tabs to each comment's likes and replies." +
+        " The buttons stay and still work. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts.",
     default = true,
 ) {
     category("Posts")
@@ -127,6 +142,7 @@ val hideNoteCountsPatch = bytecodePatch(
         )
         val reactions = resolveCommunityReactionsText()
         val tabCount = resolveNotesTabCount()
+        val commentCounts = resolveCommentCounts()
         val count = formatter.parameterRegister(0)
         formatter.addInstructions(
             0,
@@ -159,6 +175,16 @@ val hideNoteCountsPatch = bytecodePatch(
             """,
         )
         tabCount.returnEarlyWhen(PATCH, NOTES_TAB_COUNTS_HOOK, "const-string v0, \"\"\nreturn-object v0")
+        for (renderer in commentCounts) {
+            val shown = renderer.parameterRegister(0)
+            renderer.addInstructions(
+                0,
+                """
+                    invoke-static {$shown}, $COMMENT_COUNT_HOOK
+                    move-result $shown
+                """,
+            )
+        }
         enableCapability("noteCounts")
         enableStatus("hideNoteCounts")
     }
@@ -347,6 +373,43 @@ internal fun BytecodePatchContext.resolveNotesTabCount(): MutableMethod {
         "the notes tab count isn't written as a number, blank when it's unknown",
     )
     return mutableOf(count)
+}
+
+/**
+ * The two methods that write a comment's reply count and its like count on a post's notes,
+ * throwing when this build lacks either View, has no such method or several, or one that writes
+ * its count another way.
+ *
+ * Each View of [COMMENT_COUNT_VIEWS] has one instance method taking the count and returning
+ * nothing that reads the View's plural (`RepliesCountView.V` and `ReplyLikeButtonView.W`, both
+ * private, in 47.0.0.108). The first thing either does with the count is test it with `if-lez`:
+ * the reply count shows Tumblr's "Reply" label for zero, and the like count goes GONE. The notes
+ * reply cards are the only callers of their public setters (`iih.G` and `ijh.i` bind
+ * `NoteReplyViewHolder`), and they hand each setter the comment's own count on every bind, so the
+ * hook only changes what's drawn and the next bind with the switch off shows the real count.
+ * Found by reading Tumblr 47.0.0.108 (2026-11-05).
+ */
+internal fun BytecodePatchContext.resolveCommentCounts(): List<MutableMethod> {
+    requireExtensionHook(PATCH, COMMENT_COUNT_HOOK)
+    return COMMENT_COUNT_VIEWS.map { (type, plural) ->
+        val name = type.substringAfterLast('/').removeSuffix(";")
+        val view = classDefByOrNull(type)
+        requireShape(PATCH, view != null, "Tumblr's notes have no $name")
+        val renderer = view!!.methods
+            .filter { method ->
+                !method.isStatic() && method.returnType == "V" &&
+                    method.parameterTypes.map(CharSequence::toString) == listOf("I") &&
+                    method.instructionList().any { it.readsPlural(plural) }
+            }
+            .only(PATCH, "the method that writes the $name count")
+        val count = renderer.parameterRegisterNumber(0)
+        val body = renderer.instructionList()
+        val tested = body.firstOrNull { count in it.namedRegisters() }
+        requireShape(PATCH, tested?.opcode == Opcode.IF_LEZ, "the $name count isn't tested for zero before it's used")
+        requireShape(PATCH, count <= 15, "the $name count is in v$count, past what the added call can name")
+        requireShape(PATCH, !renderer.isJumpTarget(0), "something jumps back to the start of the $name count")
+        mutableOf(renderer)
+    }
 }
 
 /** A method answering the Fragment for a position that makes each of [NOTES_TAB_FRAGMENTS]. */

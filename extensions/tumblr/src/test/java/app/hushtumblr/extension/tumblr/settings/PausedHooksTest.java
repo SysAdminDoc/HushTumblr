@@ -226,10 +226,11 @@ public class PausedHooksTest {
         probes.put(Settings.HIDE_FOLLOW_BUTTON, Collections.singletonList(PostParts::hideFollowButton));
         // The Premium diamond is hidden.
         probes.put(Settings.HIDE_TUMBLRMART, Collections.singletonList(() -> StoreButtons.hideDiamond(null, null)));
-        // The like, reblog and comment counts under a post are blank, and a community reaction keeps
-        // its emoji without its count.
+        // The like, reblog and comment counts under a post are blank, a community reaction keeps its
+        // emoji without its count, and a comment in a post's notes loses its own counts.
         probes.put(Settings.HIDE_NOTE_COUNTS, Arrays.asList(() -> PostFooter.noteCount(5) == 0,
-                () -> "😀".equals(PostFooter.communityReactionsText("😀 5", 5))));
+                () -> "😀".equals(PostFooter.communityReactionsText("😀 5", 5)),
+                () -> PostFooter.commentCount(5) == 0));
         // The footer under a post leaves out a button. Each answer is kept until Tumblr restarts, so
         // each probe asks as a fresh start would.
         probes.put(Settings.HIDE_LIKE_BUTTON,

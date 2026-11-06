@@ -285,7 +285,16 @@ public final class SelectorDexFixture {
                 body(literal(0, fault.equals("notes-tab-not-blank") ? "12" : ""), returned(0, true))));
         put(classes, tabs, List.of(method(tabs, "make", fragment, false, 3, make, "I"),
                 method(tabs, "count", "Ljava/lang/CharSequence;", false, 3, count, "I")));
-        if (patched) put(classes, hooks, List.of(hook(hooks, "noteCount", "I", 0, "I"),
+        // A comment on a post's notes writes its reply and like counts, each through its View's (I)V.
+        for (Map.Entry<String, String> view : List.of(Map.entry("Lcom/tumblr/ui/widget/RepliesCountView;", "comments_count"),
+                Map.entry("Lcom/tumblr/ui/widget/ReplyLikeButtonView;", "like_count_show"))) {
+            List<Instruction> render = body(field(Opcode.SGET, 0, PLURALS, view.getValue(), "I"),
+                    new ImmutableInstruction21t(Opcode.IF_LEZ, 2, 2), end());
+            if (patched) render.addAll(0, body(staticCall(hooks, "commentCount", "I", new String[]{"I"}, 2),
+                    moved(fault.equals("notes-wrong-comment-card") ? 0 : 2, false)));
+            put(classes, view.getKey(), List.of(method(view.getKey(), "render", "V", false, 3, render, "I")));
+        }
+        if (patched) put(classes, hooks, List.of(hook(hooks, "noteCount", "I", 0, "I"), hook(hooks, "commentCount", "I", 0, "I"),
                 hook(hooks, "communityCommentsText", STRING, 0, STRING), hook(hooks, "textCount", STRING, 0, STRING),
                 hook(hooks, "notesTitle", STRING, 0, STRING), hook(hooks, "communityReactionsText", STRING, 0, STRING, "I"),
                 hook(hooks, "hideNotesTabCounts", "Z", -1)));
@@ -541,6 +550,7 @@ public final class SelectorDexFixture {
         fixture(root, "notes-late-title", "notesTitle(Ljava/lang/String;)Ljava/lang/String; is not where its rule puts it", "hideNoteCounts");
         fixture(root, "notes-wrong-reactions", "communityReactionsText(Ljava/lang/String;I)Ljava/lang/String; doesn't take what its rule hands it", "hideNoteCounts");
         fixture(root, "notes-tab-not-blank", "hideNotesTabCounts()Z isn't asked first thing", "hideNoteCounts");
+        fixture(root, "notes-wrong-comment-card", "commentCount(I)I doesn't take what its rule hands it", "hideNoteCounts");
         String[] tabs = {"hideExploreTab", "hideNotificationsTab", "reorderTabs"};
         fixture(root, "tabs-good", "", tabs);
         fixture(root, "tabs-late-freeze", "arrangeTabs(Ljava/util/List;)V is not where its rule puts it", tabs);
