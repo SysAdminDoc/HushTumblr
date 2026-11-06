@@ -3,7 +3,7 @@
 ## Unreleased
 
 * The patches move from 46.8.1.100 to Tumblr 47.0.0.108, the newest release. Every patch applies to it, so that's the version to patch.
-* The bundle is built on Morphe patcher 2.2.0 now. You'll need Morphe Manager 2.4.0 or newer, since older Manager builds can't load it.
+* The bundle is built on Morphe patcher 2.3.0 now, the one that comes with Morphe Manager 2.5.0 and Morphe Desktop 2.1.0. Update Manager to 2.5.0 or newer before you add this release, since older Manager builds can't load it.
 * Dark background color now reaches blog and tag pages. Those pages paint their owner's color, so a cream blog or a teal tag used to show through the gaps between black posts. A blog's title or link color that wouldn't show on the new background turns white or near black. The screens where you edit your own blog's colors still show the real ones.
 * New **Line between posts** switch on the Interface page, off by default. It draws a thin line in the gap between posts, so it's easier to see where one ends on a black background.
 * New **Hide Featured posts** switch on the Feed page, off by default. It takes out the posts Tumblr's staff push into your dashboard under a Featured header. A post goes only when Tumblr marks it both ways, with the Featured icon and the menu choice Tumblr gives its own promotions, so a regular post with a similar header stays. Quick setups' Quiet choice turns it on too.
