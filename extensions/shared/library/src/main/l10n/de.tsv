@@ -285,6 +285,9 @@ Hide suggested tags	Vorgeschlagene Tags ausblenden
 Takes the tags Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.	Entfernt die Tags, denen du laut Tumblr folgen sollst, samt ihren Überschriften aus deinem Dashboard und anderen Feeds.
 Hide Watch it rows	Watch-it-Reihen ausblenden
 Takes Tumblr TV's Watch it rows and video hub cards, and their headings, out of your dashboard and other feeds.	Entfernt die Watch-it-Reihen und Video-Hub-Karten von Tumblr TV samt ihren Überschriften aus deinem Dashboard und anderen Feeds.
+# context: the Hide Featured posts switch on the Feed page. Featured is the header Tumblr shows over posts its own staff promote; use the word Tumblr shows in your language.
+Hide Featured posts	Hervorgehobene Beiträge ausblenden
+Takes the posts Tumblr's staff feature under a Featured header out of your dashboard and other feeds.	Entfernt die Beiträge, die das Tumblr-Team unter der Überschrift Hervorgehoben zeigt, aus deinem Dashboard und anderen Feeds.
 # context: the Posts page and its two switches. Posts is the page's title in HushTumblr settings; Follow is the label on Tumblr's own button, so use the word Tumblr shows in your language.
 Posts	Beiträge
 Hide hashtags	Hashtags ausblenden

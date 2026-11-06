@@ -14,6 +14,8 @@ import static org.junit.Assert.assertTrue;
 import com.tumblr.rumblr.model.SponsoredState;
 import com.tumblr.rumblr.model.TimelineObject;
 import com.tumblr.rumblr.model.TimelineObjectType;
+import com.tumblr.rumblr.model.link.ActionLink;
+import com.tumblr.rumblr.model.link.Link;
 import com.tumblr.rumblr.model.post.DisplayType;
 
 import org.junit.After;
@@ -36,6 +38,7 @@ import app.hushtumblr.extension.shared.diagnostics.HookStatus;
 import app.hushtumblr.extension.shared.settings.BooleanSetting;
 import app.hushtumblr.extension.shared.settings.HushTumblrPause;
 import app.hushtumblr.extension.shared.settings.PauseForTests;
+import app.hushtumblr.extension.tumblr.settings.FamilyNames;
 import app.hushtumblr.extension.tumblr.settings.PatchFamily;
 import app.hushtumblr.extension.tumblr.settings.PatchFamilyForTests;
 import app.hushtumblr.extension.tumblr.settings.Settings;
@@ -63,6 +66,7 @@ public class TimelineFilterTest {
         Settings.HIDE_SUGGESTED_COMMUNITIES.resetToDefault();
         Settings.HIDE_SUGGESTED_TAGS.resetToDefault();
         Settings.HIDE_WATCH_IT_ROWS.resetToDefault();
+        Settings.HIDE_FEATURED_POSTS.resetToDefault();
         TimelineFilter.carouselItemsForTests = null;
         TimelinePaging.resetForTests();
         PauseForTests.resume();
@@ -189,6 +193,106 @@ public class TimelineFilterTest {
         List<Object> page = Arrays.asList(broken, TimelineItems.postWithHeader("blaze", false, false));
         assertEquals(Arrays.asList(broken), TimelineFilter.filter(page));
         assertTrue(String.join("\n", HookStatus.report("")).contains("timeline item"));
+    }
+
+    /**
+     * Tumblr sends a post its staff feature with the server's "sparkle" header icon and the
+     * marketing dismissal among its dismiss menu's choices. With Hide Featured posts on it goes,
+     * counted as a post, and the posts around it stay in order. Off, as it starts, and paused, it
+     * stays, and so it does in a build without the patch.
+     */
+    @Test
+    public void aFeaturedPostGoesWhileTheSwitchIsOn() {
+        TimelineObject featured = TimelineItems.featuredPost("sparkle", "/v2/user/dismiss/post",
+                TimelineItems.MARKETING_DISMISSAL);
+        List<Object> page = Arrays.asList(TimelineItems.post(), featured, TimelineItems.post());
+        assertSame("off, as it starts", page, TimelineItems.onTheDashboard(page));
+
+        Settings.HIDE_FEATURED_POSTS.save(true);
+        assertEquals(Arrays.asList(page.get(0), page.get(2)), TimelineItems.onTheDashboard(page));
+        String report = String.join("\n", HookStatus.report(""));
+        assertTrue(report, report.contains("Hide Featured posts") && report.contains("post removed 1"));
+
+        PauseForTests.pause(HushTumblrPause.Reason.SWITCH);
+        assertSame("paused", page, TimelineItems.onTheDashboard(page));
+        PauseForTests.resume();
+
+        PatchFamilyForTests.capabilities(EnumSet.complementOf(EnumSet.of(PatchFamily.Capability.FEATURED_POSTS)));
+        assertSame("a build without the patch", page, TimelineItems.onTheDashboard(page));
+    }
+
+    /**
+     * Neither half alone makes a post featured: the sparkle icon with another dismissal or none, the
+     * marketing dismissal under another icon or none, or Blaze and Sponsored icons with Hide ads
+     * off. The marketing dismissal still counts with a query on its address, and a choice with no
+     * link before it is skipped.
+     */
+    @Test
+    public void onlyTheSparkleIconWithTheMarketingDismissalIsFeatured() {
+        Settings.HIDE_FEATURED_POSTS.save(true);
+        Settings.HIDE_ADS.save(false);
+        List<Object> page = Arrays.asList(
+                TimelineItems.featuredPost("sparkle", "/v2/user/dismiss/post"),
+                TimelineItems.featuredPost("sparkle"),
+                TimelineItems.postWithHeader("sparkle", false, false),
+                TimelineItems.featuredPost("star", TimelineItems.MARKETING_DISMISSAL),
+                TimelineItems.featuredPost(null, TimelineItems.MARKETING_DISMISSAL),
+                TimelineItems.featuredPost("SPARKLE", TimelineItems.MARKETING_DISMISSAL),
+                TimelineItems.featuredPost("blaze", TimelineItems.MARKETING_DISMISSAL),
+                TimelineItems.featuredPost("money-alt", TimelineItems.MARKETING_DISMISSAL),
+                TimelineItems.featuredPost("sparkle", "/v2/user/dismiss/marketing_post_extra"),
+                TimelineItems.post());
+        assertSame(page, TimelineItems.onTheDashboard(page));
+
+        TimelineObject query = TimelineItems.featuredPost("sparkle", TimelineItems.MARKETING_DISMISSAL + "?tumblelog=featured");
+        TimelineObject afterABlank = TimelineItems.featuredPost("sparkle", null, TimelineItems.MARKETING_DISMISSAL);
+        List<Object> featured = Arrays.asList(query, TimelineItems.post(), afterABlank);
+        assertEquals(Collections.singletonList(featured.get(1)), TimelineItems.onTheDashboard(featured));
+        assertFalse(String.join("\n", HookStatus.report("")).contains("timeline item"));
+    }
+
+    /** A heading before a featured post stays, as it does before any post a post switch takes out. */
+    @Test
+    public void aHeadingBeforeAFeaturedPostStays() {
+        Settings.HIDE_FEATURED_POSTS.save(true);
+        List<Object> page = Arrays.asList(TimelineItems.of(TimelineObjectType.TITLE),
+                TimelineItems.featuredPost("sparkle", TimelineItems.MARKETING_DISMISSAL), TimelineItems.post());
+        assertEquals(Arrays.asList(page.get(0), page.get(2)), TimelineItems.onTheDashboard(page));
+        assertFalse(String.join("\n", HookStatus.report("")).contains("heading removed"));
+    }
+
+    /** A page of nothing but featured posts comes back empty, and the feed goes on to its next page. */
+    @Test
+    public void aPageOfOnlyFeaturedPostsGoesOnToTheNextPage() {
+        Settings.HIDE_FEATURED_POSTS.save(true);
+        List<Object> page = Collections.singletonList(
+                TimelineItems.featuredPost("sparkle", TimelineItems.MARKETING_DISMISSAL));
+        Object fragment = new Object();
+        assertEquals(Collections.emptyList(), TimelineItems.onTheDashboard(page));
+        assertEquals(TimelinePaging.NEXT, TimelinePaging.onPage(fragment, Load.PAGINATION, new Object(), true));
+        String report = String.join("\n", HookStatus.report(""));
+        assertTrue(report, report.contains(TimelinePaging.EMPTIED + " 1"));
+    }
+
+    /** A dismiss menu that can't be read keeps the post and records the failure under the switch. */
+    @Test
+    public void anUnreadableDismissMenuIsKeptAndReported() {
+        Settings.HIDE_FEATURED_POSTS.save(true);
+        TimelineObject broken = TimelineItems.featuredPostLinking("sparkle", new UnreadableLink(),
+                new ActionLink(TimelineItems.MARKETING_DISMISSAL));
+        List<Object> page = Arrays.asList(broken, TimelineItems.post());
+        assertSame(page, TimelineItems.onTheDashboard(page));
+        // The menu is read by reflection, so the link's own throw arrives wrapped.
+        assertEquals(Collections.singletonList("a working 'timeline item' hook (it threw java.lang.reflect.InvocationTargetException)"),
+                HookStatus.missing(FamilyNames.HIDE_FEATURED_POSTS));
+    }
+
+    /** A link whose address throws when it's read. Public, so the filter's reflection reaches it. */
+    public static final class UnreadableLink implements Link {
+        @Override
+        public String getLink() {
+            throw new IllegalStateException("unreadable");
+        }
     }
 
     /**

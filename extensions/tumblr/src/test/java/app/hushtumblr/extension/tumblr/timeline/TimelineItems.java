@@ -8,10 +8,13 @@ package app.hushtumblr.extension.tumblr.timeline;
 import com.tumblr.rumblr.model.BlazedPost;
 import com.tumblr.rumblr.model.Display;
 import com.tumblr.rumblr.model.GenericButton;
+import com.tumblr.rumblr.model.Option;
+import com.tumblr.rumblr.model.Options;
 import com.tumblr.rumblr.model.RelatedBlogsJsonAdapter;
 import com.tumblr.rumblr.model.SponsoredState;
 import com.tumblr.rumblr.model.TimelineObject;
 import com.tumblr.rumblr.model.link.ActionLink;
+import com.tumblr.rumblr.model.link.Link;
 import com.tumblr.rumblr.model.link.WebLink;
 import com.tumblr.rumblr.model.TimelineObjectType;
 import com.tumblr.rumblr.model.Timelineable;
@@ -24,6 +27,7 @@ import com.tumblr.rumblr.response.WrappedTimelineResponseJsonAdapter;
 import com.tumblr.rumblr.response.timeline.LikesResponseJsonAdapter;
 import com.tumblr.rumblr.response.timeline.PostsResponseJsonAdapter;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -229,6 +233,33 @@ public final class TimelineItems {
             @Override public boolean hushCanEdit() { return editable; }
             @Override public boolean hushPaidContextKnown() { return known; }
         }, false);
+    }
+
+    /** The dismissal Tumblr's web client sends for a featured post, as XKit Rewritten #2458 shows it. */
+    public static final String MARKETING_DISMISSAL = "/v2/user/dismiss/marketing_post";
+
+    /**
+     * A post whose header names [icon] and whose dismiss menu offers one choice per href. Tumblr
+     * sends the posts its staff feature with the "sparkle" icon and {@link #MARKETING_DISMISSAL}.
+     */
+    public static TimelineObject featuredPost(String icon, String... hrefs) {
+        Link[] links = new Link[hrefs.length];
+        for (int i = 0; i < hrefs.length; i++) links[i] = hrefs[i] == null ? null : new ActionLink(hrefs[i]);
+        return featuredPostLinking(icon, links);
+    }
+
+    /** A post whose header names [icon] and whose dismiss menu offers one choice per link. */
+    public static TimelineObject featuredPostLinking(String icon, Link... links) {
+        List<Option> options = new ArrayList<>();
+        for (Link link : links) options.add(new Option(link));
+        return new TimelineObject(new Post(Collections.emptyList(), null, null, null, null) {
+            @Override public String hushHeaderIcon() { return icon; }
+        }, new Options("Featured", options));
+    }
+
+    /** PausedHooksTest's probe for Hide Featured posts. */
+    public static boolean aPageLosesItsFeaturedPost() {
+        return aPageLoses(featuredPost("sparkle", MARKETING_DISMISSAL));
     }
 
     /** A blazed post displayed organically, with no paid header context. */

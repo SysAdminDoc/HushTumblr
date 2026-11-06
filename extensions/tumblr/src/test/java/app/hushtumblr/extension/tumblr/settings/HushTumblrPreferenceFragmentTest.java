@@ -108,6 +108,7 @@ public class HushTumblrPreferenceFragmentTest {
         ROW_TITLES.put(PatchFamily.HIDE_SUGGESTED_COMMUNITIES, "Hide suggested communities");
         ROW_TITLES.put(PatchFamily.HIDE_SUGGESTED_TAGS, "Hide suggested tags");
         ROW_TITLES.put(PatchFamily.HIDE_WATCH_IT_ROWS, "Hide Watch it rows");
+        ROW_TITLES.put(PatchFamily.HIDE_FEATURED_POSTS, "Hide Featured posts");
         ROW_TITLES.put(PatchFamily.HIDE_HASHTAGS, "Hide hashtags");
         ROW_TITLES.put(PatchFamily.HIDE_FOLLOW_BUTTON, "Hide the Follow button");
         ROW_TITLES.put(PatchFamily.HIDE_TUMBLRMART, "Hide the diamond and TumblrMart");

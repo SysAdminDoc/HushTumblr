@@ -79,6 +79,7 @@ public enum PatchFamily {
             Settings.HIDE_SUGGESTED_COMMUNITIES),
     HIDE_SUGGESTED_TAGS(FamilyNames.HIDE_SUGGESTED_TAGS, "hideSuggestedTags", null, Settings.HIDE_SUGGESTED_TAGS),
     HIDE_WATCH_IT_ROWS(FamilyNames.HIDE_WATCH_IT_ROWS, "hideWatchItRows", null, Settings.HIDE_WATCH_IT_ROWS),
+    HIDE_FEATURED_POSTS(FamilyNames.HIDE_FEATURED_POSTS, "hideFeaturedPosts", null, Settings.HIDE_FEATURED_POSTS),
     HIDE_HASHTAGS(FamilyNames.HIDE_HASHTAGS, "hideHashtags", null, Settings.HIDE_HASHTAGS),
     HIDE_FOLLOW_BUTTON(FamilyNames.HIDE_FOLLOW_BUTTON, "hideFollowButton", null, Settings.HIDE_FOLLOW_BUTTON),
     HIDE_TUMBLRMART(FamilyNames.HIDE_TUMBLRMART, "hideTumblrMart", null, Settings.HIDE_TUMBLRMART),
@@ -163,7 +164,7 @@ public enum PatchFamily {
     /** The families the Feed page holds. The page and its home row both read this. */
     static final Set<PatchFamily> FEED_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_FILTERED_POSTS,
             HIDE_POSTS_WITH_WORDS, HIDE_TEXT_POSTS, HIDE_PHOTO_POSTS, HIDE_VIDEO_POSTS, HIDE_OWN_REBLOGS, HIDE_REBLOGS,
-            HIDE_WATCH_IT_ROWS,
+            HIDE_WATCH_IT_ROWS, HIDE_FEATURED_POSTS,
             HIDE_SUGGESTED_TAGS, HIDE_SUGGESTED_COMMUNITIES, HIDE_SUGGESTED_BLOGS, HIDE_AD_FREE_BANNER, HIDE_ADS,
             MUTE_ROOT_POSTS));
 
@@ -216,6 +217,7 @@ public enum PatchFamily {
                 "Hide suggested communities"),
         SUGGESTED_TAG_CARDS(HIDE_SUGGESTED_TAGS, "suggestedTagCards", "Hide suggested tags"),
         WATCH_IT_ROWS(HIDE_WATCH_IT_ROWS, "watchItRows", "Hide Watch it rows"),
+        FEATURED_POSTS(HIDE_FEATURED_POSTS, "featuredPosts", "Hide Featured posts"),
         POST_TAGS(HIDE_HASHTAGS, "postTags", "Hide hashtags"),
         FOLLOW_BUTTON(HIDE_FOLLOW_BUTTON, "followButton", "Hide the Follow button"),
         // Two hooks, so the coverage line names each part rather than the patch.

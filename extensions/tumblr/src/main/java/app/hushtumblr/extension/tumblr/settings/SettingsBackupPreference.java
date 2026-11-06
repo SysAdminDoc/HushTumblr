@@ -501,6 +501,7 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
             case "hushtumblr_hide_suggested_communities": return L10n.t("Hide suggested communities");
             case "hushtumblr_hide_suggested_tags": return L10n.t("Hide suggested tags");
             case "hushtumblr_hide_watch_it_rows": return L10n.t("Hide Watch it rows");
+            case "hushtumblr_hide_featured_posts": return L10n.t("Hide Featured posts");
             case "hushtumblr_hide_hashtags": return L10n.t("Hide hashtags");
             case "hushtumblr_hide_follow_button": return L10n.t("Hide the Follow button");
             case "hushtumblr_hide_tumblrmart": return L10n.t("Hide the diamond and TumblrMart");

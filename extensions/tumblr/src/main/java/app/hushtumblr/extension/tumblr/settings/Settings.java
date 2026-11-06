@@ -189,6 +189,13 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_hide_watch_it_rows", FALSE);
 
     /**
+     * The posts Tumblr's staff put in your feeds under a "Featured" header come out of each page
+     * ({@link app.hushtumblr.extension.tumblr.timeline.TimelineFilter}). Off to start.
+     */
+    public static final BooleanSetting HIDE_FEATURED_POSTS =
+            new BooleanSetting("hushtumblr_hide_featured_posts", FALSE);
+
+    /**
      * Posts in your feeds don't show their tags
      * ({@link app.hushtumblr.extension.tumblr.ui.PostParts}). Off to start.
      */

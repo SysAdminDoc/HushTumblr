@@ -622,6 +622,9 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             patchToggle(feed, context, build, PatchFamily.HIDE_WATCH_IT_ROWS, Settings.HIDE_WATCH_IT_ROWS,
                     L10n.t("Hide Watch it rows"), L10n.t("Takes Tumblr TV's Watch it rows and video hub cards, and "
                         + "their headings, out of your dashboard and other feeds."), SettingsIcons.BLOCK);
+            patchToggle(feed, context, build, PatchFamily.HIDE_FEATURED_POSTS, Settings.HIDE_FEATURED_POSTS,
+                    L10n.t("Hide Featured posts"), L10n.t("Takes the posts Tumblr's staff feature under a Featured "
+                        + "header out of your dashboard and other feeds."), SettingsIcons.BLOCK);
             // The post switches act on each page as it loads too (PostRules). A post's kind counts
             // the part it reblogs, and the word list is read with each page.
             patchToggle(feed, context, build, PatchFamily.HIDE_REBLOGS, Settings.HIDE_REBLOGS, L10n.t("Hide reblogs"),

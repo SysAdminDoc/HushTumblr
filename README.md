@@ -43,7 +43,7 @@ Long-press the Tumblr logo at the top of your dashboard. You can also tap **Hush
 
 ## Patches
 
-There are 50 patches.
+There are 51 patches.
 
 | Patch | What it does |
 |---|---|
@@ -53,6 +53,7 @@ There are 50 patches.
 | `Filter activity notifications` | Hides selected likes, reblogs, replies, follows, mentions, asks and boops from the activity list as pages load. Each switch starts off. Choose them in Tumblr settings > HushTumblr > Notifications. |
 | `Fix push notifications` | Lets the patched app sign up for push notifications. Firebase can refuse a patched Tumblr whose request doesn't name Tumblr's original signature, so this sends its fingerprint. On by default. Turn it off in Tumblr settings > HushTumblr > Notifications. |
 | `Hide Blaze prompts` | Hides the prompts to pay for Blaze, Tumblr's way to promote a post. That covers the Blaze buttons on your blog and dashboard, the nudge after you post, and the Blaze banners. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
+| `Hide Featured posts` | Takes the staff-picked posts Tumblr shows under a Featured header out of your dashboard and other feeds. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
 | `Hide Tumblr TV` | Takes the Tumblr TV tab out of the bottom bar, and stops sign-up from sending you there. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `Hide Watch it rows` | Takes Tumblr TV's Watch it rows and video hub cards out of your dashboard and other feeds, along with their headings. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
 | `Hide ads` | Takes ad cards and paid Blaze posts out of your dashboard and other feeds. Tumblr stops asking its ad networks for more and stops showing a full-screen ad when you open a blog, and the ad networks don't start when Tumblr launches. On by default. Turn it off in Tumblr settings > HushTumblr > Feed. |

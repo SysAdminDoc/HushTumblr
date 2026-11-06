@@ -259,6 +259,7 @@ public class SettingsBackupTest {
                 Settings.HIDE_SUGGESTED_COMMUNITIES,
                 Settings.HIDE_SUGGESTED_TAGS,
                 Settings.HIDE_WATCH_IT_ROWS,
+                Settings.HIDE_FEATURED_POSTS,
                 Settings.HIDE_HASHTAGS,
                 Settings.HIDE_FOLLOW_BUTTON,
                 Settings.HIDE_TUMBLRMART,

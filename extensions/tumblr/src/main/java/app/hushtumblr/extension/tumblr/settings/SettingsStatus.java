@@ -89,6 +89,8 @@ public final class SettingsStatus {
     public static boolean suggestedTagCards() { return false; }
     public static boolean hideWatchItRows() { return false; }
     public static boolean watchItRows() { return false; }
+    public static boolean hideFeaturedPosts() { return false; }
+    public static boolean featuredPosts() { return false; }
     public static boolean hideHashtags() { return false; }
     public static boolean postTags() { return false; }
     public static boolean hideFollowButton() { return false; }

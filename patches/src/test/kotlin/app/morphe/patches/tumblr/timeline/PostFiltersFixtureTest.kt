@@ -102,6 +102,40 @@ class PostFiltersFixtureTest {
         }
     }
 
+    /**
+     * Hide Featured posts reads the header icon through the paid-post bridge without Hide ads: it
+     * turns on its own switch and leaves Hide ads' off. The icon it looks for, sparkle, is one the
+     * server's header icon enum names.
+     */
+    @Test
+    fun `Hide Featured posts bridges the header icon and turns its switch on`() {
+        for (build in Fixtures.declaredBuilds()) {
+            val icons = "Lcom/tumblr/rumblr/model/post/PostHeaderContext\$ContextIcon;"
+            val types = setOf(POST, POST_HEADER_CONTEXT, POST.removeSuffix(";") + "JsonAdapter;",
+                POST_HEADER_CONTEXT.removeSuffix(";") + "JsonAdapter;", icons)
+            val classes = FixtureDex.classes(build, types)
+            assertEquals("${build.name}: the models, their adapters and the icon enum", types, classes.keys)
+            val context = PatchContexts.of(ExtensionDex.classes() + classes.values)
+
+            postJsonPresencePatch.execute(context)
+            paidPostBridgePatch.execute(context)
+            hideFeaturedPostsPatch.execute(context)
+
+            val post = context.mutableClassDefBy(POST)
+            assertTrue("${build.name}: Post is a HushPaidPost", HUSH_PAID_POST in post.interfaces)
+            assertTrue("${build.name}: Post has the header icon getter", post.methods.any {
+                it.name == "hushHeaderIcon" && it.parameterTypes.isEmpty() && it.returnType == "Ljava/lang/String;"
+            })
+            val names = classes.getValue(icons).methods.single { it.name == "<clinit>" }.instructionList()
+            assertTrue("${build.name}: the header icons include sparkle", names.any { it.stringRef() == "sparkle" })
+            for ((flag, on) in mapOf("hideFeaturedPosts" to 1, "featuredPosts" to 1, "hideAds" to 0, "paidPostHeader" to 0)) {
+                val first = context.mutableClassDefBy(SETTINGS_STATUS).methods.single { it.name == flag }
+                    .implementation!!.instructions.first()
+                assertEquals("${build.name}: $flag", on, (first as NarrowLiteralInstruction).narrowLiteral)
+            }
+        }
+    }
+
     @Test
     fun `Hide reblogs bridges the post model and turns its switch on`() =
         check(hideReblogsPatch, "hideReblogs", "reblogPosts")

@@ -37,6 +37,7 @@ final class QuickSetupKeys {
             Settings.HIDE_SUGGESTED_COMMUNITIES,
             Settings.HIDE_SUGGESTED_TAGS,
             Settings.HIDE_WATCH_IT_ROWS,
+            Settings.HIDE_FEATURED_POSTS,
             Settings.HIDE_BLAZE_PROMPTS,
             Settings.HIDE_TUMBLRMART,
             Settings.SKIP_REVIEW_PROMPTS,

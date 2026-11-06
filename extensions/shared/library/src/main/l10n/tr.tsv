@@ -285,6 +285,9 @@ Hide suggested tags	Önerilen etiketleri gizle
 Takes the tags Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.	Tumblr'ın takip etmeni önerdiği etiketleri ve başlıklarını panondan ve diğer akışlardan kaldırır.
 Hide Watch it rows	Watch it satırlarını gizle
 Takes Tumblr TV's Watch it rows and video hub cards, and their headings, out of your dashboard and other feeds.	Tumblr TV'nin Watch it satırlarını ve video kartlarını, başlıklarıyla birlikte panondan ve diğer akışlardan kaldırır.
+# context: the Hide Featured posts switch on the Feed page. Featured is the header Tumblr shows over posts its own staff promote; use the word Tumblr shows in your language.
+Hide Featured posts	Öne çıkan gönderileri gizle
+Takes the posts Tumblr's staff feature under a Featured header out of your dashboard and other feeds.	Tumblr ekibinin Öne çıkanlar başlığı altında gösterdiği gönderileri panondan ve diğer akışlardan kaldırır.
 # context: the Posts page and its two switches. Posts is the page's title in HushTumblr settings; Follow is the label on Tumblr's own button, so use the word Tumblr shows in your language.
 Posts	Gönderiler
 Hide hashtags	Hashtag'leri gizle
