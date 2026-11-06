@@ -44,6 +44,45 @@
       "options": []
     },
     {
+      "name": "Collapse long posts",
+      "description": "Cuts long posts in your timelines to about a screen, with Tumblr's own Read more row under them. Tap it to open the whole post. Reblog trails and asks keep Tumblr's layout. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts.",
+      "category": "Posts",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch",
+        "HushTumblr settings"
+      ],
+      "compatiblePackages": {
+        "com.tumblr": [
+          "47.0.0.108"
+        ]
+      },
+      "compatibility": [
+        {
+          "name": "Tumblr",
+          "packageName": "com.tumblr",
+          "description": null,
+          "appIconColor": 6453,
+          "signatures": [
+            "39ac9c821ad2d605e4849f066e8aad3cca27d5e13eb03ad8755be234a2985dfd"
+          ],
+          "targets": [
+            {
+              "version": "47.0.0.108",
+              "experimental": false,
+              "versionCodes": {
+                "ARM64_V8A": 1470000108,
+                "ARMEABI_V7A": 1470000108,
+                "X86": 1470000108,
+                "X86_64": 1470000108
+              }
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
       "name": "Dark background color",
       "description": "Makes the background of Tumblr's Dark Mode palette black, which can save battery on OLED screens, or another dark color you pick when patching. On Android 12 or newer it can follow your wallpaper's colors instead. Blog and tag pages take it too, in place of their own colors. Other palettes stay as they are. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface.",
       "category": "Interface",

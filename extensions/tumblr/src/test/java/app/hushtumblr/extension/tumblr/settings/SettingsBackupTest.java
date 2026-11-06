@@ -298,6 +298,7 @@ public class SettingsBackupTest {
                 Settings.SHOW_IMAGE_DESCRIPTIONS,
                 Settings.SHARE_VIDEO_LINKS,
                 Settings.SHARPER_IMAGES,
+                Settings.COLLAPSE_LONG_POSTS,
                 Settings.MUTE_ROOT_POSTS,
                 Settings.REVEAL_ALLOWED_MATURE_CONTENT,
                 Settings.SHOW_MUTUAL_MARKERS,

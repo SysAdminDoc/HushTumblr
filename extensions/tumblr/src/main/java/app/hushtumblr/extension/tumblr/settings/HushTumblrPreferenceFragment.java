@@ -710,6 +710,10 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             patchToggle(posts, context, build, PatchFamily.SHARPER_IMAGES, Settings.SHARPER_IMAGES,
                     L10n.t("Sharper images"),
                     L10n.t("Loads images in posts at a higher resolution. Uses more data."), SettingsIcons.SEARCH);
+            patchToggle(posts, context, build, PatchFamily.COLLAPSE_LONG_POSTS, Settings.COLLAPSE_LONG_POSTS,
+                    L10n.t("Collapse long posts"),
+                    L10n.t("Cuts posts longer than about a screen with a Read more row. Tap it to open the whole post."),
+                    SettingsIcons.POSTS);
             patchToggle(posts, context, build, PatchFamily.REVEAL_ALLOWED_MATURE_CONTENT,
                     Settings.REVEAL_ALLOWED_MATURE_CONTENT, L10n.t("Reveal allowed mature content"),
                     L10n.t("Removes the tap-to-reveal blur only when Tumblr confirms this account may view the content."),

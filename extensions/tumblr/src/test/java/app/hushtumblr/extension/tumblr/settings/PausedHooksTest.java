@@ -80,10 +80,12 @@ import app.hushtumblr.extension.tumblr.privacy.AdvertisingId;
 import app.hushtumblr.extension.tumblr.rootmute.HushAccountIdentity;
 import app.hushtumblr.extension.tumblr.rootmute.MatureAccountsForTests;
 import app.hushtumblr.extension.tumblr.rootmute.RootPostMutes;
+import app.hushtumblr.extension.tumblr.timeline.HushBlockRow;
 import app.hushtumblr.extension.tumblr.timeline.HushPaidPost;
 import app.hushtumblr.extension.tumblr.timeline.HushPost;
 import app.hushtumblr.extension.tumblr.timeline.HushRootPost;
 import app.hushtumblr.extension.tumblr.timeline.HushTrail;
+import app.hushtumblr.extension.tumblr.timeline.LongPosts;
 import app.hushtumblr.extension.tumblr.timeline.TimelineFilter;
 import app.hushtumblr.extension.tumblr.timeline.TimelineItems;
 import app.hushtumblr.extension.tumblr.ui.AltTextCaptions;
@@ -302,6 +304,8 @@ public class PausedHooksTest {
         probes.put(Settings.SHARE_VIDEO_LINKS, Collections.singletonList(() -> videoLinkMenu(context)));
         // Tumblr's 640 pick of an image becomes its listed 1280 copy.
         probes.put(Settings.SHARPER_IMAGES, Collections.singletonList(PausedHooksTest::sharperPick));
+        // A long post keeps its first rows above Tumblr's Read more row.
+        probes.put(Settings.COLLAPSE_LONG_POSTS, Collections.singletonList(() -> LongPosts.post(true, longRows()) != null));
         probes.put(Settings.MUTE_ROOT_POSTS, Collections.singletonList(() -> mutedRoot(context)));
         probes.put(Settings.REVEAL_ALLOWED_MATURE_CONTENT, Collections.singletonList(PausedHooksTest::matureCover));
         probes.put(Settings.SHOW_MUTUAL_MARKERS, Collections.singletonList(() -> mutualMarker(context)));
@@ -356,6 +360,14 @@ public class PausedHooksTest {
     private static boolean sharperPick() {
         HushPhotoSize picked = photoSize(640, 960);
         return SharperImages.pick(Arrays.asList(photoSize(1280, 1920), picked), picked, 640) != picked;
+    }
+
+    /** Twenty paragraphs of about five lines each, a post of a couple of screens. */
+    private static List<Object> longRows() {
+        List<Object> rows = new ArrayList<>();
+        String paragraph = String.join("", Collections.nCopies(40, "words "));
+        for (int i = 0; i < 20; i++) rows.add((HushBlockRow) () -> Collections.singletonList(new TextBlock(paragraph)));
+        return rows;
     }
 
     private static HushPhotoSize photoSize(int width, int height) {

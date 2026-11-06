@@ -115,6 +115,7 @@ public enum PatchFamily {
     VISIBLE_ALT_TEXT(FamilyNames.VISIBLE_ALT_TEXT, "visibleAltText", null, Settings.SHOW_IMAGE_DESCRIPTIONS),
     SHARE_VIDEO_LINKS(FamilyNames.SHARE_VIDEO_LINKS, "shareVideoLinks", null, Settings.SHARE_VIDEO_LINKS),
     SHARPER_IMAGES(FamilyNames.SHARPER_IMAGES, "sharperImages", null, Settings.SHARPER_IMAGES),
+    COLLAPSE_LONG_POSTS(FamilyNames.COLLAPSE_LONG_POSTS, "collapseLongPosts", null, Settings.COLLAPSE_LONG_POSTS),
     MUTE_ROOT_POSTS(FamilyNames.MUTE_ROOT_POSTS, "muteRootPosts", null, Settings.MUTE_ROOT_POSTS),
     SHOW_MUTUAL_MARKERS(FamilyNames.SHOW_MUTUAL_MARKERS, "showMutualMarkers", null, Settings.SHOW_MUTUAL_MARKERS),
     REVEAL_ALLOWED_MATURE_CONTENT(FamilyNames.REVEAL_ALLOWED_MATURE_CONTENT, "revealAllowedMatureContent", null,
@@ -189,7 +190,7 @@ public enum PatchFamily {
     static final Set<PatchFamily> POSTS_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_SAVE_BUTTON,
             HIDE_SHARE_BUTTON, HIDE_COMMENT_BUTTON, HIDE_REBLOG_BUTTON, HIDE_LIKE_BUTTON, HIDE_NOTE_COUNTS, HIDE_FOLLOW_BUTTON,
             HIDE_HASHTAGS, SHOW_POST_TIMESTAMPS, VISIBLE_ALT_TEXT, SHARE_VIDEO_LINKS, SHARPER_IMAGES,
-            REVEAL_ALLOWED_MATURE_CONTENT, SHOW_MUTUAL_MARKERS));
+            COLLAPSE_LONG_POSTS, REVEAL_ALLOWED_MATURE_CONTENT, SHOW_MUTUAL_MARKERS));
 
     /** The families the Privacy page holds. The page and its home row both read this. */
     static final Set<PatchFamily> PRIVACY_PAGE = Collections.unmodifiableSet(EnumSet.of(DISABLE_ANALYTICS,
@@ -205,6 +206,7 @@ public enum PatchFamily {
         GALLERY_ALT_TEXT_CAPTIONS(VISIBLE_ALT_TEXT, "galleryAltTextCaptions", "gallery image descriptions"),
         VIDEO_LINK_PRESS(SHARE_VIDEO_LINKS, "videoLinkPress", "Share video links"),
         IMAGE_SIZES(SHARPER_IMAGES, "imageSizes", "Sharper images"),
+        LONG_POST_ROWS(COLLAPSE_LONG_POSTS, "longPostRows", "Collapse long posts"),
         NATIVE_POST_TIMESTAMPS(SHOW_POST_TIMESTAMPS, "nativePostTimestamps", "Show post timestamps"),
         ACTIVITY_NOTIFICATION_LIST(FILTER_ACTIVITY_NOTIFICATIONS, "activityNotificationList", "Filter activity notifications"),
         PAID_POST_HEADER(HIDE_ADS, "paidPostHeader", "Hide ads"),

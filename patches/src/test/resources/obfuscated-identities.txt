@@ -104,3 +104,15 @@ patches/src/main/kotlin/app/morphe/patches/tumblr/rootmute/DashboardPagePatch.kt
 patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/PostJsonPresencePatch.kt|Ladb;
 patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/PostJsonPresencePatch.kt|Lbbb;
 patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/PostJsonPresencePatch.kt|Lh47;
+
+# Collapse long posts. Lfmf lists a post card's rows: h(Lr4g;I)List appends Ljm2.g()'s list of the
+# post's own rows through e(List,List)Z and adds its Read more row d on the cut flag it tested for
+# Ljm2's own cut. Ltj2 is one row of blocks, its only list field a. Ljtl is the screen's timeline
+# field m, whose n()Z is Tumblr's own test for drawing a Read more cut (false on a post opened by
+# itself). Checked liveness keeps every register the hook writes dead past Tumblr's own use, and
+# exact-target fixtures cover the hook and the bridge.
+patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/CollapseLongPostsPatch.kt|Lfmf;
+patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/CollapseLongPostsPatch.kt|Ljm2;
+patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/CollapseLongPostsPatch.kt|Ltj2;
+patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/CollapseLongPostsPatch.kt|Ljtl;
+patches/src/main/kotlin/app/morphe/patches/tumblr/timeline/CollapseLongPostsPatch.kt|Lr4g;

@@ -83,6 +83,10 @@ method Ly5f;->hushImageItems()[Ljava/lang/Object; 8d6e797f41701b64f425ae2fe0cc01
 [Sharper images]
 implements Lcom/tumblr/imageinfo/PhotoSize; Lapp/hushtumblr/extension/tumblr/ui/HushPhotoSize;
 
+[Collapse long posts]
+implements Ltj2; Lapp/hushtumblr/extension/tumblr/timeline/HushBlockRow;
+method Ltj2;->hushBlocks()Ljava/util/List; c14c68bb99846bfa6a5d4a797fcd29d6e669532f555ae401212110ae26433d78
+
 [Reveal allowed mature content]
 implements Lapp/hushtumblr/extension/tumblr/mature/NativeMatureContinuation; Lmz5;
 implements Lcom/tumblr/UserInfo; Lapp/hushtumblr/extension/tumblr/mature/HushMatureAccount;

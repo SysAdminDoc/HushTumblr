@@ -43,10 +43,11 @@ Long-press the Tumblr logo at the top of your dashboard. You can also tap **Hush
 
 ## Patches
 
-There are 53 patches.
+There are 54 patches.
 
 | Patch | What it does |
 |---|---|
+| `Collapse long posts` | Cuts long posts in your timelines to about a screen, with Tumblr's own Read more row under them. Tap it to open the whole post. Reblog trails and asks keep Tumblr's layout. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Dark background color` | Makes the background of Tumblr's Dark Mode palette black, which can save battery on OLED screens, or another dark color you pick when patching. On Android 12 or newer it can follow your wallpaper's colors instead. Blog and tag pages take it too, in place of their own colors. Other palettes stay as they are. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `Disable analytics` | Turns off Firebase and Google's analytics collection, and Tumblr's own tracking and ad measurement once it restarts. LiveRamp's identity tracker doesn't start when Tumblr launches, and Crashlytics crash reports stay off while the switch is on. The Firebase and Google analytics part stays until you patch again without it. On by default. Turn it off in Tumblr settings > HushTumblr > Privacy. |
 | `Disable update prompts` | Stops Tumblr asking Google Play for a newer version and showing Play's update prompt. Starts off. Turn it on in Tumblr settings > HushTumblr > Updates. |

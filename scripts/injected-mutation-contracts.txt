@@ -40,6 +40,7 @@ family|showPostTimestamps|Show post timestamps|nativePostTimestamps
 family|visibleAltText|Visible image descriptions|photoAltTextCaptions,galleryAltTextCaptions
 family|shareVideoLinks|Share video links|videoLinkPress
 family|sharperImages|Sharper images|imageSizes
+family|collapseLongPosts|Collapse long posts|longPostRows
 family|muteRootPosts|Mute posts locally|rootPostMutes
 family|revealAllowedMatureContent|Reveal allowed mature content|accountSafeMatureReveal
 family|hideAdFreeBanner|Hide the ad-free banner|adFreeBannerFlags
@@ -148,6 +149,9 @@ mutation|videoLinkPress|videoLinkPress|Lapp/hushtumblr/extension/tumblr/ui/Video
 # Each return of the image size chooser hands the image's sizes, its pick and the width asked for to the
 # extension, and Tumblr's image size answers the extension's bridge with its own public getters.
 mutation|imageSizes|imageSizes|Lapp/hushtumblr/extension/tumblr/ui/SharperImages;->pick(Ljava/util/List;Ljava/lang/Object;I)Ljava/lang/Object;|Lcom/tumblr/imageinfo/PhotoSize;|Lcom/tumblr/imageinfo/PhotoInfo;|Lapp/hushtumblr/extension/tumblr/ui/HushPhotoSize;
+# The post row hook, the post row composer, the post as it holds it, the block row and the screen's
+# timeline, then the extension's block row bridge.
+mutation|longPostRows|longPostRows|Lapp/hushtumblr/extension/tumblr/timeline/LongPosts;->post(ZLjava/util/List;)Ljava/util/List;|Lfmf;|Ljm2;|Ltj2;|Ljtl;|Lapp/hushtumblr/extension/tumblr/timeline/HushBlockRow;
 mutation|fontChoice|fontChoice|Lapp/hushtumblr/extension/tumblr/ui/AppFont;->replacement(Landroid/content/Context;I)Landroid/graphics/Typeface;|Lapp/hushtumblr/extension/tumblr/ui/AppFont;->provided(Landroid/graphics/Typeface;)Landroid/graphics/Typeface;|Font resource ID #0x|sans-serif-medium|Returning pre-inflated View for resId: |Lapp/hushtumblr/extension/tumblr/ui/AppFont;->preinflated(Landroid/view/View;)V
 mutation|followButton|followButton|Lapp/hushtumblr/extension/tumblr/ui/PostParts;->hideFollowButton()Z|Lcom/tumblr/ui/widget/PostCardHeader;|Lcom/tumblr/rumblr/model/post/PostHeaderAction$ActionType;->FOLLOW|Lapp/hushtumblr/extension/tumblr/ui/PostParts;->trailFollow(Ljava/lang/Object;)Ljava/lang/Object;|Lcom/tumblr/ui/widget/graywater/viewholder/ReblogHeaderViewHolder;
 # A footer button's question, the Compose function it guards (by its source note) and the

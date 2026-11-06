@@ -69,6 +69,7 @@ body:
       description: Every patch but Spoof signature for Google sign-in is selected by default. That one is only in your build if you picked it in Expert mode.
       multiple: true
       options:
+        - Collapse long posts
         - Dark background color
         - Disable analytics
         - Disable update prompts

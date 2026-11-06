@@ -302,7 +302,7 @@ public class DexDiff {
             Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1), Map.entry("activityNotifications", 7),
             Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 7), Map.entry("timelinePaging", 5),
             Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 7), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
-            Map.entry("crashReports", 3), Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("videoLinkPress", 6), Map.entry("imageSizes", 4), Map.entry("fontChoice", 6),
+            Map.entry("crashReports", 3), Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("videoLinkPress", 6), Map.entry("imageSizes", 4), Map.entry("longPostRows", 6), Map.entry("fontChoice", 6),
             Map.entry("followButton", 5), Map.entry("footerButton", 3), Map.entry("postTags", 6),
             Map.entry("noteCounts", 9), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
@@ -5586,6 +5586,87 @@ public class DexDiff {
             capability(c.callee, picks && answers);
         }
 
+        /**
+         * Tumblr's post row composer hands the own rows of a post it didn't cut to the extension, and
+         * draws a shorter answer as its own cut with its Read more row under it. Its block row answers
+         * the extension's bridge with its blocks.
+         */
+        void longPostRows(Contract c) {
+            String composer = c.strings.get(1), screen = c.strings.get(4), row = c.strings.get(3), face = c.strings.get(5);
+            boolean rows = postRows(c.strings.get(0), composer, c.strings.get(2), screen);
+            boolean bridge = immutableBridge(row, face, "hushBlocks", "Ljava/util/List;", "a", "Lcom/google/common/collect/ImmutableList;", Opcode.IGET_OBJECT);
+            if (!bridge) fail(row + " doesn't answer " + face + " with its own list of blocks");
+            capability(c.callee, rows && bridge);
+        }
+
+        /**
+         * Eight steps in front of [cleanAt] of [old], at [start] of [m]: whether the screen draws a
+         * Read more cut into a scratch local, [hook] on it and [args], and on a list, 1 into [cut] and the
+         * list into [list]. On null they jump to Tumblr's own step. The scratch local, or -1.
+         */
+        int rowHook(Method old, Method m, int start, int cleanAt, String hook, String composer, String screen, int self, int cut, int list, int... args) {
+            List<Instruction> body = instructions(m);
+            int scratch = get(body, start) instanceof OneRegisterInstruction o ? o.getRegisterA() : -1;
+            List<Integer> asked = new ArrayList<>();
+            for (int arg : args) asked.add(arg < 0 ? scratch : arg);
+            boolean shaped = scratch >= 0 && scratch < 16 && scratch != self && scratch != cut && scratch != list
+                    && Arrays.stream(args).noneMatch(arg -> arg == scratch) && deadAt(old, cleanAt, scratch)
+                    && fieldIs(get(body, start), Opcode.IGET_OBJECT, composer + "->m:" + screen, scratch, self)
+                    && callIs(get(body, start + 1), Opcode.INVOKE_VIRTUAL, screen + "->n()Z", scratch)
+                    && movesTo(get(body, start + 2), scratch, Opcode.MOVE_RESULT)
+                    && callIs(get(body, start + 3), Opcode.INVOKE_STATIC, hook, asked.toArray(new Integer[0]))
+                    && movesTo(get(body, start + 4), scratch, Opcode.MOVE_RESULT_OBJECT)
+                    && movesTo(get(body, start + 5), scratch, Opcode.IF_EQZ) && target(m, start + 5) == start + 8
+                    && literalIs(get(body, start + 6), Opcode.CONST_4, cut, 1)
+                    && moveIs(get(body, start + 7), Opcode.MOVE_OBJECT, list, scratch);
+            if (!shaped) return -1;
+            remove(m, start, start + 8);
+            anchor(m, start, cleanAt, hook);
+            vouch(m, start + 3, asked);
+            return scratch;
+        }
+
+        /**
+         * The post hook in front of the call appending every row of a post Tumblr didn't cut. The
+         * one way into the read of every row tests the cut flag, which the next test of it after the
+         * append puts Tumblr's Read more row under the rows on. The author's own cut jumps straight
+         * to the append, so it must land past the hook.
+         */
+        boolean postRows(String hook, String composer, String post, String screen) {
+            String list = "Ljava/util/List;";
+            Method old = nativeMethod(composer + "->h(Lr4g;I)" + list, "the post row composer");
+            if (old == null) return false;
+            List<Instruction> was = instructions(old);
+            List<Integer> reads = callSites(was, post + "->g()" + list);
+            int all = reads.size() == 1 ? reads.get(0) : -1;
+            Instruction append = get(was, all + 2);
+            MethodReference appended = called(append);
+            List<Integer> args = append == null ? List.of() : arguments(append);
+            int rows = all >= 0 && get(was, all + 1) != null && was.get(all + 1).getOpcode() == Opcode.MOVE_RESULT_OBJECT ? firstRegister(was.get(all + 1)) : -1;
+            boolean shaped = rows >= 0 && append != null && append.getOpcode() == Opcode.INVOKE_DIRECT && appended != null && appended.getDefiningClass().equals(composer)
+                    && descriptor(appended).equals("(" + list + list + ")Z") && args.size() == 3 && args.get(2) == rows;
+            int self = shaped ? args.get(0) : -1;
+            FeatureFlow graph = flow(old);
+            List<Integer> into = new ArrayList<>();
+            for (int k = 0; all >= 0 && k < graph.normal.size(); k++) if (graph.normal.get(k).contains(all) || graph.handlers.get(k).contains(all)) into.add(k);
+            int branch = into.size() == 1 ? into.get(0) : -1;
+            int cut = branch >= 0 && branch != all - 1 && was.get(branch).getOpcode() == Opcode.IF_EQZ ? firstRegister(was.get(branch)) : -1;
+            int test = shaped && cut >= 0 ? firstIndex(was, all + 3, i -> namesRegister(i, cut)) : -1;
+            Instruction readMore = get(was, test + 1);
+            shaped &= test >= 0 && movesTo(was.get(test), cut, Opcode.IF_EQZ) && readMore != null && readMore.getOpcode() == Opcode.IGET_OBJECT
+                    && names(field(readMore), composer + "->d") && readMore instanceof TwoRegisterInstruction t && t.getRegisterB() == self
+                    && rows < 16 && self < 16 && cut < 16 && cut != rows && cut != self
+                    && deadAt(old, all + 3, rows) && deadAt(old, test + 1, cut) && deadAt(old, target(old, test), cut);
+            Method m = actual(old);
+            List<Integer> sites = calls(m, hook, 1);
+            if (!shaped) fail("the post row composer " + old + " no longer appends every row of a post it didn't cut where the post hook goes");
+            if (m == null || sites.size() != 1 || !shaped) return false;
+            int start = sites.get(0) - 3;
+            boolean injected = rowHook(old, m, start, all + 2, hook, composer, screen, self, cut, rows, -1, rows) >= 0 && onlyFrom(m, start, start - 1);
+            if (!injected) fail("the post hook doesn't hand every row of a post Tumblr didn't cut through in front of their append, past the author's own cut, in " + m);
+            return injected;
+        }
+
         static boolean readsContainer(Instruction i, String container) {
             return i.getOpcode() == Opcode.IGET_OBJECT && field(i) != null && field(i).getType().equals(container);
         }
@@ -6611,6 +6692,7 @@ public class DexDiff {
                     case "postLine": postLine(c); break;
                     case "videoLinkPress": videoLinkPress(c); break;
                     case "imageSizes": imageSizes(c); break;
+                    case "longPostRows": longPostRows(c); break;
                     case "fontChoice": fontChoice(c); break;
                     case "followButton": followButton(c); break;
                     case "footerButton": footerButton(c); break;
