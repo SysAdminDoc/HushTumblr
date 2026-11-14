@@ -145,6 +145,12 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
     static final String PHONE_FONT_ROW = "action_phone_font";
     /** The font picker's request. The settings file's two are in {@link SettingsBackupPreference}. */
     static final int FONT_FILE = 7313;
+    /**
+     * One font file change at a time. Picks share the staged file, and a pick that ran alongside
+     * another, or alongside going back to the phone's font, could leave a name saved over a mixed
+     * or missing file. A second pick waits for the first, and the later one stays.
+     */
+    private static final Object FONT_FILES = new Object();
 
     /** Thrown by the next initialize() and then cleared: how a test reaches the recovery page. */
     static volatile RuntimeException failNextInitialization;
@@ -1639,17 +1645,61 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
      * logs its class alone, as its message can name the file.
      */
     private static String installFontFile(Context context, Uri uri, boolean[] saved) {
+        synchronized (FONT_FILES) {
+            return installFontFileNow(context, uri, saved);
+        }
+    }
+
+    private static String installFontFileNow(Context context, Uri uri, boolean[] saved) {
         ContentResolver resolver = context.getContentResolver();
-        try (InputStream source = resolver.openInputStream(uri)) {
-            if (source == null) throw new IOException("no stream");
-            saveFontFile(AppFont.install(context, source, fontFileName(resolver, uri)));
+        try {
+            String value;
+            try (InputStream source = resolver.openInputStream(uri)) {
+                if (source == null) throw new IOException("no stream");
+                value = AppFont.stage(context, source, fontFileName(resolver, uri));
+            } catch (AppFont.Refused refused) {
+                return refused.getMessage();
+            } catch (AppFont.Unwritable unwritable) {
+                Logger.printInfo(() -> "Could not copy the font file: " + unwritable.getClass().getSimpleName());
+                return L10n.t("Couldn't change the font. Try again.");
+            } catch (IOException | RuntimeException failure) {
+                Logger.printInfo(() -> "Could not take the font file: " + failure.getClass().getSimpleName());
+                return L10n.t("Couldn't read that file. Try again.");
+            }
+            try {
+                keepFontFile(context, value);
+            } catch (IOException | RuntimeException failure) {
+                Logger.printInfo(() -> "Could not keep the font file: " + failure.getClass().getSimpleName());
+                return L10n.t("Couldn't change the font. Try again.");
+            }
             saved[0] = true;
             return Settings.APP_FONT.savedValue() ? L10n.t("Font file saved.") : L10n.t("Font file saved. Turn on App font to use it.");
-        } catch (AppFont.Refused refused) {
-            return refused.getMessage();
-        } catch (IOException | RuntimeException failure) {
-            Logger.printInfo(() -> "Could not take the font file: " + failure.getClass().getSimpleName());
-            return L10n.t("Couldn't read that file. Try again.");
+        } finally {
+            AppFont.discard(context);
+        }
+    }
+
+    /**
+     * Saves the staged file's [value], then puts the file in place. A refused save leaves the font
+     * in use alone. Anything that fails once the value is saved takes the earlier value back, so a
+     * name never stays saved over another file.
+     */
+    private static void keepFontFile(Context context, String value) throws IOException {
+        synchronized (app.hushtumblr.extension.shared.settings.Setting.class) {
+            String before = TextSettings.APP_FONT_FILE.persistedValue();
+            try {
+                saveFontFile(value);
+                AppFont.place(context);
+            } catch (IOException | RuntimeException failure) {
+                if (!before.equals(TextSettings.APP_FONT_FILE.persistedValue())) {
+                    try {
+                        saveFontFile(before);
+                    } catch (IOException | RuntimeException undone) {
+                        Logger.printInfo(() -> "Could not take the font file's name back: " + undone.getClass().getSimpleName());
+                    }
+                }
+                throw failure;
+            }
         }
     }
 
@@ -1669,15 +1719,17 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         String[] outcome = new String[1];
         boolean[] saved = new boolean[1];
         if (!submitEdit(() -> {
-            try {
-                // An empty value stops the file being read, so a delete that fails does no harm.
-                saveFontFile("");
-                AppFont.forget(app);
-                saved[0] = true;
-                outcome[0] = L10n.t("Back to the phone's font.");
-            } catch (IOException | RuntimeException failure) {
-                Logger.printInfo(() -> "Could not forget the font file: " + failure.getClass().getSimpleName());
-                outcome[0] = L10n.t("Couldn't change the font. Try again.");
+            synchronized (FONT_FILES) {
+                try {
+                    // An empty value stops the file being read, so a delete that fails does no harm.
+                    saveFontFile("");
+                    AppFont.forget(app);
+                    saved[0] = true;
+                    outcome[0] = L10n.t("Back to the phone's font.");
+                } catch (IOException | RuntimeException failure) {
+                    Logger.printInfo(() -> "Could not forget the font file: " + failure.getClass().getSimpleName());
+                    outcome[0] = L10n.t("Couldn't change the font. Try again.");
+                }
             }
         }, () -> showFontOutcome(PHONE_FONT_ROW, outcome[0], saved[0]))) {
             rowResult(PHONE_FONT_ROW, L10n.t("Couldn't start that. Try again in a moment."));
