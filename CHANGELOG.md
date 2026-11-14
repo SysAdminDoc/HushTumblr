@@ -4,6 +4,7 @@
 
 * Line between posts only draws between two posts now. It used to show up under headings like "Looking for more?", above carousels and around buttons too, where it didn't divide anything. Sponsored and Blaze posts still count as posts.
 * Hide ads now takes out the one-line app promos that tag pages and search results slip between posts, like "Made with WordPress" with its Install button.
+* Dark background color now reaches the row of buttons under your own posts too, the one with Blaze, delete and edit. It kept a lighter gray strip with a rounded bottom under each post, which stood out on a black background. It takes the card's color now on your blog, in drafts, the queue and scheduled posts. With the switch off or HushTumblr paused it's Tumblr's gray as before.
 * **Tooling:** The source audit reads Jman's Patch Bundle Registry through its new API and asks again with fewer rows when a page fails. It also reads every page of a GitHub code search now. Before, it stopped at the first page that came back short and missed files.
 * **Tooling:** A release checks the source census when it's cut and again before anything goes up on GitHub. A census refreshed after the cut no longer keeps the publish step from running.
 

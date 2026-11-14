@@ -6952,39 +6952,49 @@ public class DexDiff {
                     vouch(m, at, List.of(register, register + 1));
                 }
             }
-            postFooter(footerHook);
+            panelBackground(POST_FOOTER_NOTE, footerHook, "the post footer");
+            panelBackground(AUTHOR_ACTIONS_NOTE, footerHook, "the author actions row");
         }
 
         static final String POST_FOOTER_NOTE = "com.tumblr.ui.widget.splitnotescount.composable.PostFooterSplitNotesCountContent (";
+        static final String AUTHOR_ACTIONS_NOTE = "com.tumblr.ui.widget.authoractions.composable.AuthorActionsBarContent (";
 
         /**
-         * The footer under a post handing the color it paints itself with to [hook] right after reading
-         * it, the answer moved back over the color before the background modifier takes it. The place
-         * is found in the clean target the way the patch finds it: the one color read kept and handed
-         * straight to a static (modifier, long, shape) call. Only checked once the design colors are,
-         * as the patch only adds it then, and a build without that one read keeps the footer as it was.
+         * The function carrying [note] (the footer under a post, or the row under your own posts)
+         * handing the color it paints itself with to [hook] right after reading it, the answer moved
+         * back over the color before the background modifier takes it. The place is found in the clean
+         * target the way the patch finds it: the one color read kept and handed to a static (modifier,
+         * long, shape) call or its defaults variant, with only constants that leave the color alone
+         * between them. Only checked once the design colors are, as the patch only adds it then, and a
+         * build without that one read keeps the function as it was.
          */
-        void postFooter(String hook) {
-            List<Method> footers = new ArrayList<>();
-            for (Method m : tumblrMethods()) if (clean.texts.get(m.toString()).stream().anyMatch(t -> t.startsWith(POST_FOOTER_NOTE))) footers.add(m);
-            if (footers.size() != 1 || clean.duplicates.contains(footers.get(0).getDefiningClass())) return;
-            List<Instruction> was = instructions(footers.get(0));
+        void panelBackground(String note, String hook, String what) {
+            List<Method> panels = new ArrayList<>();
+            for (Method m : tumblrMethods()) if (clean.texts.get(m.toString()).stream().anyMatch(t -> t.startsWith(note))) panels.add(m);
+            if (panels.size() != 1 || clean.duplicates.contains(panels.get(0).getDefiningClass())) return;
+            List<Instruction> was = instructions(panels.get(0));
             List<Integer> places = new ArrayList<>(), registers = new ArrayList<>();
             for (int at = 0; at + 2 < was.size(); at++) {
                 if (colorGetter(was.get(at)) == null || was.get(at + 1).getOpcode() != Opcode.MOVE_RESULT_WIDE) continue;
                 int register = firstRegister(was.get(at + 1));
-                if (!paintsBackground(was.get(at + 2), register)) continue;
+                int call = at + 2;
+                while (call < was.size() && (was.get(call).getOpcode() == Opcode.CONST_4 || was.get(call).getOpcode() == Opcode.CONST_16)) {
+                    int set = firstRegister(was.get(call));
+                    if (set == register || set == register + 1) break;
+                    call++;
+                }
+                if (call >= was.size() || !paintsBackground(was.get(call), register)) continue;
                 places.add(at + 2);
                 registers.add(register);
             }
             if (places.size() != 1) return;
-            Method m = actual(footers.get(0));
+            Method m = actual(panels.get(0));
             List<Integer> sites = calls(m, hook, 1);
             if (sites.size() != 1) return;
             int at = sites.get(0), register = registers.get(0);
             List<Instruction> body = instructions(m);
             if (!arguments(body.get(at)).equals(List.of(register, register + 1)) || !movesTo(get(body, at + 1), register, Opcode.MOVE_RESULT_WIDE)) {
-                fail(hook + " doesn't take the post footer's color and put its answer back where it was in " + m);
+                fail(hook + " doesn't take " + what + "'s color and put its answer back where it was in " + m);
                 return;
             }
             remove(m, at, at + 2);
@@ -6992,14 +7002,19 @@ public class DexDiff {
             vouch(m, at, List.of(register, register + 1));
         }
 
-        /** A static (modifier, long, shape) call answering the modifier's type, taking the long in [register] and the next. */
+        /**
+         * A static (modifier, long, shape) call answering the modifier's type, or its defaults variant
+         * (modifier, long, shape, int, Object), taking the long in [register] and the next.
+         */
         static boolean paintsBackground(Instruction i, int register) {
-            MethodReference call = i.getOpcode() == Opcode.INVOKE_STATIC ? called(i) : null;
+            MethodReference call = i.getOpcode() == Opcode.INVOKE_STATIC || i.getOpcode() == Opcode.INVOKE_STATIC_RANGE ? called(i) : null;
             if (call == null) return false;
             List<String> types = call.getParameterTypes().stream().map(Object::toString).toList();
+            if (types.size() < 3 || !types.get(1).equals("J") || !types.get(0).startsWith("L") || !types.get(2).startsWith("L")
+                    || !call.getReturnType().equals(types.get(0))) return false;
+            if (types.size() != 3 && !types.subList(3, types.size()).equals(List.of("I", "Ljava/lang/Object;"))) return false;
             List<Integer> handed = arguments(i);
-            return types.size() == 3 && types.get(1).equals("J") && types.get(0).startsWith("L") && types.get(2).startsWith("L")
-                    && call.getReturnType().equals(types.get(0)) && handed.size() == 4 && handed.get(1) == register && handed.get(2) == register + 1;
+            return handed.size() == types.size() + 1 && handed.get(1) == register && handed.get(2) == register + 1;
         }
 
         /**
