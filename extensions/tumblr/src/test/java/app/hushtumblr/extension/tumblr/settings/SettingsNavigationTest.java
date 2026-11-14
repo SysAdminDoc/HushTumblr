@@ -1985,6 +1985,125 @@ public class SettingsNavigationTest {
     }
 
     /**
+     * Seen on the lab emulator with TalkBack and a keyboard: Back put home where it was left, with
+     * the keys on the first row in view, while TalkBack read the row that opened the page. The next
+     * Down went to a row far above it. The keys go back to that row, as TalkBack does.
+     */
+    @Test public void withoutTouchBackGivesTheKeysToTheRowThatOpenedThePage() {
+        android.view.accessibility.AccessibilityManager a11y = controller.get().getSystemService(android.view.accessibility.AccessibilityManager.class);
+        org.robolectric.Shadows.shadowOf(a11y).setEnabled(true);
+        org.robolectric.Shadows.shadowOf(a11y).setTouchExplorationEnabled(true);
+        touchMode(false);
+        layout(dialog.getView());
+        int about = keysTwoRowsAboveAbout();
+        page.navigation.navigate("About");
+        layout(dialog.getView());
+        page.navigation.back();
+        layout(dialog.getView());
+        layout(dialog.getView());
+        layout(dialog.getView());
+        assertEquals("About", focusedTitle(a11y));
+        assertEquals(about, list().getSelectedItemPosition());
+    }
+
+    /** Without a screen reader too: Enter on a row and then Back leave the keys on that row, and the list where it was. */
+    @Test public void withoutAScreenReaderBackGivesTheKeysToTheRowThatOpenedThePage() {
+        touchMode(false);
+        layout(dialog.getView());
+        int about = keysTwoRowsAboveAbout();
+        int left = list().getFirstVisiblePosition();
+        page.navigation.navigate("About");
+        layout(dialog.getView());
+        page.navigation.back();
+        layout(dialog.getView());
+        layout(dialog.getView());
+        assertEquals(about, list().getSelectedItemPosition());
+        assertEquals(left, list().getFirstVisiblePosition());
+    }
+
+    /**
+     * Seen on the lab emulator: a larger font remade the screen on a page with the keys on the
+     * header's Back button. Back read the page's row on home, and Down went from the header. Moved
+     * into the list later, the keys made TalkBack read the row they were about to leave.
+     */
+    @Test public void backFromTheHeaderGivesTheKeysToTheRowThatOpenedThePage() {
+        android.view.accessibility.AccessibilityManager a11y = controller.get().getSystemService(android.view.accessibility.AccessibilityManager.class);
+        org.robolectric.Shadows.shadowOf(a11y).setEnabled(true);
+        org.robolectric.Shadows.shadowOf(a11y).setTouchExplorationEnabled(true);
+        touchMode(false);
+        layout(dialog.getView());
+        int about = keysTwoRowsAboveAbout();
+        page.navigation.navigate("About");
+        layout(dialog.getView());
+        View back = findBack(dialog.getView());
+        assertNotNull(back);
+        assertTrue(back.requestFocus());
+        int sent = org.robolectric.Shadows.shadowOf(a11y).getSentAccessibilityEvents().size();
+        page.navigation.back();
+        layout(dialog.getView());
+        layout(dialog.getView());
+        layout(dialog.getView());
+        assertTrue("the keys stayed in the header", list().hasFocus());
+        assertEquals(about, list().getSelectedItemPosition());
+        assertEquals("About", focusedTitle(a11y));
+        List<android.view.accessibility.AccessibilityEvent> events = org.robolectric.Shadows.shadowOf(a11y).getSentAccessibilityEvents();
+        for (android.view.accessibility.AccessibilityEvent event : events.subList(sent, events.size())) {
+            if (event.getEventType() != android.view.accessibility.AccessibilityEvent.TYPE_VIEW_FOCUSED) continue;
+            String said = event.getText().isEmpty() ? "" : String.valueOf(event.getText().get(0));
+            assertTrue("the list's focus read " + said, said.isEmpty() || said.startsWith("About"));
+        }
+    }
+
+    /**
+     * Seen on the lab emulator at a larger font: the row Back went to was cut off at the list's
+     * bottom edge, so the first Down only scrolled the rest of it in and read nothing.
+     */
+    @Test public void backGivesTheKeysToARowCutOffAtTheEdgeWithAllOfItInView() {
+        touchMode(false);
+        layout(dialog.getView());
+        int about = position("section_About");
+        list().setSelectionFromTop(about, 0);
+        layout(dialog.getView());
+        int height = list().getChildAt(about - list().getFirstVisiblePosition()).getHeight();
+        int area = list().getHeight() - list().getListPaddingTop() - list().getListPaddingBottom();
+        list().setSelectionFromTop(about - 2, area - 2 * height - height / 2);
+        layout(dialog.getView());
+        int bottom = list().getHeight() - list().getListPaddingBottom();
+        View cut = list().getChildAt(about - list().getFirstVisiblePosition());
+        assertTrue("About is cut off at the bottom", cut != null && cut.getTop() < bottom && cut.getBottom() > bottom);
+        page.navigation.navigate("About");
+        layout(dialog.getView());
+        page.navigation.back();
+        layout(dialog.getView());
+        layout(dialog.getView());
+        assertEquals(about, list().getSelectedItemPosition());
+        View shown = list().getChildAt(about - list().getFirstVisiblePosition());
+        assertTrue("About is still cut off", shown.getTop() >= list().getListPaddingTop() && shown.getBottom() <= bottom);
+    }
+
+    private static android.widget.ImageButton findBack(View view) {
+        if (view instanceof android.widget.ImageButton) return (android.widget.ImageButton) view;
+        if (view instanceof android.view.ViewGroup) {
+            android.view.ViewGroup group = (android.view.ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                android.widget.ImageButton found = findBack(group.getChildAt(i));
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    /** Puts home's keys two rows above About with About in view, and answers About's position. */
+    private int keysTwoRowsAboveAbout() {
+        int about = position("section_About");
+        list().setSelectionFromTop(about - 2, 0);
+        layout(dialog.getView());
+        assertEquals("the keys are two rows above About", about - 2, list().getSelectedItemPosition());
+        assertTrue("About shows", about <= list().getLastVisiblePosition());
+        return about;
+    }
+
+    /**
      * A page opened with home never scrolled to its row, as after a restart or from search, leaves
      * that row off screen. Back scrolls it into view, and focus lands on it then rather than
      * whenever it was scrolled to later.

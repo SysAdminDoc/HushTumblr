@@ -426,8 +426,14 @@ final class SettingsNavigation extends BaseAdapter {
         rebuild();
         host.showPage(title(), true, query, description());
         showPlace(homePosition, homeOffset, homeKeyPosition, homeKeyTop);
+        // Keys left on the header, as when the screen was made again on that page, went on from
+        // there. Asked while the new adapter has no rows drawn, so a screen reader hears nothing
+        // for it: later, it read the row the keys were about to leave.
+        if (section != null && !list.isInTouchMode() && !list.hasFocus()) list.requestFocus();
         refocus = section != null ? section.link : null;
         if (refocus != null && screenReaderOn()) bringIntoView(refocus);
+        // Without touch the list put the keys on the first row in view, not the row Enter opened.
+        else if (section != null && !list.isInTouchMode()) selectWhereItStands(section.link, visible.indexOf(section.link));
         return true;
     }
 
@@ -486,7 +492,11 @@ final class SettingsNavigation extends BaseAdapter {
                 // Focused already, which cleared refocus, or another page or a search came first.
                 int position = visible.indexOf(row);
                 if (refocus != row || position < 0) return;
-                if (position >= list.getFirstVisiblePosition() && position <= list.getLastVisiblePosition()) return;
+                if (position >= list.getFirstVisiblePosition() && position <= list.getLastVisiblePosition()) {
+                    // In view where home was left, while the keys went to the first row in view.
+                    if (!list.isInTouchMode()) selectShown(row, position);
+                    return;
+                }
                 list.post(() -> {
                     // The row above it shows too: its heading, or the page row before it.
                     if (refocus != row || visible.indexOf(row) != position) return;
@@ -509,15 +519,24 @@ final class SettingsNavigation extends BaseAdapter {
             @Override public void onLayoutChange(View view, int left, int top, int right, int bottom,
                     int oldLeft, int oldTop, int oldRight, int oldBottom) {
                 list.removeOnLayoutChangeListener(this);
-                int first = list.getFirstVisiblePosition();
-                View shown = position < first ? null : list.getChildAt(position - first);
-                if (shown == null || visible.indexOf(row) != position) return;
-                int at = shown.getTop() - list.getListPaddingTop();
-                list.post(() -> {
-                    if (!list.isInTouchMode() && visible.indexOf(row) == position && list.getSelectedItemPosition() != position) {
-                        list.setSelectionFromTop(position, at);
-                    }
-                });
+                selectShown(row, position);
+            }
+        });
+    }
+
+    /**
+     * Called from a layout: selects [row] where the list just drew it, when it drew it. Cut off at
+     * an edge it comes all the way in, or the next key only scrolled the rest of it in.
+     */
+    private void selectShown(Preference row, int position) {
+        int first = list.getFirstVisiblePosition();
+        View shown = position < first ? null : list.getChildAt(position - first);
+        if (shown == null || visible.indexOf(row) != position) return;
+        int area = list.getHeight() - list.getListPaddingTop() - list.getListPaddingBottom();
+        int at = Math.max(0, Math.min(shown.getTop() - list.getListPaddingTop(), area - shown.getHeight()));
+        list.post(() -> {
+            if (!list.isInTouchMode() && visible.indexOf(row) == position && list.getSelectedItemPosition() != position) {
+                list.setSelectionFromTop(position, at);
             }
         });
     }
