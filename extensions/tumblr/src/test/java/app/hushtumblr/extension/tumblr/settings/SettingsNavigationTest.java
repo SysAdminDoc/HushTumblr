@@ -1938,6 +1938,27 @@ public class SettingsNavigationTest {
     }
 
     /**
+     * Seen on the lab emulator: arrow keys did nothing on the settings page. Its root holds focus
+     * so a new screen doesn't give it to the search box and raise the keyboard, and it kept it when
+     * touch ended, where no arrow key moves from a view that covers every row.
+     */
+    @Test public void arrowKeysReachTheRowsOnceTouchEnds() {
+        View decor = dialog.getDialog().getWindow().getDecorView();
+        touchMode(true);
+        layout(dialog.getView());
+        assertFalse("the search box took focus", decor.findFocus() instanceof EditText);
+        touchMode(false);
+        layout(dialog.getView());
+        View focused = decor.findFocus();
+        assertNotNull(focused);
+        assertNotEquals("the page's root kept focus", dialog.getView(), focused);
+        assertNotNull("no arrow key moves from " + focused, focused.focusSearch(View.FOCUS_DOWN));
+        touchMode(true);
+        layout(dialog.getView());
+        assertEquals("the root holds focus again under touch", dialog.getView(), decor.findFocus());
+    }
+
+    /**
      * With TalkBack and a keyboard, Back scrolled the row above into view by selecting it, so the
      * next key press started on that row while TalkBack read the one below. The keys stay on the row.
      */
