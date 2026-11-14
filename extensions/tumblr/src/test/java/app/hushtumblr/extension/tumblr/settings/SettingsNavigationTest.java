@@ -28,6 +28,7 @@ import android.preference.PreferenceCategory;
 import android.preference.SwitchPreference;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -2094,6 +2095,40 @@ public class SettingsNavigationTest {
         }
         assertNotNull("the list sent no focus event", said);
         assertTrue("the list's focus read " + said, said.contains(title));
+    }
+
+    /**
+     * Seen on the lab emulator with TalkBack and a keyboard: Up from the first row put the keys on
+     * the status card's Pause, and TalkBack said "Pause. Button", but the list's next layout took
+     * the keys back to the row, so Enter opened Quick setups.
+     */
+    @Test public void upFromTheFirstRowLeavesTheListRatherThanStoppingOnTheCardsPause() {
+        touchMode(false);
+        layout(dialog.getView());
+        assertTrue(list().requestFocus());
+        layout(dialog.getView());
+        int firstKey = 1;
+        while (!list().getAdapter().isEnabled(firstKey)) firstKey++;
+        assertEquals(firstKey, list().getSelectedItemPosition());
+        assertFalse("the list moved up from its first key row",
+                list().dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_UP)));
+        // What the window does with an arrow key nothing used: the next view that way takes focus.
+        ViewGroup root = (ViewGroup) dialog.getDialog().getWindow().getDecorView();
+        View next = list().focusSearch(View.FOCUS_UP);
+        assertNotNull(next);
+        android.graphics.Rect from = new android.graphics.Rect();
+        list().getFocusedRect(from);
+        root.offsetDescendantRectToMyCoords(list(), from);
+        root.offsetRectIntoDescendantCoords(next, from);
+        assertTrue(next.requestFocus(View.FOCUS_UP, from));
+        layout(dialog.getView());
+        layout(dialog.getView());
+        assertFalse("the list took the keys back from " + next, list().hasFocus());
+        // A screen reader still reaches and presses it.
+        android.widget.Button pause = statusAction();
+        assertTrue(pause.isClickable());
+        assertTrue(pause.createAccessibilityNodeInfo().getActionList()
+                .contains(android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction.ACTION_CLICK));
     }
 
     /**

@@ -994,6 +994,11 @@ final class SettingsNavigation extends BaseAdapter {
         action.setMinHeight(dp(48));
         action.setMinimumWidth(dp(48));
         action.setMinimumHeight(dp(48));
+        // Not a stop for arrow keys or Tab: the list's next layout took the keys back from a
+        // button inside a row to the row selected under it, so Enter on "Pause" opened that row.
+        // A screen reader still reaches and presses it, a paused card resumes on Enter itself,
+        // and the Pause HushTumblr switch takes keys.
+        action.setFocusable(false);
         Preference pause = page.findPreference(BaseSettings.PAUSED.key);
         Preference status = pageStatusAction ? pageStatus : screen.getPreference(0);
         action.setEnabled(status.isEnabled() && pause != null && pause.isEnabled()
