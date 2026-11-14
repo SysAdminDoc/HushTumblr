@@ -2174,22 +2174,58 @@ public class SettingsNavigationTest {
         pauseFromTheCardWithTheKeysOnARow(true, false, true);
     }
 
+    /**
+     * Seen on the lab emulator: Undo after that pause took the restart row away above the keys'
+     * row, the list said that row was selected again at its new place, and TalkBack left Pause for
+     * Quick setups.
+     */
+    @Test public void undoingAPauseFromTheCardWithAScreenReaderAndTheKeysOnARowKeepsTheReaderOnTheCard() {
+        pauseFromTheCardWithTheKeysOnARow(true, false, false, true);
+    }
+
+    @Test public void undoingAPauseFromTheCardWithAScreenReaderAndTheKeysOnARowKeepsTheReaderOnTheCardWhenTheSaveLandsLater() {
+        pauseFromTheCardWithTheKeysOnARow(true, true, false, true);
+    }
+
+    @Test public void undoingAPauseFromTheCardWithTheKeysOnARowKeepsTheCardInView() {
+        pauseFromTheCardWithTheKeysOnARow(false, true, false, true);
+    }
+
+    /**
+     * On a phone the list's word that its keys' row is selected at its new place is posted, and the
+     * save landing rebuilt the page before it ran. The list then held that word for its next layout,
+     * and by then the row's new place was taken for the place the keys stayed at, so it was said.
+     */
+    @Test public void undoingAPauseFromTheCardWithAScreenReaderAndTheKeysOnARowKeepsTheReaderOnTheCardThroughARebuildBeforeTheListSaysSo() {
+        pauseFromTheCardWithTheKeysOnARow(true, false, false, true, true);
+    }
+
     private void pauseFromTheCardWithTheKeysOnARow(boolean reader, boolean saveLater) {
-        pauseFromTheCardWithTheKeysOnARow(reader, saveLater, false);
+        pauseFromTheCardWithTheKeysOnARow(reader, saveLater, false, false);
     }
 
     private void pauseFromTheCardWithTheKeysOnARow(boolean reader, boolean saveLater, boolean rebuildBeforeTheMove) {
+        pauseFromTheCardWithTheKeysOnARow(reader, saveLater, rebuildBeforeTheMove, false);
+    }
+
+    private void pauseFromTheCardWithTheKeysOnARow(boolean reader, boolean saveLater, boolean rebuildBeforeTheMove, boolean undo) {
+        pauseFromTheCardWithTheKeysOnARow(reader, saveLater, rebuildBeforeTheMove, undo, false);
+    }
+
+    private void pauseFromTheCardWithTheKeysOnARow(boolean reader, boolean saveLater, boolean rebuildBeforeTheMove, boolean undo,
+            boolean rebuildBeforeTheUndoIsSaid) {
         List<Runnable> writes = new ArrayList<>();
         if (saveLater) HushTumblrPreferenceFragment.editWorkerForTests = writes::add;
         try {
-            pauseFromTheCardWithTheKeysOnARow(reader, writes, rebuildBeforeTheMove);
+            pauseFromTheCardWithTheKeysOnARow(reader, writes, rebuildBeforeTheMove, undo, rebuildBeforeTheUndoIsSaid);
         } finally {
             for (Runnable write : writes) write.run();
             HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
         }
     }
 
-    private void pauseFromTheCardWithTheKeysOnARow(boolean reader, List<Runnable> writes, boolean rebuildBeforeTheMove) {
+    private void pauseFromTheCardWithTheKeysOnARow(boolean reader, List<Runnable> writes, boolean rebuildBeforeTheMove, boolean undo,
+            boolean rebuildBeforeTheUndoIsSaid) {
         android.view.accessibility.AccessibilityManager a11y = controller.get().getSystemService(android.view.accessibility.AccessibilityManager.class);
         if (reader) {
             org.robolectric.Shadows.shadowOf(a11y).setEnabled(true);
@@ -2264,16 +2300,72 @@ public class SettingsNavigationTest {
         assertEquals(cardTop, list().getChildAt(0).getTop());
         assertEquals("Undo", statusAction().getText().toString());
         assertSame("the keys left " + keyed, keyed, list().getSelectedItem());
-        if (reader) {
-            View on = readerFocus(list());
-            assertNotNull("the screen reader lost its place", on);
-            assertSame("the screen reader went to " + on, statusAction(), on);
-            List<android.view.accessibility.AccessibilityEvent> events = org.robolectric.Shadows.shadowOf(a11y).getSentAccessibilityEvents();
-            for (android.view.accessibility.AccessibilityEvent event : events.subList(sent, events.size())) {
-                assertFalse("the list said " + keyed + " was selected again, which takes TalkBack to it ("
-                                + event.getClassName() + ": " + event.getText() + ")",
-                        event.getEventType() == android.view.accessibility.AccessibilityEvent.TYPE_VIEW_SELECTED);
+        if (reader) assertReaderStayedOnTheCard(a11y, sent, keyed);
+        if (!undo) return;
+        android.widget.Button undoButton = statusAction();
+        ShadowLooper.idleMainLooper();
+        sent = org.robolectric.Shadows.shadowOf(a11y).getSentAccessibilityEvents().size();
+        int keysAt = list().getSelectedItemPosition();
+        boolean[] rebuiltBeforeSaid = {false};
+        if (rebuildBeforeTheUndoIsSaid) {
+            org.robolectric.shadows.ShadowChoreographer.setPaused(true);
+            // The layout that gives the keys' row its new place posts the list's word on it, and
+            // the page rebuilds before that runs.
+            list().addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+                @Override public void onLayoutChange(View view, int left, int top, int right, int bottom,
+                        int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                    if (list().getSelectedItemPosition() == keysAt) return;
+                    list().removeOnLayoutChangeListener(this);
+                    new android.os.Handler(android.os.Looper.getMainLooper()).postAtFrontOfQueue(() -> {
+                        rebuiltBeforeSaid[0] = true;
+                        page.navigation.restartChanged();
+                    });
+                }
+            });
+        }
+        try {
+            if (reader) {
+                // Still on it from the pause.
+                assertSame(undoButton, readerFocus(list()));
+                assertTrue(undoButton.performAccessibilityAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK, null));
+            } else {
+                assertTrue(undoButton.performClick());
             }
+            ShadowLooper.idleMainLooper();
+            layout(dialog.getView());
+            for (int frame = 0; rebuildBeforeTheUndoIsSaid && frame < 6; frame++) {
+                org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(16));
+                layout(dialog.getView());
+            }
+        } finally {
+            org.robolectric.shadows.ShadowChoreographer.setPaused(false);
+        }
+        assertEquals("the page rebuilt before the list said its keys' row moved", rebuildBeforeTheUndoIsSaid, rebuiltBeforeSaid[0]);
+        while (!writes.isEmpty()) {
+            writes.remove(0).run();
+            ShadowLooper.idleMainLooper();
+            layout(dialog.getView());
+        }
+        ShadowLooper.idleMainLooper();
+        layout(dialog.getView());
+        assertFalse(contains(SettingsNavigation.RESTART));
+        assertEquals("the status card went off screen", 0, list().getFirstVisiblePosition());
+        assertEquals(cardTop, list().getChildAt(0).getTop());
+        assertEquals("Pause", statusAction().getText().toString());
+        assertSame("the keys left " + keyed, keyed, list().getSelectedItem());
+        if (reader) assertReaderStayedOnTheCard(a11y, sent, keyed);
+    }
+
+    /** The reader is on the card's button it pressed, and the list never said its keys' row was selected again. */
+    private void assertReaderStayedOnTheCard(android.view.accessibility.AccessibilityManager a11y, int sent, Object keyed) {
+        View on = readerFocus(list());
+        assertNotNull("the screen reader lost its place", on);
+        assertSame("the screen reader went to " + on, statusAction(), on);
+        List<android.view.accessibility.AccessibilityEvent> events = org.robolectric.Shadows.shadowOf(a11y).getSentAccessibilityEvents();
+        for (android.view.accessibility.AccessibilityEvent event : events.subList(sent, events.size())) {
+            assertFalse("the list said " + keyed + " was selected again, which takes TalkBack to it ("
+                            + event.getClassName() + ": " + event.getText() + ")",
+                    event.getEventType() == android.view.accessibility.AccessibilityEvent.TYPE_VIEW_SELECTED);
         }
     }
 

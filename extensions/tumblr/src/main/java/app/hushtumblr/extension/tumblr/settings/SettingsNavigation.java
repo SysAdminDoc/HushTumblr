@@ -865,8 +865,14 @@ final class SettingsNavigation extends BaseAdapter {
             keptRestartWas = restartWas;
             keptKeys = keysWas;
             keptLayouts = 0;
-            keysStayed = keysWas;
-            keysStayedAt = list.getSelectedItemPosition();
+            // The list posts its word that the keys' row is selected at a new place, and holds it
+            // for its next layout when the page rebuilds first. Undo's save rebuilt it after the
+            // keep-top was done, so taking the place again here took the new one and the word got
+            // through. Kept while the keys are on the same row.
+            if (keysStayed != keysWas) {
+                keysStayed = keysWas;
+                keysStayedAt = list.getSelectedItemPosition();
+            }
         }
         waitToKeepTop();
     }

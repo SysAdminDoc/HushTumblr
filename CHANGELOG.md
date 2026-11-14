@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+* Settings with TalkBack and a keyboard: pressing Undo on the "HushTumblr is on" card keeps TalkBack on the card's button. When the Restart row went away above the row your keys were on, TalkBack used to jump to that row, usually Quick setups.
+
 ## 0.0.11 (2026-11-14)
 
 * Line between posts only draws between two posts now. It used to show up under headings like "Looking for more?", above carousels and around buttons too, where it didn't divide anything. Sponsored and Blaze posts still count as posts.
