@@ -448,6 +448,14 @@ final class SettingsNavigation extends BaseAdapter {
         }
     }
 
+    /**
+     * A dialog opened over the page, as the import preview does once the picked file is read.
+     * Focus still waiting for a row's next draw would go to that row behind the dialog.
+     */
+    void dialogOpened() {
+        refocus = null;
+    }
+
     /** The row in view that holds a screen reader's focus, or null for none. */
     private View rowReaderIsOn() {
         for (int i = 0; i < list.getChildCount(); i++) {

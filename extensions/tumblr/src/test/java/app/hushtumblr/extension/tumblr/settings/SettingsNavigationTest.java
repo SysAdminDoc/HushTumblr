@@ -1902,6 +1902,42 @@ public class SettingsNavigationTest {
     }
 
     /**
+     * A small settings file can be read before the list lays out again back from the picker. Its
+     * preview then opens first, and the focus meant for the Import row went to it behind the dialog.
+     */
+    @Test public void aPreviewOpenedBeforeTheListLaysOutKeepsFocusOffTheRowsBehindIt() throws Exception {
+        android.view.accessibility.AccessibilityManager a11y = controller.get().getSystemService(android.view.accessibility.AccessibilityManager.class);
+        org.robolectric.Shadows.shadowOf(a11y).setEnabled(true);
+        org.robolectric.Shadows.shadowOf(a11y).setTouchExplorationEnabled(true);
+        touchMode(true);
+        layout(dialog.getView());
+        page.navigation.navigate("Pause, backup and diagnostics");
+        layout(dialog.getView());
+        int before = focusedTitles(a11y).size();
+        page.onActivityResult(SettingsBackupPreference.IMPORT, android.app.Activity.RESULT_CANCELED, null);
+        page.pendingImport = SettingsBackup.parse(SettingsBackup.create()).toBundle();
+        SettingsBackupPreference.showPreview(page);
+        assertNotNull(page.importPreview);
+        layout(dialog.getView());
+        layout(dialog.getView());
+        assertEquals("a row behind the preview took focus", before, focusedTitles(a11y).size());
+        SettingsBackupPreference.closePreview(page);
+    }
+
+    /** Without a screen reader nothing moves back from a picker: the list stays where it was left. */
+    @Test public void withoutAScreenReaderBackFromAFilePickerLeavesTheListWhereItWas() {
+        layout(dialog.getView());
+        page.navigation.navigate("Interface");
+        layout(dialog.getView());
+        int left = list().getFirstVisiblePosition();
+        assertTrue("the font row starts off screen", position(HushTumblrPreferenceFragment.FONT_FILE_ROW) > list().getLastVisiblePosition());
+        page.onActivityResult(HushTumblrPreferenceFragment.FONT_FILE, android.app.Activity.RESULT_CANCELED, null);
+        layout(dialog.getView());
+        layout(dialog.getView());
+        assertEquals(left, list().getFirstVisiblePosition());
+    }
+
+    /**
      * A page opened with home never scrolled to its row, as after a restart or from search, leaves
      * that row off screen. Back scrolls it into view, and focus lands on it then rather than
      * whenever it was scrolled to later.

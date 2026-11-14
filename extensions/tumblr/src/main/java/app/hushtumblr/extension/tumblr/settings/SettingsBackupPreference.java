@@ -606,6 +606,8 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
             }
         }
         page.importPreview = builder.show();
+        // A small file can be read before the list's first layout back from the picker.
+        if (page.navigation != null) page.navigation.dialogOpened();
         ScreenColors.dialog(page.importPreview);
     }
 
