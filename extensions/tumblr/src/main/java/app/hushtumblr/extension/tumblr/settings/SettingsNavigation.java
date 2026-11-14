@@ -489,7 +489,34 @@ final class SettingsNavigation extends BaseAdapter {
                 if (position >= list.getFirstVisiblePosition() && position <= list.getLastVisiblePosition()) return;
                 list.post(() -> {
                     // The row above it shows too: its heading, or the page row before it.
-                    if (refocus == row && visible.indexOf(row) == position) list.setSelectionFromTop(Math.max(0, position - 1), 0);
+                    if (refocus != row || visible.indexOf(row) != position) return;
+                    list.setSelectionFromTop(Math.max(0, position - 1), 0);
+                    // Without touch that selected the row above, so the next key started there
+                    // while the screen reader read this one.
+                    if (!list.isInTouchMode()) selectWhereItStands(row, position);
+                });
+            }
+        });
+    }
+
+    /**
+     * Gives the keys to [row] where the list draws it, so nothing moves. Once the list has laid
+     * out, and posted: the screen reader's focus is posted from that layout and goes first, and
+     * the list keeps the rows it has, the focused one included, when only the selection moves.
+     */
+    private void selectWhereItStands(Preference row, int position) {
+        list.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+            @Override public void onLayoutChange(View view, int left, int top, int right, int bottom,
+                    int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                list.removeOnLayoutChangeListener(this);
+                int first = list.getFirstVisiblePosition();
+                View shown = position < first ? null : list.getChildAt(position - first);
+                if (shown == null || visible.indexOf(row) != position) return;
+                int at = shown.getTop() - list.getListPaddingTop();
+                list.post(() -> {
+                    if (!list.isInTouchMode() && visible.indexOf(row) == position && list.getSelectedItemPosition() != position) {
+                        list.setSelectionFromTop(position, at);
+                    }
                 });
             }
         });

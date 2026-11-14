@@ -1938,6 +1938,32 @@ public class SettingsNavigationTest {
     }
 
     /**
+     * With TalkBack and a keyboard, Back scrolled the row above into view by selecting it, so the
+     * next key press started on that row while TalkBack read the one below. The keys stay on the row.
+     */
+    @Test public void withoutTouchBackLeavesTheKeysOnTheRowTheReaderIsOn() {
+        android.view.accessibility.AccessibilityManager a11y = controller.get().getSystemService(android.view.accessibility.AccessibilityManager.class);
+        org.robolectric.Shadows.shadowOf(a11y).setEnabled(true);
+        org.robolectric.Shadows.shadowOf(a11y).setTouchExplorationEnabled(true);
+        touchMode(false);
+        layout(dialog.getView());
+        int about = position("section_About");
+        assertTrue("About starts off screen", about > list().getLastVisiblePosition());
+        assertTrue("the row above About takes keys", list().getAdapter().isEnabled(about - 1));
+        page.navigation.navigate("About");
+        layout(dialog.getView());
+        page.navigation.back();
+        // One pass scrolls, the next draws and focuses the row, the last moves the keys onto it.
+        layout(dialog.getView());
+        layout(dialog.getView());
+        layout(dialog.getView());
+        assertEquals("About", focusedTitle(a11y));
+        assertTrue("About is on screen", about >= list().getFirstVisiblePosition() && about <= list().getLastVisiblePosition());
+        assertTrue("the row above shows too", about - 1 >= list().getFirstVisiblePosition());
+        assertEquals(about, list().getSelectedItemPosition());
+    }
+
+    /**
      * A page opened with home never scrolled to its row, as after a restart or from search, leaves
      * that row off screen. Back scrolls it into view, and focus lands on it then rather than
      * whenever it was scrolled to later.
