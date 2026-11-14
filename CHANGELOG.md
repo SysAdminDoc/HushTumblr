@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.0.11 (2026-11-14)
 
 * Line between posts only draws between two posts now. It used to show up under headings like "Looking for more?", above carousels and around buttons too, where it didn't divide anything. Sponsored and Blaze posts still count as posts.
 * Hide ads now takes out the one-line app promos that tag pages and search results slip between posts, like "Made with WordPress" with its Install button.
