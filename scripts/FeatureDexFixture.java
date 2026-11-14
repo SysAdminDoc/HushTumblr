@@ -1338,26 +1338,57 @@ public final class FeatureDexFixture {
     private static void postLine(Map<String, List<Method>> classes, String variant) {
         String helper = BASE + "ui/PostLines;", owner = "Lfixture/PostSpacing;", canvas = "Landroid/graphics/Canvas;",
                 paint = "Landroid/graphics/Paint;", list = "Landroidx/recyclerview/widget/RecyclerView;";
+        String view = "Landroid/view/View;", card = "Lfixture/Card;", timelineable = "Lcom/tumblr/rumblr/model/Timelineable;";
         boolean hooked = !variant.equals("clean") && !variant.equals("missing");
         List<Instruction> draw = new ArrayList<>(List.of(invoke(Opcode.INVOKE_DIRECT, ref(owner, "debug", "Z"), 9),
                 new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0)));
         if (hooked) draw.addAll(List.of(new ImmutableInstruction3rc(Opcode.INVOKE_STATIC_RANGE, variant.equals("wrong-register") ? 1 : 0, 1,
                         ref(helper, "paintsGaps", "I", "I")),
                 new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0)));
-        draw.add(new ImmutableInstruction21t(Opcode.IF_EQZ, 0, 5));
+        draw.add(new ImmutableInstruction21t(Opcode.IF_EQZ, 0, hooked ? 17 : 14));
+        draw.addAll(List.of(new ImmutableInstruction11n(Opcode.CONST_4, 2, 0),
+                invoke(Opcode.INVOKE_VIRTUAL, ref("Landroid/view/ViewGroup;", "getChildAt", view, "I"), 11, 2),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1)));
+        if (hooked) draw.add(new ImmutableInstruction3rc(Opcode.INVOKE_STATIC_RANGE, variant.equals("wrong-drawn-row") ? 2 : 1, 1,
+                ref(helper, "drawingRow", VOID, view)));
+        draw.addAll(List.of(invoke(Opcode.INVOKE_VIRTUAL, ref(view, "getTop", "I"), 1), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 4)));
         draw.add(hooked && !variant.equals("wrong-paint")
                 ? new ImmutableInstruction3rc(Opcode.INVOKE_STATIC_RANGE, 3, 6, ref(helper, "paintGap", VOID, canvas, "F", "F", "F", "F", paint))
                 : new ImmutableInstruction3rc(Opcode.INVOKE_VIRTUAL_RANGE, 3, 6, ref(canvas, "drawRect", VOID, "F", "F", "F", "F", paint)));
         draw.add(end());
+        // getItemOffsets: the item above the row into v8, the row's own into v10, both to the gap size picker.
+        ImmutableMethodReference item = ref("Lfixture/Adapter;", "G0", card, "I"), payload = ref(card, "l", timelineable);
+        List<Instruction> offsets = new ArrayList<>();
+        if (hooked) offsets.add(new ImmutableInstruction3rc(Opcode.INVOKE_STATIC_RANGE, variant.equals("wrong-measured-row") ? 7 : 8, 1,
+                ref(helper, "offsetsOf", VOID, view)));
+        offsets.addAll(List.of(new ImmutableInstruction11n(Opcode.CONST_4, 0, 0), invoke(Opcode.INVOKE_VIRTUAL, item, 9, 0),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 8), new ImmutableInstruction11n(Opcode.CONST_4, 0, 1),
+                invoke(Opcode.INVOKE_VIRTUAL, item, 9, 0), new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 10)));
+        if (hooked) offsets.addAll(List.of(new ImmutableInstruction11n(Opcode.CONST_4, 0, 0), new ImmutableInstruction21t(Opcode.IF_EQZ, 8, 6),
+                invoke(Opcode.INVOKE_VIRTUAL, payload, 8), new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0),
+                new ImmutableInstruction11n(Opcode.CONST_4, 2, 0), new ImmutableInstruction21t(Opcode.IF_EQZ, 10, 6),
+                invoke(Opcode.INVOKE_VIRTUAL, payload, 10), new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 2),
+                variant.equals("swapped-neighbors") ? invoke(Opcode.INVOKE_STATIC, ref(helper, "between", VOID, OBJECT, OBJECT), 2, 0)
+                        : invoke(Opcode.INVOKE_STATIC, ref(helper, "between", VOID, OBJECT, OBJECT), 0, 2)));
+        offsets.addAll(List.of(new ImmutableInstruction11n(Opcode.CONST_4, 0, 0),
+                invoke(Opcode.INVOKE_VIRTUAL, ref("Lfixture/Gap;", "b", "I", card, card), 0, 8, 10),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT, 1), end()));
         classes.put(owner, List.of(
                 method(owner, "debug", "Z", false, 2, List.of(literal("debug_timeline_object_spacing", 0), new ImmutableInstruction11n(Opcode.CONST_4, 0, 0),
                         new ImmutableInstruction11x(Opcode.RETURN, 0))),
-                method(owner, "draw", VOID, false, 13, draw, canvas, list, "Landroidx/recyclerview/widget/RecyclerView$a0;")));
+                method(owner, "draw", VOID, false, 13, draw, canvas, list, "Landroidx/recyclerview/widget/RecyclerView$a0;"),
+                method(owner, "offsets", VOID, false, 11, offsets, "Landroid/graphics/Rect;", view, list,
+                        "Landroidx/recyclerview/widget/RecyclerView$a0;")));
+        classes.put(card, List.of(method(card, "l", timelineable, false, 2, List.of(new ImmutableInstruction11n(Opcode.CONST_4, 0, 0),
+                new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0)))));
         if (!variant.equals("clean")) classes.put(helper, List.of(
                 method(helper, "paintsGaps", "I", true, 2, List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0),
                         new ImmutableInstruction11x(Opcode.RETURN, 0)), "I"),
                 method(helper, "paintGap", VOID, true, 7, List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), end()),
-                        canvas, "F", "F", "F", "F", paint)));
+                        canvas, "F", "F", "F", "F", paint),
+                method(helper, "offsetsOf", VOID, true, 2, List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), end()), view),
+                method(helper, "between", VOID, true, 3, List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), end()), OBJECT, OBJECT),
+                method(helper, "drawingRow", VOID, true, 2, List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), end()), view)));
     }
 
     private static void fontChoice(Map<String, List<Method>> classes, String variant) {
@@ -1573,7 +1604,7 @@ public final class FeatureDexFixture {
             optionalNudges(classes, "gift", variant);
             write(root, "feature-gift-popup-" + variant, classes, true, "hideGiftMessagePopups");
         }
-        for (String variant : List.of("good", "missing", "wrong-register", "wrong-paint")) {
+        for (String variant : List.of("good", "missing", "wrong-register", "wrong-paint", "wrong-drawn-row", "wrong-measured-row", "swapped-neighbors")) {
             reset(); enable("lineBetweenPosts");
             Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
             postLine(classes, variant);

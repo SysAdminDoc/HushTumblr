@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* Line between posts only draws between two posts now. It used to show up under headings like "Looking for more?", above carousels and around buttons too, where it didn't divide anything. Sponsored and Blaze posts still count as posts.
 * **Tooling:** The source audit reads Jman's Patch Bundle Registry through its new API and asks again with fewer rows when a page fails. It also reads every page of a GitHub code search now. Before, it stopped at the first page that came back short and missed files.
 * **Tooling:** A release checks the source census when it's cut and again before anything goes up on GitHub. A census refreshed after the cut no longer keeps the publish step from running.
 

@@ -302,7 +302,7 @@ public class DexDiff {
             Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1), Map.entry("activityNotifications", 7),
             Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 7), Map.entry("timelinePaging", 5),
             Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 7), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
-            Map.entry("crashReports", 3), Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 3), Map.entry("videoLinkPress", 6), Map.entry("imageSizes", 4), Map.entry("longPostRows", 6), Map.entry("exploreHeaderAd", 4), Map.entry("shareLinkTag", 5), Map.entry("longTrailRows", 4), Map.entry("longPostExpand", 17), Map.entry("fontChoice", 6),
+            Map.entry("crashReports", 3), Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 6), Map.entry("videoLinkPress", 6), Map.entry("imageSizes", 4), Map.entry("longPostRows", 6), Map.entry("exploreHeaderAd", 4), Map.entry("shareLinkTag", 5), Map.entry("longTrailRows", 4), Map.entry("longPostExpand", 17), Map.entry("fontChoice", 6),
             Map.entry("followButton", 5), Map.entry("footerButton", 3), Map.entry("postTags", 6),
             Map.entry("noteCounts", 9), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
@@ -5430,30 +5430,120 @@ public class DexDiff {
             Method m = actual(old);
             List<Integer> asks = calls(m, c.strings.get(0), 1);
             List<Integer> paints = calls(m, c.strings.get(1), 1);
+            List<Integer> drawn = calls(m, c.strings.get(5), 1);
             String rect = "Landroid/graphics/Canvas;->drawRect(FFFFLandroid/graphics/Paint;)V";
             List<Integer> cleanChecks = callSites(instructions(old), check.toString());
             List<Integer> cleanPaints = callSites(instructions(old), rect);
-            boolean shaped = m != null && asks.size() == 1 && paints.size() == 1 && cleanChecks.size() == 1 && cleanPaints.size() == 1;
+            List<Integer> cleanChildren = callSites(instructions(old), "Landroid/view/ViewGroup;->getChildAt(I)Landroid/view/View;");
+            boolean shaped = m != null && asks.size() == 1 && paints.size() == 1 && drawn.size() == 1 && cleanChecks.size() == 1
+                    && cleanPaints.size() == 1 && cleanChildren.size() == 1;
             if (shaped) {
                 List<Instruction> body = instructions(m);
-                int at = asks.get(0), paint = paints.get(0), read = cleanChecks.get(0);
-                int kept = firstRegister(get(instructions(old), read + 1));
+                int at = asks.get(0), paint = paints.get(0), read = cleanChecks.get(0), rowAt = drawn.get(0), children = cleanChildren.get(0);
+                int kept = firstRegister(get(instructions(old), read + 1)), child = firstRegister(get(instructions(old), children + 1));
                 Instruction was = instructions(old).get(cleanPaints.get(0));
+                // The row hook goes right after the loop takes the row, behind the debug answer's two steps.
                 shaped = movesTo(get(instructions(old), read + 1), kept, Opcode.MOVE_RESULT) && at == read + 2
                         && callIs(get(body, read), get(instructions(old), read).getOpcode(), check.toString(), arguments(get(instructions(old), read)).get(0))
                         && movesTo(get(body, read + 1), kept, Opcode.MOVE_RESULT)
                         && arguments(body.get(at)).equals(List.of(kept)) && movesTo(get(body, at + 1), kept, Opcode.MOVE_RESULT)
+                        && movesTo(get(instructions(old), children + 1), child, Opcode.MOVE_RESULT_OBJECT) && read + 1 < children
+                        && children + 2 < cleanPaints.get(0) && rowAt == children + 4
+                        && movesTo(get(body, rowAt - 1), child, Opcode.MOVE_RESULT_OBJECT) && arguments(body.get(rowAt)).equals(List.of(child))
                         && callSites(body, rect).isEmpty()
-                        && arguments(body.get(paint)).equals(arguments(was)) && paint == cleanPaints.get(0) + 2;
+                        && arguments(body.get(paint)).equals(arguments(was)) && paint == cleanPaints.get(0) + 3;
                 if (shaped) {
                     remove(m, at, at + 2);
+                    remove(m, rowAt, rowAt + 1);
+                    fallthroughOnly(old, children + 2, c.strings.get(5));
                     vouch(m, at, List.of(kept));
+                    vouch(m, rowAt, List.of(child));
                     vouch(m, paint, arguments(was));
                     edits.computeIfAbsent(m.toString(), k -> new FeatureEdits()).replacements.put(paint, was);
                 }
             }
-            if (!shaped) fail("the post line hooks don't take the debug answer and the painted gap of " + old);
-            capability(c.callee, shaped);
+            if (!shaped) fail("the post line hooks don't take the debug answer, each drawn row and the painted gap of " + old);
+            boolean neighbors = postNeighbors(c, owner);
+            capability(c.callee, shaped && neighbors);
+        }
+
+        /**
+         * #15: the spacing's getItemOffsets hands its row over first, then the payloads of the
+         * timeline items its gap size picker takes, the one above the row and the row's own, read
+         * into two free locals right after the second item is.
+         */
+        boolean postNeighbors(Contract c, ClassDef owner) {
+            List<String> shape = List.of("Landroid/graphics/Rect;", "Landroid/view/View;", "Landroidx/recyclerview/widget/RecyclerView;",
+                    "Landroidx/recyclerview/widget/RecyclerView$a0;");
+            List<Method> found = new ArrayList<>();
+            for (Method k : owner.getMethods()) if (k.getImplementation() != null && !isStatic(k) && k.getReturnType().equals("V")
+                    && k.getParameterTypes().stream().map(Object::toString).toList().equals(shape)) found.add(k);
+            Method old = unique(found, "the timeline spacing's offsets");
+            if (old == null) return false;
+            Method m = actual(old);
+            List<Integer> rows = calls(m, c.strings.get(3), 1);
+            List<Integer> handed = calls(m, c.strings.get(4), 1);
+            List<Instruction> was = instructions(old);
+            List<Integer> pickers = new ArrayList<>();
+            for (int k = 0; k < was.size(); k++) {
+                MethodReference r = called(was.get(k));
+                if (r == null || !r.getReturnType().equals("I") || r.getParameterTypes().size() != 2) continue;
+                String card = r.getParameterTypes().get(0).toString();
+                if (card.equals(r.getParameterTypes().get(1).toString()) && card.startsWith("L") && !card.startsWith("Landroid") && !card.startsWith("Ljava")) pickers.add(k);
+            }
+            int picker = pickers.size() == 1 ? pickers.get(0) : -1;
+            String card = picker < 0 ? null : called(was.get(picker)).getParameterTypes().get(0).toString();
+            List<Integer> reads = new ArrayList<>();
+            for (int k = 0; k < picker; k++) {
+                MethodReference r = called(was.get(k));
+                if (was.get(k).getOpcode() == Opcode.INVOKE_VIRTUAL && r != null && r.getReturnType().equals(card)
+                        && r.getParameterTypes().size() == 1 && r.getParameterTypes().get(0).toString().equals("I")
+                        && get(was, k + 1) != null && was.get(k + 1).getOpcode() == Opcode.MOVE_RESULT_OBJECT) reads.add(k);
+            }
+            boolean shaped = m != null && rows.size() == 1 && handed.size() == 1 && reads.size() == 2;
+            if (shaped) {
+                List<Instruction> body = instructions(m);
+                int cleanAt = reads.get(1) + 2, at = cleanAt + 1, row = parameter(old, 1);
+                int above = firstRegister(was.get(reads.get(0) + 1)), here = firstRegister(was.get(reads.get(1) + 1));
+                int aboveKind = firstRegister(get(body, at)), hereKind = firstRegister(get(body, at + 4));
+                MethodReference payload = called(get(body, at + 2));
+                ClassDef item = clean.classes.get(card);
+                boolean read = payload != null && payload.getDefiningClass().equals(card) && payload.getParameterTypes().isEmpty()
+                        && payload.getReturnType().equals("Lcom/tumblr/rumblr/model/Timelineable;") && item != null
+                        && !AccessFlags.INTERFACE.isSet(item.getAccessFlags());
+                if (read) {
+                    int defined = 0;
+                    for (Method k : item.getMethods()) if (!isStatic(k) && k.getName().equals(payload.getName()) && descriptor(k).equals(descriptor(payload))) defined++;
+                    read = defined == 1;
+                }
+                String ref = read ? String.valueOf(payload) : "";
+                shaped = read && above != here && arguments(was.get(picker)).subList(1, 3).equals(List.of(above, here))
+                        && !writtenBetween(was, cleanAt, picker, above) && !writtenBetween(was, cleanAt, picker, here)
+                        && rows.get(0) == 0 && arguments(body.get(0)).equals(List.of(row))
+                        && literalIs(get(body, at), Opcode.CONST_4, aboveKind, 0)
+                        && movesTo(get(body, at + 1), above, Opcode.IF_EQZ) && target(m, at + 1) == at + 4
+                        && callIs(get(body, at + 2), Opcode.INVOKE_VIRTUAL, ref, above)
+                        && movesTo(get(body, at + 3), aboveKind, Opcode.MOVE_RESULT_OBJECT)
+                        && literalIs(get(body, at + 4), Opcode.CONST_4, hereKind, 0)
+                        && movesTo(get(body, at + 5), here, Opcode.IF_EQZ) && target(m, at + 5) == at + 8
+                        && callIs(get(body, at + 6), Opcode.INVOKE_VIRTUAL, ref, here)
+                        && movesTo(get(body, at + 7), hereKind, Opcode.MOVE_RESULT_OBJECT)
+                        && handed.get(0) == at + 8 && callIs(get(body, at + 8), Opcode.INVOKE_STATIC, c.strings.get(4), aboveKind, hereKind)
+                        && aboveKind != hereKind && List.of(aboveKind, hereKind).stream().allMatch(r -> r >= 0 && r < 16 && r < parameter(old, -1)
+                                && r != above && r != here && deadAt(old, cleanAt, r));
+                if (shaped) {
+                    remove(m, 0, 1);
+                    remove(m, at, at + 9);
+                    anchor(m, at, cleanAt, c.strings.get(4));
+                    fallthroughOnly(old, cleanAt, c.strings.get(4));
+                    vouch(m, 0, List.of(row));
+                    vouch(m, at + 2, List.of(above));
+                    vouch(m, at + 6, List.of(here));
+                    vouch(m, at + 8, List.of(aboveKind, hereKind));
+                }
+            }
+            if (!shaped) fail("the post line hooks don't take the row and the items around its gap in " + old);
+            return shaped;
         }
 
         /**
