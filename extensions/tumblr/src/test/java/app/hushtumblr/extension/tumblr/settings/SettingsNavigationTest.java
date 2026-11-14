@@ -26,6 +26,7 @@ import android.graphics.Canvas;
 import android.preference.Preference;
 import android.preference.PreferenceCategory;
 import android.preference.SwitchPreference;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -82,6 +83,9 @@ public class SettingsNavigationTest {
     private boolean touch;
 
     @Before public void open() {
+        // Saves run in line. On the real worker a save finished whenever it did, before or after
+        // the test's next layout, and what was said under a switch depended on which.
+        HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
         PatchFamily.inBuildForTests = EnumSet.allOf(PatchFamily.class);
         PauseForTests.resume();
         controller = Robolectric.buildActivity(Activity.class).setup().visible();
@@ -365,6 +369,74 @@ public class SettingsNavigationTest {
         assertEquals(0, list().getFirstVisiblePosition());
         assertEquals(SettingsNavigation.PAGE_STATUS, ((Preference) list().getItemAtPosition(0)).getKey());
         assertTrue("a key still lands on the first setting", list().getSelectedItemPosition() > 0);
+    }
+
+    /**
+     * Seen with a D-pad: a switch flipped with the center key handed the selection to the switch
+     * under it while it saved, so the next press flipped that one. The keys stay on the switch.
+     */
+    @Test public void aSwitchFlippedByKeyKeepsTheSelection() {
+        page.navigation.navigate("Feed");
+        flipBannerByKey(false);
+    }
+
+    /**
+     * Seen with a D-pad on search results scrolled down: the restart row came in above the rows
+     * in view, the list held its first row in place, and holding it took the selection there.
+     */
+    @Test public void aSwitchFlippedByKeyBelowTheTopOfScrolledResultsKeepsTheSelection() {
+        findSearch(dialog.getView()).setText("hide");
+        ShadowLooper.idleMainLooper();
+        flipBannerByKey(true);
+    }
+
+    private void flipBannerByKey(boolean belowTheTop) {
+        assertFalse("the list is driven by keys here", list().isInTouchMode());
+        layout(dialog.getView());
+        int at = position(Settings.HIDE_AD_FREE_BANNER.key);
+        assertTrue(at >= 0);
+        Preference banner = (Preference) list().getItemAtPosition(at);
+        assertTrue("a switch sits under it", list().getItemAtPosition(at + 1) instanceof HushTumblrPreferenceFragment.Toggle);
+        boolean before = Settings.HIDE_AD_FREE_BANNER.savedValue();
+        List<Runnable> writes = new ArrayList<>();
+        HushTumblrPreferenceFragment.editWorkerForTests = writes::add;
+        try {
+            assertTrue(list().requestFocus());
+            list().setSelection(at);
+            layout(dialog.getView());
+            // The row above it shows at the top, part-way.
+            if (belowTheTop) list().scrollListBy(-40);
+            layout(dialog.getView());
+            assertEquals(at, list().getSelectedItemPosition());
+            if (belowTheTop) assertTrue("the restart row comes in above the rows in view, and another row is at the top: first "
+                    + list().getFirstVisiblePosition() + ", switch " + at,
+                    list().getFirstVisiblePosition() > 0 && list().getFirstVisiblePosition() < at);
+            int top = list().getSelectedView().getTop();
+            assertTrue(list().dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_CENTER)));
+            assertTrue(list().dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DPAD_CENTER)));
+            assertEquals("the key flipped nothing", 1, writes.size());
+            layout(dialog.getView());
+            assertEquals("the selection left the switch while it saved", at, list().getSelectedItemPosition());
+            list().dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_CENTER));
+            list().dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DPAD_CENTER));
+            ShadowLooper.idleMainLooper();
+            assertEquals("a press while it saved flipped it again", 1, writes.size());
+            assertEquals(before, Settings.HIDE_AD_FREE_BANNER.savedValue());
+            writes.remove(0).run();
+            ShadowLooper.idleMainLooper();
+            layout(dialog.getView());
+            assertEquals(!before, Settings.HIDE_AD_FREE_BANNER.savedValue());
+            // Its restart row may come in above it once it saved, so it's found by the row.
+            assertSame("the selection left the switch once it saved", banner, list().getSelectedItem());
+            if (belowTheTop) assertEquals("the switch moved on screen", top, list().getSelectedView().getTop());
+            assertTrue(list().hasFocus());
+        } finally {
+            for (Runnable write : writes) write.run();
+            HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
+            Settings.HIDE_AD_FREE_BANNER.save(before);
+            app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.remove(
+                    Settings.HIDE_AD_FREE_BANNER.key);
+        }
     }
 
     /**

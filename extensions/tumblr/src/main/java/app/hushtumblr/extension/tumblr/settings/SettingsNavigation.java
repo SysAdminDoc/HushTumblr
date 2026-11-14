@@ -681,7 +681,11 @@ final class SettingsNavigation extends BaseAdapter {
     private void keepPlace(int restartWas, boolean pageStatusWas) {
         String pageWas = rebuiltPage;
         rebuiltPage = route + '\n' + query;
-        if (!rebuiltPage.equals(pageWas) || pageStatusWas != visible.contains(pageStatus) || list.getChildCount() == 0) {
+        // Without touch the list keeps the row its keys are on in place itself, by its id. Holding
+        // another row moved the keys there, since an untouched list selects the row it's told to
+        // show, so a switch flipped by key under the top of scrolled results gave them to the top.
+        if (!rebuiltPage.equals(pageWas) || pageStatusWas != visible.contains(pageStatus) || list.getChildCount() == 0
+                || !list.isInTouchMode() && list.getSelectedItemPosition() != android.widget.AdapterView.INVALID_POSITION) {
             held = null;
             return;
         }
@@ -785,7 +789,13 @@ final class SettingsNavigation extends BaseAdapter {
     @Override public long getItemId(int position) { return System.identityHashCode(getItem(position)); }
     @Override public boolean hasStableIds() { return true; }
     @Override public boolean areAllItemsEnabled() { return false; }
-    @Override public boolean isEnabled(int position) { return getItem(position).isEnabled() && getItem(position).isSelectable(); }
+    // A row off only while its save or action runs keeps the keys. The list moves its selection off
+    // a row that's off, so a switch flipped by key handed it to the switch under it, and the next
+    // press flipped that one. The row takes no click until it's done.
+    @Override public boolean isEnabled(int position) {
+        Preference item = getItem(position);
+        return (item.isEnabled() || showsBusyLine(item)) && item.isSelectable();
+    }
     // Preference creates several incompatible layouts. Never recycle one kind into another.
     @Override public int getItemViewType(int position) { return IGNORE_ITEM_VIEW_TYPE; }
 
