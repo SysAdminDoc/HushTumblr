@@ -167,8 +167,21 @@ final class SettingsNavigation extends BaseAdapter {
      * page was rebuilt. Rows are made anew, so the reader goes back to the new row's button.
      */
     private Preference refocusAction;
-    /** Without touch, whether {@link #keepTopWithKeys} waits on the list's next layout. */
+    /** Without touch, whether {@link #keepTopAfterLayout} waits on the list's next layout. */
     private boolean keepingTop;
+    /**
+     * Without touch, the place and top of the row kept at the top while rows above the keys' row
+     * change, with the restart row's place and the keys' row, all from before the first change.
+     * Held until a layout shows that row back where it was. -1 when nothing is kept.
+     */
+    private int keptFirst = -1;
+    private int keptTop;
+    private int keptRestartWas;
+    private Object keptKeys;
+    private int keptLayouts;
+    /** Without touch, the row the keys stayed on while rows changed, and its place before; see {@link #repeatsSelection}. */
+    private Object keysStayed;
+    private int keysStayedAt;
     private int homePosition;
     private int homeOffset;
     /** The first row in view a key could land on when home was left, and its top; see showPlace. */
@@ -193,6 +206,7 @@ final class SettingsNavigation extends BaseAdapter {
         list.setAccessibilityDelegate(new View.AccessibilityDelegate() {
             @Override public void sendAccessibilityEvent(View host, int eventType) {
                 if (eventType == android.view.accessibility.AccessibilityEvent.TYPE_VIEW_FOCUSED) selectKeyRowInView();
+                if (eventType == android.view.accessibility.AccessibilityEvent.TYPE_VIEW_SELECTED && repeatsSelection()) return;
                 super.sendAccessibilityEvent(host, eventType);
             }
         });
@@ -709,6 +723,7 @@ final class SettingsNavigation extends BaseAdapter {
         View readerOn = (route + '\n' + query).equals(rebuiltPage) && screenReaderOn() ? rowReaderIsOn() : null;
         View readerOnAction = readerOn == null ? null : readerOnAction(readerOn);
         Object reading = readerOn == null ? null : list.getItemAtPosition(list.getPositionForView(readerOn));
+        Preference keysWas = keysRow();
         visible.clear();
         List<String> terms = SettingsSearch.terms(query);
         Section selected = selected();
@@ -771,7 +786,7 @@ final class SettingsNavigation extends BaseAdapter {
             bringIntoView(refocus);
         }
         notifyDataSetChanged();
-        keepPlace(restartWas, pageStatusWas);
+        keepPlace(restartWas, pageStatusWas, keysWas);
         // A result that came back while its row's page wasn't in view shows once that page is.
         // Not from the constructor's first build, before the page knows this navigation.
         if (page.navigation == this) page.showUnseenResults();
@@ -799,18 +814,22 @@ final class SettingsNavigation extends BaseAdapter {
      * stays where it was. A row added at the top of what's in view is left to push the list down,
      * so it's seen. The row held stays held through every rebuild until the list lays out.
      */
-    private void keepPlace(int restartWas, boolean pageStatusWas) {
+    private void keepPlace(int restartWas, boolean pageStatusWas, Object keysWas) {
         String pageWas = rebuiltPage;
         rebuiltPage = route + '\n' + query;
         // Without touch the list keeps the row its keys are on in place itself, by its id. Holding
         // another row moved the keys there, since an untouched list selects the row it's told to
         // show, so a switch flipped by key under the top of scrolled results gave them to the top.
         boolean keyed = !list.isInTouchMode() && list.getSelectedItemPosition() != android.widget.AdapterView.INVALID_POSITION;
-        if (!rebuiltPage.equals(pageWas) || pageStatusWas != visible.contains(pageStatus) || list.getChildCount() == 0 || keyed) {
+        boolean samePlace = rebuiltPage.equals(pageWas) && pageStatusWas == visible.contains(pageStatus) && list.getChildCount() > 0;
+        if (keyed && samePlace) {
+            keepTopWithKeys(restartWas, keysWas);
+        } else {
+            keptFirst = -1;
+            keysStayed = null;
+        }
+        if (!samePlace || keyed) {
             held = null;
-            if (keyed && rebuiltPage.equals(pageWas) && pageStatusWas == visible.contains(pageStatus) && list.getChildCount() > 0) {
-                keepTopWithKeys(restartWas);
-            }
             return;
         }
         int restartNow = visible.indexOf(restart);
@@ -833,49 +852,102 @@ final class SettingsNavigation extends BaseAdapter {
     /**
      * Without touch, a row coming, going or growing above the keys' row moved every row above it
      * instead, since the list keeps the keys' row where it was: the restart row and the paused
-     * status card sent the card off screen. Once the list lays out, the keys' row moves by however
-     * far the row touch keeps at the top went.
+     * status card sent the card off screen. After each layout the keys' row moves by however far
+     * the row touch keeps at the top went, until that row is back.
      */
-    private void keepTopWithKeys(int restartWas) {
-        // The first rebuild before a layout sees the rows as they're drawn. Later ones see the
-        // same children with rows already changed.
+    private void keepTopWithKeys(int restartWas, Object keysWas) {
+        // Taken once, from the rows as they were drawn before the first change. A pause rebuilds
+        // the page many times, and one that came between a layout and the move it asked for saw
+        // the rows the change had pushed, so the next layout moved them back off.
+        if (keptFirst < 0) {
+            keptFirst = list.getFirstVisiblePosition();
+            keptTop = list.getChildAt(0).getTop();
+            keptRestartWas = restartWas;
+            keptKeys = keysWas;
+            keptLayouts = 0;
+            keysStayed = keysWas;
+            keysStayedAt = list.getSelectedItemPosition();
+        }
+        waitToKeepTop();
+    }
+
+    private void waitToKeepTop() {
         if (keepingTop) return;
         keepingTop = true;
-        int first = list.getFirstVisiblePosition();
-        int top = list.getChildAt(0).getTop();
-        afterLayout(() -> {
-            keepingTop = false;
-            // The row at the top stays, by its place, as with touch. A restart row that came or
-            // went above it moved it a place.
-            int restartNow = visible.indexOf(restart);
-            int at = restartWas < 0 && restartNow >= 0 && restartNow < first ? first + 1
-                    : restartWas >= 0 && restartNow < 0 && restartWas < first ? first - 1 : first;
-            if (at >= 0 && at < visible.size()) moveKeysToKeep(visible.get(at), top, 3);
-        });
+        afterLayout(this::keepTopAfterLayout);
+    }
+
+    private void keepTopAfterLayout() {
+        keepingTop = false;
+        if (keptFirst < 0) return;
+        // The row at the top stays, by its place, as with touch. A restart row that came or went
+        // above it moved it a place.
+        int restartNow = visible.indexOf(restart);
+        int at = keptRestartWas < 0 && restartNow >= 0 && restartNow < keptFirst ? keptFirst + 1
+                : keptRestartWas >= 0 && restartNow < 0 && keptRestartWas < keptFirst ? keptFirst - 1 : keptFirst;
+        // Done once that row is back, when the keys went to another row, or after a few tries.
+        if (++keptLayouts > 4 || at < 0 || at >= visible.size() || keysRow() != keptKeys
+                || !moveKeysToKeep(visible.get(at), keptTop)) {
+            keptFirst = -1;
+        }
     }
 
     /**
      * Called from a layout: moves the keys' row by however far [row] went from [top], keeping all
-     * of the keys' row in view. Posted, since a layout request made during layout is dropped. A
-     * row the layout left above the rows drawn is brought in a little first, then put in place.
+     * of the keys' row in view, and says whether it's moving. Posted, since a layout request made
+     * during layout is dropped. A row the layout left above the rows drawn is brought in a little,
+     * and the next layout puts it in place.
      */
-    private void moveKeysToKeep(Preference row, int top, int tries) {
+    private boolean moveKeysToKeep(Preference row, int top) {
         int at = visible.indexOf(row);
         int keys = list.getSelectedItemPosition();
         View keyed = list.getSelectedView();
         int first = list.getFirstVisiblePosition();
-        if (list.isInTouchMode() || keyed == null || at < 0 || at > keys || list.getChildCount() == 0) return;
+        if (list.isInTouchMode() || keyed == null || at < 0 || at > keys || list.getChildCount() == 0) return false;
         View shown = at < first ? null : list.getChildAt(at - first);
         int by = shown != null ? top - shown.getTop() : top - list.getChildAt(0).getTop() + 1;
         int area = list.getHeight() - list.getListPaddingTop() - list.getListPaddingBottom();
         int from = keyed.getTop() - list.getListPaddingTop();
         int to = Math.max(0, Math.min(from + by, area - keyed.getHeight()));
-        if (to == from) return;
+        if (to == from) return false;
+        Preference keysRow = keysRow();
         list.post(() -> {
-            if (list.isInTouchMode() || list.getSelectedItemPosition() != keys || visible.indexOf(row) != at) return;
-            if (shown == null && tries > 1) afterLayout(() -> moveKeysToKeep(row, top, tries - 1));
+            if (keptFirst < 0) return;
+            if (list.isInTouchMode() || list.getSelectedItemPosition() != keys
+                    || visible.indexOf(keysRow) != keys || visible.indexOf(row) != at) {
+                // Rows changed again before the move. The layout that rebuild asked for measures
+                // afresh, and without one nothing is kept.
+                if (!keepingTop) keptFirst = -1;
+                return;
+            }
+            waitToKeepTop();
             list.setSelectionFromTop(keys, to);
         });
+        return true;
+    }
+
+    /**
+     * The row the keys are on, or null. The list's own getter reads the keys' place in the rows as
+     * they are now, and a rebuild that took rows away before the list laid them out left that
+     * place past the end, so it threw.
+     */
+    private Preference keysRow() {
+        int at = list.getSelectedItemPosition();
+        return at >= 0 && at < visible.size() ? visible.get(at) : null;
+    }
+
+    /**
+     * Whether the list is about to say a row is selected that its keys never left. A row coming or
+     * going above it gives it another place, and the list says it's selected again; TalkBack took
+     * its focus there, off the card's button just pressed. Any other row the keys go to is said.
+     */
+    private boolean repeatsSelection() {
+        Preference keys = keysRow();
+        int at = list.getSelectedItemPosition();
+        boolean repeat = keys != null && keys == keysStayed && at != keysStayedAt;
+        keysStayed = repeat ? keys : null;
+        keysStayedAt = at;
+        return repeat;
     }
 
     /** Runs [then] once, from the list's next layout. */

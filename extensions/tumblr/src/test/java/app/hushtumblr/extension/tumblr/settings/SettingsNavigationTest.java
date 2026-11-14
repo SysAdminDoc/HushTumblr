@@ -2137,15 +2137,59 @@ public class SettingsNavigationTest {
      * it was, so the card went up off screen.
      */
     @Test public void pausingFromTheCardWithTheKeysOnARowKeepsTheCardInView() {
-        pauseFromTheCardWithTheKeysOnARow(false);
+        pauseFromTheCardWithTheKeysOnARow(false, false);
     }
 
     /** The same press made by a screen reader, which then stays on the card rather than the restart row. */
     @Test public void pausingFromTheCardWithAScreenReaderAndTheKeysOnARowKeepsTheCardInView() {
-        pauseFromTheCardWithTheKeysOnARow(true);
+        pauseFromTheCardWithTheKeysOnARow(true, false);
     }
 
-    private void pauseFromTheCardWithTheKeysOnARow(boolean reader) {
+    /**
+     * Seen on the lab emulator after the fix above: the save finished on its worker after the list
+     * had laid out the press, so the restart row came in a layout later and still sent the card off.
+     */
+    @Test public void pausingFromTheCardWithTheKeysOnARowKeepsTheCardInViewWhenTheSaveLandsLater() {
+        pauseFromTheCardWithTheKeysOnARow(false, true);
+    }
+
+    @Test public void pausingFromTheCardWithAScreenReaderAndTheKeysOnARowKeepsTheCardInViewWhenTheSaveLandsLater() {
+        pauseFromTheCardWithTheKeysOnARow(true, true);
+    }
+
+    /**
+     * Seen on the lab emulator after both fixes above: a pause rebuilds the page many times, and
+     * one that came between a layout and the move it asked for measured the rows already pushed,
+     * so the next layout sent the card back off.
+     */
+    @Test public void pausingFromTheCardWithTheKeysOnARowKeepsTheCardInViewThroughARebuildBeforeTheMove() {
+        pauseFromTheCardWithTheKeysOnARow(false, false, true);
+    }
+
+    /**
+     * The same, with TalkBack, which also left the card's button for Quick setups: the list said
+     * that row was selected again at its new place, though the keys never left it.
+     */
+    @Test public void pausingFromTheCardWithAScreenReaderAndTheKeysOnARowKeepsTheCardInViewThroughARebuildBeforeTheMove() {
+        pauseFromTheCardWithTheKeysOnARow(true, false, true);
+    }
+
+    private void pauseFromTheCardWithTheKeysOnARow(boolean reader, boolean saveLater) {
+        pauseFromTheCardWithTheKeysOnARow(reader, saveLater, false);
+    }
+
+    private void pauseFromTheCardWithTheKeysOnARow(boolean reader, boolean saveLater, boolean rebuildBeforeTheMove) {
+        List<Runnable> writes = new ArrayList<>();
+        if (saveLater) HushTumblrPreferenceFragment.editWorkerForTests = writes::add;
+        try {
+            pauseFromTheCardWithTheKeysOnARow(reader, writes, rebuildBeforeTheMove);
+        } finally {
+            for (Runnable write : writes) write.run();
+            HushTumblrPreferenceFragment.editWorkerForTests = Runnable::run;
+        }
+    }
+
+    private void pauseFromTheCardWithTheKeysOnARow(boolean reader, List<Runnable> writes, boolean rebuildBeforeTheMove) {
         android.view.accessibility.AccessibilityManager a11y = controller.get().getSystemService(android.view.accessibility.AccessibilityManager.class);
         if (reader) {
             org.robolectric.Shadows.shadowOf(a11y).setEnabled(true);
@@ -2165,14 +2209,54 @@ public class SettingsNavigationTest {
         assertFalse(contains(SettingsNavigation.RESTART));
         android.widget.Button pause = statusAction();
         assertEquals("Pause", pause.getText().toString());
-        if (reader) {
-            assertTrue(pause.performAccessibilityAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null));
-            assertTrue(pause.performAccessibilityAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK, null));
-        } else {
-            assertTrue(pause.performClick());
+        ShadowLooper.idleMainLooper();
+        int sent = org.robolectric.Shadows.shadowOf(a11y).getSentAccessibilityEvents().size();
+        boolean[] rebuilt = {false};
+        if (rebuildBeforeTheMove) {
+            // A phone's frame waits for the display, so what's already posted runs first. Here a
+            // frame comes the moment a layout is asked for, unless frames are paused.
+            org.robolectric.shadows.ShadowChoreographer.setPaused(true);
+            // The list lays out the press with the card pushed up and asks for the move, and the
+            // page rebuilds again before that runs.
+            list().addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+                @Override public void onLayoutChange(View view, int left, int top, int right, int bottom,
+                        int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                    if (list().getChildAt(0).getTop() == cardTop) return;
+                    list().removeOnLayoutChangeListener(this);
+                    new android.os.Handler(android.os.Looper.getMainLooper()).postAtFrontOfQueue(() -> {
+                        rebuilt[0] = true;
+                        page.navigation.restartChanged();
+                    });
+                }
+            });
+        }
+        try {
+            if (reader) {
+                assertTrue(pause.performAccessibilityAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null));
+                assertTrue(pause.performAccessibilityAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK, null));
+            } else {
+                assertTrue(pause.performClick());
+            }
+            ShadowLooper.idleMainLooper();
+            for (int frame = 0; rebuildBeforeTheMove && frame < 6; frame++) {
+                org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(16));
+            }
+        } finally {
+            org.robolectric.shadows.ShadowChoreographer.setPaused(false);
+        }
+        assertEquals("the page rebuilt between the layout and the move", rebuildBeforeTheMove, rebuilt[0]);
+        if (rebuildBeforeTheMove) {
+            assertEquals("the status card went off screen", 0, list().getFirstVisiblePosition());
+            assertEquals(cardTop, list().getChildAt(0).getTop());
         }
         ShadowLooper.idleMainLooper();
         layout(dialog.getView());
+        // A save on its worker finishes after the press is laid out.
+        while (!writes.isEmpty()) {
+            writes.remove(0).run();
+            ShadowLooper.idleMainLooper();
+            layout(dialog.getView());
+        }
         ShadowLooper.idleMainLooper();
         layout(dialog.getView());
         assertTrue(contains(SettingsNavigation.RESTART));
@@ -2184,6 +2268,12 @@ public class SettingsNavigationTest {
             View on = readerFocus(list());
             assertNotNull("the screen reader lost its place", on);
             assertSame("the screen reader went to " + on, statusAction(), on);
+            List<android.view.accessibility.AccessibilityEvent> events = org.robolectric.Shadows.shadowOf(a11y).getSentAccessibilityEvents();
+            for (android.view.accessibility.AccessibilityEvent event : events.subList(sent, events.size())) {
+                assertFalse("the list said " + keyed + " was selected again, which takes TalkBack to it ("
+                                + event.getClassName() + ": " + event.getText() + ")",
+                        event.getEventType() == android.view.accessibility.AccessibilityEvent.TYPE_VIEW_SELECTED);
+            }
         }
     }
 
