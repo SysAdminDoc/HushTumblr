@@ -77,6 +77,7 @@ public final class SettingsStatus {
     public static boolean communitiesTabButton() { return false; }
     public static boolean hideBlazePrompts() { return false; }
     public static boolean blazePromptFlags() { return false; }
+    public static boolean blazeButtons() { return false; }
     public static boolean skipReviewPrompts() { return false; }
     public static boolean reviewPrompt() { return false; }
     public static boolean hideBlogNotificationReminders() { return false; }

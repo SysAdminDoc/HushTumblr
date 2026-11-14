@@ -291,7 +291,7 @@
     },
     {
       "name": "Hide Blaze prompts",
-      "description": "Hides the prompts to pay for Blaze, Tumblr's way to promote a post. That covers the Blaze buttons on your blog and dashboard, the nudge after you post, and the Blaze banners. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface.",
+      "description": "Hides the prompts to pay for Blaze, Tumblr's way to promote a post. That covers the Blaze buttons on your blog and dashboard, the nudge after you post, the Blaze banners, and the Blaze buttons on posts: the flame under your own posts, Blaze in a post's menu and the share sheet, and Promote in community posts. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface.",
       "category": "Interface",
       "use": true,
       "dependencies": [

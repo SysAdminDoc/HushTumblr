@@ -94,6 +94,16 @@ The "t" at the top of the dashboard is `com.tumblr.ui.widget.TLogoView`, a `Fram
 - **Listeners:** `TLogoView.setOnClickListener` wraps the listener in `aqk`, which runs the logo's own `d()` first when its flag `a` is set, and the constructor sets one too, so the view always reports a click listener. Nothing sets a long press or touch listener on it, so the settings patch's long press leaves the tap alone.
 - `n6(TLogoView)` only recolors and animates the logo for `HUNGRY_HUNGRY_DASHBOARD`.
 
+## Blaze buttons on posts
+
+None of these has a feature flag, so Hide Blaze prompts answers each one where Tumblr reads it. Read on 2026-11-13.
+
+- **The flame under your own posts:** the row's state is the data class `m01`, whose `toString` prints "AuthorActionsState(showDelete=" and later ", showBlaze=" followed by `append(Z)` of its own boolean field. Its getter `m01.y()Z` (`iget-boolean`, `return`) is read by the row `a01.i` and by Tumblr TV's two post views. Delete and edit are separate flags, so the row keeps them in place.
+- **Blaze in a post's three-dot menu:** every menu builder asks `r4g.J()Z` (the post's can-Blaze field, `iget-boolean`, `return`), then `move-result` and `if-eqz` on the answer, right before it reads `com.tumblr.core.ui.R$string.blaze_post_overflow_menu_action_item`. The askers are the post header's menu `PostCardHeader.H2` and the notes screen's `flh.y`. The video hub's menu reads the same getter. The label's other readers (the flame, the blog header's Blaze entry) aren't gated that way.
+- **Blaze in the share sheet:** `com.tumblr.sharing.d.Q6()` reads `can_blaze` from its arguments with `getBoolean(String, Z)`, then `if-eqz` skips the Blaze target. The argument comes from `af1.m()`, which the Blaze dashboard reads too, so the answer is changed at the sheet's test and not at `af1.m()`.
+- **Promote in a community post's menu:** `t2g$a.invokeSuspend` is the only caller of `bm4.a(CommunityPostInfo)List`. The list holds `com.tumblr.rumblr.communities.PostOverflowMenuItem` subclasses, which keep their names, and Promote is `PostOverflowMenuItem$PromotePost`. The hook hands back a copy without it.
+- `ic_search_blaze` is the dashboard's Blaze entry, not a post button.
+
 ## Themes and colors
 
 Tumblr colors a screen in three ways, and a palette's background has to change in all of them. Read on 2026-10-31.

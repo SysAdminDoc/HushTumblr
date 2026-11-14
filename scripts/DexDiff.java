@@ -305,7 +305,7 @@ public class DexDiff {
             Map.entry("crashReports", 3), Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 6), Map.entry("videoLinkPress", 6), Map.entry("imageSizes", 4), Map.entry("longPostRows", 6), Map.entry("exploreHeaderAd", 4), Map.entry("shareLinkTag", 5), Map.entry("longTrailRows", 4), Map.entry("longPostExpand", 17), Map.entry("fontChoice", 6),
             Map.entry("followButton", 5), Map.entry("footerButton", 3), Map.entry("postTags", 6),
             Map.entry("noteCounts", 9), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
-            Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("accountIdentity", 10),
+            Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("blazeButtons", 8), Map.entry("accountIdentity", 10),
             Map.entry("matureContent", 12), Map.entry("rootPostMutes", 9), Map.entry("dashboardPage", 9), Map.entry("mutualMarkers", 13));
 
     /**
@@ -7148,6 +7148,128 @@ public class DexDiff {
             return hookAt(old, actual(old), at, hook, List.of(room), room, List.of(room));
         }
 
+        /** Where one Blaze answer is checked in the clean [old]: in front of instruction [at], on [register]. */
+        record BlazeSite(Method old, int at, int register) {}
+
+        /**
+         * Hide Blaze prompts' Blaze buttons on posts, all four or none: the own-post row's show-Blaze
+         * getter, the can-Blaze getter every post menu asks before its Blaze item, the share sheet's
+         * can_blaze test and the list of a community post's menu items. Like the patch, a clean
+         * target missing any of the four leaves them all alone, with the capability off.
+         */
+        void blazeButtons(Contract c) {
+            List<BlazeSite> sites = new ArrayList<>();
+            sites.add(ownPostFlame(c.strings.get(4)));
+            sites.add(postMenuBlaze(c.strings.get(5)));
+            sites.add(shareSheetBlaze(c.strings.get(6)));
+            sites.add(communityPromote(c.strings.get(7)));
+            if (sites.contains(null)) { capability(c.callee, false); return; }
+            boolean found = true;
+            for (int k = 0; k < sites.size(); k++) {
+                BlazeSite site = sites.get(k);
+                List<Integer> held = List.of(site.register());
+                found &= hookAt(site.old(), actual(site.old()), site.at(), c.strings.get(k), held, site.register(), held);
+            }
+            capability(c.callee, found);
+        }
+
+        /** The getter of the flag the row state's printout shows after ", showBlaze=", in front of its return. */
+        BlazeSite ownPostFlame(String printout) {
+            List<Method> printers = clean.holding(printout);
+            if (printers.size() != 1) return null;
+            Method printer = printers.get(0);
+            List<Instruction> body = instructions(printer);
+            int label = firstIndex(body, 0, i -> i.getOpcode() == Opcode.CONST_STRING
+                    && reference(i) instanceof StringReference s && s.getString().equals(", showBlaze="));
+            Instruction append = get(body, label + 2);
+            MethodReference appended = called(append);
+            int flag = label >= 0 && appended != null && appended.getDefiningClass().equals("Ljava/lang/StringBuilder;")
+                    && appended.getName().equals("append") && descriptor(appended).equals("(Z)Ljava/lang/StringBuilder;") ? arguments(append).get(1) : -1;
+            int read = -1;
+            for (int k = label - 1; flag >= 0 && k >= 0 && read < 0; k--) if (writes(body.get(k), flag)) read = k;
+            FieldReference f = read < 0 ? null : field(body.get(read));
+            if (f == null || body.get(read).getOpcode() != Opcode.IGET_BOOLEAN || !f.getDefiningClass().equals(printer.getDefiningClass())
+                    || writtenBetween(body, label, label + 2, flag)) return null;
+            List<Method> getters = new ArrayList<>();
+            for (Method m : clean.classes.get(printer.getDefiningClass()).getMethods()) if (readsAndReturns(m, f)) getters.add(m);
+            return getters.size() == 1 ? getterSite(getters.get(0)) : null;
+        }
+
+        /** The one getter every post menu asks right before it reads the Blaze item's label [label], in front of its return. */
+        BlazeSite postMenuBlaze(String label) {
+            Set<String> asked = new TreeSet<>();
+            for (Method m : tumblrMethods()) {
+                List<Instruction> body = instructions(m);
+                for (int at = 3; at < body.size(); at++) {
+                    if (body.get(at).getOpcode() != Opcode.SGET || !names(field(body.get(at)), label)) continue;
+                    Instruction ask = body.get(at - 3), answer = body.get(at - 2), test = body.get(at - 1);
+                    MethodReference getter = called(ask);
+                    if (getter != null && ask.getOpcode() == Opcode.INVOKE_VIRTUAL && descriptor(getter).equals("()Z")
+                            && answer.getOpcode() == Opcode.MOVE_RESULT && test.getOpcode() == Opcode.IF_EQZ
+                            && firstRegister(answer) == firstRegister(test)) asked.add(getter.toString());
+                }
+            }
+            Method old = asked.size() == 1 ? clean.methods.get(asked.iterator().next()) : null;
+            return old != null && readsAndReturns(old, null) ? getterSite(old) : null;
+        }
+
+        /** The share sheet's test of its [key] argument, right before it. */
+        BlazeSite shareSheetBlaze(String key) {
+            List<BlazeSite> sites = new ArrayList<>();
+            for (Method m : clean.holding(key)) {
+                List<Instruction> body = instructions(m);
+                for (int k = 0; k < body.size(); k++) {
+                    if (body.get(k).getOpcode() != Opcode.CONST_STRING || !(reference(body.get(k)) instanceof StringReference s) || !s.getString().equals(key)) continue;
+                    int read = firstIndex(body, k + 1, i -> called(i) != null && called(i).getName().equals("getBoolean"));
+                    Instruction answer = get(body, read + 1), test = get(body, read + 2);
+                    if (read < 0 || read > k + 2 || !descriptor(called(body.get(read))).equals("(Ljava/lang/String;Z)Z")
+                            || arguments(body.get(read)).get(1) != firstRegister(body.get(k)) || answer == null || answer.getOpcode() != Opcode.MOVE_RESULT
+                            || test == null || test.getOpcode() != Opcode.IF_EQZ || firstRegister(answer) != firstRegister(test)) continue;
+                    sites.add(new BlazeSite(m, read + 2, firstRegister(test)));
+                }
+            }
+            return sites.size() == 1 ? sites.get(0) : null;
+        }
+
+        /** The list of a community post's menu items, right after the menu's model hands it over. */
+        BlazeSite communityPromote(String promote) {
+            String item = "Lcom/tumblr/rumblr/communities/PostOverflowMenuItem;";
+            ClassDef promoteItem = clean.classes.get(promote);
+            if (promoteItem == null || !item.equals(promoteItem.getSuperclass())) return null;
+            List<BlazeSite> sites = new ArrayList<>();
+            for (Method m : tumblrMethods()) {
+                List<Instruction> body = instructions(m);
+                if (body.stream().noneMatch(i -> i.getOpcode() == Opcode.CHECK_CAST && reference(i) instanceof TypeReference t && t.getType().equals(item))) continue;
+                for (int k = 0; k + 1 < body.size(); k++) {
+                    MethodReference r = called(body.get(k));
+                    if (r != null && body.get(k).getOpcode() == Opcode.INVOKE_INTERFACE
+                            && descriptor(r).equals("(Lcom/tumblr/rumblr/communities/CommunityPostInfo;)Ljava/util/List;")
+                            && body.get(k + 1).getOpcode() == Opcode.MOVE_RESULT_OBJECT) sites.add(new BlazeSite(m, k + 2, firstRegister(body.get(k + 1))));
+                }
+            }
+            return sites.size() == 1 ? sites.get(0) : null;
+        }
+
+        /** In front of [old]'s return, on the flag it read. */
+        BlazeSite getterSite(Method old) {
+            return new BlazeSite(old, 1, firstRegister(instructions(old).get(0)));
+        }
+
+        /**
+         * Whether [m] is an instance getter with no arguments that reads a boolean field of its own
+         * class ([f]'s, or any when null) from `this` and returns it, and nothing else.
+         */
+        static boolean readsAndReturns(Method m, FieldReference f) {
+            if (isStatic(m) || !m.getParameterTypes().isEmpty() || !m.getReturnType().equals("Z") || m.getImplementation() == null) return false;
+            List<Instruction> body = instructions(m);
+            if (body.size() != 2 || body.get(0).getOpcode() != Opcode.IGET_BOOLEAN || body.get(1).getOpcode() != Opcode.RETURN) return false;
+            FieldReference read = field(body.get(0));
+            return read != null && read.getDefiningClass().equals(m.getDefiningClass()) && read.getType().equals("Z")
+                    && (f == null || read.getName().equals(f.getName()))
+                    && ((TwoRegisterInstruction) body.get(0)).getRegisterB() == m.getImplementation().getRegisterCount() - 1
+                    && firstRegister(body.get(0)) == firstRegister(body.get(1));
+        }
+
         List<String> normalized(Method m, FeatureEdits e) {
             return normalizedBody(m, e, this::fail);
         }
@@ -7228,6 +7350,7 @@ public class DexDiff {
                     case "bottomBarTabs": bottomBarTabs(c); break;
                     case "darkBackground": darkBackground(c); break;
                     case "storeButtons": storeButtons(c); break;
+                    case "blazeButtons": blazeButtons(c); break;
                     default: fail("unknown mutation kind " + c.target);
                 }
             }

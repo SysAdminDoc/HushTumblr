@@ -784,8 +784,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                         + "Notifications tab. One already showing goes when Tumblr next updates its counts."),
                     SettingsIcons.BLOCK);
             patchToggle(ui, context, build, PatchFamily.HIDE_BLAZE_PROMPTS, Settings.HIDE_BLAZE_PROMPTS,
-                    L10n.t("Hide Blaze prompts"), L10n.t("Hides the Blaze buttons, banners and the nudge to promote "
-                        + "a post after you share it. The Blaze item in a post's menu stays."),
+                    L10n.t("Hide Blaze prompts"), L10n.t("Hides the Blaze buttons and banners, the nudge to promote "
+                        + "a post after you share it, and Blaze in post menus and the share sheet."),
                     SettingsIcons.BLOCK);
             // Not flag-backed, but the TumblrMart button is only placed when its screen is made.
             patchToggle(ui, context, build, PatchFamily.HIDE_TUMBLRMART, Settings.HIDE_TUMBLRMART,

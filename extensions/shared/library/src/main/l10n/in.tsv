@@ -245,7 +245,7 @@ Hide the Communities tab	Sembunyikan tab Komunitas
 Takes the Communities tab out of the bottom bar and stops Communities tips in the post editor.	Menghapus tab Komunitas dari bilah bawah dan menghentikan tips Komunitas di editor postingan.
 # context: the Hide Blaze prompts switch on the Interface page. Blaze is Tumblr's paid post promotion.
 Hide Blaze prompts	Sembunyikan ajakan Blaze
-Hides the Blaze buttons, banners and the nudge to promote a post after you share it. The Blaze item in a post's menu stays.	Menyembunyikan tombol dan banner Blaze serta ajakan untuk mempromosikan postingan setelah kamu membagikannya. Pilihan Blaze di menu postingan tetap ada.
+Hides the Blaze buttons and banners, the nudge to promote a post after you share it, and Blaze in post menus and the share sheet.	Menyembunyikan tombol dan banner Blaze, ajakan untuk mempromosikan postingan setelah kamu membagikannya, serta Blaze di menu postingan dan menu berbagi.
 # context: the Skip review prompts switch on the Interface page. It stops Tumblr's rate-this-app pop-up.
 # context: the Skip review prompts switch on the Interface page. It stops Tumblr's "What do you think of the Tumblr app?" pop-up.
 Skip review prompts	Lewati permintaan ulasan
@@ -273,6 +273,8 @@ That isn't a font file. Nothing changed.	Itu bukan file font. Tidak ada yang ber
 That file is too big to be a font.	File itu terlalu besar untuk sebuah font.
 Blog notification reminder	Pengingat notifikasi blog
 Gift purchase popup	Pop-up pembelian hadiah
+# context: a part of Hide Blaze prompts, named on the status card when a build has or lacks it. The flame under your own posts, Blaze in post menus and the share sheet, and Promote in community posts.
+Blaze buttons on posts	Tombol Blaze di postingan
 Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.	Menghentikan pop-up yang menanyakan pendapatmu tentang aplikasi Tumblr lalu meminta rating atau masukan.
 # context: the Turn off screenshot sharing switch on the Interface page. Tumblr watches for screenshots and offers to save the post as an image.
 Turn off screenshot sharing	Matikan berbagi tangkapan layar

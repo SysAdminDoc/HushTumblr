@@ -77,10 +77,11 @@ public final class FeatureDexFixture {
     private static final String CRASHLYTICS = "Lcom/google/firebase/crashlytics/FirebaseCrashlytics;";
     private static final String CRASH_SETUP = "Lfixture/CrashSetup;";
     private static final String APPLICATION = "Landroid/app/Application;";
+    private static final String PROMOTE_POST = "Lcom/tumblr/rumblr/communities/PostOverflowMenuItem$PromotePost;";
     private static final Map<String, String> SUPERCLASSES = Map.of(APP, CORE_APP, ACTIVITY, COMPONENT_ACTIVITY,
             CORE_APP, "Landroid/app/Application;", COMPONENT_ACTIVITY, "Landroid/app/Activity;", POSTS_RESPONSE, TIMELINE_RESPONSE,
             "Lfixture/PostSpacing;", "Landroidx/recyclerview/widget/RecyclerView$o;", MOBILE_ADS, PROVIDER,
-            VUNGLE, PROVIDER, LIVERAMP, PROVIDER);
+            VUNGLE, PROVIDER, LIVERAMP, PROVIDER, PROMOTE_POST, "Lcom/tumblr/rumblr/communities/PostOverflowMenuItem;");
     private static final String VOID = "V";
     private static final String OBJECT = "Ljava/lang/Object;";
     private static final String LIST = "Ljava/util/List;";
@@ -655,6 +656,67 @@ public final class FeatureDexFixture {
                 List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 1)), textView)));
     }
 
+    /**
+     * The four places the Blaze buttons on posts are answered, Hide Blaze prompts' blazeButtons: the
+     * show-Blaze getter of the row under your own posts (found through its printout), the can-Blaze
+     * getter a post menu asks before it reads the Blaze label, the share sheet's can_blaze test and
+     * a community post menu's list of items.
+     */
+    private static void blazeButtons(Map<String, List<Method>> classes, String variant) {
+        String state = "Lfixture/AuthorActionsState;", post = "Lfixture/BlazePost;", menu = "Lfixture/PostMenu;", share = "Lfixture/ShareSheet;",
+                community = "Lfixture/CommunityMenu;", builder = "Ljava/lang/StringBuilder;", hookOwner = BASE + "ui/BlazeButtons;",
+                info = "Lcom/tumblr/rumblr/communities/CommunityPostInfo;";
+        boolean hooked = !variant.equals("clean") && !variant.equals("false-capability");
+        ImmutableFieldReference showBlaze = new ImmutableFieldReference(state, "showBlaze", "Z"), canBlaze = new ImmutableFieldReference(post, "canBlaze", "Z");
+        classes.put(state, List.of(method(state, "toString", STRING, false, 4, List.of(
+                        new ImmutableInstruction21c(Opcode.NEW_INSTANCE, 0, new ImmutableTypeReference(builder)), literal("AuthorActionsState(showDelete=", 2),
+                        invoke(Opcode.INVOKE_DIRECT, ref(builder, "<init>", VOID, STRING), 0, 2),
+                        new ImmutableInstruction22c(Opcode.IGET_BOOLEAN, 1, 3, showBlaze), literal(", showBlaze=", 2),
+                        invoke(Opcode.INVOKE_VIRTUAL, ref(builder, "append", builder, STRING), 0, 2),
+                        invoke(Opcode.INVOKE_VIRTUAL, ref(builder, "append", builder, "Z"), 0, 1),
+                        invoke(Opcode.INVOKE_VIRTUAL, ref(builder, "toString", STRING), 0), new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0),
+                        new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0))),
+                blazeGetter(state, "y", showBlaze, hooked ? ref(hookOwner, "ownPostButton", "Z", "I") : null)));
+        classes.put(post, List.of(blazeGetter(post, "J", canBlaze, hooked ? ref(hookOwner, "postMenuItem", "Z", "I") : null)));
+        classes.put(menu, List.of(method(menu, "build", VOID, true, 3, List.of(invoke(Opcode.INVOKE_VIRTUAL, ref(post, "J", "Z"), 2),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction21t(Opcode.IF_EQZ, 0, 4),
+                new ImmutableInstruction21c(Opcode.SGET, 1, new ImmutableFieldReference("Lcom/tumblr/core/ui/R$string;", "blaze_post_overflow_menu_action_item", "I")),
+                end()), post)));
+        List<Instruction> targets = new ArrayList<>(List.of(literal("can_blaze", 0), new ImmutableInstruction11n(Opcode.CONST_4, 1, 0),
+                invoke(Opcode.INVOKE_VIRTUAL, ref("Landroid/os/Bundle;", "getBoolean", "Z", STRING, "Z"), 2, 0, 1),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0)));
+        if (hooked && !variant.equals("missing")) targets.addAll(List.of(invoke(Opcode.INVOKE_STATIC, ref(hookOwner, "shareTarget", "Z", "I"), 0),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0)));
+        targets.addAll(List.of(new ImmutableInstruction21t(Opcode.IF_EQZ, 0, 3), new ImmutableInstruction11n(Opcode.CONST_4, 1, 1), end()));
+        classes.put(share, List.of(method(share, "targets", VOID, true, 3, targets, "Landroid/os/Bundle;")));
+        List<Instruction> rows = new ArrayList<>(List.of(invoke(Opcode.INVOKE_INTERFACE, ref("Lfixture/CommunityMenuModel;", "a", LIST, info), 2, 3),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0)));
+        if (hooked) rows.addAll(List.of(invoke(Opcode.INVOKE_STATIC, ref(hookOwner, "communityMenu", LIST, LIST), variant.equals("wrong-register") ? 3 : 0),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0)));
+        rows.addAll(List.of(new ImmutableInstruction11n(Opcode.CONST_4, 1, 0), invoke(Opcode.INVOKE_INTERFACE, ref(LIST, "get", OBJECT, "I"), 0, 1),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 1),
+                new ImmutableInstruction21c(Opcode.CHECK_CAST, 1, new ImmutableTypeReference("Lcom/tumblr/rumblr/communities/PostOverflowMenuItem;")), end()));
+        classes.put(community, List.of(method(community, "rows", VOID, true, 4, rows, "Lfixture/CommunityMenuModel;", info)));
+        classes.put(PROMOTE_POST, List.of());
+        if (variant.equals("clean")) return;
+        List<Method> hooks = new ArrayList<>();
+        for (String name : List.of("ownPostButton", "postMenuItem", "shareTarget")) hooks.add(method(hookOwner, name, "Z", true, 2,
+                List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), new ImmutableInstruction11x(Opcode.RETURN, 1)), "I"));
+        List<Instruction> list = new ArrayList<>();
+        if (!variant.equals("uncontrolled")) list.addAll(List.of(readiness(), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0)));
+        list.add(new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 1));
+        hooks.add(method(hookOwner, "communityMenu", LIST, true, 2, list, LIST));
+        classes.put(hookOwner, hooks);
+    }
+
+    /** `iget-boolean v0, p0, [flag]; return v0`, with [hook] asked in front of the return when there is one. */
+    private static Method blazeGetter(String owner, String name, ImmutableFieldReference flag, ImmutableMethodReference hook) {
+        List<Instruction> body = new ArrayList<>(List.of(new ImmutableInstruction22c(Opcode.IGET_BOOLEAN, 0, 1, flag)));
+        if (hook != null) body.addAll(List.of(invoke(Opcode.INVOKE_STATIC, hook, 0), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0)));
+        body.add(new ImmutableInstruction11x(Opcode.RETURN, 0));
+        return method(owner, name, "Z", false, 2, body);
+    }
+
     private static void timestamps(Map<String, List<Method>> classes, String variant) {
         List<Instruction> body = new ArrayList<>(List.of(literal("pref_is_timestamps", 0), new ImmutableInstruction11n(Opcode.CONST_4, 1, 0),
                 invoke(Opcode.INVOKE_STATIC, ref("Lcom/tumblr/Remember;", "c", "Z", STRING, "Z"), 0, 1), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0)));
@@ -895,6 +957,19 @@ public final class FeatureDexFixture {
             unreadDots(classes, variant);
             smallCase(root, "feature-small-unread-" + variant, classes, "hideUnreadDots", variant.equals("good") ? ""
                     : variant.equals("missing") ? "has 0 calls" : "doesn't take what its rule hands it");
+        }
+        // The clean target has all four Blaze answers, so a build that skips them, the capability off, is refused too.
+        for (String variant : List.of("good", "missing", "wrong-register", "uncontrolled", "false-capability")) {
+            reset(); enable("hideBlazePrompts");
+            if (variant.equals("false-capability")) FLAGS.put("blazeButtons", false);
+            Map<String, List<Method>> classes = new LinkedHashMap<>(settings);
+            featureSwitch(classes, true); blazeButtons(classes, variant);
+            smallCase(root, "feature-small-blaze-" + variant, classes, "hideBlazePrompts", switch (variant) {
+                case "good" -> "";
+                case "missing", "false-capability" -> "has 0 calls";
+                case "wrong-register" -> "doesn't take what its rule hands it";
+                default -> "no compiled family control";
+            });
         }
         if (FAMILIES.containsKey("showPostTimestamps")) for (String variant : List.of("good", "missing", "wrong-answer", "changed-setter")) {
             reset(); enable("showPostTimestamps");
@@ -1488,6 +1563,7 @@ public final class FeatureDexFixture {
         followButton(clean, "clean");
         footerButtons(clean, "", "clean");
         unreadDots(clean, "clean");
+        blazeButtons(clean, "clean");
         timestamps(clean, "clean");
         imageDescriptions(clean, "clean");
         write(root, "feature-clean", clean, false);

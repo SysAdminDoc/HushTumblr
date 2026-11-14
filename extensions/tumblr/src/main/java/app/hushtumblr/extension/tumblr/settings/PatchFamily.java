@@ -226,6 +226,7 @@ public enum PatchFamily {
         COMMUNITIES_TAB_FLAGS(HIDE_COMMUNITIES_TAB, "communitiesTabFlags", "Hide the Communities tab"),
         COMMUNITIES_TAB_BUTTON(HIDE_COMMUNITIES_TAB, "communitiesTabButton", "Hide the Communities tab"),
         BLAZE_PROMPT_FLAGS(HIDE_BLAZE_PROMPTS, "blazePromptFlags", "Hide Blaze prompts"),
+        BLAZE_BUTTONS(HIDE_BLAZE_PROMPTS, "blazeButtons", "Blaze buttons on posts"),
         REVIEW_PROMPT(SKIP_REVIEW_PROMPTS, "reviewPrompt", "Skip review prompts"),
         BLOG_NOTIFICATION_REMINDER(HIDE_BLOG_NOTIFICATION_REMINDERS, "blogNotificationReminder", "Blog notification reminder"),
         GIFT_MESSAGE_POPUP(HIDE_GIFT_MESSAGE_POPUPS, "giftMessagePopup", "Gift purchase popup"),

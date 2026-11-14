@@ -245,7 +245,7 @@ Hide the Communities tab	Communities-Tab ausblenden
 Takes the Communities tab out of the bottom bar and stops Communities tips in the post editor.	Entfernt den Communities-Tab aus der unteren Leiste und beendet die Communities-Tipps im Beitragseditor.
 # context: the Hide Blaze prompts switch on the Interface page. Blaze is Tumblr's paid post promotion.
 Hide Blaze prompts	Blaze-Hinweise ausblenden
-Hides the Blaze buttons, banners and the nudge to promote a post after you share it. The Blaze item in a post's menu stays.	Blendet die Blaze-Schaltflächen, -Banner und den Hinweis aus, einen Beitrag nach dem Teilen zu bewerben. Der Blaze-Eintrag im Menü eines Beitrags bleibt.
+Hides the Blaze buttons and banners, the nudge to promote a post after you share it, and Blaze in post menus and the share sheet.	Blendet die Blaze-Schaltflächen und -Banner, den Hinweis, einen Beitrag nach dem Teilen zu bewerben, und Blaze in Beitragsmenüs und im Teilen-Menü aus.
 # context: the Skip review prompts switch on the Interface page. It stops Tumblr's rate-this-app pop-up.
 # context: the Skip review prompts switch on the Interface page. It stops Tumblr's "What do you think of the Tumblr app?" pop-up.
 Skip review prompts	Bewertungsaufforderungen überspringen
@@ -273,6 +273,8 @@ That isn't a font file. Nothing changed.	Das ist keine Schriftdatei. Nichts wurd
 That file is too big to be a font.	Diese Datei ist zu groß für eine Schriftart.
 Blog notification reminder	Erinnerung an Blog-Benachrichtigungen
 Gift purchase popup	Geschenkkauf-Popup
+# context: a part of Hide Blaze prompts, named on the status card when a build has or lacks it. The flame under your own posts, Blaze in post menus and the share sheet, and Promote in community posts.
+Blaze buttons on posts	Blaze-Schaltflächen an Beiträgen
 Stops the pop-up that asks what you think of the Tumblr app and then asks for a rating or feedback.	Verhindert das Pop-up, das fragt, was du von der Tumblr-App hältst, und dann um eine Bewertung oder Feedback bittet.
 # context: the Turn off screenshot sharing switch on the Interface page. Tumblr watches for screenshots and offers to save the post as an image.
 Turn off screenshot sharing	Screenshot-Teilen ausschalten

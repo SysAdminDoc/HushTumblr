@@ -47,7 +47,7 @@ family|revealAllowedMatureContent|Reveal allowed mature content|accountSafeMatur
 family|hideAdFreeBanner|Hide the ad-free banner|adFreeBannerFlags
 family|hideTumblrTv|Hide Tumblr TV|tumblrTvFlags
 family|hideCommunitiesTab|Hide the Communities tab|communitiesTabFlags,communitiesTabButton
-family|hideBlazePrompts|Hide Blaze prompts|blazePromptFlags
+family|hideBlazePrompts|Hide Blaze prompts|blazePromptFlags,blazeButtons
 family|turnOffScreenshotSharing|Turn off screenshot sharing|screenshotSharingFlags
 family|disableUpdatePrompts|Disable update prompts|updatePromptFlags
 family|skipReviewPrompts|Skip review prompts|reviewPrompt
@@ -189,3 +189,6 @@ mutation|themeBackground|darkBackground|Lapp/hushtumblr/extension/tumblr/ui/Dark
 # The diamond's question, the TumblrMart button hook, the two search bar room hooks and the
 # preference only the diamond's class names.
 mutation|premiumDiamond,tumblrMartButtons|storeButtons|Lapp/hushtumblr/extension/tumblr/ui/StoreButtons;->hideDiamond(Landroid/view/View;Landroid/view/View;)Z|Lapp/hushtumblr/extension/tumblr/ui/StoreButtons;->hideTumblrMart(Landroid/view/View;)V|Lapp/hushtumblr/extension/tumblr/ui/StoreButtons;->tumblrMartRoom(I)I|Lapp/hushtumblr/extension/tumblr/ui/StoreButtons;->diamondRoom(I)I|arg_has_clicked_on_premium_diamond
+# The own-post flame, post menu, share sheet and community menu hooks, then the row state's
+# printout, the menu item's label, the share sheet's argument and the community Promote item.
+mutation|blazeButtons|blazeButtons|Lapp/hushtumblr/extension/tumblr/ui/BlazeButtons;->ownPostButton(I)Z|Lapp/hushtumblr/extension/tumblr/ui/BlazeButtons;->postMenuItem(I)Z|Lapp/hushtumblr/extension/tumblr/ui/BlazeButtons;->shareTarget(I)Z|Lapp/hushtumblr/extension/tumblr/ui/BlazeButtons;->communityMenu(Ljava/util/List;)Ljava/util/List;|AuthorActionsState(showDelete=|Lcom/tumblr/core/ui/R$string;->blaze_post_overflow_menu_action_item|can_blaze|Lcom/tumblr/rumblr/communities/PostOverflowMenuItem$PromotePost;

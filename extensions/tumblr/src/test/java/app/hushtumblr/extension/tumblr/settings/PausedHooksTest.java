@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import com.tumblr.rumblr.communities.PostOverflowMenuItem;
 import com.tumblr.rumblr.model.TimelineObject;
 import com.tumblr.rumblr.model.TimelineObjectType;
 import com.tumblr.rumblr.model.Timelineable;
@@ -92,6 +93,7 @@ import app.hushtumblr.extension.tumblr.timeline.LongPosts;
 import app.hushtumblr.extension.tumblr.timeline.TimelineFilter;
 import app.hushtumblr.extension.tumblr.timeline.TimelineItems;
 import app.hushtumblr.extension.tumblr.ui.AltTextCaptions;
+import app.hushtumblr.extension.tumblr.ui.BlazeButtons;
 import app.hushtumblr.extension.tumblr.ui.BottomBarForTests;
 import app.hushtumblr.extension.tumblr.ui.BottomBarTabsForTests;
 import app.hushtumblr.extension.tumblr.ui.DarkBackgroundForTests;
@@ -202,9 +204,16 @@ public class PausedHooksTest {
         probes.put(Settings.HIDE_COMMUNITIES_TAB, Arrays.asList(
                 BottomBarTabsForTests::hidesTheCommunitiesTab,
                 () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("COMMUNITIES_TOOLTIPS"), true)));
-        // The Blaze button in your blog's header answers off.
-        probes.put(Settings.HIDE_BLAZE_PROMPTS, Collections.singletonList(
-                () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("BLAZE_DASHBOARD_ENTRYPOINT_IN_USER_BLOG_HEADER"), true)));
+        // The Blaze button in your blog's header answers off, and so do the Blaze buttons on posts:
+        // the flame under your own post, Blaze in a post's menu and the share sheet, and a community
+        // post menu's Promote row.
+        probes.put(Settings.HIDE_BLAZE_PROMPTS, Arrays.asList(
+                () -> !FeatureSwitches.isEnabled(FeatureSwitchesTest.flag("BLAZE_DASHBOARD_ENTRYPOINT_IN_USER_BLOG_HEADER"), true),
+                () -> !BlazeButtons.ownPostButton(1),
+                () -> !BlazeButtons.postMenuItem(1),
+                () -> !BlazeButtons.shareTarget(1),
+                () -> BlazeButtons.communityMenu(Arrays.asList(
+                        new PostOverflowMenuItem.PromotePost(), new PostOverflowMenuItem.CopyLink())).size() == 1));
         // Tumblr's rating prompt is skipped.
         probes.put(Settings.SKIP_REVIEW_PROMPTS, Collections.singletonList(ReviewPrompts::skip));
         probes.put(Settings.HIDE_BLOG_NOTIFICATION_REMINDERS,
