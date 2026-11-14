@@ -22,6 +22,7 @@ import com.tumblr.rumblr.model.post.DisplayType;
 import com.tumblr.rumblr.model.post.blocks.ImageBlock;
 import com.tumblr.rumblr.model.post.blocks.TextBlock;
 import com.tumblr.rumblr.model.post.blocks.VideoBlock;
+import com.tumblr.rumblr.response.CommunityHubResponseJsonAdapter;
 import com.tumblr.rumblr.response.SearchResultsResponseJsonAdapter;
 import com.tumblr.rumblr.response.WrappedTimelineResponseJsonAdapter;
 import com.tumblr.rumblr.response.timeline.LikesResponseJsonAdapter;
@@ -135,6 +136,11 @@ public final class TimelineItems {
      */
     public static List<?> onTheDashboard(List<?> page) {
         return WrappedTimelineResponseJsonAdapter.fromJson(() -> TimelineFilter.filter(page));
+    }
+
+    /** What the filter makes of [page] while Tumblr parses a page of a tag's posts. */
+    public static List<?> onATagPage(List<?> page) {
+        return CommunityHubResponseJsonAdapter.fromJson(() -> TimelineFilter.filter(page));
     }
 
     /** What the filter makes of [page] while Tumblr parses a page of a blog's posts. */
