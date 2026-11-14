@@ -215,12 +215,13 @@ final class RootPostMuteUi {
             empty = paragraph(context, L10n.t("No muted posts or blog rules. Use a post's menu to add one on this device."));
             header.addView(empty);
             list.addHeaderView(header, null, false);
+            // The adapter never calls a row off, even during a save. A list moves its key selection
+            // off a row that's off, so after a failed unmute a keyboard's next press only found the
+            // row again. Clicks check `busy`, and a screen reader hears the row is off from its info.
             rows = new BaseAdapter() {
                 @Override public int getCount() { return roots.size(); }
                 @Override public String getItem(int position) { return roots.get(position); }
                 @Override public long getItemId(int position) { return position; }
-                @Override public boolean areAllItemsEnabled() { return false; }
-                @Override public boolean isEnabled(int position) { return !busy; }
                 @Override public View getView(int position, View recycled, ViewGroup parent) {
                     TextView row = recycled instanceof TextView ? (TextView) recycled : new TextView(context);
                     String root = getItem(position);
@@ -355,8 +356,8 @@ final class RootPostMuteUi {
 
         void setBusy(boolean value) {
             busy = value;
-            // Rows go off, and the list and buttons stay on, as a view switched off lets go of
-            // keyboard focus. Their clicks check `busy`.
+            // Rows only look off, and the list and buttons stay on, as a view switched off lets go
+            // of keyboard focus. Their clicks check `busy`.
             feedback.setBusy(value);
             rows.notifyDataSetChanged();
         }

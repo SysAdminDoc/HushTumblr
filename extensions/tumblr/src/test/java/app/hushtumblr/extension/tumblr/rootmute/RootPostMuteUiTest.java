@@ -685,6 +685,52 @@ public class RootPostMuteUiTest {
         dialog.dismiss();
     }
 
+    /**
+     * Seen with a D-pad under TalkBack: after a failed unmute, the next press of the center key only
+     * found the row again. The rows said they were off during the save, and a list moves its key
+     * selection off a row that's off.
+     */
+    @Test public void aRowUnmutedByKeyKeepsTheSelectionThroughAFailedSave() {
+        mute("11");
+        mute("12");
+        AlertDialog dialog = RootPostMuteUi.manage(controller.get());
+        layoutManager(dialog);
+        ListView list = find(dialog.getWindow().getDecorView(), ListView.class);
+        boolean wasTouch = touchMode(dialog, false);
+        try {
+            assertTrue(list.requestFocus());
+            int position = list.getHeaderViewsCount();
+            list.setSelection(position);
+            layoutManager(dialog);
+            assertEquals(position, list.getSelectedItemPosition());
+            List<Runnable> queued = new ArrayList<>(); RootPostMutes.workerForTests = queued::add;
+            ShadowReplacingAtomicFile.refuseCommitFor = RootPostMutes.fileForTests;
+            center(list);
+            assertEquals(1, queued.size());
+            layoutManager(dialog);
+            assertEquals("the selection left the row during the save", position, list.getSelectedItemPosition());
+            queued.get(0).run();
+            layoutManager(dialog);
+            assertTrue(notice(dialog).getText().toString().contains("Try again"));
+            assertEquals("the selection left the row once the save failed", position, list.getSelectedItemPosition());
+            center(list);
+            assertEquals("the next press only found the row again", 2, queued.size());
+            queued.get(1).run();
+            ShadowLooper.idleMainLooper();
+        } finally {
+            touchMode(dialog, wasTouch);
+        }
+        assertEquals(java.util.Set.of("11", "12"), RootPostMutes.capture().roots);
+        dialog.dismiss();
+    }
+
+    /** Presses and lets go of the center key on [view], as a D-pad does. */
+    private static void center(View view) {
+        view.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_CENTER));
+        view.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DPAD_CENTER));
+        ShadowLooper.idleMainLooper();
+    }
+
     /** Clear muted posts was switched off for its write, and let go of keyboard focus as the list did. */
     @Test public void clearKeepsKeyboardFocusOnItsButtonWhileItSaves() {
         mute("11");
@@ -753,9 +799,12 @@ public class RootPostMuteUiTest {
         assertTrue(info.getContentDescription().toString().contains("Unmute"));
         List<Runnable> queued = new ArrayList<>(); RootPostMutes.workerForTests = queued::add;
         assertTrue(row.performAccessibilityAction(AccessibilityNodeInfo.ACTION_CLICK, null));
-        assertFalse(list.getAdapter().isEnabled(position));
-        // Clear stays on during the save, as a button switched off lets go of keyboard focus.
-        // The presses below show it starts nothing.
+        // A screen reader hears the row is off during the save. The adapter still calls it on, as
+        // a list moves its key selection off a row the adapter calls off (this asserted that the
+        // adapter did, which was the bug). Clear stays on too, as a button switched off lets go of
+        // keyboard focus. The presses below show neither starts anything.
+        assertFalse(row.createAccessibilityNodeInfo().isClickable());
+        assertTrue(list.getAdapter().isEnabled(position));
         list.performItemClick(row, position, 0);
         dialog.getButton(AlertDialog.BUTTON_NEUTRAL).performClick();
         assertEquals(1, queued.size());
