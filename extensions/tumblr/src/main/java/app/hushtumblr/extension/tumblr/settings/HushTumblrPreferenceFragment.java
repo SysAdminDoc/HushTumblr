@@ -1384,18 +1384,28 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         feedback.setTextSize(14);
         feedback.setTextColor(ScreenColors.DEFAULT.summary);
         feedback.setPaddingRelative(0, Math.round(8 * context.getResources().getDisplayMetrics().density), 0, 0);
-        feedback.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
+        SpokenLine spoken = new SpokenLine(feedback);
         editor.addView(feedback);
         editor.addView(WordPreviewSection.build(context, editingAllowedWords, field));
         ScreenColors.startSide(label);
         ScreenColors.startSide(field);
         ScreenColors.startSide(feedback);
+        // While a save runs. The field stays on, as a field switched off lets go of focus and the
+        // caret leaves the draft. It takes no edits instead, and the buttons check this.
+        boolean[] saving = {false};
+        // The line under the field says why the last Save didn't keep the words, until an edit.
+        boolean[] lineSaysWhy = {false};
+        android.text.InputFilter[] filters = field.getFilters();
+        android.text.InputFilter[] held = java.util.Arrays.copyOf(filters, filters.length + 1);
+        held[filters.length] = (source, start, end, dest, dstart, dend) ->
+                saving[0] ? dest.subSequence(dstart, dend) : null;
+        field.setFilters(held);
         field.addTextChangedListener(new android.text.TextWatcher() {
             @Override public void beforeTextChanged(CharSequence text, int start, int count, int after) { }
             @Override public void onTextChanged(CharSequence text, int start, int before, int count) {
-                if (field.getError() != null) {
-                    field.setError(null);
-                    feedback.setText(L10n.t("Changes are saved only when you tap Save."));
+                if (lineSaysWhy[0]) {
+                    lineSaysWhy[0] = false;
+                    spoken.show(L10n.t("Changes are saved only when you tap Save."));
                 }
             }
             @Override public void afterTextChanged(android.text.Editable text) { }
@@ -1419,6 +1429,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         restoreWordsEditor = false;
         dialog.setOnDismissListener(ignored -> {
             shownDialogs.remove(dialog);
+            spoken.cancel();
             if (wordsDialog == dialog) {
                 wordsDialog = null;
                 wordsField = null;
@@ -1428,17 +1439,18 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             if (wordsDialog == dialog) clearWordsDraft();
         });
         dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener(ignored -> {
-            if (wordsDialog != dialog || !isAdded()) return;
+            if (saving[0] || wordsDialog != dialog || !isAdded()) return;
             clearWordsDraft();
             dialog.dismiss();
         });
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(ignored -> {
-            if (wordsDialog != dialog || !dialog.isShowing() || !isAdded() || !field.isEnabled()) return;
+            if (saving[0] || wordsDialog != dialog || !dialog.isShowing() || !isAdded()) return;
             String words = field.getText().toString().trim();
             rememberWordsDraft();
-            field.setEnabled(false);
+            saving[0] = true;
             setEditorBusy(dialog, true);
-            feedback.setText(L10n.t("Saving changes"));
+            lineSaysWhy[0] = false;
+            spoken.busy(L10n.t("Saving changes"));
             if (!submitEdit(() -> {
                 String error = null;
                 try {
@@ -1457,38 +1469,46 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                 Utils.runOnMainThreadNowOrLater(() -> {
                     SettingsBackupPreference.refreshCurrentPage();
                     if (wordsDialog != dialog || !dialog.isShowing() || !isAdded()) return;
-                    field.setEnabled(true);
+                    saving[0] = false;
                     setEditorBusy(dialog, false);
                     if (outcome != null) {
-                        field.setError(outcome);
-                        feedback.setText(outcome);
-                        Utils.showToastLong(outcome);
+                        showRefusal(spoken, feedback, outcome, lineSaysWhy);
                         return;
                     }
+                    spoken.cancel();
                     row.setSummary(wordsSummary(setting.savedValue()));
                     clearWordsDraft();
                     dialog.dismiss();
                     Utils.showToastShort(L10n.t("Words saved"));
                 });
             })) {
-                field.setEnabled(true);
+                saving[0] = false;
                 setEditorBusy(dialog, false);
-                String error = L10n.t("Couldn't start that. Try again in a moment.");
-                field.setError(error);
-                feedback.setText(error);
-                Utils.showToastLong(error);
+                showRefusal(spoken, feedback, L10n.t("Couldn't start that. Try again in a moment."), lineSaysWhy);
             }
         });
     }
 
+    /**
+     * Says [message] on the line under the words field and scrolls the line into view, as the
+     * keyboard can cover it. That line is the one place it's said: an error on the field and a
+     * toast each had a screen reader read it again.
+     */
+    private static void showRefusal(SpokenLine spoken, TextView feedback, String message, boolean[] lineSaysWhy) {
+        spoken.say(message);
+        lineSaysWhy[0] = true;
+        feedback.post(() -> feedback.requestRectangleOnScreen(
+                new android.graphics.Rect(0, 0, feedback.getWidth(), feedback.getHeight()), true));
+    }
+
+    /**
+     * A saving editor can't be closed with Back or a tap outside. Its buttons stay on, as a button
+     * switched off lets go of keyboard focus and Android hands it to the next one. Their listeners
+     * check the save instead.
+     */
     private static void setEditorBusy(AlertDialog dialog, boolean busy) {
         dialog.setCancelable(!busy);
         dialog.setCanceledOnTouchOutside(!busy);
-        for (int button : new int[]{AlertDialog.BUTTON_POSITIVE, AlertDialog.BUTTON_NEGATIVE,
-                AlertDialog.BUTTON_NEUTRAL}) {
-            Button action = dialog.getButton(button);
-            if (action != null) action.setEnabled(!busy);
-        }
     }
 
     private void rememberWordsDraft() {
@@ -1945,8 +1965,12 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             saving[0] = false;
             order.clear();
             order.addAll(BottomBarTabs.choices(TextSettings.TAB_ORDER.savedValue()));
+            // One change, never an empty list in between: an empty list can't hold focus, and the
+            // keyboard's focus would go to the buttons.
+            labels.setNotifyOnChange(false);
             labels.clear();
             labels.addAll(tabLabels(order));
+            labels.notifyDataSetChanged();
             row.setSummary(tabOrderSummary(TextSettings.TAB_ORDER.savedValue()));
             retry.setVisibility(tabOrderDraft == null ? View.GONE : View.VISIBLE);
             // A failure already said so under the list. A save says where the tab went and what a
@@ -2037,7 +2061,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         tabOrderDraft = value;
         tabOrderDraftBase = TextSettings.TAB_ORDER.savedValue();
         setEditorBusy(dialog, true);
-        dialog.getListView().setEnabled(false);
+        // The list stays on, as a list switched off lets go of keyboard focus and Android hands it
+        // to the buttons. The tab taps check `saving` instead.
         // Under the list until the save answers. A save done within the frame replaces it unread.
         feedback.show(L10n.t("Saving changes"));
         if (!submitEdit(() -> {
@@ -2060,14 +2085,12 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                 SettingsBackupPreference.refreshCurrentPage();
                 if (!dialog.isShowing() || !isAdded() || !shownDialogs.contains(dialog)) return;
                 setEditorBusy(dialog, false);
-                dialog.getListView().setEnabled(true);
                 if (!outcome) feedback.show(L10n.t("Couldn't save the tab order. Your earlier order is unchanged. Try again."));
                 else onRestartPendingChanged();
                 done.accept(outcome);
             });
         })) {
             setEditorBusy(dialog, false);
-            dialog.getListView().setEnabled(true);
             feedback.show(L10n.t("Couldn't start that. Try again in a moment."));
             done.accept(false);
         }
