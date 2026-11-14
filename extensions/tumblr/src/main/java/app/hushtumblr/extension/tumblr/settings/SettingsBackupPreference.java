@@ -911,6 +911,12 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
         return row instanceof SettingsBackupPreference ? (SettingsBackupPreference) row : null;
     }
 
+    /** The key of the row whose file picker answers with [request], or null for another request. */
+    @Nullable
+    static String rowFor(int request) {
+        return request == EXPORT || request == IMPORT ? keyOf(request) : null;
+    }
+
     private static String keyOf(int action) {
         return action == EXPORT ? "action_export_settings"
                 : action == IMPORT ? "action_import_settings" : "action_undo_import";

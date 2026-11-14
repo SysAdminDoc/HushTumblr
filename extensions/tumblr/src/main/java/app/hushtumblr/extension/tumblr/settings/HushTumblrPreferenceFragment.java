@@ -558,6 +558,10 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        // Picked or cancelled, a screen reader goes back to the row that opened the picker.
+        if (navigation != null) {
+            navigation.focusOnReturn(requestCode == FONT_FILE ? FONT_FILE_ROW : SettingsBackupPreference.rowFor(requestCode));
+        }
         if (requestCode == FONT_FILE) {
             onFontFilePicked(resultCode, data);
             return;

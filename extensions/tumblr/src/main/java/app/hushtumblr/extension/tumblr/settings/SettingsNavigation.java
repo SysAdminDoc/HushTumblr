@@ -431,6 +431,23 @@ final class SettingsNavigation extends BaseAdapter {
         return true;
     }
 
+    /**
+     * Gives a screen reader's focus back to the row with [key] once it's drawn, as on the way back
+     * from a file picker that row opened. The picker's screen took the reader's focus with it, and
+     * the rows here are rebuilt while it's up, so the reader found nothing to go back to and
+     * started at the page's header.
+     */
+    void focusOnReturn(String key) {
+        if (key == null || !screenReaderOn()) return;
+        for (Preference row : visible) {
+            if (!key.equals(row.getKey())) continue;
+            refocus = row;
+            bringIntoView(row);
+            notifyDataSetChanged();
+            return;
+        }
+    }
+
     /** The row in view that holds a screen reader's focus, or null for none. */
     private View rowReaderIsOn() {
         for (int i = 0; i < list.getChildCount(); i++) {

@@ -1871,6 +1871,37 @@ public class SettingsNavigationTest {
     }
 
     /**
+     * Seen with TalkBack: back from the file picker that Choose a font file opened, focus started
+     * at the page's header, as the picker took the reader's focus with it and the rows were rebuilt
+     * while it was up. The row that opened the picker gets it back, picked or not, and the backup
+     * rows' pickers do the same.
+     */
+    @Test public void backFromAFilePickerPutsScreenReaderFocusOnTheRowThatOpenedIt() {
+        android.view.accessibility.AccessibilityManager a11y = controller.get().getSystemService(android.view.accessibility.AccessibilityManager.class);
+        org.robolectric.Shadows.shadowOf(a11y).setEnabled(true);
+        org.robolectric.Shadows.shadowOf(a11y).setTouchExplorationEnabled(true);
+        touchMode(true);
+        layout(dialog.getView());
+        page.navigation.navigate("Interface");
+        layout(dialog.getView());
+        page.onActivityResult(HushTumblrPreferenceFragment.FONT_FILE, android.app.Activity.RESULT_CANCELED, null);
+        // One pass may scroll the row into view, the next draws it and focuses it.
+        layout(dialog.getView());
+        layout(dialog.getView());
+        assertEquals("Choose a font file", focusedTitle(a11y));
+
+        page.navigation.navigate("");
+        layout(dialog.getView());
+        page.navigation.navigate("Pause, backup and diagnostics");
+        layout(dialog.getView());
+        String importTitle = String.valueOf(page.findPreference("action_import_settings").getTitle());
+        page.onActivityResult(SettingsBackupPreference.IMPORT, android.app.Activity.RESULT_CANCELED, null);
+        layout(dialog.getView());
+        layout(dialog.getView());
+        assertEquals(importTitle, focusedTitle(a11y));
+    }
+
+    /**
      * A page opened with home never scrolled to its row, as after a restart or from search, leaves
      * that row off screen. Back scrolls it into view, and focus lands on it then rather than
      * whenever it was scrolled to later.
