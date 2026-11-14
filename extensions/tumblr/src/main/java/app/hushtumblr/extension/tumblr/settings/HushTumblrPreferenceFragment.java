@@ -652,6 +652,9 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             patchToggle(feed, context, build, PatchFamily.HIDE_OWN_REBLOGS, Settings.HIDE_OWN_REBLOGS,
                     L10n.t("Hide your own reblogs"), L10n.t("Takes the reblogs you made out of your dashboard. "
                         + "Your blog and the rest of Tumblr still show them."), SettingsIcons.BLOCK);
+            patchToggle(feed, context, build, PatchFamily.HIDE_REBLOGS_OF_YOURS, Settings.HIDE_REBLOGS_OF_YOURS,
+                    L10n.t("Hide reblogs of your posts"), L10n.t("Takes other people's reblogs of your posts out of your dashboard. "
+                        + "Your blog and the rest of Tumblr still show them."), SettingsIcons.BLOCK);
             patchToggle(feed, context, build, PatchFamily.HIDE_LIKED_POSTS, Settings.HIDE_LIKED_POSTS,
                     L10n.t("Hide liked posts"), L10n.t("Takes the posts you've already liked out of your dashboard. "
                         + "Your likes and the rest of Tumblr still show them."), SettingsIcons.BLOCK);

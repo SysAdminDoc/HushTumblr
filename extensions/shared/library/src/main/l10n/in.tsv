@@ -399,6 +399,9 @@ Keep reblogs with added content	Pertahankan reblog dengan konten tambahan
 When reblogs are hidden, keep ones where the reblogger added something of their own. Other post filters still apply.	Saat reblog disembunyikan, pertahankan yang diberi tambahan sendiri oleh pembuat reblog. Filter postingan lainnya tetap berlaku.
 Hide your own reblogs	Sembunyikan reblog milikmu
 Takes the reblogs you made out of your dashboard. Your blog and the rest of Tumblr still show them.	Menghapus reblog yang kamu buat dari dasbor. Blogmu dan bagian lain Tumblr tetap menampilkannya.
+# context: a switch on the Feed page, next to Hide your own reblogs. It hides posts where someone else reblogged a post you made, or reblogged it from you.
+Hide reblogs of your posts	Sembunyikan reblog postinganmu
+Takes other people's reblogs of your posts out of your dashboard. Your blog and the rest of Tumblr still show them.	Menghapus reblog orang lain atas postinganmu dari dasbor. Blogmu dan bagian lain Tumblr tetap menampilkannya.
 Hide liked posts	Sembunyikan postingan yang disukai
 Takes the posts you've already liked out of your dashboard. Your likes and the rest of Tumblr still show them.	Menghapus postingan yang sudah kamu sukai dari dasbor. Daftar sukamu dan bagian lain Tumblr tetap menampilkannya.
 Match current post text	Cocokkan teks postingan saat ini

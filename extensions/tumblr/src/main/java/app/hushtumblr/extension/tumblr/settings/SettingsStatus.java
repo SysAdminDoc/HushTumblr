@@ -129,6 +129,8 @@ public final class SettingsStatus {
     public static boolean reblogPosts() { return false; }
     public static boolean hideOwnReblogs() { return false; }
     public static boolean ownReblogPosts() { return false; }
+    public static boolean hideReblogsOfYours() { return false; }
+    public static boolean reblogsOfYours() { return false; }
     public static boolean hideLikedPosts() { return false; }
     public static boolean likedPosts() { return false; }
     public static boolean hideVideoPosts() { return false; }

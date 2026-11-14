@@ -875,6 +875,45 @@
       "options": []
     },
     {
+      "name": "Hide reblogs of your posts",
+      "description": "Takes other people's reblogs of your posts out of your dashboard as each page loads. Your blog and the rest of Tumblr still show them. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed.",
+      "category": "Feed",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch",
+        "HushTumblr settings"
+      ],
+      "compatiblePackages": {
+        "com.tumblr": [
+          "47.0.0.108"
+        ]
+      },
+      "compatibility": [
+        {
+          "name": "Tumblr",
+          "packageName": "com.tumblr",
+          "description": null,
+          "appIconColor": 6453,
+          "signatures": [
+            "39ac9c821ad2d605e4849f066e8aad3cca27d5e13eb03ad8755be234a2985dfd"
+          ],
+          "targets": [
+            {
+              "version": "47.0.0.108",
+              "experimental": false,
+              "versionCodes": {
+                "ARM64_V8A": 1470000108,
+                "ARMEABI_V7A": 1470000108,
+                "X86": 1470000108,
+                "X86_64": 1470000108
+              }
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
       "name": "Hide suggested blogs",
       "description": "Takes the blogs Tumblr suggests you follow out of your dashboard and other feeds, whether as cards, rows or carousels, along with their headings. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed.",
       "category": "Feed",

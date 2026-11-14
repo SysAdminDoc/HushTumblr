@@ -399,6 +399,9 @@ Keep reblogs with added content	Reblogs mit eigenem Inhalt behalten
 When reblogs are hidden, keep ones where the reblogger added something of their own. Other post filters still apply.	Behält Reblogs, bei denen jemand etwas Eigenes hinzugefügt hat, wenn Reblogs ausgeblendet sind. Andere Beitragsfilter gelten weiter.
 Hide your own reblogs	Eigene Reblogs ausblenden
 Takes the reblogs you made out of your dashboard. Your blog and the rest of Tumblr still show them.	Entfernt die Reblogs, die du gemacht hast, aus deinem Dashboard. Dein Blog und der Rest von Tumblr zeigen sie weiterhin.
+# context: a switch on the Feed page, next to Hide your own reblogs. It hides posts where someone else reblogged a post you made, or reblogged it from you.
+Hide reblogs of your posts	Reblogs deiner Beiträge ausblenden
+Takes other people's reblogs of your posts out of your dashboard. Your blog and the rest of Tumblr still show them.	Entfernt die Reblogs anderer Leute von deinen Beiträgen aus deinem Dashboard. Dein Blog und der Rest von Tumblr zeigen sie weiterhin.
 Hide liked posts	Gelikte Beiträge ausblenden
 Takes the posts you've already liked out of your dashboard. Your likes and the rest of Tumblr still show them.	Entfernt Beiträge, die du schon geliked hast, aus deinem Dashboard. Deine Likes und der Rest von Tumblr zeigen sie weiterhin.
 Match current post text	Aktuellen Beitragstext prüfen

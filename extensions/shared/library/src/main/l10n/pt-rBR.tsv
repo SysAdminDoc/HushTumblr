@@ -396,6 +396,9 @@ Keep reblogs with added content	Manter reblogs com conteúdo adicionado
 When reblogs are hidden, keep ones where the reblogger added something of their own. Other post filters still apply.	Ao ocultar reblogs, mantém aqueles em que quem reblogou adicionou algo próprio. Os outros filtros continuam valendo.
 Hide your own reblogs	Ocultar seus próprios reblogs
 Takes the reblogs you made out of your dashboard. Your blog and the rest of Tumblr still show them.	Tira os reblogs que você fez do seu painel. Seu blog e o resto do Tumblr continuam mostrando esses reblogs.
+# context: a switch on the Feed page, next to Hide your own reblogs. It hides posts where someone else reblogged a post you made, or reblogged it from you.
+Hide reblogs of your posts	Ocultar reblogs dos seus posts
+Takes other people's reblogs of your posts out of your dashboard. Your blog and the rest of Tumblr still show them.	Tira do seu painel os reblogs que outras pessoas fazem dos seus posts. Seu blog e o resto do Tumblr continuam mostrando esses reblogs.
 Hide liked posts	Ocultar posts curtidos
 Takes the posts you've already liked out of your dashboard. Your likes and the rest of Tumblr still show them.	Tira do seu painel os posts que você já curtiu. Suas curtidas e o resto do Tumblr continuam mostrando esses posts.
 Match current post text	Buscar no texto do post atual

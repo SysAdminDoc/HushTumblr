@@ -306,7 +306,8 @@ public class DexDiff {
             Map.entry("followButton", 5), Map.entry("tagBlogLinks", 8), Map.entry("footerButton", 3), Map.entry("postTags", 6),
             Map.entry("noteCounts", 9), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("blazeButtons", 8), Map.entry("accountIdentity", 10),
-            Map.entry("matureContent", 12), Map.entry("rootPostMutes", 9), Map.entry("dashboardPage", 9), Map.entry("mutualMarkers", 13));
+            Map.entry("matureContent", 12), Map.entry("rootPostMutes", 9), Map.entry("dashboardPage", 9), Map.entry("mutualMarkers", 13),
+            Map.entry("reblogSources", 5));
 
     /**
      * A start-call, next-call, sole-call or once-call line: its method reference, the next-call's
@@ -2611,8 +2612,9 @@ public class DexDiff {
          * Families that need a shared hook without owning one of its capabilities, the rule's last
          * column: Hide ads asks the feature switch hook too, and the card and post families the
          * timeline list hook, each owning only the capability of its own bridge. Hide your own reblogs
-         * reads the paid-post bridge's can_edit getter. The dashboard page hook serves blog rules,
-         * Hide liked posts and Hide your own reblogs.
+         * and Hide reblogs of your posts read the paid-post bridge's can_edit getter. The dashboard
+         * page hook serves blog rules, Hide liked posts, Hide your own reblogs and Hide reblogs of
+         * your posts, the last of which also reads the fresh account the account identity hook keeps.
          */
         static List<String> users(Contract rule) {
             return rule.target.equals("featureSwitch") || rule.target.equals("timelineList") || rule.target.equals("timelinePaging")
@@ -4803,6 +4805,34 @@ public class DexDiff {
             boolean found = true;
             for (String spec : c.strings) found &= bridge(spec);
             capability(c.callee, found);
+        }
+
+        /**
+         * Hide reblogs of your posts: the post and blog bridges, as {@link #bridge} reads them, and
+         * UserInfo handing back the private final blog list its fresh user/info constructor fills
+         * straight from getBlogs(), the only write to it.
+         */
+        void reblogSources(Contract c) {
+            String user = c.strings.get(2), face = c.strings.get(3), field = c.strings.get(4);
+            String reason = "account blog list bridge changed", list = field.substring(field.lastIndexOf(':') + 1);
+            String name = field.substring(field.indexOf("->") + 2, field.lastIndexOf(':'));
+            preserveClass(user);
+            preserveClass(c.strings.get(1).substring(0, c.strings.get(1).indexOf('>')));
+            boolean found = bridge(c.strings.get(0)) & bridge(c.strings.get(1));
+            boolean account = field.startsWith(user + "->") && immutableBridge(user, face, "hushAccountBlogs", list, name, Opcode.IGET_OBJECT);
+            Method fresh = nativeMethod(user + "-><init>(Lcom/tumblr/rumblr/response/UserInfoResponse;)V", reason);
+            if (fresh == null) account = false;
+            else {
+                List<Instruction> b = instructions(fresh);
+                int read = firstIndex(b, 0, i -> isCall(i, "Lcom/tumblr/rumblr/model/UserInfo;", "getBlogs", "()" + list));
+                int writes = 0;
+                for (Method m : clean.classes.get(user).getMethods()) for (Instruction i : instructions(m))
+                    if (i.getOpcode() == Opcode.IPUT_OBJECT && String.valueOf(reference(i)).equals(field)) writes++;
+                account &= read >= 0 && writes == 1 && get(b, read + 1) != null && b.get(read + 1).getOpcode() == Opcode.MOVE_RESULT_OBJECT
+                        && fieldIs(get(b, read + 2), Opcode.IPUT_OBJECT, field, firstRegister(b.get(read + 1)), parameter(fresh, -1));
+            }
+            if (!account) fail(reason);
+            capability(c.callee, found && account);
         }
 
         /** One `model>interface>method:key,method:key` bridge. */
@@ -7401,6 +7431,7 @@ public class DexDiff {
                     case "nativeTimestamps": nativeTimestamps(c); break;
                     case "timelineCarousel": timelineCarousel(c); break;
                     case "postBridge": postBridge(c); break;
+                    case "reblogSources": reblogSources(c); break;
                     case "paidPostBridge": paidPostBridge(c); break;
                     case "imageDescriptions": imageDescriptions(c); break;
                     case "activityNotifications": activityNotifications(c); break;

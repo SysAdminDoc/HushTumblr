@@ -90,6 +90,7 @@ body:
         - Hide photo posts
         - Hide posts with these words
         - Hide reblogs
+        - Hide reblogs of your posts
         - Hide suggested blogs
         - Hide suggested communities
         - Hide suggested tags

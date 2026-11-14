@@ -328,6 +328,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_hide_own_reblogs", FALSE);
 
     /**
+     * Someone else's reblog of a post from one of your blogs, reblogged straight from it or first
+     * made there, leaves each page of the dashboard. A blog's own page and a post opened by itself
+     * keep it ({@link app.hushtumblr.extension.tumblr.timeline.DashboardPosts}).
+     */
+    public static final BooleanSetting HIDE_REBLOGS_OF_YOURS =
+            new BooleanSetting("hushtumblr_hide_reblogs_of_yours", FALSE);
+
+    /**
      * Posts the signed-in account had liked when Tumblr sent them leave each page of the dashboard
      * and the feeds that load like it. Likes and blog pages keep them
      * ({@link app.hushtumblr.extension.tumblr.timeline.PostRules}).
