@@ -106,6 +106,8 @@ public final class SettingsStatus {
     public static boolean postTags() { return false; }
     public static boolean hideFollowButton() { return false; }
     public static boolean followButton() { return false; }
+    public static boolean tagBlogSearch() { return false; }
+    public static boolean tagBlogLinks() { return false; }
     public static boolean hideTumblrMart() { return false; }
     public static boolean premiumDiamond() { return false; }
     public static boolean tumblrMartButtons() { return false; }

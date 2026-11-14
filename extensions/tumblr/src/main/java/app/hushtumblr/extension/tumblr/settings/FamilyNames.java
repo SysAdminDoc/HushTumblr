@@ -60,6 +60,7 @@ public final class FamilyNames {
     public static final String HIDE_FEATURED_POSTS = "Hide Featured posts";
     public static final String HIDE_HASHTAGS = "Hide hashtags";
     public static final String HIDE_FOLLOW_BUTTON = "Hide the Follow button";
+    public static final String TAG_BLOG_SEARCH = "Tags open the blog's tag search";
     public static final String HIDE_TUMBLRMART = "Hide the diamond and TumblrMart";
     public static final String HIDE_NOTE_COUNTS = "Hide note counts";
     public static final String HIDE_LIKE_BUTTON = "Hide the like button";

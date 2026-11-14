@@ -300,6 +300,9 @@ Hide hashtags	Hashtag'leri gizle
 Hide the Follow button	Takip et düğmesini gizle
 Takes the Follow button out of the header of posts from blogs you don't follow yet.	Henüz takip etmediğin blogların gönderilerinin başlığındaki Takip et düğmesini kaldırır.
 Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.	Panondaki ve diğer akışlardaki gönderilerin altındaki etiketleri kaldırır, kaynak bağlantısını bırakır.
+# context: a switch on the Posts page. A tag is a hashtag under a post, and tapping it opens a search. The blog's tag search is the screen blog.tumblr.com/tagged/<tag> shows, only that blog's posts.
+Tags open the blog's tag search	Etiketler blogun etiket aramasını açar
+Tapping a tag under a post searches that blog's posts for the tag, in the dashboard, other feeds and a post opened by itself.	Bir gönderinin altındaki etikete dokunmak, o blogun gönderilerinde etiketi arar. Panoda, diğer akışlarda ve tek başına açılan bir gönderide çalışır.
 # context: the switch for Tumblr's Premium diamond and TumblrMart button on the Interface page. TumblrMart and Premium are Tumblr's names; keep them. The last two are parts named in "This build handles %1$s."
 Hide the diamond and TumblrMart	Elmas ve TumblrMart'ı gizle
 Hides the Premium diamond on your dashboard, Explore and notifications when you return to them. Open screens keep their TumblrMart button until Tumblr restarts.	Panoya, Keşfet ekranına ve bildirimlere döndüğünüzde Premium elmasını gizler. Açık ekranlar Tumblr yeniden başlatılana kadar TumblrMart düğmesini korur.

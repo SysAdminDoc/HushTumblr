@@ -84,6 +84,7 @@ public enum PatchFamily {
     HIDE_FEATURED_POSTS(FamilyNames.HIDE_FEATURED_POSTS, "hideFeaturedPosts", null, Settings.HIDE_FEATURED_POSTS),
     HIDE_HASHTAGS(FamilyNames.HIDE_HASHTAGS, "hideHashtags", null, Settings.HIDE_HASHTAGS),
     HIDE_FOLLOW_BUTTON(FamilyNames.HIDE_FOLLOW_BUTTON, "hideFollowButton", null, Settings.HIDE_FOLLOW_BUTTON),
+    TAG_BLOG_SEARCH(FamilyNames.TAG_BLOG_SEARCH, "tagBlogSearch", null, Settings.TAG_BLOG_SEARCH),
     HIDE_TUMBLRMART(FamilyNames.HIDE_TUMBLRMART, "hideTumblrMart", null, Settings.HIDE_TUMBLRMART),
     HIDE_NOTE_COUNTS(FamilyNames.HIDE_NOTE_COUNTS, "hideNoteCounts", null, Settings.HIDE_NOTE_COUNTS),
     HIDE_LIKE_BUTTON(FamilyNames.HIDE_LIKE_BUTTON, "hideLikeButton", null, Settings.HIDE_LIKE_BUTTON),
@@ -191,7 +192,7 @@ public enum PatchFamily {
     /** The families the Posts page holds. The page and its home row both read this. */
     static final Set<PatchFamily> POSTS_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_SAVE_BUTTON,
             HIDE_SHARE_BUTTON, HIDE_COMMENT_BUTTON, HIDE_REBLOG_BUTTON, HIDE_LIKE_BUTTON, HIDE_NOTE_COUNTS, HIDE_FOLLOW_BUTTON,
-            HIDE_HASHTAGS, SHOW_POST_TIMESTAMPS, VISIBLE_ALT_TEXT, SHARE_VIDEO_LINKS, SHARPER_IMAGES,
+            HIDE_HASHTAGS, TAG_BLOG_SEARCH, SHOW_POST_TIMESTAMPS, VISIBLE_ALT_TEXT, SHARE_VIDEO_LINKS, SHARPER_IMAGES,
             COLLAPSE_LONG_POSTS, REVEAL_ALLOWED_MATURE_CONTENT, SHOW_MUTUAL_MARKERS));
 
     /** The families the Privacy page holds. The page and its home row both read this. */
@@ -242,6 +243,7 @@ public enum PatchFamily {
         FEATURED_POSTS(HIDE_FEATURED_POSTS, "featuredPosts", "Hide Featured posts"),
         POST_TAGS(HIDE_HASHTAGS, "postTags", "Hide hashtags"),
         FOLLOW_BUTTON(HIDE_FOLLOW_BUTTON, "followButton", "Hide the Follow button"),
+        TAG_BLOG_LINKS(TAG_BLOG_SEARCH, "tagBlogLinks", "Tags open the blog's tag search"),
         // Two hooks, so the coverage line names each part rather than the patch.
         PREMIUM_DIAMOND(HIDE_TUMBLRMART, "premiumDiamond", "the Premium diamond"),
         TUMBLRMART_BUTTONS(HIDE_TUMBLRMART, "tumblrMartButtons", "TumblrMart buttons"),

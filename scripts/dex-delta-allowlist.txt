@@ -72,6 +72,10 @@ method Lapp/hushtumblr/extension/tumblr/timeline/TimelineFilter;->carouselItems(
 implements Lcom/tumblr/rumblr/model/activity/ActivityNotification; Lapp/hushtumblr/extension/tumblr/notifications/HushActivityNotification;
 method Lcom/tumblr/rumblr/model/activity/ActivityNotification;->hushNotificationType()Ljava/lang/String; 5b196f54e07f695a284a8209f59cb22672809e2440873efbc47d59a24cf18346
 
+[Tags open the blog's tag search]
+implements Lcom/tumblr/ui/widget/t$b; Lapp/hushtumblr/extension/tumblr/ui/HushTagBlog;
+method Lcom/tumblr/ui/widget/t$b;->hushTagBlogName()Ljava/lang/String; e1559a150b2b9ab10f354ca7f22f46c8cfa42d2f2ddd4c4571b3af16ac9efa0a
+
 [Visible image descriptions]
 implements Lcom/tumblr/rumblr/model/post/blocks/ImageBlock; Lapp/hushtumblr/extension/tumblr/ui/HushImageDescription;
 implements Lcom/tumblr/ui/widget/graywater/viewholder/PhotoContainer; Lapp/hushtumblr/extension/tumblr/ui/HushImageContainer;

@@ -726,6 +726,10 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             patchToggle(posts, context, build, PatchFamily.HIDE_HASHTAGS, Settings.HIDE_HASHTAGS,
                     L10n.t("Hide hashtags"), L10n.t("Takes the tags off the bottom of posts in your dashboard "
                         + "and other feeds, and keeps the source link."), SettingsIcons.BLOCK);
+            patchToggle(posts, context, build, PatchFamily.TAG_BLOG_SEARCH, Settings.TAG_BLOG_SEARCH,
+                    L10n.t("Tags open the blog's tag search"), L10n.t("Tapping a tag under a post searches that "
+                        + "blog's posts for the tag, in the dashboard, other feeds and a post opened by itself."),
+                    SettingsIcons.SEARCH);
             patchToggle(posts, context, build, PatchFamily.HIDE_FOLLOW_BUTTON, Settings.HIDE_FOLLOW_BUTTON,
                     L10n.t("Hide the Follow button"), L10n.t("Takes the Follow button out of the header of "
                         + "posts from blogs you don't follow yet."), SettingsIcons.BLOCK);

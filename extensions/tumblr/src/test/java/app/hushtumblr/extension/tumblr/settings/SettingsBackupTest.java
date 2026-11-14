@@ -264,6 +264,7 @@ public class SettingsBackupTest {
                 Settings.HIDE_FEATURED_POSTS,
                 Settings.HIDE_HASHTAGS,
                 Settings.HIDE_FOLLOW_BUTTON,
+                Settings.TAG_BLOG_SEARCH,
                 Settings.HIDE_TUMBLRMART,
                 Settings.HIDE_NOTE_COUNTS,
                 Settings.HIDE_LIKE_BUTTON,

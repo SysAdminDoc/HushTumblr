@@ -303,7 +303,7 @@ public class DexDiff {
             Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 7), Map.entry("timelinePaging", 5),
             Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 7), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
             Map.entry("crashReports", 3), Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 6), Map.entry("videoLinkPress", 6), Map.entry("imageSizes", 4), Map.entry("longPostRows", 6), Map.entry("exploreHeaderAd", 4), Map.entry("shareLinkTag", 5), Map.entry("longTrailRows", 4), Map.entry("longPostExpand", 17), Map.entry("fontChoice", 6),
-            Map.entry("followButton", 5), Map.entry("footerButton", 3), Map.entry("postTags", 6),
+            Map.entry("followButton", 5), Map.entry("tagBlogLinks", 8), Map.entry("footerButton", 3), Map.entry("postTags", 6),
             Map.entry("noteCounts", 9), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("blazeButtons", 8), Map.entry("accountIdentity", 10),
             Map.entry("matureContent", 12), Map.entry("rootPostMutes", 9), Map.entry("dashboardPage", 9), Map.entry("mutualMarkers", 13));
@@ -6268,6 +6268,88 @@ public class DexDiff {
             return true;
         }
 
+        /**
+         * The click listener the tags row builds from a screen and a blog: [hook] handed the answer
+         * of its question whether the screen belongs to a blog, and the listener, right after that
+         * answer lands, its own answer moved back over it. The listener answers the bridge's name
+         * with its blog's name, or null when the emptiness test Tumblr makes of that blog before its
+         * own blog search says it's empty.
+         */
+        void tagBlogLinks(Contract c) {
+            String hook = c.strings.get(0), drawer = c.strings.get(1), navigation = c.strings.get(2), blog = c.strings.get(3),
+                    screen = c.strings.get(4), search = c.strings.get(5), face = c.strings.get(6), name = c.strings.get(7);
+            ClassDef tags = clean.classes.get(drawer);
+            List<Method> clicks = new ArrayList<>();
+            if (tags == null) fail("Tumblr's " + drawer + " is absent");
+            else {
+                Set<String> built = new TreeSet<>();
+                for (Method m : tags.getMethods()) for (Instruction i : instructions(m))
+                    if (i.getOpcode() == Opcode.NEW_INSTANCE && reference(i) instanceof TypeReference t) built.add(t.getType());
+                for (String type : built) {
+                    ClassDef cd = clean.classes.get(type);
+                    if (cd == null || !cd.getInterfaces().contains("Landroid/view/View$OnClickListener;")) continue;
+                    boolean shaped = false;
+                    for (Method m : cd.getMethods()) if (m.getName().equals("<init>") && descriptor(m).equals("(" + navigation + blog + ")V")) shaped = true;
+                    if (shaped) for (Method m : cd.getMethods()) if (!isStatic(m) && m.getName().equals("onClick")
+                            && descriptor(m).equals("(Landroid/view/View;)V") && m.getImplementation() != null) clicks.add(m);
+                }
+            }
+            Method old = unique(clicks, "the click listener a post's tags are built with");
+            boolean found = false;
+            if (old != null) {
+                List<Instruction> body = instructions(old);
+                boolean opens = body.stream().anyMatch(i -> i.getOpcode() == Opcode.INVOKE_STATIC && called(i) != null
+                        && called(i).getDefiningClass().equals(search)
+                        && descriptor(called(i)).equals("(Landroid/content/Context;Ljava/lang/String;" + blog + "Z)V"));
+                List<Integer> asks = new ArrayList<>();
+                for (int k = 0; k + 1 < body.size(); k++) if (body.get(k).getOpcode() == Opcode.INVOKE_STATIC && called(body.get(k)) != null
+                        && descriptor(called(body.get(k))).equals("(" + screen + ")Z") && body.get(k + 1).getOpcode() == Opcode.MOVE_RESULT) asks.add(k);
+                if (!opens) fail("the tag listener " + old + " doesn't open " + search);
+                else if (asks.size() != 1) fail("the tag listener's screen question has " + asks.size() + " clean targets, expected 1");
+                else {
+                    int answer = firstRegister(body.get(asks.get(0) + 1));
+                    found = hookAt(old, actual(old), asks.get(0) + 2, hook, List.of(answer, parameter(old, -1)), answer, List.of(answer));
+                }
+            }
+            String listener = old == null ? null : old.getDefiningClass();
+            String added = listener + "->" + name + "()" + STRING_TYPE;
+            ClassDef bridge = patched.classes.get(face);
+            int abstractCount = 0;
+            boolean bridged = listener != null && implementsBridge(listener, face) && bridge != null;
+            if (bridge != null) for (Method m : bridge.getMethods()) if (AccessFlags.ABSTRACT.isSet(m.getAccessFlags())) {
+                abstractCount++;
+                bridged &= m.getName().equals(name) && descriptor(m).equals("()" + STRING_TYPE);
+            }
+            Method call = listener == null || clean.methods.containsKey(added) ? null : actual(added);
+            List<Instruction> b = call == null ? List.of() : instructions(call);
+            bridged &= abstractCount == 1 && call != null && !isStatic(call) && AccessFlags.PUBLIC.isSet(call.getAccessFlags()) && b.size() == 9;
+            if (bridged) {
+                FieldReference kept = field(b.get(0));
+                MethodReference empty = called(b.get(1)), named = called(b.get(4));
+                int held = firstRegister(b.get(0)), required = AccessFlags.PRIVATE.getValue() | AccessFlags.FINAL.getValue();
+                bridged = kept != null && kept.getDefiningClass().equals(listener) && kept.getType().equals(blog)
+                        && hasField(clean, listener, kept.getName(), blog, required, AccessFlags.STATIC.getValue())
+                        && hasField(patched, listener, kept.getName(), blog, required, AccessFlags.STATIC.getValue())
+                        && fieldIs(b.get(0), Opcode.IGET_OBJECT, kept.toString(), held, parameter(call, -1))
+                        && b.get(1).getOpcode() == Opcode.INVOKE_STATIC && empty != null && empty.getDefiningClass().equals(blog)
+                        && descriptor(empty).equals("(" + blog + ")Z") && arguments(b.get(1)).equals(List.of(held))
+                        && b.get(2).getOpcode() == Opcode.MOVE_RESULT && b.get(3).getOpcode() == Opcode.IF_NEZ
+                        && firstRegister(b.get(3)) == firstRegister(b.get(2)) && target(call, 3) == 7
+                        && b.get(4).getOpcode() == Opcode.INVOKE_VIRTUAL && named != null && named.getDefiningClass().equals(blog)
+                        && descriptor(named).equals("()" + STRING_TYPE) && arguments(b.get(4)).equals(List.of(held))
+                        && movesTo(b.get(5), held, Opcode.MOVE_RESULT_OBJECT) && movesTo(b.get(6), held, Opcode.RETURN_OBJECT)
+                        && literalIs(b.get(7), Opcode.CONST_4, held, 0) && movesTo(b.get(8), held, Opcode.RETURN_OBJECT);
+                // The emptiness test is the one Tumblr's onClick makes before its own blog search, and it reads that name.
+                Method test = bridged ? clean.methods.get(empty.toString()) : null;
+                bridged &= test != null && isStatic(test) && instructions(old).stream().anyMatch(i -> i.getOpcode() == Opcode.INVOKE_STATIC
+                        && String.valueOf(reference(i)).equals(empty.toString()))
+                        && instructions(test).stream().anyMatch(i -> i.getOpcode() == Opcode.INVOKE_VIRTUAL
+                        && String.valueOf(reference(i)).equals(named.toString()));
+            }
+            if (!bridged) fail(added + " doesn't answer the tag listener's blog name with a null fallback");
+            capability(c.callee, found && bridged);
+        }
+
         /** The footer function Compose names [control], found by its source note. */
         Method footerControl(String control) {
             String note = control + " (";
@@ -7343,6 +7425,7 @@ public class DexDiff {
                     case "longPostExpand": longPostExpand(c); break;
                     case "fontChoice": fontChoice(c); break;
                     case "followButton": followButton(c); break;
+                    case "tagBlogLinks": tagBlogLinks(c); break;
                     case "footerButton": footerButton(c); break;
                     case "postTags": postTags(c); break;
                     case "noteCounts": noteCounts(c); break;

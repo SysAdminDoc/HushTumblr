@@ -300,6 +300,9 @@ Hide hashtags	Hashtags ausblenden
 Hide the Follow button	Folgen-Button ausblenden
 Takes the Follow button out of the header of posts from blogs you don't follow yet.	Entfernt den Folgen-Button aus dem Kopf von Beiträgen aus Blogs, denen du noch nicht folgst.
 Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.	Entfernt die Tags unten an Beiträgen in deinem Dashboard und anderen Feeds und lässt den Quellenlink stehen.
+# context: a switch on the Posts page. A tag is a hashtag under a post, and tapping it opens a search. The blog's tag search is the screen blog.tumblr.com/tagged/<tag> shows, only that blog's posts.
+Tags open the blog's tag search	Tags öffnen die Tag-Suche des Blogs
+Tapping a tag under a post searches that blog's posts for the tag, in the dashboard, other feeds and a post opened by itself.	Ein Tipp auf einen Tag unter einem Beitrag durchsucht die Beiträge dieses Blogs nach dem Tag, im Dashboard, in anderen Feeds und in einem einzeln geöffneten Beitrag.
 # context: the switch for Tumblr's Premium diamond and TumblrMart button on the Interface page. TumblrMart and Premium are Tumblr's names; keep them. The last two are parts named in "This build handles %1$s."
 Hide the diamond and TumblrMart	Diamant und TumblrMart ausblenden
 Hides the Premium diamond on your dashboard, Explore and notifications when you return to them. Open screens keep their TumblrMart button until Tumblr restarts.	Blendet den Premium-Diamanten auf Dashboard, Entdecken und Benachrichtigungen aus, wenn du dorthin zurückkehrst. Offene Bildschirme behalten ihren TumblrMart-Button bis zum Neustart von Tumblr.

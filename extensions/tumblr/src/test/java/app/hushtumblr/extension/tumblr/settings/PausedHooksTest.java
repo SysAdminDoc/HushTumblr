@@ -94,6 +94,8 @@ import app.hushtumblr.extension.tumblr.timeline.TimelineFilter;
 import app.hushtumblr.extension.tumblr.timeline.TimelineItems;
 import app.hushtumblr.extension.tumblr.ui.AltTextCaptions;
 import app.hushtumblr.extension.tumblr.ui.BlazeButtons;
+import app.hushtumblr.extension.tumblr.ui.BlogTags;
+import app.hushtumblr.extension.tumblr.ui.HushTagBlog;
 import app.hushtumblr.extension.tumblr.ui.BottomBarForTests;
 import app.hushtumblr.extension.tumblr.ui.BottomBarTabsForTests;
 import app.hushtumblr.extension.tumblr.ui.DarkBackgroundForTests;
@@ -242,6 +244,9 @@ public class PausedHooksTest {
         probes.put(Settings.HIDE_HASHTAGS, Collections.singletonList(PostParts::hideTags));
         // A post header's Follow button is hidden.
         probes.put(Settings.HIDE_FOLLOW_BUTTON, Collections.singletonList(PostParts::hideFollowButton));
+        // A tag under a post opens its blog's search.
+        probes.put(Settings.TAG_BLOG_SEARCH, Collections.singletonList(
+                () -> BlogTags.blogScreen(0, (HushTagBlog) () -> "staff")));
         // The Premium diamond is hidden.
         probes.put(Settings.HIDE_TUMBLRMART, Collections.singletonList(() -> StoreButtons.hideDiamond(null, null)));
         // The like, reblog and comment counts under a post are blank, a community reaction keeps its

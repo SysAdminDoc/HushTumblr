@@ -92,7 +92,7 @@ public class QuickSetupKeysTest {
                 Settings.HIDE_EXPLORE_TAB, Settings.HIDE_NOTIFICATIONS_TAB, Settings.HIDE_LIKE_BUTTON,
                 Settings.HIDE_REBLOG_BUTTON, Settings.HIDE_COMMENT_BUTTON, Settings.HIDE_SHARE_BUTTON,
                 Settings.HIDE_SAVE_BUTTON, Settings.HIDE_NOTE_COUNTS, Settings.HIDE_HASHTAGS,
-                Settings.HIDE_FOLLOW_BUTTON, Settings.HIDE_NOTIFICATIONS_COUNT, Settings.HIDE_NOTIFICATION_REPLIES,
+                Settings.HIDE_FOLLOW_BUTTON, Settings.TAG_BLOG_SEARCH, Settings.HIDE_NOTIFICATIONS_COUNT, Settings.HIDE_NOTIFICATION_REPLIES,
                 Settings.HIDE_NOTIFICATION_MENTIONS, Settings.HIDE_NOTIFICATION_ASKS);
         for (BooleanSetting setting : missed) assertFalse(setting.key + " is in a quick setup", chosen.contains(setting));
     }

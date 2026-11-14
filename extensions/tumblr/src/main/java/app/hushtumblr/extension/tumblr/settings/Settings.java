@@ -227,6 +227,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_hide_follow_button", FALSE);
 
     /**
+     * A tag tapped on a post opens the posting blog's own search for that tag, the screen
+     * blog.tumblr.com/tagged/tag shows, in place of Tumblr's search of every blog
+     * ({@link app.hushtumblr.extension.tumblr.ui.BlogTags}). Off to start.
+     */
+    public static final BooleanSetting TAG_BLOG_SEARCH =
+            new BooleanSetting("hushtumblr_tag_blog_search", FALSE);
+
+    /**
      * The Premium diamond and the TumblrMart button stay out of Tumblr's top bars
      * ({@link app.hushtumblr.extension.tumblr.ui.StoreButtons}). Off to start.
      */

@@ -70,6 +70,7 @@ family|hidePostsWithWords|Hide posts with these words|postWords
 family|hideFilteredPosts|Hide filtered posts|filteredPosts
 family|hideHashtags|Hide hashtags|postTags
 family|hideFollowButton|Hide the Follow button|followButton
+family|tagBlogSearch|Tags open the blog's tag search|tagBlogLinks
 family|hideTumblrMart|Hide the diamond and TumblrMart|premiumDiamond,tumblrMartButtons
 family|hideNoteCounts|Hide note counts|noteCounts
 family|hideLikeButton|Hide the like button|likeButton
@@ -167,6 +168,10 @@ mutation|longTrailRows|longTrailRows|Lapp/hushtumblr/extension/tumblr/timeline/L
 mutation|longPostExpand|longPostExpand|Lapp/hushtumblr/extension/tumblr/timeline/LongPosts;->readMoreShown(Landroid/view/View;Ljava/lang/Object;)V|Lapp/hushtumblr/extension/tumblr/timeline/LongPosts;->readMore(Ljava/lang/Object;Landroid/view/View;)Z|Lr0h;|Lqfe;|Lcom/tumblr/ui/widget/graywater/viewholder/ReadMoreViewHolder;|Lr4g;|La2k;|Lcom/tumblr/ui/fragment/TimelineFragment;|Lw4a;|Lzx9;|Landroidx/recyclerview/widget/RecyclerView$h;|Lapp/hushtumblr/extension/tumblr/timeline/HushReadMoreBinder;|Lapp/hushtumblr/extension/tumblr/timeline/HushTimelineItem;|Lapp/hushtumblr/extension/tumblr/timeline/HushExpandingTimeline;|Ljm2;|Laf1;|Lkjh;
 mutation|fontChoice|fontChoice|Lapp/hushtumblr/extension/tumblr/ui/AppFont;->replacement(Landroid/content/Context;I)Landroid/graphics/Typeface;|Lapp/hushtumblr/extension/tumblr/ui/AppFont;->provided(Landroid/graphics/Typeface;)Landroid/graphics/Typeface;|Font resource ID #0x|sans-serif-medium|Returning pre-inflated View for resId: |Lapp/hushtumblr/extension/tumblr/ui/AppFont;->preinflated(Landroid/view/View;)V
 mutation|followButton|followButton|Lapp/hushtumblr/extension/tumblr/ui/PostParts;->hideFollowButton()Z|Lcom/tumblr/ui/widget/PostCardHeader;|Lcom/tumblr/rumblr/model/post/PostHeaderAction$ActionType;->FOLLOW|Lapp/hushtumblr/extension/tumblr/ui/PostParts;->trailFollow(Ljava/lang/Object;)Ljava/lang/Object;|Lcom/tumblr/ui/widget/graywater/viewholder/ReblogHeaderViewHolder;
+# The tag listener's question hook, the tags row that builds the listener, the screen and blog it's
+# built from, the screen type its blog question takes, the blog search it opens, and the bridge the
+# listener answers its blog's name through, with the bridge's method name.
+mutation|tagBlogLinks|tagBlogLinks|Lapp/hushtumblr/extension/tumblr/ui/BlogTags;->blogScreen(ILjava/lang/Object;)Z|Lcom/tumblr/ui/widget/PostCardWrappedTags;|Lcom/tumblr/analytics/NavigationState;|Lcom/tumblr/bloginfo/BlogInfo;|Lcom/tumblr/analytics/ScreenType;|Lcom/tumblr/ui/activity/GraywaterBlogSearchActivity;|Lapp/hushtumblr/extension/tumblr/ui/HushTagBlog;|hushTagBlogName
 # A footer button's question, the Compose function it guards (by its source note) and the
 # community footer hook the family adds, or none.
 mutation|likeButton|footerButton|Lapp/hushtumblr/extension/tumblr/ui/PostFooter;->hideLikeButton()Z|com.tumblr.ui.widget.splitnotescount.composable.LikeEngagement|Lapp/hushtumblr/extension/tumblr/ui/PostFooter;->hideCommunityReactions(Landroid/view/ViewGroup;)V
