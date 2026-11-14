@@ -1852,20 +1852,91 @@ public class SettingsNavigationTest {
         assertTrue(row.performAccessibilityAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null));
         int before = focusedTitles(a11y).size();
 
-        assertTrue(list().performItemClick(row, at, list().getAdapter().getItemId(at)));
-        ShadowLooper.idleMainLooper();
-        layout(dialog.getView());
+        // A phone measures the list with room to spare as soon as its rows change, before it lays
+        // them out, and that measure takes rows for the top of the page from the adapter and
+        // throws them away undrawn.
+        android.database.DataSetObserver measuresFirst = new android.database.DataSetObserver() {
+            @Override public void onChanged() {
+                list().measure(View.MeasureSpec.makeMeasureSpec(780, View.MeasureSpec.EXACTLY),
+                        View.MeasureSpec.makeMeasureSpec(1688, View.MeasureSpec.AT_MOST));
+            }
+        };
+        list().getAdapter().registerDataSetObserver(measuresFirst);
+        try {
+            assertTrue(list().performItemClick(row, at, list().getAdapter().getItemId(at)));
+            ShadowLooper.idleMainLooper();
+            layout(dialog.getView());
+            ShadowLooper.idleMainLooper();
+        } finally {
+            list().getAdapter().unregisterDataSetObserver(measuresFirst);
+        }
 
         assertFalse(Settings.HIDE_ADS.savedValue());
         assertTrue("the restart row came in above the switch",
                 contains(SettingsNavigation.RESTART) && position(SettingsNavigation.RESTART) < position(Settings.HIDE_ADS.key));
         List<String> after = focusedTitles(a11y).subList(before, focusedTitles(a11y).size());
-        assertEquals("focus went back to the switch, and only there", Arrays.asList("Hide ads"), after);
+        assertFalse("focus went back to the switch", after.isEmpty());
+        // The flip and then the finished save each rebuild the page, and each hands focus to the
+        // switch's new row: "Saving the setting" is read, then the switch's state.
+        assertEquals("and only there", java.util.Collections.singleton("Hide ads"), new java.util.HashSet<>(after));
         View flipped = list().getChildAt(position(Settings.HIDE_ADS.key) - list().getFirstVisiblePosition());
         TextView note = flipped.findViewWithTag(SettingsFeedback.MESSAGE_TAG);
         assertEquals("Saved. Restart Tumblr to apply this change.", note.getText().toString());
         assertEquals("the note is read with the row, not again on its own",
                 View.ACCESSIBILITY_LIVE_REGION_NONE, note.getAccessibilityLiveRegion());
+    }
+
+    /**
+     * A switch at the bottom of the screen is pushed off it by the restart row coming in at the top
+     * of the page. The list scrolls back to it, and focus lands on it then rather than whenever it
+     * was scrolled to later.
+     */
+    @Test public void aFlippedSwitchPushedOffScreenByTheRestartRowIsBroughtBackForItsFocus() {
+        android.view.accessibility.AccessibilityManager a11y = controller.get().getSystemService(android.view.accessibility.AccessibilityManager.class);
+        org.robolectric.Shadows.shadowOf(a11y).setEnabled(true);
+        org.robolectric.Shadows.shadowOf(a11y).setTouchExplorationEnabled(true);
+        touchMode(true);
+        layout(dialog.getView());
+        page.navigation.navigate("Interface");
+        layout(dialog.getView());
+        int at = position(Settings.TURN_OFF_SCREENSHOT_SHARING.key);
+        assertTrue("the switch sits a few rows down its page", at >= 2);
+        // The tallest screen that shows no more than a sliver of the switch at its bottom, with the
+        // page's top in view.
+        int low = 200;
+        int high = 6000;
+        while (high - low > 1) {
+            int mid = (low + high) / 2;
+            layout(dialog.getView(), mid);
+            int last = list().getLastVisiblePosition();
+            boolean tooTall = last > at || last == at
+                    && list().getHeight() - list().getChildAt(at - list().getFirstVisiblePosition()).getTop() > 8;
+            if (tooTall) high = mid;
+            else low = mid;
+        }
+        int height = low;
+        layout(dialog.getView(), height);
+        assertEquals(0, list().getFirstVisiblePosition());
+        assertEquals("the switch is the last row in view", at, list().getLastVisiblePosition());
+        View row = list().getChildAt(at);
+        assertTrue(row.performAccessibilityAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null));
+        int before = focusedTitles(a11y).size();
+
+        assertTrue(list().performItemClick(row, at, list().getAdapter().getItemId(at)));
+        ShadowLooper.idleMainLooper();
+        // One pass finds the switch pushed off screen and scrolls, the next draws it and focuses it.
+        layout(dialog.getView(), height);
+        ShadowLooper.idleMainLooper();
+        layout(dialog.getView(), height);
+        ShadowLooper.idleMainLooper();
+
+        int now = position(Settings.TURN_OFF_SCREENSHOT_SHARING.key);
+        assertTrue("the restart row came in above the switch", contains(SettingsNavigation.RESTART)
+                && position(SettingsNavigation.RESTART) < now);
+        assertTrue("the switch is on screen", now >= list().getFirstVisiblePosition() && now <= list().getLastVisiblePosition());
+        List<String> after = focusedTitles(a11y).subList(before, focusedTitles(a11y).size());
+        assertFalse("focus went back to the switch", after.isEmpty());
+        assertEquals("and only there", java.util.Collections.singleton("Turn off screenshot sharing"), new java.util.HashSet<>(after));
     }
 
     /** The first text of each row that took accessibility focus, in order. */

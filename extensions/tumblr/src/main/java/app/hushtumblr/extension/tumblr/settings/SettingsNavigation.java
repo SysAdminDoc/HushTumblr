@@ -156,9 +156,10 @@ final class SettingsNavigation extends BaseAdapter {
     private String route = "";
     private String query = "";
     /**
-     * The row Back returns to. With a screen reader on it takes accessibility focus once it's back
-     * on screen: on the S22 TalkBack otherwise held the whole screen, and the person's place in
-     * the list was lost.
+     * The row Back returns to, or the row a screen reader was on when its page was rebuilt. With a
+     * screen reader on it takes accessibility focus once it's back on screen: on the S22 TalkBack
+     * otherwise held the whole screen, and the person's place in the list was lost. Cleared when
+     * the row takes focus, and by another page or a search.
      */
     private Preference refocus;
     private int homePosition;
@@ -457,7 +458,7 @@ final class SettingsNavigation extends BaseAdapter {
             @Override public void onLayoutChange(View view, int left, int top, int right, int bottom,
                     int oldLeft, int oldTop, int oldRight, int oldBottom) {
                 list.removeOnLayoutChangeListener(this);
-                // Drawn already, which cleared refocus, or another page or a search came first.
+                // Focused already, which cleared refocus, or another page or a search came first.
                 int position = visible.indexOf(row);
                 if (refocus != row || position < 0) return;
                 if (position >= list.getFirstVisiblePosition() && position <= list.getLastVisiblePosition()) return;
@@ -645,6 +646,8 @@ final class SettingsNavigation extends BaseAdapter {
             // once that's drawn.
             readerOn.performAccessibilityAction(AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS, null);
             refocus = (Preference) reading;
+            // A restart row put in at the top of the view can push the last row in view off it.
+            bringIntoView(refocus);
         }
         notifyDataSetChanged();
         keepPlace(restartWas, pageStatusWas);
@@ -790,11 +793,20 @@ final class SettingsNavigation extends BaseAdapter {
         Preference item = getItem(position);
         View row = item.getView(null, parent);
         if (item == refocus) {
-            refocus = null;
-            // Posted from the new row, it runs after this layout has put the row in the window.
-            // Focus reads the whole row, so a note just put under it isn't read again on its own.
-            row.post(() -> {
-                if (!row.performAccessibilityAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null)) return;
+            // Not this row: a measure asks for rows it throws away undrawn, so the row that gets
+            // focus is the one the list shows once this pass is done. Posted to the list, it runs
+            // after the layout. With a layout still to come the children are the old rows, and
+            // still off screen the item waits too: the layout that draws it, as Back's scroll to it
+            // makes, asks for it again.
+            list.post(() -> {
+                if (refocus != item || list.isLayoutRequested()) return;
+                int at = visible.indexOf(item);
+                int first = list.getFirstVisiblePosition();
+                View shown = at < first ? null : list.getChildAt(at - first);
+                if (shown == null) return;
+                refocus = null;
+                // Focus reads the whole row, so a note just put under it isn't read again on its own.
+                if (!shown.performAccessibilityAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null)) return;
                 SettingsFeedback note = item.hasKey() ? page.feedbackFor(item.getKey()) : null;
                 if (note != null) note.readWithRow();
             });
