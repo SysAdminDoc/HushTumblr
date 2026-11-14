@@ -2055,6 +2055,48 @@ public class SettingsNavigationTest {
     }
 
     /**
+     * Seen on the lab emulator with TalkBack and a keyboard: after a touch, Down from the search
+     * box put the first row a key lands on where the status card was, so the card went off
+     * screen, and TalkBack read nothing as the keys came into the list.
+     */
+    @Test public void theFirstKeyIntoTheRowsAfterATouchKeepsTheStatusCardAndReadsTheRow() {
+        android.view.accessibility.AccessibilityManager a11y = controller.get().getSystemService(android.view.accessibility.AccessibilityManager.class);
+        org.robolectric.Shadows.shadowOf(a11y).setEnabled(true);
+        org.robolectric.Shadows.shadowOf(a11y).setTouchExplorationEnabled(true);
+        touchMode(true);
+        layout(dialog.getView());
+        // Home drawn again by touch, as on a phone: into a page whose row shows at the top, and back.
+        page.navigation.navigate("Feed");
+        layout(dialog.getView());
+        page.navigation.back();
+        layout(dialog.getView());
+        assertEquals(0, list().getFirstVisiblePosition());
+        assertFalse("the status card takes no keys", list().getAdapter().isEnabled(0));
+        int cardTop = list().getChildAt(0).getTop();
+        int firstKey = 1;
+        while (!list().getAdapter().isEnabled(firstKey)) firstKey++;
+        String title = String.valueOf(((Preference) list().getAdapter().getItem(firstKey)).getTitle());
+        touchMode(false);
+        assertFalse(list().hasFocus());
+        int sent = org.robolectric.Shadows.shadowOf(a11y).getSentAccessibilityEvents().size();
+        // Focus coming down from the search box above the list.
+        assertTrue(list().requestFocus(View.FOCUS_DOWN, new android.graphics.Rect(0, -60, list().getWidth(), -10)));
+        layout(dialog.getView());
+        assertEquals("the status card went off screen", 0, list().getFirstVisiblePosition());
+        assertEquals(cardTop, list().getChildAt(0).getTop());
+        assertEquals(firstKey, list().getSelectedItemPosition());
+        String said = null;
+        List<android.view.accessibility.AccessibilityEvent> events = org.robolectric.Shadows.shadowOf(a11y).getSentAccessibilityEvents();
+        for (android.view.accessibility.AccessibilityEvent event : events.subList(sent, events.size())) {
+            if (event.getEventType() != android.view.accessibility.AccessibilityEvent.TYPE_VIEW_FOCUSED
+                    || !android.widget.ListView.class.getName().equals(String.valueOf(event.getClassName()))) continue;
+            said = String.valueOf(event.getText());
+        }
+        assertNotNull("the list sent no focus event", said);
+        assertTrue("the list's focus read " + said, said.contains(title));
+    }
+
+    /**
      * Seen on the lab emulator at a larger font: the row Back went to was cut off at the list's
      * bottom edge, so the first Down only scrolled the rest of it in and read nothing.
      */

@@ -179,6 +179,16 @@ final class SettingsNavigation extends BaseAdapter {
         screen = page.getPreferenceScreen();
         list = page.getView().findViewById(android.R.id.list);
         normalBottomPadding = list.getPaddingBottom();
+        // Keys coming into the list after a touch found no row selected. The list's focus event,
+        // sent before the list picks a row, read nothing to a screen reader, and the row it then
+        // picked went where the row it last showed was, the status card here, so the card went
+        // off screen. The event goes through this delegate with or without a screen reader on.
+        list.setAccessibilityDelegate(new View.AccessibilityDelegate() {
+            @Override public void sendAccessibilityEvent(View host, int eventType) {
+                if (eventType == android.view.accessibility.AccessibilityEvent.TYPE_VIEW_FOCUSED) selectKeyRowInView();
+                super.sendAccessibilityEvent(host, eventType);
+            }
+        });
         source = screen.getRootAdapter();
         Context context = screen.getContext();
         searchAliases = localizedSearchAliases();
@@ -570,6 +580,26 @@ final class SettingsNavigation extends BaseAdapter {
         for (int row = position; byKeyRow && row < keyPosition; row++) byKeyRow = !isEnabled(row);
         if (byKeyRow) showAt(keyPosition, keyTop - list.getListPaddingTop());
         else showAt(position, offset);
+    }
+
+    /**
+     * Without touch and with no row selected, selects the first row in view a key can land on
+     * where it stands, and lays the list out at once, so the row is selected before the list
+     * picks one itself.
+     */
+    private void selectKeyRowInView() {
+        if (list.isInTouchMode() || list.getSelectedItemPosition() != android.widget.AdapterView.INVALID_POSITION) return;
+        int first = list.getFirstVisiblePosition();
+        int area = list.getHeight() - list.getListPaddingTop() - list.getListPaddingBottom();
+        for (int i = 0; i < list.getChildCount(); i++) {
+            View child = list.getChildAt(i);
+            if (first + i >= getCount() || !isEnabled(first + i) || child.getTop() < list.getListPaddingTop()) continue;
+            list.setSelectionFromTop(first + i, Math.min(child.getTop() - list.getListPaddingTop(), Math.max(0, area - child.getHeight())));
+            list.measure(View.MeasureSpec.makeMeasureSpec(list.getWidth(), View.MeasureSpec.EXACTLY),
+                    View.MeasureSpec.makeMeasureSpec(list.getHeight(), View.MeasureSpec.EXACTLY));
+            list.layout(list.getLeft(), list.getTop(), list.getRight(), list.getBottom());
+            return;
+        }
     }
 
     /** The first row in view a key can land on, or -1. */
