@@ -108,10 +108,13 @@ public final class PostLines {
         }
     }
 
-    /** The spacing's draw has come to [row], whose gap the next {@link #paintGap} paints. */
+    /**
+     * The spacing's draw has come to [row], whose gap the next {@link #paintGap} paints. A build
+     * without the hook, or a draw before the settings are ready, marks nothing.
+     */
     public static void drawingRow(View row) {
         try {
-            drawingBetweenPosts = row != null && BETWEEN_POSTS.contains(row);
+            drawingBetweenPosts = tracking() && row != null && BETWEEN_POSTS.contains(row);
         } catch (Throwable failure) {
             drawingBetweenPosts = false;
             HookStatus.threw(FamilyNames.LINE_BETWEEN_POSTS, "row draw", failure);

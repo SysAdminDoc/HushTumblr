@@ -209,6 +209,20 @@ public class PostLinesTest {
         assertEquals(0, PostLines.paintsGaps(0));
     }
 
+    /** A row drawn while the hook isn't in the build marks nothing for the next gap. */
+    @Test
+    public void aRowDrawnWithoutTheHookMarksNothing() {
+        Settings.LINE_BETWEEN_POSTS.save(true);
+        View row = measured(item(TimelineObjectType.POST), item(TimelineObjectType.POST));
+
+        PatchFamilyForTests.capabilities(EnumSet.noneOf(PatchFamily.Capability.class));
+        PostLines.drawingRow(row);
+        PatchFamilyForTests.capabilities(EnumSet.allOf(PatchFamily.Capability.class));
+        PostLines.paintGap(canvas, 0f, 4f, 10f, 12f, tumblrs);
+
+        assertEquals(Color.BLACK, page.getPixel(5, 8));
+    }
+
     @Test
     public void beforeTheSettingsAreReadyItsTumblrsAnswer() {
         Settings.LINE_BETWEEN_POSTS.save(true);
