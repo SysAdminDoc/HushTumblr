@@ -363,7 +363,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
     }
 
     @Nullable
-    private SettingsFeedback feedbackFor(String key) {
+    SettingsFeedback feedbackFor(String key) {
         SettingsFeedback[] found = {null};
         forEachFeedback(getPreferenceScreen(), (rowKey, feedback) -> {
             if (rowKey.equals(key)) found[0] = feedback;
@@ -2507,6 +2507,10 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             showAllText(view);
             ScreenColors.row(view, this);
             view.setAccessibilityDelegate(new RowSemantics(this, Switch.class));
+            // The row says it's a switch and whether it's on, so the switch drawn in it said both
+            // again ("on, Switch, Hide ads, ... ON, Switch").
+            View drawn = view.findViewById(android.R.id.switch_widget);
+            if (drawn != null) drawn.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             feedback.bind(view);
         }
     }

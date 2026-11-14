@@ -430,6 +430,15 @@ final class SettingsNavigation extends BaseAdapter {
         return true;
     }
 
+    /** The row in view that holds a screen reader's focus, or null for none. */
+    private View rowReaderIsOn() {
+        for (int i = 0; i < list.getChildCount(); i++) {
+            View child = list.getChildAt(i);
+            if (child.createAccessibilityNodeInfo().isAccessibilityFocused()) return child;
+        }
+        return null;
+    }
+
     private boolean screenReaderOn() {
         android.view.accessibility.AccessibilityManager a11y = (android.view.accessibility.AccessibilityManager)
                 list.getContext().getSystemService(android.content.Context.ACCESSIBILITY_SERVICE);
@@ -575,6 +584,11 @@ final class SettingsNavigation extends BaseAdapter {
         rememberRestingHeights();
         int restartWas = visible.indexOf(restart);
         boolean pageStatusWas = visible.contains(pageStatus);
+        // On the same page, the row a screen reader is on. Rows are drawn anew for every change and
+        // the list gives focus back by position, so the restart row coming in above a switch as it
+        // flipped took the focus from it and read itself, then the switch's saved note.
+        View readerOn = (route + '\n' + query).equals(rebuiltPage) && screenReaderOn() ? rowReaderIsOn() : null;
+        Object reading = readerOn == null ? null : list.getItemAtPosition(list.getPositionForView(readerOn));
         visible.clear();
         List<String> terms = SettingsSearch.terms(query);
         Section selected = selected();
@@ -625,6 +639,12 @@ final class SettingsNavigation extends BaseAdapter {
         int bottom = normalBottomPadding + (visible.contains(pageStatus) ? 0 : pageStatusHeight);
         if (list.getPaddingBottom() != bottom) {
             list.setPadding(list.getPaddingLeft(), list.getPaddingTop(), list.getPaddingRight(), bottom);
+        }
+        if (reading instanceof Preference && visible.contains(reading)) {
+            // Taken off the old row, so the list puts it nowhere, and given back to the same row
+            // once that's drawn.
+            readerOn.performAccessibilityAction(AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS, null);
+            refocus = (Preference) reading;
         }
         notifyDataSetChanged();
         keepPlace(restartWas, pageStatusWas);
@@ -772,7 +792,12 @@ final class SettingsNavigation extends BaseAdapter {
         if (item == refocus) {
             refocus = null;
             // Posted from the new row, it runs after this layout has put the row in the window.
-            row.post(() -> row.performAccessibilityAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null));
+            // Focus reads the whole row, so a note just put under it isn't read again on its own.
+            row.post(() -> {
+                if (!row.performAccessibilityAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null)) return;
+                SettingsFeedback note = item.hasKey() ? page.feedbackFor(item.getKey()) : null;
+                if (note != null) note.readWithRow();
+            });
         }
         if (!(item instanceof PreferenceCategory)) {
             palette().paintSurface(row, item, true, true);

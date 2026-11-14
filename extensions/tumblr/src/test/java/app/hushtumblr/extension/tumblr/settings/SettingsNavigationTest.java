@@ -97,6 +97,9 @@ public class SettingsNavigationTest {
         Settings.HIDE_ADVERTISING_ID.resetToDefault();
         Settings.FIX_PUSH_NOTIFICATIONS.resetToDefault();
         Settings.HIDE_TUMBLR_TV.resetToDefault();
+        Settings.HIDE_ADS.resetToDefault();
+        app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.remove(
+                Settings.HIDE_ADS.key);
         SettingsNavigation.HIDE_QUICK_SETUPS.resetToDefault();
         BaseSettings.PAUSED.resetToDefault();
         app.hushtumblr.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.remove(
@@ -1825,6 +1828,54 @@ public class SettingsNavigationTest {
         layout(dialog.getView());
         assertEquals(0, list().getFirstVisiblePosition());
         assertEquals("Feed", focusedTitle(a11y));
+    }
+
+    /**
+     * With TalkBack on the lab emulator, flipping Hide ads brought the restart row in above it and
+     * the list gave focus back by position: TalkBack read the restart row, then the switch's saved
+     * note, so the restart was said twice and the switch's new state never. Focus stays on the
+     * switch, whose read carries the note, and the note isn't read again on its own.
+     */
+    @Test public void aFlippedSwitchKeepsScreenReaderFocusWhenTheRestartRowComesAboveIt() {
+        android.view.accessibility.AccessibilityManager a11y = controller.get().getSystemService(android.view.accessibility.AccessibilityManager.class);
+        org.robolectric.Shadows.shadowOf(a11y).setEnabled(true);
+        org.robolectric.Shadows.shadowOf(a11y).setTouchExplorationEnabled(true);
+        touchMode(true);
+        layout(dialog.getView());
+        page.navigation.navigate("Feed");
+        layout(dialog.getView());
+        int at = position(Settings.HIDE_ADS.key);
+        assertTrue("Hide ads is in view", at >= list().getFirstVisiblePosition() && at <= list().getLastVisiblePosition());
+        View row = list().getChildAt(at - list().getFirstVisiblePosition());
+        assertEquals("the row says it's a switch and its state, so the drawn switch stays quiet",
+                View.IMPORTANT_FOR_ACCESSIBILITY_NO, row.findViewById(android.R.id.switch_widget).getImportantForAccessibility());
+        assertTrue(row.performAccessibilityAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null));
+        int before = focusedTitles(a11y).size();
+
+        assertTrue(list().performItemClick(row, at, list().getAdapter().getItemId(at)));
+        ShadowLooper.idleMainLooper();
+        layout(dialog.getView());
+
+        assertFalse(Settings.HIDE_ADS.savedValue());
+        assertTrue("the restart row came in above the switch",
+                contains(SettingsNavigation.RESTART) && position(SettingsNavigation.RESTART) < position(Settings.HIDE_ADS.key));
+        List<String> after = focusedTitles(a11y).subList(before, focusedTitles(a11y).size());
+        assertEquals("focus went back to the switch, and only there", Arrays.asList("Hide ads"), after);
+        View flipped = list().getChildAt(position(Settings.HIDE_ADS.key) - list().getFirstVisiblePosition());
+        TextView note = flipped.findViewWithTag(SettingsFeedback.MESSAGE_TAG);
+        assertEquals("Saved. Restart Tumblr to apply this change.", note.getText().toString());
+        assertEquals("the note is read with the row, not again on its own",
+                View.ACCESSIBILITY_LIVE_REGION_NONE, note.getAccessibilityLiveRegion());
+    }
+
+    /** The first text of each row that took accessibility focus, in order. */
+    private static List<String> focusedTitles(android.view.accessibility.AccessibilityManager a11y) {
+        List<String> titles = new ArrayList<>();
+        for (android.view.accessibility.AccessibilityEvent event : org.robolectric.Shadows.shadowOf(a11y).getSentAccessibilityEvents()) {
+            if (event.getEventType() != android.view.accessibility.AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED) continue;
+            titles.add(event.getText().isEmpty() ? null : String.valueOf(event.getText().get(0)));
+        }
+        return titles;
     }
 
     /** The first text of the last row that took accessibility focus. */
