@@ -302,6 +302,7 @@ public class SettingsBackupTest {
                 Settings.SHOW_IMAGE_DESCRIPTIONS,
                 Settings.SHARE_VIDEO_LINKS,
                 Settings.FIT_FULL_SCREEN_VIDEOS,
+                Settings.TAP_TO_PLAY_FEED_VIDEOS,
                 Settings.SHARPER_IMAGES,
                 Settings.COLLAPSE_LONG_POSTS,
                 Settings.MUTE_ROOT_POSTS,
@@ -339,7 +340,7 @@ public class SettingsBackupTest {
         Settings.CHECK_FOR_RELEASES.save(true);
         BaseSettings.PAUSED.save(true);
         BaseSettings.DEBUG.save(true);
-        BaseSettings.DEBUG_LOG_FILTERS.save("feed");
+        BaseSettings.DEBUG_LOG_FILTERS.save("log-filter-value");
         PauseForTests.pause(HushTumblrPause.Reason.CRASH_LOOP);
         String cookie = "sessionid=100012345678901%3Asecret-session; ds_user_id=100012345678901";
         LogBufferManager.appendToLogBuffer("sentinel line " + cookie);
@@ -366,7 +367,7 @@ public class SettingsBackupTest {
             assertFalse(setting.key + " is in the file", text.contains(setting.key));
         }
         for (String leak : new String[]{"sentinel", "sessionid", "ds_user_id", "100012345678901", "secret-session",
-                app.getPackageName(), FamilyNames.HIDE_ADVERTISING_ID, "feed"}) {
+                app.getPackageName(), FamilyNames.HIDE_ADVERTISING_ID, "log-filter-value"}) {
             assertFalse("the file carries " + leak + ":\n" + text, text.contains(leak));
         }
     }

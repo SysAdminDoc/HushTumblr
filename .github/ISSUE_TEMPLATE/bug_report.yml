@@ -125,6 +125,7 @@ body:
         - Skip review prompts
         - Spoof signature for Google sign-in
         - Tags open the blog's tag search
+        - Tap to play feed videos
         - Turn off screenshot sharing
         - Visible image descriptions
     validations:

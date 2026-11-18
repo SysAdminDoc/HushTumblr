@@ -89,6 +89,11 @@ method Lcom/tumblr/rumblr/model/activity/ActivityNotification;->hushNotification
 implements Lcom/tumblr/ui/widget/t$b; Lapp/hushtumblr/extension/tumblr/ui/HushTagBlog;
 method Lcom/tumblr/ui/widget/t$b;->hushTagBlogName()Ljava/lang/String; e1559a150b2b9ab10f354ca7f22f46c8cfa42d2f2ddd4c4571b3af16ac9efa0a
 
+[Tap to play feed videos]
+implements Lmyl; Lapp/hushtumblr/extension/tumblr/ui/HushFeedVideo;
+method Lmyl;->hushPlayInPlace()I f1ecd3d654f8f373a507fea72a937283165e138c9c904595ba5afdbfe286b724
+method Lmyl;->hushPausePlayback()V abdf601e41820834ad074a2f8dd87f23becdfe3e4c272c2b92fe9532fa4c0c59
+
 [Visible image descriptions]
 implements Lcom/tumblr/rumblr/model/post/blocks/ImageBlock; Lapp/hushtumblr/extension/tumblr/ui/HushImageDescription;
 implements Lcom/tumblr/ui/widget/graywater/viewholder/PhotoContainer; Lapp/hushtumblr/extension/tumblr/ui/HushImageContainer;

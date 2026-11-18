@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(1018);
+        Map<String, String> table = new HashMap<>(1022);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -888,8 +888,12 @@ public final class L10nTranslations {
                 "Entfernt die Tags, denen du laut Tumblr folgen sollst, samt ihren \u00dcberschriften aus deinem Dashboard und anderen Feeds.");
         table.put("Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.",
                 "Entfernt die Tags unten an Beitr\u00e4gen in deinem Dashboard und anderen Feeds und l\u00e4sst den Quellenlink stehen.");
+        table.put("Tap a stopped video in your feed to play it right there. Tap it again while it plays to open it full screen.",
+                "Tippe auf ein angehaltenes Video in deinem Feed, um es direkt dort abzuspielen. Tippe noch einmal, w\u00e4hrend es l\u00e4uft, um es im Vollbild zu \u00f6ffnen.");
         table.put("Tap a tab to move it up",
                 "Tippe auf einen Tab, um ihn nach oben zu schieben");
+        table.put("Tap to play feed videos",
+                "Videos im Feed per Tippen abspielen");
         table.put("Tap to turn it back on.",
                 "Zum Wiedereinschalten tippen.");
         table.put("Tapping a tag under a post searches that blog's posts for the tag, in the dashboard, other feeds and a post opened by itself.",
@@ -918,13 +922,13 @@ public final class L10nTranslations {
                 "Das aktive Konto hat sich ge\u00e4ndert. \u00d6ffne \u201eStummgeschaltete Posts verwalten\u201c erneut, um seine Liste zu sehen.");
         table.put("The app holding that file is taking too long, so HushTumblr stopped waiting. Nothing was changed.",
                 "Die App, in der die Datei liegt, braucht zu lange, deshalb wartet HushTumblr nicht mehr. Es wurde nichts ge\u00e4ndert.");
+    }
+
+    private static void fillDe7(Map<String, String> table) {
         table.put("The app holding the last settings file still hasn't answered. Try again later.",
                 "Die App mit der letzten Einstellungsdatei hat noch immer nicht geantwortet. Versuche es sp\u00e4ter noch einmal.");
         table.put("The app holding the settings file is taking too long, so HushTumblr stopped waiting. That app may still finish saving it, so check the file before you rely on it.",
                 "Die App, in der die Einstellungsdatei liegt, braucht zu lange, deshalb wartet HushTumblr nicht mehr. Sie kann das Speichern noch abschlie\u00dfen, also pr\u00fcfe die Datei, bevor du dich darauf verl\u00e4sst.");
-    }
-
-    private static void fillDe7(Map<String, String> table) {
         table.put("The bottom bar keeps Tumblr's order.",
                 "Die untere Leiste beh\u00e4lt die Reihenfolge von Tumblr.");
         table.put("The diagnostic report couldn't be saved yet. Try again in a moment.",
@@ -1041,13 +1045,13 @@ public final class L10nTranslations {
                 "Nutze die E-Mail-Adresse deines Tumblr-Kontos und ein Tumblr-Passwort. Die Google-Anmeldung funktioniert vielleicht nicht, weil diese gepatchte App mit einem anderen Schl\u00fcssel signiert ist. Push-Benachrichtigungen wurden nicht getestet.");
         table.put("Use the phone's font",
                 "Schriftart des Telefons nutzen");
+    }
+
+    private static void fillDe8(Map<String, String> table) {
         table.put("Uses your phone's font. Tap to pick a .ttf or .otf file.",
                 "Nutzt die Schriftart deines Telefons. Tippe, um eine .ttf- oder .otf-Datei auszuw\u00e4hlen.");
         table.put("Using %1$s. Tap to pick another.",
                 "%1$s wird verwendet. Tippe, um eine andere auszuw\u00e4hlen.");
-    }
-
-    private static void fillDe8(Map<String, String> table) {
         table.put("Version",
                 "Version");
         table.put("Version, help and project details",
@@ -1109,7 +1113,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(1018);
+        Map<String, String> table = new HashMap<>(1022);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -1947,8 +1951,12 @@ public final class L10nTranslations {
                 "Quita las etiquetas que Tumblr te sugiere seguir, y sus encabezados, de tu panel y otros feeds.");
         table.put("Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.",
                 "Quita las etiquetas de la parte de abajo de las publicaciones en tu panel y otros feeds, y deja el enlace a la fuente.");
+        table.put("Tap a stopped video in your feed to play it right there. Tap it again while it plays to open it full screen.",
+                "Toca un video detenido en tu feed para reproducirlo ah\u00ed mismo. T\u00f3calo de nuevo mientras se reproduce para abrirlo a pantalla completa.");
         table.put("Tap a tab to move it up",
                 "Toca una pesta\u00f1a para subirla");
+        table.put("Tap to play feed videos",
+                "Tocar para reproducir videos del feed");
         table.put("Tap to turn it back on.",
                 "Toca para volver a activarlo.");
         table.put("Tapping a tag under a post searches that blog's posts for the tag, in the dashboard, other feeds and a post opened by itself.",
@@ -1977,13 +1985,13 @@ public final class L10nTranslations {
                 "La cuenta activa ha cambiado. Vuelve a abrir Gestionar publicaciones silenciadas para ver su lista.");
         table.put("The app holding that file is taking too long, so HushTumblr stopped waiting. Nothing was changed.",
                 "La app que guarda ese archivo tarda demasiado, as\u00ed que HushTumblr dej\u00f3 de esperar. No se cambi\u00f3 nada.");
+    }
+
+    private static void fillEs7(Map<String, String> table) {
         table.put("The app holding the last settings file still hasn't answered. Try again later.",
                 "La app del \u00faltimo archivo de configuraci\u00f3n a\u00fan no ha respondido. Int\u00e9ntalo m\u00e1s tarde.");
         table.put("The app holding the settings file is taking too long, so HushTumblr stopped waiting. That app may still finish saving it, so check the file before you rely on it.",
                 "La app que guarda el archivo de configuraci\u00f3n tarda demasiado, as\u00ed que HushTumblr dej\u00f3 de esperar. Esa app a\u00fan puede terminar de guardarlo, as\u00ed que revisa el archivo antes de confiar en \u00e9l.");
-    }
-
-    private static void fillEs7(Map<String, String> table) {
         table.put("The bottom bar keeps Tumblr's order.",
                 "La barra inferior mantiene el orden de Tumblr.");
         table.put("The diagnostic report couldn't be saved yet. Try again in a moment.",
@@ -2100,13 +2108,13 @@ public final class L10nTranslations {
                 "Usa el correo de tu cuenta de Tumblr y una contrase\u00f1a de Tumblr. Puede que el inicio de sesi\u00f3n con Google no funcione porque esta app parcheada est\u00e1 firmada con otra clave. No se han probado las notificaciones push.");
         table.put("Use the phone's font",
                 "Usar la fuente del tel\u00e9fono");
+    }
+
+    private static void fillEs8(Map<String, String> table) {
         table.put("Uses your phone's font. Tap to pick a .ttf or .otf file.",
                 "Usa la fuente de tu tel\u00e9fono. Toca para elegir un archivo .ttf u .otf.");
         table.put("Using %1$s. Tap to pick another.",
                 "Usando %1$s. Toca para elegir otro.");
-    }
-
-    private static void fillEs8(Map<String, String> table) {
         table.put("Version",
                 "Versi\u00f3n");
         table.put("Version, help and project details",
@@ -2168,7 +2176,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(1018);
+        Map<String, String> table = new HashMap<>(1022);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -3006,8 +3014,12 @@ public final class L10nTranslations {
                 "Menghapus tag yang disarankan Tumblr untuk kamu ikuti, beserta judulnya, dari dasbor dan feed lainnya.");
         table.put("Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.",
                 "Menghapus tag di bagian bawah postingan di dasbor dan feed lainnya, dan tetap menampilkan tautan sumber.");
+        table.put("Tap a stopped video in your feed to play it right there. Tap it again while it plays to open it full screen.",
+                "Ketuk video yang berhenti di feed Anda untuk memutarnya di tempat. Ketuk lagi saat diputar untuk membukanya di layar penuh.");
         table.put("Tap a tab to move it up",
                 "Ketuk tab untuk memindahkannya ke atas");
+        table.put("Tap to play feed videos",
+                "Ketuk untuk memutar video feed");
         table.put("Tap to turn it back on.",
                 "Ketuk untuk mengaktifkan HushTumblr lagi.");
         table.put("Tapping a tag under a post searches that blog's posts for the tag, in the dashboard, other feeds and a post opened by itself.",
@@ -3036,13 +3048,13 @@ public final class L10nTranslations {
                 "Akun aktif telah berubah. Buka kembali Kelola postingan yang dibisukan untuk melihat daftarnya.");
         table.put("The app holding that file is taking too long, so HushTumblr stopped waiting. Nothing was changed.",
                 "Aplikasi yang menyimpan file itu terlalu lama, jadi HushTumblr berhenti menunggu. Tidak ada yang diubah.");
+    }
+
+    private static void fillIn7(Map<String, String> table) {
         table.put("The app holding the last settings file still hasn't answered. Try again later.",
                 "Aplikasi yang menyimpan file pengaturan terakhir masih belum merespons. Coba lagi nanti.");
         table.put("The app holding the settings file is taking too long, so HushTumblr stopped waiting. That app may still finish saving it, so check the file before you rely on it.",
                 "Aplikasi yang menyimpan file pengaturan terlalu lama, jadi HushTumblr berhenti menunggu. Aplikasi itu mungkin masih menyelesaikan penyimpanannya, jadi periksa file itu sebelum mengandalkannya.");
-    }
-
-    private static void fillIn7(Map<String, String> table) {
         table.put("The bottom bar keeps Tumblr's order.",
                 "Bilah bawah tetap memakai urutan Tumblr.");
         table.put("The diagnostic report couldn't be saved yet. Try again in a moment.",
@@ -3159,13 +3171,13 @@ public final class L10nTranslations {
                 "Gunakan email akun Tumblr Anda dan kata sandi Tumblr. Masuk dengan Google mungkin tidak berfungsi, karena aplikasi yang ditambal ini ditandatangani dengan kunci yang berbeda. Notifikasi push belum diuji.");
         table.put("Use the phone's font",
                 "Pakai font ponsel");
+    }
+
+    private static void fillIn8(Map<String, String> table) {
         table.put("Uses your phone's font. Tap to pick a .ttf or .otf file.",
                 "Memakai font ponselmu. Ketuk untuk memilih file .ttf atau .otf.");
         table.put("Using %1$s. Tap to pick another.",
                 "Memakai %1$s. Ketuk untuk memilih yang lain.");
-    }
-
-    private static void fillIn8(Map<String, String> table) {
         table.put("Version",
                 "Versi");
         table.put("Version, help and project details",
@@ -3227,7 +3239,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(1018);
+        Map<String, String> table = new HashMap<>(1022);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -4065,8 +4077,12 @@ public final class L10nTranslations {
                 "Tira do seu painel e de outros feeds as tags que o Tumblr sugere que voc\u00ea siga, junto com os t\u00edtulos delas.");
         table.put("Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.",
                 "Tira as tags do fim dos posts no seu painel e em outros feeds, e mant\u00e9m o link da fonte.");
+        table.put("Tap a stopped video in your feed to play it right there. Tap it again while it plays to open it full screen.",
+                "Toque em um v\u00eddeo parado no seu feed para reproduzi-lo ali mesmo. Toque de novo enquanto ele estiver passando para abrir em tela cheia.");
         table.put("Tap a tab to move it up",
                 "Toque em uma aba para subi-la");
+        table.put("Tap to play feed videos",
+                "Tocar para reproduzir v\u00eddeos do feed");
         table.put("Tap to turn it back on.",
                 "Toque para reativar.");
         table.put("Tapping a tag under a post searches that blog's posts for the tag, in the dashboard, other feeds and a post opened by itself.",
@@ -4095,13 +4111,13 @@ public final class L10nTranslations {
                 "A conta ativa mudou. Abra Gerenciar posts silenciados novamente para ver a lista dela.");
         table.put("The app holding that file is taking too long, so HushTumblr stopped waiting. Nothing was changed.",
                 "O app que guarda esse arquivo est\u00e1 demorando demais, ent\u00e3o o HushTumblr parou de esperar. Nada foi alterado.");
+    }
+
+    private static void fillPt_rBR7(Map<String, String> table) {
         table.put("The app holding the last settings file still hasn't answered. Try again later.",
                 "O app do \u00faltimo arquivo de configura\u00e7\u00f5es ainda n\u00e3o respondeu. Tente de novo mais tarde.");
         table.put("The app holding the settings file is taking too long, so HushTumblr stopped waiting. That app may still finish saving it, so check the file before you rely on it.",
                 "O app que guarda o arquivo de configura\u00e7\u00f5es est\u00e1 demorando demais, ent\u00e3o o HushTumblr parou de esperar. Esse app ainda pode terminar de salv\u00e1-lo, ent\u00e3o confira o arquivo antes de confiar nele.");
-    }
-
-    private static void fillPt_rBR7(Map<String, String> table) {
         table.put("The bottom bar keeps Tumblr's order.",
                 "A barra de baixo mant\u00e9m a ordem do Tumblr.");
         table.put("The diagnostic report couldn't be saved yet. Try again in a moment.",
@@ -4218,13 +4234,13 @@ public final class L10nTranslations {
                 "Use o e-mail da sua conta do Tumblr e uma senha do Tumblr. O login com Google pode n\u00e3o funcionar, porque este app com patches \u00e9 assinado com outra chave. As notifica\u00e7\u00f5es push n\u00e3o foram testadas.");
         table.put("Use the phone's font",
                 "Usar a fonte do celular");
+    }
+
+    private static void fillPt_rBR8(Map<String, String> table) {
         table.put("Uses your phone's font. Tap to pick a .ttf or .otf file.",
                 "Usa a fonte do seu celular. Toque para escolher um arquivo .ttf ou .otf.");
         table.put("Using %1$s. Tap to pick another.",
                 "Usando %1$s. Toque para escolher outro.");
-    }
-
-    private static void fillPt_rBR8(Map<String, String> table) {
         table.put("Version",
                 "Vers\u00e3o");
         table.put("Version, help and project details",
@@ -4286,7 +4302,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(1018);
+        Map<String, String> table = new HashMap<>(1022);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -5124,8 +5140,12 @@ public final class L10nTranslations {
                 "Tumblr'\u0131n takip etmeni \u00f6nerdi\u011fi etiketleri ve ba\u015fl\u0131klar\u0131n\u0131 panondan ve di\u011fer ak\u0131\u015flardan kald\u0131r\u0131r.");
         table.put("Takes the tags off the bottom of posts in your dashboard and other feeds, and keeps the source link.",
                 "Panondaki ve di\u011fer ak\u0131\u015flardaki g\u00f6nderilerin alt\u0131ndaki etiketleri kald\u0131r\u0131r, kaynak ba\u011flant\u0131s\u0131n\u0131 b\u0131rak\u0131r.");
+        table.put("Tap a stopped video in your feed to play it right there. Tap it again while it plays to open it full screen.",
+                "Ak\u0131\u015f\u0131n\u0131zda durmu\u015f bir videoya dokunarak oldu\u011fu yerde oynat\u0131n. Oynarken yeniden dokunursan\u0131z tam ekran a\u00e7\u0131l\u0131r.");
         table.put("Tap a tab to move it up",
                 "Yukar\u0131 ta\u015f\u0131mak i\u00e7in bir sekmeye dokun");
+        table.put("Tap to play feed videos",
+                "Ak\u0131\u015ftaki videolar\u0131 dokunarak oynat");
         table.put("Tap to turn it back on.",
                 "Yeniden a\u00e7mak i\u00e7in dokun.");
         table.put("Tapping a tag under a post searches that blog's posts for the tag, in the dashboard, other feeds and a post opened by itself.",
@@ -5154,13 +5174,13 @@ public final class L10nTranslations {
                 "Etkin hesap de\u011fi\u015fti. Listenin g\u00f6r\u00fcnt\u00fclenmesi i\u00e7in Susturulan g\u00f6nderileri y\u00f6net b\u00f6l\u00fcm\u00fcn\u00fc yeniden a\u00e7.");
         table.put("The app holding that file is taking too long, so HushTumblr stopped waiting. Nothing was changed.",
                 "O dosyay\u0131 tutan uygulama \u00e7ok uzun s\u00fcr\u00fcyor, bu y\u00fczden HushTumblr beklemeyi b\u0131rakt\u0131. Hi\u00e7bir \u015fey de\u011fi\u015ftirilmedi.");
+    }
+
+    private static void fillTr7(Map<String, String> table) {
         table.put("The app holding the last settings file still hasn't answered. Try again later.",
                 "Son ayar dosyas\u0131n\u0131 tutan uygulama h\u00e2l\u00e2 yan\u0131t vermedi. Daha sonra tekrar dene.");
         table.put("The app holding the settings file is taking too long, so HushTumblr stopped waiting. That app may still finish saving it, so check the file before you rely on it.",
                 "Ayar dosyas\u0131n\u0131 tutan uygulama \u00e7ok uzun s\u00fcr\u00fcyor, bu y\u00fczden HushTumblr beklemeyi b\u0131rakt\u0131. O uygulama kaydetmeyi yine de bitirebilir, bu y\u00fczden dosyaya g\u00fcvenmeden \u00f6nce onu kontrol et.");
-    }
-
-    private static void fillTr7(Map<String, String> table) {
         table.put("The bottom bar keeps Tumblr's order.",
                 "Alt \u00e7ubuk Tumblr'\u0131n s\u0131ras\u0131n\u0131 korur.");
         table.put("The diagnostic report couldn't be saved yet. Try again in a moment.",
@@ -5277,13 +5297,13 @@ public final class L10nTranslations {
                 "Tumblr hesab\u0131ndaki e-postay\u0131 ve bir Tumblr parolas\u0131n\u0131 kullan. Bu yamal\u0131 uygulama farkl\u0131 bir anahtarla imzaland\u0131\u011f\u0131 i\u00e7in Google ile giri\u015f \u00e7al\u0131\u015fmayabilir. Anl\u0131k bildirimler test edilmedi.");
         table.put("Use the phone's font",
                 "Telefonun yaz\u0131 tipini kullan");
+    }
+
+    private static void fillTr8(Map<String, String> table) {
         table.put("Uses your phone's font. Tap to pick a .ttf or .otf file.",
                 "Telefonunun yaz\u0131 tipini kullan\u0131r. Bir .ttf veya .otf dosyas\u0131 se\u00e7mek i\u00e7in dokun.");
         table.put("Using %1$s. Tap to pick another.",
                 "%1$s kullan\u0131l\u0131yor. Ba\u015fka birini se\u00e7mek i\u00e7in dokun.");
-    }
-
-    private static void fillTr8(Map<String, String> table) {
         table.put("Version",
                 "S\u00fcr\u00fcm");
         table.put("Version, help and project details",

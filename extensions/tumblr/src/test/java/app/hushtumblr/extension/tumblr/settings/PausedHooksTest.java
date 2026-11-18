@@ -111,6 +111,8 @@ import app.hushtumblr.extension.tumblr.ui.AppFontForTests;
 import app.hushtumblr.extension.tumblr.ui.PostLines;
 import app.hushtumblr.extension.tumblr.ui.StoreButtons;
 import app.hushtumblr.extension.tumblr.ui.VideoFit;
+import app.hushtumblr.extension.tumblr.ui.FeedVideoTap;
+import app.hushtumblr.extension.tumblr.ui.HushFeedVideo;
 import app.hushtumblr.extension.tumblr.ui.VideoLinks;
 import app.hushtumblr.extension.tumblr.ui.HushPhotoSize;
 import app.hushtumblr.extension.tumblr.ui.SharperImages;
@@ -336,6 +338,11 @@ public class PausedHooksTest {
         probes.put(Settings.SHARE_VIDEO_LINKS, Collections.singletonList(() -> videoLinkMenu(context)));
         // A tall video opened full screen is fitted whole instead of filling the screen's height.
         probes.put(Settings.FIT_FULL_SCREEN_VIDEOS, Collections.singletonList(() -> !VideoFit.fillsHeight(true)));
+        // A tap on a stopped feed video starts it where it sits.
+        probes.put(Settings.TAP_TO_PLAY_FEED_VIDEOS, Collections.singletonList(() -> FeedVideoTap.onTap(new HushFeedVideo() {
+            @Override public int hushPlayInPlace() { return 1; }
+            @Override public void hushPausePlayback() { }
+        }) != 0));
         // Tumblr's 640 pick of an image becomes its listed 1280 copy.
         probes.put(Settings.SHARPER_IMAGES, Collections.singletonList(PausedHooksTest::sharperPick));
         // A long post keeps its first rows above Tumblr's Read more row, and a long trail entry gets a cut.

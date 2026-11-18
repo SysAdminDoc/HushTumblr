@@ -43,7 +43,7 @@ Long-press the Tumblr logo at the top of your dashboard. You can also tap **Hush
 
 ## Patches
 
-There are 58 patches.
+There are 59 patches.
 
 | Patch | What it does |
 |---|---|
@@ -100,6 +100,7 @@ There are 58 patches.
 | `Show mutual markers` | Marks blogs that follow your primary blog when you follow them. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Skip review prompts` | Stops the pop-up that asks what you think of the Tumblr app and then asks you for a store rating or feedback. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `Tags open the blog's tag search` | Tapping a tag under a post opens that blog's own search for the tag, like blog.tumblr.com/tagged, in place of a search of all of Tumblr. Works on posts in the dashboard, other feeds and a post opened by itself. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
+| `Tap to play feed videos` | Tapping a stopped video in your feed plays it right there, and a tap while it plays opens it full screen. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `Turn off screenshot sharing` | Stops Tumblr watching for screenshots, so taking one doesn't bring up its offer to save the post as an image. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `Visible image descriptions` | Shows author-provided image descriptions below each image, including galleries and reblogs. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 

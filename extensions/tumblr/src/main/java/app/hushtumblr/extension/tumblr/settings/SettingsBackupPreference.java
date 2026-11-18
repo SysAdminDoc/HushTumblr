@@ -544,6 +544,7 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
             case "hushtumblr_show_image_descriptions": return L10n.t("Visible image descriptions");
             case "hushtumblr_share_video_links": return L10n.t("Share video links");
             case "hushtumblr_fit_full_screen_videos": return L10n.t("Fit full-screen videos");
+            case "hushtumblr_tap_to_play_feed_videos": return L10n.t("Tap to play feed videos");
             case "hushtumblr_sharper_images": return L10n.t("Sharper images");
             case "hushtumblr_collapse_long_posts": return L10n.t("Collapse long posts");
             case "hushtumblr_mute_root_posts": return L10n.t("Mute posts locally");

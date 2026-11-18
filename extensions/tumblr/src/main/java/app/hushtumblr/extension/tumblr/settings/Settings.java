@@ -51,6 +51,7 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting SHOW_IMAGE_DESCRIPTIONS = new BooleanSetting("hushtumblr_show_image_descriptions", FALSE);
     public static final BooleanSetting SHARE_VIDEO_LINKS = new BooleanSetting("hushtumblr_share_video_links", FALSE);
     public static final BooleanSetting FIT_FULL_SCREEN_VIDEOS = new BooleanSetting("hushtumblr_fit_full_screen_videos", FALSE);
+    public static final BooleanSetting TAP_TO_PLAY_FEED_VIDEOS = new BooleanSetting("hushtumblr_tap_to_play_feed_videos", FALSE);
     public static final BooleanSetting SHARPER_IMAGES = new BooleanSetting("hushtumblr_sharper_images", FALSE);
     public static final BooleanSetting COLLAPSE_LONG_POSTS = new BooleanSetting("hushtumblr_collapse_long_posts", FALSE);
     public static final BooleanSetting SHOW_POST_TIMESTAMPS = new BooleanSetting("hushtumblr_show_post_timestamps", FALSE);

@@ -119,6 +119,7 @@ public enum PatchFamily {
     VISIBLE_ALT_TEXT(FamilyNames.VISIBLE_ALT_TEXT, "visibleAltText", null, Settings.SHOW_IMAGE_DESCRIPTIONS),
     SHARE_VIDEO_LINKS(FamilyNames.SHARE_VIDEO_LINKS, "shareVideoLinks", null, Settings.SHARE_VIDEO_LINKS),
     FIT_FULL_SCREEN_VIDEOS(FamilyNames.FIT_FULL_SCREEN_VIDEOS, "fitFullScreenVideos", null, Settings.FIT_FULL_SCREEN_VIDEOS),
+    TAP_TO_PLAY_FEED_VIDEOS(FamilyNames.TAP_TO_PLAY_FEED_VIDEOS, "tapToPlayFeedVideos", null, Settings.TAP_TO_PLAY_FEED_VIDEOS),
     SHARPER_IMAGES(FamilyNames.SHARPER_IMAGES, "sharperImages", null, Settings.SHARPER_IMAGES),
     COLLAPSE_LONG_POSTS(FamilyNames.COLLAPSE_LONG_POSTS, "collapseLongPosts", null, Settings.COLLAPSE_LONG_POSTS),
     MUTE_ROOT_POSTS(FamilyNames.MUTE_ROOT_POSTS, "muteRootPosts", null, Settings.MUTE_ROOT_POSTS),
@@ -191,7 +192,7 @@ public enum PatchFamily {
             HIDE_NOTIFICATIONS_TAB, HIDE_EXPLORE_TAB, DARK_BACKGROUND, HIDE_UNREAD_DOTS, HIDE_TUMBLRMART,
             TURN_OFF_SCREENSHOT_SHARING, SKIP_REVIEW_PROMPTS, HIDE_BLOG_NOTIFICATION_REMINDERS,
             HIDE_GIFT_MESSAGE_POPUPS, HIDE_BLAZE_PROMPTS, HIDE_COMMUNITIES_TAB, HIDE_TUMBLR_TV, LINE_BETWEEN_POSTS, APP_FONT,
-            FIT_FULL_SCREEN_VIDEOS));
+            FIT_FULL_SCREEN_VIDEOS, TAP_TO_PLAY_FEED_VIDEOS));
 
     /** The families the Posts page holds. The page and its home row both read this. */
     static final Set<PatchFamily> POSTS_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_SAVE_BUTTON,
@@ -213,6 +214,7 @@ public enum PatchFamily {
         GALLERY_ALT_TEXT_CAPTIONS(VISIBLE_ALT_TEXT, "galleryAltTextCaptions", "gallery image descriptions"),
         VIDEO_LINK_PRESS(SHARE_VIDEO_LINKS, "videoLinkPress", "Share video links"),
         FULL_SCREEN_VIDEO_FIT(FIT_FULL_SCREEN_VIDEOS, "fullScreenVideoFit", "Fit full-screen videos"),
+        FEED_VIDEO_TAP(TAP_TO_PLAY_FEED_VIDEOS, "feedVideoTap", "Tap to play feed videos"),
         IMAGE_SIZES(SHARPER_IMAGES, "imageSizes", "Sharper images"),
         LONG_POST_ROWS(COLLAPSE_LONG_POSTS, "longPostRows", "Collapse long posts"),
         LONG_TRAIL_ROWS(COLLAPSE_LONG_POSTS, "longTrailRows", "long reblog trail entries"),

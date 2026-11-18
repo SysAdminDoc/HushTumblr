@@ -302,7 +302,7 @@ public class DexDiff {
             Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1), Map.entry("activityNotifications", 7),
             Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 7), Map.entry("timelinePaging", 5),
             Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 7), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
-            Map.entry("crashReports", 3), Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 6), Map.entry("videoLinkPress", 6), Map.entry("fullScreenVideoFit", 2), Map.entry("imageSizes", 4), Map.entry("longPostRows", 6), Map.entry("exploreHeaderAd", 4), Map.entry("shareLinkTag", 5), Map.entry("longTrailRows", 4), Map.entry("longPostExpand", 17), Map.entry("fontChoice", 6),
+            Map.entry("crashReports", 3), Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 6), Map.entry("videoLinkPress", 6), Map.entry("feedVideoTap", 4), Map.entry("fullScreenVideoFit", 2), Map.entry("imageSizes", 4), Map.entry("longPostRows", 6), Map.entry("exploreHeaderAd", 4), Map.entry("shareLinkTag", 5), Map.entry("longTrailRows", 4), Map.entry("longPostExpand", 17), Map.entry("fontChoice", 6),
             Map.entry("followButton", 5), Map.entry("tagBlogLinks", 8), Map.entry("footerButton", 3), Map.entry("postTags", 6),
             Map.entry("noteCounts", 9), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("blazeButtons", 8), Map.entry("accountIdentity", 10),
@@ -5696,6 +5696,57 @@ public class DexDiff {
          * asked for through the hook, whose answer is cast back to Tumblr's image size and
          * returned, and Tumblr's image size answers the extension's bridge with its own getters.
          */
+        /** The overlay's tap handler: read the callback, skip when it's null, call it, return. */
+        static boolean feedVideoTapShape(Method m) {
+            List<Opcode> steps = new ArrayList<>();
+            for (Instruction i : instructions(m)) steps.add(i.getOpcode());
+            return steps.equals(List.of(Opcode.IGET_OBJECT, Opcode.IF_EQZ, Opcode.INVOKE_INTERFACE, Opcode.RETURN_VOID));
+        }
+
+        /**
+         * A tap on a feed video's overlay asks the extension before Tumblr's callback runs, leaves
+         * the answer in the view parameter Tumblr never reads, and jumps to the handler's return
+         * when the video started. The overlay answers every method of the extension's bridge.
+         */
+        void feedVideoTap(Contract c) {
+            String hook = c.strings.get(0), face = c.strings.get(3);
+            List<Method> setups = new ArrayList<>();
+            for (Method m : tumblrMethods()) {
+                List<Instruction> body = instructions(m);
+                if (body.stream().anyMatch(i -> names(field(i), c.strings.get(1)))
+                        && body.stream().anyMatch(i -> names(field(i), c.strings.get(2)))) setups.add(m);
+            }
+            Method setup = unique(setups, "the feed video overlay's setup");
+            if (setup == null) { capability(c.callee, false); return; }
+            String overlay = setup.getDefiningClass();
+            List<Method> taps = new ArrayList<>();
+            for (Method m : clean.classes.get(overlay).getMethods())
+                if (isStatic(m) && m.getImplementation() != null && descriptor(m).equals("(" + overlay + "Landroid/view/View;)V")
+                        && feedVideoTapShape(m)) taps.add(m);
+            Method old = unique(taps, "the feed video overlay's tap handler");
+            if (old == null) { capability(c.callee, false); return; }
+            int self = parameter(old, 0), spare = parameter(old, 1);
+            Method m = actual(old);
+            List<Integer> sites = calls(m, hook, 1);
+            List<Instruction> body = m == null ? List.of() : instructions(m);
+            boolean hooked = sites.size() == 1 && sites.get(0) == 0 && arguments(body.get(0)).equals(List.of(self))
+                    && movesTo(get(body, 1), spare, Opcode.MOVE_RESULT) && movesTo(get(body, 2), spare, Opcode.IF_NEZ)
+                    && target(m, 2) == 6;
+            if (hooked) {
+                remove(m, 0, 3);
+                vouch(m, 0, List.of(self));
+            } else fail("the feed video tap hook doesn't lead the overlay's tap handler in " + old);
+            ClassDef bridge = patched.classes.get(face);
+            boolean answers = implementsBridge(overlay, face) && bridge.getMethods().iterator().hasNext();
+            if (answers) for (Method declared : bridge.getMethods()) {
+                Method own = patched.methods.get(overlay + "->" + declared.getName() + descriptor(declared));
+                answers &= AccessFlags.ABSTRACT.isSet(declared.getAccessFlags()) && own != null && own.getImplementation() != null
+                        && AccessFlags.PUBLIC.isSet(own.getAccessFlags()) && !isStatic(own);
+            }
+            if (!answers) fail(overlay + " doesn't answer every method of " + face);
+            capability(c.callee, hooked && answers);
+        }
+
         void imageSizes(Contract c) {
             String size = c.strings.get(1), info = c.strings.get(2), face = c.strings.get(3);
             List<Method> choosers = new ArrayList<>();
@@ -7488,6 +7539,7 @@ public class DexDiff {
                     case "postLine": postLine(c); break;
                     case "videoLinkPress": videoLinkPress(c); break;
                     case "fullScreenVideoFit": fullScreenVideoFit(c); break;
+                    case "feedVideoTap": feedVideoTap(c); break;
                     case "imageSizes": imageSizes(c); break;
                     case "longPostRows": longPostRows(c); break;
                     case "exploreHeaderAd": exploreHeaderAd(c); break;
