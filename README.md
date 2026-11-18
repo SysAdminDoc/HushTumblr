@@ -5,7 +5,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License GPL-3.0"></a>
   <img src="https://img.shields.io/badge/platform-Android%208%2B-3DDC84" alt="Platform Android 8+">
   <img src="https://img.shields.io/badge/Tumblr-47.0.0.108-001935" alt="Tumblr 47.0.0.108">
-  <img src="https://img.shields.io/badge/for-Morphe%20Manager%202.5.0%2B-8A2BE2" alt="For Morphe Manager 2.5.0 or newer">
+  <img src="https://img.shields.io/badge/for-Morphe%20Manager%202.6.0%2B-8A2BE2" alt="For Morphe Manager 2.6.0 or newer">
 </p>
 
 <p>
@@ -27,7 +27,7 @@ The latest release is [v0.0.11](https://github.com/SysAdminDoc/HushTumblr/releas
 
 ## Install
 
-1. Install [Morphe Manager](https://github.com/MorpheApp/morphe-manager) 2.5.0 or newer.
+1. Install [Morphe Manager](https://github.com/MorpheApp/morphe-manager) 2.6.0 or newer.
 2. Add HushTumblr as a patch source: https://morphe.software/add-source?github=SysAdminDoc%2FHushTumblr
 3. Download the Tumblr 47.0.0.108 bundle (`.apkm`, version code 1470000108) from [APKMirror](https://www.apkmirror.com/apk/tumblr-inc/tumblr/tumblr-social-media-art-47-0-0-108-release/).
 4. Patch it with the default selection. That's every patch except Spoof signature for Google sign-in, which you can pick after turning on **Settings → Advanced → Expert mode** in Morphe Manager.
