@@ -397,6 +397,9 @@ Keep tagged reblogs	Etiketli yeniden bloglamaları tut
 When reblogs are hidden, keep ones with tags. Other post filters still apply.	Yeniden bloglamalar gizlenirken etiketli olanları tutar. Diğer gönderi filtreleri uygulanmaya devam eder.
 Keep reblogs with added content	Eklenen içeriği olan yeniden bloglamaları tut
 When reblogs are hidden, keep ones where the reblogger added something of their own. Other post filters still apply.	Yeniden bloglamalar gizlenirken, yeniden bloglayanın kendi eklemesi olanları tutar. Diğer gönderi filtreleri uygulanmaya devam eder.
+# context: an option under Hide reblogs on the Feed page, and its summary
+Keep reblogs in communities	Topluluklardaki yeniden bloglamaları tut
+When reblogs are hidden, keep ones shared to a community. Other post filters still apply.	Yeniden bloglamalar gizlenirken bir toplulukta paylaşılanları tutar. Diğer gönderi filtreleri uygulanmaya devam eder.
 Hide your own reblogs	Kendi yeniden bloglarını gizle
 Takes the reblogs you made out of your dashboard. Your blog and the rest of Tumblr still show them.	Yaptığın yeniden blogları panondan kaldırır. Blogun ve Tumblr'ın geri kalanı onları göstermeye devam eder.
 # context: a switch on the Feed page, next to Hide your own reblogs. It hides posts where someone else reblogged a post you made, or reblogged it from you.

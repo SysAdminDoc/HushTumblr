@@ -319,6 +319,10 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting KEEP_REBLOGS_WITH_CONTENT =
             new BooleanSetting("hushtumblr_keep_reblogs_with_content", FALSE);
 
+    /** Keep reblogs shared to a community, while leaving the other enabled post rules in force. */
+    public static final BooleanSetting KEEP_COMMUNITY_REBLOGS =
+            new BooleanSetting("hushtumblr_keep_community_reblogs", FALSE);
+
     /**
      * Reblogs made on a blog of yours, the ones Tumblr says you can edit, leave each page of the
      * dashboard and the feeds that load like it. A blog's own page keeps them

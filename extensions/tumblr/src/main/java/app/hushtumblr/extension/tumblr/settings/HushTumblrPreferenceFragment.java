@@ -659,6 +659,10 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                     L10n.t("When reblogs are hidden, keep ones where the reblogger added something of their own. "
                         + "Other post filters still apply."),
                     SettingsIcons.BLOCK);
+            patchToggle(feed, context, build, PatchFamily.HIDE_REBLOGS, Settings.KEEP_COMMUNITY_REBLOGS,
+                    L10n.t("Keep reblogs in communities"),
+                    L10n.t("When reblogs are hidden, keep ones shared to a community. Other post filters still apply."),
+                    SettingsIcons.BLOCK);
             patchToggle(feed, context, build, PatchFamily.HIDE_OWN_REBLOGS, Settings.HIDE_OWN_REBLOGS,
                     L10n.t("Hide your own reblogs"), L10n.t("Takes the reblogs you made out of your dashboard. "
                         + "Your blog and the rest of Tumblr still show them."), SettingsIcons.BLOCK);

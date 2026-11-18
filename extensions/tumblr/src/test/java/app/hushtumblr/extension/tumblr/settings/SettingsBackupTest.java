@@ -278,6 +278,7 @@ public class SettingsBackupTest {
                 Settings.HIDE_REBLOGS,
                 Settings.KEEP_TAGGED_REBLOGS,
                 Settings.KEEP_REBLOGS_WITH_CONTENT,
+                Settings.KEEP_COMMUNITY_REBLOGS,
                 Settings.HIDE_OWN_REBLOGS,
                 Settings.HIDE_REBLOGS_OF_YOURS,
                 Settings.HIDE_LIKED_POSTS,
@@ -2569,15 +2570,18 @@ public class SettingsBackupTest {
         for (int schema : new int[]{1, 2}) {
             Settings.KEEP_TAGGED_REBLOGS.save(true);
             Settings.KEEP_REBLOGS_WITH_CONTENT.save(true);
+            Settings.KEEP_COMMUNITY_REBLOGS.save(true);
             JSONObject file = new JSONObject().put("format", SettingsBackup.FORMAT).put("schema", schema)
                     .put("settings", new JSONObject().put(Settings.HIDE_REBLOGS.key, true));
             SettingsBackup.apply(SettingsBackup.parse(file.toString()));
             assertTrue(Settings.HIDE_REBLOGS.savedValue());
             assertFalse(Settings.KEEP_TAGGED_REBLOGS.savedValue());
             assertFalse(Settings.KEEP_REBLOGS_WITH_CONTENT.savedValue());
+            assertFalse(Settings.KEEP_COMMUNITY_REBLOGS.savedValue());
             assertEquals(SettingsBackup.UndoResult.UNDONE, SettingsBackup.undo());
             assertTrue(Settings.KEEP_TAGGED_REBLOGS.savedValue());
             assertTrue(Settings.KEEP_REBLOGS_WITH_CONTENT.savedValue());
+            assertTrue(Settings.KEEP_COMMUNITY_REBLOGS.savedValue());
         }
         SettingsBackup.apply(SettingsBackup.parse(new JSONObject().put("format", SettingsBackup.FORMAT)
                 .put("schema", 2).put("settings", new JSONObject().put(Settings.HIDE_ADS.key, true)).toString()));

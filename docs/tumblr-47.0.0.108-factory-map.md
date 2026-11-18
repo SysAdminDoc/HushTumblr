@@ -75,6 +75,7 @@ Turning an ad-request flag off is a second line behind the feed filter, not a re
   - Every tab host hands its pager a `yqk` adapter built on the host's own `getChildFragmentManager()`, so a tab's `getParentFragment()` is the host that holds it. The patch gives both dashboard classes `hushDashboard()Z`. `GraywaterDashboardFragment` answers true, and `GraywaterTabFragment` answers `getParentFragment() instanceof TabbedDashboardHostFragment`.
   - The tab's `ScreenType` can't stand in for that. Both hosts' providers (`TabbedDashboardHostFragment$d`, `TabbedExploreHostFragment$c`) pick `DASHBOARD_TAB` or `EXPLORE_TAB` from the tab's logging id with the same code.
 - **Filtered posts.** A post that matches one of your filtered tags or words arrives with a note, `post.asset.Filtered`, which `PostJsonAdapter` writes under "filtered" through `Post.c0()`. The note's adapter writes "tags" through `Filtered.b()List` and "content" through `Filtered.a()List`. The post's view model copies the two lists (an empty list when the note is null), and `GraywaterFragment` covers the post with "This post contains filtered tags" or "... filtered content" when either has an entry.
+- **A post's community.** `PostJsonAdapter` reads "community" into `Post.U0()`, a `ShortCommunityInfo`. Posts in a community's timeline carry it, reblogs with no text or tags included (seen 2026-11-18 on `/v2/communities/cat-pics/timeline`). Keep reblogs in communities reads it through the `hushCommunity()` bridge, as an object, because only its presence matters.
 
 ## Settings hub
 

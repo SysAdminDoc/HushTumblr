@@ -397,6 +397,9 @@ Keep tagged reblogs	Reblogs mit Tags behalten
 When reblogs are hidden, keep ones with tags. Other post filters still apply.	Behält Reblogs mit Tags, wenn Reblogs ausgeblendet sind. Andere Beitragsfilter gelten weiter.
 Keep reblogs with added content	Reblogs mit eigenem Inhalt behalten
 When reblogs are hidden, keep ones where the reblogger added something of their own. Other post filters still apply.	Behält Reblogs, bei denen jemand etwas Eigenes hinzugefügt hat, wenn Reblogs ausgeblendet sind. Andere Beitragsfilter gelten weiter.
+# context: an option under Hide reblogs on the Feed page, and its summary
+Keep reblogs in communities	Reblogs in Communities behalten
+When reblogs are hidden, keep ones shared to a community. Other post filters still apply.	Behält Reblogs, die in einer Community geteilt wurden, wenn Reblogs ausgeblendet sind. Andere Beitragsfilter gelten weiter.
 Hide your own reblogs	Eigene Reblogs ausblenden
 Takes the reblogs you made out of your dashboard. Your blog and the rest of Tumblr still show them.	Entfernt die Reblogs, die du gemacht hast, aus deinem Dashboard. Dein Blog und der Rest von Tumblr zeigen sie weiterhin.
 # context: a switch on the Feed page, next to Hide your own reblogs. It hides posts where someone else reblogged a post you made, or reblogged it from you.

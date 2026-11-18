@@ -126,6 +126,8 @@ mutation|reblogPosts,ownReblogPosts,videoPosts,photoPosts,textPosts,postWords|po
 mutation|filteredPosts|postBridge|Lcom/tumblr/rumblr/model/post/Post;>Lapp/hushtumblr/extension/tumblr/timeline/HushFilteredPost;>hushFiltered:filtered|Lcom/tumblr/rumblr/model/post/asset/Filtered;>Lapp/hushtumblr/extension/tumblr/timeline/HushFiltered;>hushFilteredTags:tags,hushFilteredContent:content
 # The post's liked state as Tumblr sent it.
 mutation|likedPosts|postBridge|Lcom/tumblr/rumblr/model/post/Post;>Lapp/hushtumblr/extension/tumblr/timeline/HushLikedPost;>hushLiked:liked
+# The community a post was shared to, which it hands back as an object.
+mutation|reblogPosts|postBridge|Lcom/tumblr/rumblr/model/post/Post;>Lapp/hushtumblr/extension/tumblr/timeline/HushCommunityPost;>hushCommunity:community
 # The blogs a post was reblogged from and first made on, a blog's name, and the signed-in
 # account's blogs: UserInfo's private final list, filled from getBlogs() by its fresh
 # user/info constructor and nowhere else.

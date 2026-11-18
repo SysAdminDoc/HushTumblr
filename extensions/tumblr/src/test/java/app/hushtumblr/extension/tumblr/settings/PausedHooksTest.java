@@ -86,6 +86,7 @@ import app.hushtumblr.extension.tumblr.rootmute.MatureAccountsForTests;
 import app.hushtumblr.extension.tumblr.rootmute.RootPostMutes;
 import app.hushtumblr.extension.tumblr.timeline.ExploreHeader;
 import app.hushtumblr.extension.tumblr.timeline.HushBlockRow;
+import app.hushtumblr.extension.tumblr.timeline.HushCommunityPost;
 import app.hushtumblr.extension.tumblr.timeline.HushPaidPost;
 import app.hushtumblr.extension.tumblr.timeline.HushPost;
 import app.hushtumblr.extension.tumblr.timeline.HushRootPost;
@@ -345,7 +346,7 @@ public class PausedHooksTest {
 
     private static List<BooleanSetting> dependentSwitches() {
         return Arrays.asList(Settings.KEEP_BLAZE_POSTS, Settings.KEEP_TAGGED_REBLOGS, Settings.KEEP_REBLOGS_WITH_CONTENT,
-                Settings.WORDS_CURRENT_TEXT,
+                Settings.KEEP_COMMUNITY_REBLOGS, Settings.WORDS_CURRENT_TEXT,
                 Settings.WORDS_REBLOG_TRAIL, Settings.WORDS_TAGS, Settings.WORDS_SUMMARY);
     }
 
@@ -653,7 +654,7 @@ public class PausedHooksTest {
         TextSettings.ALLOWED_WORDS.save("");
         for (BooleanSetting option : dependentSwitches()) {
             boolean retention = option == Settings.KEEP_TAGGED_REBLOGS || option == Settings.KEEP_REBLOGS_WITH_CONTENT
-                    || option == Settings.KEEP_BLAZE_POSTS;
+                    || option == Settings.KEEP_COMMUNITY_REBLOGS || option == Settings.KEEP_BLAZE_POSTS;
             BooleanSetting parent = option == Settings.KEEP_BLAZE_POSTS ? Settings.HIDE_ADS
                     : retention ? Settings.HIDE_REBLOGS : Settings.HIDE_POSTS_WITH_WORDS;
             List<?> page = Collections.singletonList(new TimelineObject(new OptionPost(option), false));
@@ -679,7 +680,7 @@ public class PausedHooksTest {
         }
     }
 
-    private static final class OptionPost implements Timelineable, HushPost, HushPaidPost {
+    private static final class OptionPost implements Timelineable, HushPost, HushPaidPost, HushCommunityPost {
         final BooleanSetting option;
         OptionPost(BooleanSetting option) { this.option = option; }
         /** Keep Blaze posts' post is one paid for with Blaze, from a blog you don't follow. */
@@ -687,6 +688,7 @@ public class PausedHooksTest {
         @Override public boolean hushFollowed() { return false; }
         @Override public boolean hushCanEdit() { return false; }
         @Override public boolean hushPaidContextKnown() { return true; }
+        @Override public Object hushCommunity() { return option == Settings.KEEP_COMMUNITY_REBLOGS ? this : null; }
         @Override public String getId() { return "pause-option"; }
         @Override public TimelineObjectType getTimelineObjectType() { return TimelineObjectType.POST; }
         @Override public List<?> hushContent() {
@@ -704,7 +706,8 @@ public class PausedHooksTest {
         }
         @Override public String hushSummary() { return option == Settings.WORDS_SUMMARY ? TimelineItems.PROBE_WORD : null; }
         @Override public String hushRebloggedFrom() {
-            return option == Settings.KEEP_TAGGED_REBLOGS || option == Settings.KEEP_REBLOGS_WITH_CONTENT ? "100" : null;
+            return option == Settings.KEEP_TAGGED_REBLOGS || option == Settings.KEEP_REBLOGS_WITH_CONTENT
+                    || option == Settings.KEEP_COMMUNITY_REBLOGS ? "100" : null;
         }
     }
 

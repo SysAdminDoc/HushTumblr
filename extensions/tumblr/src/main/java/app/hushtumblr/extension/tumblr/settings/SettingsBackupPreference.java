@@ -525,6 +525,7 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
             case "hushtumblr_keep_tagged_reblogs": return L10n.t("Keep tagged reblogs");
             case "hushtumblr_keep_blaze_posts": return L10n.t("Keep Blaze posts");
             case "hushtumblr_keep_reblogs_with_content": return L10n.t("Keep reblogs with added content");
+            case "hushtumblr_keep_community_reblogs": return L10n.t("Keep reblogs in communities");
             case "hushtumblr_hide_own_reblogs": return L10n.t("Hide your own reblogs");
             case "hushtumblr_hide_reblogs_of_yours": return L10n.t("Hide reblogs of your posts");
             case "hushtumblr_hide_liked_posts": return L10n.t("Hide liked posts");
