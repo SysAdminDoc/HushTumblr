@@ -302,7 +302,7 @@ public class DexDiff {
             Map.entry("answers", 4), Map.entry("settings", 3), Map.entry("firebaseCertificate", 1), Map.entry("activityNotifications", 7),
             Map.entry("settingsRow", 3), Map.entry("featureSwitch", 4), Map.entry("timelineList", 7), Map.entry("timelinePaging", 5),
             Map.entry("timelineCarousel", 3), Map.entry("paidPostBridge", 7), Map.entry("postJsonPresence", 3), Map.entry("imageDescriptions", 10), Map.entry("reviewPrompt", 3),
-            Map.entry("crashReports", 3), Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 6), Map.entry("videoLinkPress", 6), Map.entry("imageSizes", 4), Map.entry("longPostRows", 6), Map.entry("exploreHeaderAd", 4), Map.entry("shareLinkTag", 5), Map.entry("longTrailRows", 4), Map.entry("longPostExpand", 17), Map.entry("fontChoice", 6),
+            Map.entry("crashReports", 3), Map.entry("blogNotificationReminder", 2), Map.entry("giftMessagePopup", 3), Map.entry("postLine", 6), Map.entry("videoLinkPress", 6), Map.entry("fullScreenVideoFit", 2), Map.entry("imageSizes", 4), Map.entry("longPostRows", 6), Map.entry("exploreHeaderAd", 4), Map.entry("shareLinkTag", 5), Map.entry("longTrailRows", 4), Map.entry("longPostExpand", 17), Map.entry("fontChoice", 6),
             Map.entry("followButton", 5), Map.entry("tagBlogLinks", 8), Map.entry("footerButton", 3), Map.entry("postTags", 6),
             Map.entry("noteCounts", 9), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("blazeButtons", 8), Map.entry("accountIdentity", 10),
@@ -5576,6 +5576,45 @@ public class DexDiff {
             return shaped;
         }
 
+        /** Where [body] takes a tall video's answer into its flag, the move after `const/4 tall, 1`, or -1. */
+        static int tallVideoAnswer(List<Instruction> body) {
+            for (int k = 0; k + 7 < body.size(); k++) {
+                Instruction ratio = body.get(k);
+                if (ratio.getOpcode() != Opcode.CONST_WIDE || ((WideLiteralInstruction) ratio).getWideLiteral() != 0x3fe999999999999aL) continue;
+                if (body.get(k + 1).getOpcode() == Opcode.CMPG_DOUBLE && body.get(k + 2).getOpcode() == Opcode.IF_GEZ
+                        && body.get(k + 3).getOpcode() == Opcode.CONST_4 && body.get(k + 4).getOpcode() == Opcode.MOVE
+                        && body.get(k + 5).getOpcode() == Opcode.GOTO && body.get(k + 6).getOpcode() == Opcode.MOVE
+                        && body.get(k + 7).getOpcode() == Opcode.IF_NEZ) return k + 4;
+            }
+            return -1;
+        }
+
+        /** The full-screen video page's answer for a tall video passes through the extension before its flag takes it. */
+        void fullScreenVideoFit(Contract c) {
+            List<Method> found = new ArrayList<>();
+            for (Method m : tumblrMethods()) {
+                if (!m.getName().equals("<init>")) continue;
+                List<Instruction> body = instructions(m);
+                if (tallVideoAnswer(body) >= 0 && body.stream().anyMatch(i -> names(field(i), c.strings.get(1)))) found.add(m);
+            }
+            Method old = unique(found, "the full-screen video page's constructor");
+            if (old == null) { capability(c.callee, false); return; }
+            List<Instruction> was = instructions(old);
+            int at = tallVideoAnswer(was);
+            int tall = firstRegister(was.get(at - 1));
+            Method m = actual(old);
+            List<Integer> sites = calls(m, c.strings.get(0), 1);
+            List<Instruction> body = instructions(m);
+            boolean hooked = sites.size() == 1 && sites.get(0) == at && arguments(body.get(at)).equals(List.of(tall))
+                    && movesTo(get(body, at + 1), tall, Opcode.MOVE_RESULT);
+            if (hooked) {
+                fallthroughOnly(old, at, "the tall video hook");
+                remove(m, at, at + 2);
+                vouch(m, at, List.of(tall));
+            } else fail("the tall video hook doesn't take the answer right before its flag in " + old);
+            capability(c.callee, hooked);
+        }
+
         /**
          * A video in a post hands its container and address over right after the binder builds the
          * video's details, and the timeline controls' long-press listener, set up from the controls'
@@ -7448,6 +7487,7 @@ public class DexDiff {
                     case "giftMessagePopup": giftMessagePopup(c); break;
                     case "postLine": postLine(c); break;
                     case "videoLinkPress": videoLinkPress(c); break;
+                    case "fullScreenVideoFit": fullScreenVideoFit(c); break;
                     case "imageSizes": imageSizes(c); break;
                     case "longPostRows": longPostRows(c); break;
                     case "exploreHeaderAd": exploreHeaderAd(c); break;

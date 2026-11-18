@@ -74,6 +74,7 @@ body:
         - Disable analytics
         - Disable update prompts
         - Filter activity notifications
+        - Fit full-screen videos
         - Fix push notifications
         - Hide ads
         - Hide advertising ID

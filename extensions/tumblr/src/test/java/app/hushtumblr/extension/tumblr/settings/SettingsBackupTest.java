@@ -301,6 +301,7 @@ public class SettingsBackupTest {
                 Settings.SHOW_POST_TIMESTAMPS,
                 Settings.SHOW_IMAGE_DESCRIPTIONS,
                 Settings.SHARE_VIDEO_LINKS,
+                Settings.FIT_FULL_SCREEN_VIDEOS,
                 Settings.SHARPER_IMAGES,
                 Settings.COLLAPSE_LONG_POSTS,
                 Settings.MUTE_ROOT_POSTS,
