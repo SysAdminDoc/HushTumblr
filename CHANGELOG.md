@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Settings with TalkBack and a keyboard: pressing Undo on the "HushTumblr is on" card keeps TalkBack on the card's button. When the Restart row went away above the row your keys were on, TalkBack used to jump to that row, usually Quick setups.
+* **Tooling:** The GitHub release notes carry the Tumblr bullets under What's new and the update steps now. The Tooling bullets stay here in the changelog, and a hand-written tail with a Validation section is refused.
 
 ## 0.0.11 (2026-11-14)
 
