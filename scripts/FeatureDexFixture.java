@@ -98,6 +98,8 @@ public final class FeatureDexFixture {
     private static final String HTTP = "Ljava/net/HttpURLConnection;";
     private static final String CONNECTION = "Ljava/net/URLConnection;";
     private static final String POST = "Lcom/tumblr/rumblr/model/post/Post;";
+    private static final String SHORT_COMMUNITY_INFO = "Lcom/tumblr/rumblr/communities/ShortCommunityInfo;";
+    private static final String COMMUNITY_POST = "Lapp/hushtumblr/extension/tumblr/timeline/HushCommunityPost;";
     private static final String HEADER = "Lcom/tumblr/rumblr/model/post/PostHeaderContext;";
     private static final String PAID_POST = BASE + "timeline/HushPaidPost;";
     private static final String TIMELINE_FILTER = BASE + "timeline/TimelineFilter;";
@@ -180,6 +182,7 @@ public final class FeatureDexFixture {
                 || owner.equals(ACTIVITY_NOTIFICATION) || owner.equals(PHOTO_CONTAINER) || owner.equals(GALLERY_ROW);
         List<String> interfaces = new ArrayList<>();
         if (owner.equals(POST) && methods.stream().anyMatch(m -> m.getName().equals("hushFollowed"))) interfaces.add(PAID_POST);
+        if (owner.equals(POST) && methods.stream().anyMatch(m -> m.getName().equals("hushCommunity"))) interfaces.add(COMMUNITY_POST);
         if (methods.stream().anyMatch(m -> m.getName().equals("hushContent") || m.getName().equals("hushText")))
             interfaces.add(BASE + "timeline/" + (owner.equals(POST) ? "HushPost;" : owner.endsWith("ReblogTrail;") ? "HushTrail;" : "HushText;"));
         if (owner.equals(ACTIVITY_NOTIFICATION) && methods.stream().anyMatch(m -> m.getName().equals("hushNotificationType"))) interfaces.add(HUSH_ACTIVITY);
@@ -926,8 +929,8 @@ public final class FeatureDexFixture {
         boolean hooked = !variant.equals("clean");
         model(classes, IMAGE_BLOCK, new LinkedHashMap<>(Map.of("alt_text", ref(IMAGE_BLOCK, "j", STRING), "other", ref(IMAGE_BLOCK, "otherAlt", STRING))));
         String frame = "Landroid/widget/FrameLayout;", view = "Landroid/view/View;", images = "[" + PHOTO_ROW_ITEM;
-        List<Method> container = new ArrayList<>(List.of(abstractMethod(PHOTO_CONTAINER, "j0", frame)));
-        List<Method> row = new ArrayList<>(List.of(abstractMethod(GALLERY_ROW, "Z", images)));
+        List<Method> container = new ArrayList<>(List.of(abstractMethod(PHOTO_CONTAINER, "i0", frame)));
+        List<Method> row = new ArrayList<>(List.of(abstractMethod(GALLERY_ROW, "Y", images)));
         if (hooked) {
             classes.put(IMAGE_DESCRIPTION, List.of(abstractMethod(IMAGE_DESCRIPTION, "hushAltText", STRING)));
             classes.put(IMAGE_CONTAINER, List.of(abstractMethod(IMAGE_CONTAINER, "hushImageFrame", view)));
@@ -939,10 +942,10 @@ public final class FeatureDexFixture {
             classes.put(IMAGE_BLOCK, image);
             if (!variant.equals("missing-container-bridge")) container.add(method(PHOTO_CONTAINER, "hushImageFrame", view, false, 2,
                     List.of(invoke(variant.equals("wrong-container-invoke") ? Opcode.INVOKE_VIRTUAL : Opcode.INVOKE_INTERFACE,
-                                    ref(PHOTO_CONTAINER, "j0", frame), 1), new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0),
+                                    ref(PHOTO_CONTAINER, "i0", frame), 1), new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0),
                             new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0))));
             if (!variant.equals("missing-row-bridge")) row.add(method(GALLERY_ROW, "hushImageItems", "[" + OBJECT, false, 2,
-                    List.of(invoke(Opcode.INVOKE_INTERFACE, ref(GALLERY_ROW, "Z", images), 1), new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0),
+                    List.of(invoke(Opcode.INVOKE_INTERFACE, ref(GALLERY_ROW, "Y", images), 1), new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0),
                             new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0))));
             List<Method> hooks = captionCleanup(variant);
             for (String name : List.of("photo", "gallery")) hooks.add(method(ALT_TEXT, name, VOID, true, 3,
@@ -1150,6 +1153,7 @@ public final class FeatureDexFixture {
         getters.put("other_header", ref(POST, "otherHeader", HEADER));
         for (String name : List.of("hushContent", "hushTrail", "hushTags", "hushSummary", "hushRebloggedFrom"))
             getters.put(postKey(name), ref(POST, "original_" + name, name.equals("hushSummary") || name.equals("hushRebloggedFrom") ? STRING : LIST));
+        getters.put("community", ref(POST, "original_hushCommunity", SHORT_COMMUNITY_INFO));
         model(classes, POST, getters);
         model(classes, HEADER, Map.of("icon", ref(HEADER, "icon", STRING), "other_icon", ref(HEADER, "otherIcon", STRING)));
         postJsonPresence(classes, hooked, variant);
@@ -1200,11 +1204,11 @@ public final class FeatureDexFixture {
 
     private static void postJsonPresence(Map<String, List<Method>> classes, boolean patched, String fault) {
         String adapter = POST.substring(0, POST.length() - 1) + "JsonAdapter;";
-        String[] parameters = new String[155]; Arrays.fill(parameters, "I"); parameters[154] = "Lc47;";
+        String[] parameters = new String[157]; Arrays.fill(parameters, "I"); parameters[156] = "Lc47;";
         List<Method> model = new ArrayList<>(classes.get(POST));
-        model.removeIf(m -> m.getName().equals("<init>") && m.getParameterTypes().size() == 155);
+        model.removeIf(m -> m.getName().equals("<init>") && m.getParameterTypes().size() == 157);
         model.add(new ImmutableMethod(POST, "<init>", Arrays.stream(parameters).map(p -> new ImmutableMethodParameter(p, Set.of(), null)).toList(),
-                VOID, AccessFlags.PUBLIC.getValue() | AccessFlags.CONSTRUCTOR.getValue(), Set.of(), Set.of(), new ImmutableMethodImplementation(156,
+                VOID, AccessFlags.PUBLIC.getValue() | AccessFlags.CONSTRUCTOR.getValue(), Set.of(), Set.of(), new ImmutableMethodImplementation(158,
                 List.of(invoke(Opcode.INVOKE_DIRECT, ref(OBJECT, "<init>", VOID), 0), end()), List.of(), List.of())));
         if (patched) {
             List<Instruction> setter = List.of(new ImmutableInstruction31i(Opcode.CONST, 0, fault.equals("wrong-paid-bits") ? 0x80000 : 0x4080000),
@@ -1218,39 +1222,44 @@ public final class FeatureDexFixture {
                     VOID, AccessFlags.PUBLIC.getValue() | AccessFlags.SYNTHETIC.getValue(), Set.of(), Set.of(), new ImmutableMethodImplementation(4, setter, List.of(), List.of())));
         }
         classes.put(POST, model);
-        List<Instruction> reader = new ArrayList<>(); for (int k = 0; k < 2183; k++) reader.add(new ImmutableInstruction10x(Opcode.NOP));
+        // Tumblr 47.3.0.110's reader: two more Post fields than 47.0 put every pin past the start 16 further on, the
+        // masks reach the constructor in v156 and v160, and the missing-fields branch returns v159's null through v0.
+        List<Instruction> reader = new ArrayList<>(); for (int k = 0; k < 2202; k++) reader.add(new ImmutableInstruction10x(Opcode.NOP));
         reader.set(0, new ImmutableInstruction11n(Opcode.CONST_4, 0, 0));
         reader.set(10, new ImmutableInstruction11n(Opcode.CONST_4, 10, -1));
         reader.set(66, new ImmutableInstruction12x(Opcode.MOVE, 4, 10));
         for (int k = 67; k <= 69; k++) reader.set(k, new ImmutableInstruction12x(Opcode.MOVE, k - 62, k - 63));
         reader.set(168, new ImmutableInstruction31i(Opcode.CONST, 161, ~0x80000));
         reader.set(175, new ImmutableInstruction31i(Opcode.CONST, 168, ~0x4000000));
-        reader.set(211, new ImmutableInstruction12x(Opcode.MOVE, 7, 3));
-        reader.set(394, new ImmutableInstruction22b(Opcode.AND_INT_LIT8, 3, 7, -2));
-        reader.set(1713, new ImmutableInstruction12x(Opcode.MOVE, 10, 3));
-        reader.set(1732, new ImmutableInstruction23x(Opcode.AND_INT, 3, 10, 168));
-        reader.set(1865, new ImmutableInstruction23x(Opcode.AND_INT, 3, 10, 161));
-        reader.set(2065, new ImmutableInstruction21s(Opcode.CONST_16, 157, 0));
-        reader.set(2069, new ImmutableInstruction21t(Opcode.IF_NEZ, 0, 1));
-        reader.set(2098, new ImmutableInstruction21c(Opcode.NEW_INSTANCE, 4, new ImmutableTypeReference(POST)));
-        reader.set(2126, new ImmutableInstruction22x(Opcode.MOVE_FROM16, 154, 10));
-        reader.set(2070, new ImmutableInstruction22x(Opcode.MOVE_FROM16, 158, 7));
-        reader.set(2166, new ImmutableInstruction3rc(Opcode.INVOKE_DIRECT_RANGE, 4, 156, ref(POST, "<init>", VOID, parameters)));
-        reader.set(2167, new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 4));
-        reader.set(2180, invoke(Opcode.INVOKE_STATIC, ref("Llab;", "a", VOID, STRING), 0));
-        reader.set(2181, new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 157));
-        int error = 2168;
+        reader.set(227, new ImmutableInstruction12x(Opcode.MOVE, 7, 3));
+        reader.set(410, new ImmutableInstruction22b(Opcode.AND_INT_LIT8, 3, 7, -2));
+        reader.set(1729, new ImmutableInstruction12x(Opcode.MOVE, 10, 3));
+        reader.set(1748, new ImmutableInstruction23x(Opcode.AND_INT, 3, 10, 168));
+        reader.set(1881, new ImmutableInstruction23x(Opcode.AND_INT, 3, 10, 161));
+        reader.set(2081, new ImmutableInstruction21s(Opcode.CONST_16, 159, 0));
+        reader.set(2085, new ImmutableInstruction21t(Opcode.IF_NEZ, 0, 1));
+        reader.set(2115, new ImmutableInstruction21c(Opcode.NEW_INSTANCE, 4, new ImmutableTypeReference(POST)));
+        reader.set(2142, new ImmutableInstruction22x(Opcode.MOVE_FROM16, 156, 10));
+        reader.set(2154, new ImmutableInstruction22x(Opcode.MOVE_FROM16, 160, 7));
+        // The range's last register is the constructor's Lc47; marker, which a null fills here.
+        reader.set(2183, new ImmutableInstruction21s(Opcode.CONST_16, 161, 0));
+        reader.set(2184, new ImmutableInstruction3rc(Opcode.INVOKE_DIRECT_RANGE, 4, 158, ref(POST, "<init>", VOID, parameters)));
+        reader.set(2185, new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 4));
+        reader.set(2186, new ImmutableInstruction22x(Opcode.MOVE_OBJECT_FROM16, 0, 159));
+        reader.set(2199, invoke(Opcode.INVOKE_STATIC, ref("Llab;", "a", VOID, STRING), 1));
+        reader.set(2200, new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0));
+        int error = 2186;
         if (patched && !fault.equals("missing-presence-hook")) {
-            reader.addAll(2167, List.of(new ImmutableInstruction22x(Opcode.MOVE_OBJECT_FROM16, 0, 4),
-                    new ImmutableInstruction22x(Opcode.MOVE_FROM16, 1, fault.equals("wrong-first-mask") ? 153 : fault.equals("swapped-presence-masks") ? 158 : 154),
-                    new ImmutableInstruction22x(Opcode.MOVE_FROM16, 2, fault.equals("wrong-trail-mask") ? 157 : fault.equals("swapped-presence-masks") ? 154 : 158),
+            reader.addAll(2185, List.of(new ImmutableInstruction22x(Opcode.MOVE_OBJECT_FROM16, 0, 4),
+                    new ImmutableInstruction22x(Opcode.MOVE_FROM16, 1, fault.equals("wrong-first-mask") ? 155 : fault.equals("swapped-presence-masks") ? 160 : 156),
+                    new ImmutableInstruction22x(Opcode.MOVE_FROM16, 2, fault.equals("wrong-trail-mask") ? 159 : fault.equals("swapped-presence-masks") ? 156 : 160),
                     invoke(Opcode.INVOKE_VIRTUAL, ref(POST, "hushSetJsonPresence", VOID, "I", "I"), 0, 1, 2)));
             error += 4;
         }
-        reader.set(2069, new ImmutableInstruction21t(Opcode.IF_NEZ, 0, codeOffset(reader, 2069, error)));
-        if (patched && fault.equals("missing-error-return")) reader.set(error + 13, new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0));
+        reader.set(2085, new ImmutableInstruction21t(Opcode.IF_NEZ, 0, codeOffset(reader, 2085, error)));
+        if (patched && fault.equals("missing-error-return")) reader.set(error + 14, new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 1));
         List<Method> adapterMethods = new ArrayList<>(classes.get(adapter)); adapterMethods.removeIf(m -> m.getName().equals("fromJson"));
-        adapterMethods.add(method(adapter, "fromJson", OBJECT, false, 178, reader, "Lkcb;")); classes.put(adapter, adapterMethods);
+        adapterMethods.add(method(adapter, "fromJson", OBJECT, false, 180, reader, "Lkcb;")); classes.put(adapter, adapterMethods);
     }
 
     private static String postKey(String name) {
@@ -1288,6 +1297,13 @@ public final class FeatureDexFixture {
             classes.put(owner, model);
             classes.put(face, bridge);
         }
+        // Keep reblogs in communities: the community bridge hands the model's community back as an object.
+        List<Method> post = new ArrayList<>(classes.get(POST));
+        post.add(method(POST, "hushCommunity", OBJECT, false, 2, List.of(
+                invoke(Opcode.INVOKE_VIRTUAL, ref(POST, "original_hushCommunity", SHORT_COMMUNITY_INFO), 1),
+                new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0), new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0))));
+        classes.put(POST, post);
+        classes.put(COMMUNITY_POST, List.of(abstractMethod(COMMUNITY_POST, "hushCommunity", OBJECT)));
     }
 
     private static void reviewPrompt(Map<String, List<Method>> classes, String variant) {

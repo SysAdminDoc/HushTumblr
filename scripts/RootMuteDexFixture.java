@@ -163,23 +163,23 @@ public final class RootMuteDexFixture {
 
     private static void local(Map<String, ClassDef> classes, boolean patched, String fault) {
         List<Instruction> body = AccountDexFixture.nops(60);
-        body.set(51, call(Opcode.INVOKE_VIRTUAL, MODE, "g", "Z", new int[]{4})); body.set(52, AccountDexFixture.result(0, false));
+        body.set(51, call(Opcode.INVOKE_VIRTUAL, MODE, "j", "Z", new int[]{4})); body.set(52, AccountDexFixture.result(0, false));
         body.set(53, new ImmutableInstruction21t(Opcode.IF_NEZ, 0, 7));
         body.set(54, field(Opcode.IGET_OBJECT, 0, 3, LOCAL, "z", LIST));
         body.set(55, call(Opcode.INVOKE_INTERFACE, LIST, "clear", "V", new int[]{0}));
         body.set(56, field(Opcode.IGET_OBJECT, 0, 3, LOCAL, "z", LIST));
         body.set(57, call(Opcode.INVOKE_INTERFACE, LIST, "addAll", "Z", new int[]{0, 5}, "Ljava/util/Collection;"));
-        body.set(58, call(Opcode.INVOKE_DIRECT, LOCAL, "d7", "V", new int[]{3, 4, 5}, MODE, LIST)); body.set(59, end());
+        body.set(58, call(Opcode.INVOKE_DIRECT, LOCAL, "g7", "V", new int[]{3, 4, 5}, MODE, LIST)); body.set(59, end());
         List<Instruction> render = AccountDexFixture.nops(46);
-        render.set(0, call(Opcode.INVOKE_VIRTUAL, LOCAL, "j6", "V", new int[]{9}));
+        render.set(0, call(Opcode.INVOKE_VIRTUAL, LOCAL, "m6", "V", new int[]{9}));
         render.set(1, move(5, 9)); render.set(2, move(6, 11)); render.set(3, move(7, 10)); render.set(4, move(8, 11));
         render.set(5, move(9, 11)); render.set(6, integer(10, 0)); render.set(7, integer(11, 0));
         render.set(8, new ImmutableInstruction3rc(Opcode.INVOKE_VIRTUAL_RANGE, 5, 7,
-                AccountDexFixture.ref(LOCAL, "e7", "V", LIST, MODE, LIST, LIST, "I", "I"))); render.set(45, end());
-        List<Method> methods = new ArrayList<>(List.of(method(LOCAL, "o6", "V", AccessFlags.PROTECTED.getValue(), 6, body, MODE, LIST),
-                method(LOCAL, "d7", "V", AccessFlags.PRIVATE.getValue(), 12, render, MODE, LIST),
-                method(LOCAL, "j6", "V", AccessFlags.PROTECTED.getValue(), 1, code(end())),
-                method(LOCAL, "e7", "V", AccessFlags.PROTECTED.getValue(), 7, code(end()), LIST, MODE, LIST, LIST, "I", "I")));
+                AccountDexFixture.ref(LOCAL, "h7", "V", LIST, MODE, LIST, LIST, "I", "I"))); render.set(45, end());
+        List<Method> methods = new ArrayList<>(List.of(method(LOCAL, "r6", "V", AccessFlags.PROTECTED.getValue(), 6, body, MODE, LIST),
+                method(LOCAL, "g7", "V", AccessFlags.PRIVATE.getValue(), 12, render, MODE, LIST),
+                method(LOCAL, "m6", "V", AccessFlags.PROTECTED.getValue(), 1, code(end())),
+                method(LOCAL, "h7", "V", AccessFlags.PROTECTED.getValue(), 7, code(end()), LIST, MODE, LIST, LIST, "I", "I")));
         // Muting a root can empty a page, so this fragment carries the page delivery and its paging question too.
         methods.addAll(FeatureDexFixture.pagingMethods(patched ? "good" : "clean"));
         if (patched) {
@@ -189,7 +189,7 @@ public final class RootMuteDexFixture {
                             call(Opcode.INVOKE_DIRECT, "Ljava/util/ArrayList;", "<init>", "V", new int[]{0, 1}, "Ljava/util/Collection;"), returns(0))));
             methods.add(method(LOCAL, "hushApplyTimelineItems", "V", PUBLIC, 3,
                     code(staticField(0, MODE, fault.equals("append-local-rebind") ? "PAGINATION" : "FROM_CACHE", MODE),
-                            call(Opcode.INVOKE_VIRTUAL, LOCAL, "o6", "V", new int[]{1, 0, 2}, MODE, LIST), end()), LIST));
+                            call(Opcode.INVOKE_VIRTUAL, LOCAL, "r6", "V", new int[]{1, 0, 2}, MODE, LIST), end()), LIST));
         }
         classes.put(LOCAL, clazz(LOCAL, patched ? List.of(LOCAL_BRIDGE) : List.of(),
                 List.of(member(LOCAL, "z", LIST, AccessFlags.PROTECTED.getValue()), member(LOCAL, "other", LIST, AccessFlags.PROTECTED.getValue())), methods));
@@ -203,19 +203,19 @@ public final class RootMuteDexFixture {
                 method(MODE, "<clinit>", "V", STATIC | AccessFlags.CONSTRUCTOR.getValue(), 3, init),
                 method(MODE, "<init>", "V", AccessFlags.PRIVATE.getValue() | AccessFlags.CONSTRUCTOR.getValue(), 3,
                         code(call(Opcode.INVOKE_DIRECT, OBJECT, "<init>", "V", new int[]{0}), end()), STRING, "I"),
-                method(MODE, "g", "Z", PUBLIC, 2, code(staticField(0, MODE, "PAGINATION", MODE),
+                method(MODE, "j", "Z", PUBLIC, 2, code(staticField(0, MODE, "PAGINATION", MODE),
                         new ImmutableInstruction22t(Opcode.IF_NE, 1, 0, 4), integer(1, 1), AccountDexFixture.returns(1, false),
                         integer(1, 0), AccountDexFixture.returns(1, false))))));
     }
 
     private static void menus(Map<String, ClassDef> classes, boolean patched, String fault) {
         additionalMenus(classes, patched, fault);
-        List<Instruction> menu = AccountDexFixture.nops(228);
+        List<Instruction> menu = AccountDexFixture.nops(235);
         menu.set(0, move(0, 17)); menu.set(12, call(Opcode.INVOKE_VIRTUAL, "Landroidx/fragment/app/Fragment;", "requireContext", CONTEXT, new int[]{0}));
         menu.set(13, result(10)); menu.set(14, type(Opcode.NEW_INSTANCE, 11, CONCRETE));
         menu.set(15, call(Opcode.INVOKE_DIRECT, CONCRETE, "<init>", "V", new int[]{11, 10}, CONTEXT));
-        menu.set(225, call(Opcode.INVOKE_VIRTUAL, BUILDER, "h", SHEET, new int[]{11})); menu.set(226, result(2)); menu.set(227, end());
-        if (patched) menu.addAll(fault.equals("late-menu-hook") ? 227 : 225,
+        menu.set(232, call(Opcode.INVOKE_VIRTUAL, BUILDER, "h", SHEET, new int[]{11})); menu.set(233, result(2)); menu.set(234, end());
+        if (patched) menu.addAll(fault.equals("late-menu-hook") ? 234 : 232,
                 code(move(0, fault.equals("wrong-menu-card") ? 25 : 24), move(1, 17),
                         call(Opcode.INVOKE_STATIC, MENU, "add", "V", new int[]{fault.equals("wrong-menu-builder") ? 10 : 11, 0, 10, 1}, OBJECT, OBJECT, CONTEXT, OBJECT)));
         classes.put("Lmmh;", clazz("Lmmh;", List.of(), List.of(), List.of(method("Lmmh;", "y", "V", PUBLIC | STATIC, 28, menu,
@@ -252,22 +252,22 @@ public final class RootMuteDexFixture {
     }
 
     private static void additionalMenus(Map<String, ClassDef> classes, boolean patched, String fault) {
-        List<Instruction> header = AccountDexFixture.nops(210);
+        List<Instruction> header = AccountDexFixture.nops(222);
         header.set(0, move(1, 20)); header.set(1, move(3, 22));
         header.set(5, call(Opcode.INVOKE_VIRTUAL, "Landroid/view/View;", "getContext", CONTEXT, new int[]{1}));
         header.set(6, result(5)); header.set(24, type(Opcode.NEW_INSTANCE, 11, CONCRETE));
         header.set(25, call(Opcode.INVOKE_DIRECT, CONCRETE, "<init>", "V", new int[]{11, 5}, CONTEXT));
-        header.set(158, integer(8, 0)); header.set(159, new ImmutableInstruction12x(Opcode.MOVE_OBJECT, 2, 5));
-        header.set(160, new ImmutableInstruction21t(Opcode.IF_EQZ, 8, 1)); header.set(161, move(5, 21));
-        header.set(164, call(Opcode.INVOKE_VIRTUAL, BUILDER, "h", SHEET, new int[]{11}));
-        header.set(165, result(14)); header.set(209, end());
+        header.set(170, integer(8, 0)); header.set(171, new ImmutableInstruction12x(Opcode.MOVE_OBJECT, 2, 5));
+        header.set(172, new ImmutableInstruction21t(Opcode.IF_EQZ, 8, 1)); header.set(173, move(5, 21));
+        header.set(176, call(Opcode.INVOKE_VIRTUAL, BUILDER, "h", SHEET, new int[]{11}));
+        header.set(177, result(14)); header.set(221, end());
         boolean headerHook = patched && !fault.equals("missing-redesigned-hook");
-        if (headerHook) header.addAll(fault.equals("late-redesigned-hook") ? 166 : 164, code(
+        if (headerHook) header.addAll(fault.equals("late-redesigned-hook") ? 178 : 176, code(
                 move(0, fault.equals("wrong-redesigned-callback") ? 23 : 24),
                 call(Opcode.INVOKE_STATIC, MENU, "add", "V", new int[]{11, fault.equals("wrong-redesigned-card") ? 1 : 3,
                         fault.equals("wrong-redesigned-context") ? 5 : 2, 0}, OBJECT, OBJECT, CONTEXT, OBJECT)));
-        header.set(160, new ImmutableInstruction21t(Opcode.IF_EQZ, 8,
-                offset(header, 160, headerHook && fault.equals("bypassed-redesigned-hook") ? 166 : 164)));
+        header.set(172, new ImmutableInstruction21t(Opcode.IF_EQZ, 8,
+                offset(header, 172, headerHook && fault.equals("bypassed-redesigned-hook") ? 178 : 176)));
         classes.put(HEADER, clazz(HEADER, "Landroid/view/View;", List.of(), List.of(), List.of(method(HEADER, "H2", "V",
                 AccessFlags.PRIVATE.getValue(), 29, header, "Lt0n;", "Lf3g;", "Lpvl;", "Lele;", "Lbw2;", "Ls0m;", "Lizb;", "Lc22;"))));
 

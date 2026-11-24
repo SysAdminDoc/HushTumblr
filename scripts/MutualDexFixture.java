@@ -121,7 +121,7 @@ public final class MutualDexFixture {
         List<Instruction> detach = new ArrayList<>(List.of(call(Opcode.INVOKE_SUPER, "Landroid/view/View;", "onDetachedFromWindow", "V", new int[]{0}),
                 field(Opcode.IGET_OBJECT, 0, 0, HEADER, "w0", "Lwr4;"), call(Opcode.INVOKE_VIRTUAL, "Lwr4;", "e", "V", new int[]{0}), end()));
         if (patched && !variant.equals("missing-detach-clear")) detach.add(0, call(Opcode.INVOKE_STATIC, HELPER, "clear", "V", new int[]{0}, OBJECT));
-        List<Instruction> displayName = AccountDexFixture.nops(17); displayName.set(4, call(Opcode.INVOKE_VIRTUAL, BLOG, "d0", STRING, new int[]{3})); displayName.set(5, result(0, true)); displayName.set(16, returns(0, true));
+        List<Instruction> displayName = AccountDexFixture.nops(17); displayName.set(4, call(Opcode.INVOKE_VIRTUAL, BLOG, "P", STRING, new int[]{3})); displayName.set(5, result(0, true)); displayName.set(16, returns(0, true));
         classes.put(HEADER, clazz(HEADER, "Landroid/widget/LinearLayout;", List.of(), List.of(nativeField(HEADER, "K", "Landroid/widget/TextView;", false), nativeField(HEADER, "w0", "Lwr4;", true)),
                 List.of(method(HEADER, "t2", "V", AccessFlags.PRIVATE.getValue(), 21, bind, "Lf3g;", "Lwzn;", "Z", BLOG, "Z"),
                         method(HEADER, "S0", "V", PUBLIC, 35, full, fullArgs), method(HEADER, "onDetachedFromWindow", "V", AccessFlags.PROTECTED.getValue(), 1, detach),
@@ -146,7 +146,7 @@ public final class MutualDexFixture {
                 method(PRIMARY, "<init>", "V", CTOR, 111, primary, primaryArgs), method(PRIMARY, "<init>", "V", CTOR | AccessFlags.SYNTHETIC.getValue(), 129, defaults, primaryDefaults))));
         List<Instruction> copied = AccountDexFixture.nops(119); copied.set(39, call(Opcode.INVOKE_VIRTUAL, SHORT, "Y", STRING, new int[]{2})); copied.set(40, result(1, true));
         copied.set(41, field(Opcode.IPUT_OBJECT, 1, 0, BLOG, "F", STRING)); copied.set(118, returns(0, true));
-        classes.put(BLOG, clazz(BLOG, OBJECT, List.of(), List.of(nativeField(BLOG, "a", STRING, false), nativeField(BLOG, "F", STRING, false)), List.of(getter(BLOG, "d0", STRING, "a"), getter(BLOG, "t0", STRING, "F"), method(BLOG, "W0", BLOG, PUBLIC, 3, copied, SHORT))));
+        classes.put(BLOG, clazz(BLOG, OBJECT, List.of(), List.of(nativeField(BLOG, "a", STRING, false), nativeField(BLOG, "F", STRING, false)), List.of(getter(BLOG, "P", STRING, "a"), getter(BLOG, "t0", STRING, "F"), method(BLOG, "W0", BLOG, PUBLIC, 3, copied, SHORT))));
 
         String[] followerArgs = {STRING, STRING, "J", "Z", SHORT};
         List<Instruction> follower = new ArrayList<>(List.of(call(Opcode.INVOKE_DIRECT, OBJECT, "<init>", "V", new int[]{0}), field(Opcode.IPUT_OBJECT, 1, 0, FOLLOWER, "name", STRING),
@@ -181,10 +181,10 @@ public final class MutualDexFixture {
             reads.add(new ImmutableMethod(SERVICE, name, args, CALL, PUBLIC | AccessFlags.ABSTRACT.getValue(), Set.of(annotation(patched && variant.equals("unsafe-request-verb") ? "POST" : "GET", first ? "blog/{hostname}/followers?limit=100" : null)), Set.of(), null));
         }
         classes.put(SERVICE, new ImmutableClassDef(SERVICE, PUBLIC | AccessFlags.INTERFACE.getValue() | AccessFlags.ABSTRACT.getValue(), OBJECT, List.of(), null, Set.of(), List.of(), reads));
-        append(classes, CORE, null, List.of(method(CORE, "Z", SERVICE, PUBLIC | STATIC | AccessFlags.DECLARED_SYNCHRONIZED.getValue(), 1, List.of(integer(0, 0), returns(0, true)))));
+        append(classes, CORE, null, List.of(method(CORE, "X", SERVICE, PUBLIC | STATIC | AccessFlags.DECLARED_SYNCHRONIZED.getValue(), 1, List.of(integer(0, 0), returns(0, true)))));
         List<Instruction> nativeRead = AccountDexFixture.nops(18); nativeRead.set(9, literal(1, ".tumblr.com")); nativeRead.set(13, literal(1, FIELDS));
         nativeRead.set(14, call(Opcode.INVOKE_INTERFACE, SERVICE, "followers", CALL, new int[]{0, 2, 1}, STRING, STRING)); nativeRead.set(15, result(0, true)); nativeRead.set(17, returns(0, true));
-        classes.put("Lcom/tumblr/ui/fragment/FollowerFragment;", clazz("Lcom/tumblr/ui/fragment/FollowerFragment;", OBJECT, List.of(), List.of(), List.of(method("Lcom/tumblr/ui/fragment/FollowerFragment;", "c5", CALL, PUBLIC, 3, nativeRead))));
+        classes.put("Lcom/tumblr/ui/fragment/FollowerFragment;", clazz("Lcom/tumblr/ui/fragment/FollowerFragment;", OBJECT, List.of(), List.of(), List.of(method("Lcom/tumblr/ui/fragment/FollowerFragment;", "e5", CALL, PUBLIC, 3, nativeRead))));
         classes.put(CALL, AccountDexFixture.contract(CALL, new String[]{"execute", "timeout", "cancel"}, new String[]{RESPONSE, "Li1m;", "V"}, new String[][]{ {}, {}, {} }));
         classes.put(TIME_UNIT, clazz(TIME_UNIT, "Ljava/lang/Enum;", List.of(), List.of(new ImmutableField(TIME_UNIT, "MILLISECONDS", TIME_UNIT,
                 PUBLIC | STATIC | AccessFlags.FINAL.getValue(), null, Set.of(), Set.of())), List.of()));
@@ -205,7 +205,7 @@ public final class MutualDexFixture {
         append(classes, USER, BASE + "mutual/HushMutualAccount;", List.of(method(USER, "hushMutualBlogs", LIST, PUBLIC, 2, List.of(field(Opcode.IGET_OBJECT, 0, 1, USER, patched && variant.equals("wrong-account-list") ? "j" : "k", LIST), returns(0, true)))));
         append(classes, PRIMARY, BASE + "mutual/HushPrimaryBlog;", List.of(getterBridge(PRIMARY, "hushMutualPrimary", "Z", "N0", "Z")));
         append(classes, SHORT, BASE + "mutual/HushMutualBlog;", List.of(getterBridge(SHORT, "hushMutualName", STRING, "m", STRING), getterBridge(SHORT, "hushMutualUuid", STRING, "Y", STRING)));
-        append(classes, BLOG, BASE + "mutual/HushMutualBlog;", List.of(getterBridge(BLOG, "hushMutualName", STRING, "d0", STRING), getterBridge(BLOG, "hushMutualUuid", STRING, variant.equals("wrong-blog-uuid") ? "d0" : "t0", STRING)));
+        append(classes, BLOG, BASE + "mutual/HushMutualBlog;", List.of(getterBridge(BLOG, "hushMutualName", STRING, "P", STRING), getterBridge(BLOG, "hushMutualUuid", STRING, variant.equals("wrong-blog-uuid") ? "P" : "t0", STRING)));
         append(classes, FOLLOWER, BASE + "mutual/HushMutualFollower;", List.of(getterBridge(FOLLOWER, "hushMutualFollowing", "Z", "isFollowing", "Z"), getterBridge(FOLLOWER, "hushMutualFollowerBlog", OBJECT, "getBlog", SHORT)));
         append(classes, PAGE, variant.equals("missing-page-interface") ? null : BASE + "mutual/HushMutualPage;", List.of(getterBridge(PAGE, "hushMutualUsers", LIST, "getUsers", LIST), getterBridge(PAGE, "hushMutualPagination", OBJECT, "getPaginationLinks", PAGINATION), getterBridge(PAGE, "hushMutualLinks", OBJECT, "getLinks", PAGINATION)));
         append(classes, PAGINATION, BASE + "mutual/HushMutualPagination;", List.of(getterBridge(PAGINATION, "hushMutualNext", OBJECT, "getNext", SIMPLE)));
@@ -215,7 +215,7 @@ public final class MutualDexFixture {
         branch(status, 2, variant.equals("unsafe-null-status") ? 3 : 6);
         append(classes, API, BASE + "mutual/HushMutualResponse;", List.of(getterBridge(API, "hushMutualResponse", OBJECT, "getResponse", OBJECT), method(API, "hushMutualStatus", "I", PUBLIC, 2, status)));
         List<Method> source = new ArrayList<>();
-        for (String name : List.of("first", "next")) source.add(method(SOURCE, name, OBJECT, PUBLIC, 4, List.of(call(Opcode.INVOKE_STATIC, CORE, "Z", SERVICE, new int[]{}), result(0, true), literal(1, FIELDS),
+        for (String name : List.of("first", "next")) source.add(method(SOURCE, name, OBJECT, PUBLIC, 4, List.of(call(Opcode.INVOKE_STATIC, CORE, "X", SERVICE, new int[]{}), result(0, true), literal(1, FIELDS),
                 call(variant.equals("request-virtual") ? Opcode.INVOKE_VIRTUAL : Opcode.INVOKE_INTERFACE, SERVICE, name.equals("first") ? "followers" : "followersPagination", CALL, new int[]{0, 3, 1}, STRING, STRING), result(0, true), returns(0, true)), STRING));
         List<Instruction> execute = new ArrayList<>(List.of(new ImmutableInstruction12x(Opcode.MOVE_OBJECT, 0, 5), type(Opcode.CHECK_CAST, 0, CALL), call(Opcode.INVOKE_INTERFACE, CALL, "timeout", "Li1m;", new int[]{0}), result(1, true),
                 new ImmutableInstruction21c(Opcode.SGET_OBJECT, 2, new ImmutableFieldReference(TIME_UNIT, "MILLISECONDS", TIME_UNIT)), call(Opcode.INVOKE_VIRTUAL, "Li1m;", "timeout", "Li1m;", new int[]{1, 6, 7, 2}, "J", TIME_UNIT),

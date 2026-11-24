@@ -307,7 +307,7 @@ public class DexDiff {
             Map.entry("noteCounts", 9), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("blazeButtons", 8), Map.entry("accountIdentity", 10),
             Map.entry("matureContent", 12), Map.entry("rootPostMutes", 9), Map.entry("dashboardPage", 9), Map.entry("mutualMarkers", 13),
-            Map.entry("reblogSources", 5));
+            Map.entry("reblogSources", 5), Map.entry("imageLimit", 3), Map.entry("textScale", 4));
 
     /**
      * A start-call, next-call, sole-call or once-call line: its method reference, the next-call's
@@ -3765,7 +3765,7 @@ public class DexDiff {
                 if (b.isEmpty() || b.get(0).getOpcode() != Opcode.MONITOR_ENTER || callSites(b, credentials + "->a()V").isEmpty()) fail(lifecycle + ": credential reset monitor");
                 hookAtLabel(reset, actual(reset), 1, hooks + "->logout()V", List.of(), -1, List.of());
             }
-            Method out = nativeMethod(logout + "->m(Landroid/content/Context;ZLmz5;)Ljava/lang/Object;", lifecycle);
+            Method out = nativeMethod(logout + "->m(Landroid/content/Context;ZLhz5;)Ljava/lang/Object;", lifecycle);
             if (out != null) {
                 if (callSites(instructions(out), "Lcom/tumblr/Remember;->b()V").size() != 1) fail(lifecycle + ": native logout Remember clear");
                 hookAt(out, actual(out), 0, hooks + "->logout()V", List.of(), -1, List.of());
@@ -3813,7 +3813,7 @@ public class DexDiff {
             if (nsfw == null) found = false;
             else {
                 List<Instruction> b = instructions(nsfw);
-                int at = firstIndex(b, 0, i -> isCall(i, "Lze1;", "U0", "()Z"));
+                int at = firstIndex(b, 0, i -> isCall(i, "Lze1;", "W0", "()Z"));
                 Method after = actual(nsfw);
                 if (at < 0 || at > 8 || !isCall(get(b, 10), gate, "k", "(Lf3g;)Z") || after == null
                         || !normalized(nsfw, null).equals(normalized(after, null))) { fail("native NSFW restriction changed"); found = false; }
@@ -4055,7 +4055,7 @@ public class DexDiff {
                         && literalIs(get(before, 2081), Opcode.CONST_16, 159, 0) && movesTo(get(before, 2085), 0, Opcode.IF_NEZ)
                         && movePair(get(before, 2186), Opcode.MOVE_OBJECT_FROM16, 0, 159) && movesTo(get(before, 2200), 0, Opcode.RETURN_OBJECT)
                         && !writtenBetween(before, 2082, 2086, 159) && !writtenBetween(before, 2187, 2201, 0)
-                        && callIs(get(before, 2199), Opcode.INVOKE_STATIC, "Llab;->a(Ljava/lang/String;)V", 0);
+                        && callIs(get(before, 2199), Opcode.INVOKE_STATIC, "Llab;->a(Ljava/lang/String;)V", 1);
                 if (nativeProof) {
                     FeatureFlow graph = flow(reader);
                     nativeProof = predecessors(graph, 2185).equals(List.of(2184)) && graph.normal.get(2085).contains(2186);
@@ -4120,7 +4120,7 @@ public class DexDiff {
                 if (shown) labelAnchors.add(new Anchor(actual(bind), 106, 106, headerReason));
             }
             Method name = nativeMethod(header + "->Z0(Lf3g;" + blog + ")" + STRING_TYPE, headerReason);
-            shown &= name != null && instructions(name).size() == 17 && isCall(get(instructions(name), 4), blog, "d0", "()" + STRING_TYPE);
+            shown &= name != null && instructions(name).size() == 17 && isCall(get(instructions(name), 4), blog, "P", "()" + STRING_TYPE);
             List<Method> fulls = new ArrayList<>(); ClassDef oldHeader = clean.classes.get(header);
             if (oldHeader != null) for (Method m : oldHeader.getMethods()) if (m.getName().equals("S0") && m.getReturnType().equals("V")) fulls.add(m);
             Method full = fulls.size() == 1 ? fulls.get(0) : null, detach = nativeMethod(header + "->onDetachedFromWindow()V", headerReason);
@@ -4294,7 +4294,7 @@ public class DexDiff {
             for (String name : List.of("first", "next")) {
                 Method m = actual(source + "->" + name + "(" + STRING_TYPE + ")" + object); List<Instruction> b = m == null ? List.of() : instructions(m);
                 good &= m != null && !isStatic(m) && AccessFlags.PUBLIC.isSet(m.getAccessFlags()) && m.getImplementation().getRegisterCount() == 4 && b.size() == 6
-                        && callIs(b.get(0), Opcode.INVOKE_STATIC, "Lcom/tumblr/CoreApp;->Z()" + service)
+                        && callIs(b.get(0), Opcode.INVOKE_STATIC, "Lcom/tumblr/CoreApp;->X()" + service)
                         && movesTo(b.get(1), 0, Opcode.MOVE_RESULT_OBJECT) && fields != null && fields.equals(literal(b.get(2))) && firstRegister(b.get(2)) == 1
                         && callIs(b.get(3), Opcode.INVOKE_INTERFACE, service + "->" + (name.equals("first") ? "followers" : "followersPagination") + signature, 0, 3, 1)
                         && movesTo(b.get(4), 0, Opcode.MOVE_RESULT_OBJECT) && movesTo(b.get(5), 0, Opcode.RETURN_OBJECT);
@@ -5616,6 +5616,101 @@ public class DexDiff {
             capability(c.callee, hooked);
         }
 
+        static boolean anyConst(Instruction i, int register, int value) {
+            return i != null && Set.of(Opcode.CONST_4, Opcode.CONST_16, Opcode.CONST).contains(i.getOpcode()) && firstRegister(i) == register
+                    && i instanceof NarrowLiteralInstruction n && n.getNarrowLiteral() == value;
+        }
+
+        /**
+         * The post editor's block limits, built once in the one static initializer that reads the image
+         * limit's message: the limit's number goes through the extension right before the limit is
+         * built from it and its message, and the register gets the stock number back right after the
+         * limit is stored, for the limits built after it. The share screen's cap, set to the same
+         * number, goes through the extension right before it reads the images it was handed.
+         */
+        void imageLimit(Contract c) {
+            String hook = c.strings.get(0), message = c.strings.get(1), share = c.strings.get(2), reason = "image limit hook changed";
+            boolean found = true;
+            List<Method> inits = new ArrayList<>();
+            for (Method m : tumblrMethods()) if (m.getName().equals("<clinit>")
+                    && instructions(m).stream().anyMatch(i -> i.getOpcode() == Opcode.SGET && names(field(i), message))) inits.add(m);
+            Method limits = unique(inits, "the post editor's block limits");
+            int stock = -1;
+            if (limits == null) found = false;
+            else {
+                List<Instruction> was = instructions(limits);
+                List<Integer> said = new ArrayList<>();
+                for (int k = 0; k < was.size(); k++) if (was.get(k).getOpcode() == Opcode.SGET && names(field(was.get(k)), message)) said.add(k);
+                int at = said.size() == 1 ? said.get(0) : -1;
+                Instruction number = get(was, at + 1), build = get(was, at + 2), store = get(was, at + 3);
+                MethodReference made = called(build);
+                int limit = number == null ? -1 : firstRegister(number);
+                stock = number instanceof NarrowLiteralInstruction n ? n.getNarrowLiteral() : -1;
+                boolean shaped = at >= 0 && anyConst(number, limit, stock) && stock > 0 && limit >= 0 && limit < 16
+                        && was.stream().noneMatch(i -> i instanceof OffsetInstruction)
+                        && build instanceof FiveRegisterInstruction f && build.getOpcode() == Opcode.INVOKE_DIRECT && made != null
+                        && made.getName().equals("<init>") && made.getParameterTypes().size() == 3
+                        && f.getRegisterCount() == 4 && f.getRegisterE() == limit && f.getRegisterF() == firstRegister(was.get(at))
+                        && store != null && store.getOpcode() == Opcode.SPUT_OBJECT && firstRegister(store) == f.getRegisterC();
+                Method m = actual(limits);
+                if (!shaped) { fail(reason + ": the image limit isn't built from its number and message in " + limits); found = false; }
+                else if (!hookAt(limits, m, at + 2, hook, List.of(limit), limit, List.of(limit))) found = false;
+                else {
+                    int site = callSites(instructions(m), hook).get(0);
+                    if (!anyConst(get(instructions(m), site + 4), limit, stock)) {
+                        fail(reason + ": the limit's register doesn't get " + stock + " back after the limit is stored in " + m);
+                        found = false;
+                    } else { remove(m, site + 4, site + 5); anchor(m, site + 4, at + 4, reason); }
+                }
+            }
+            ClassDef screen = clean.classes.get(share);
+            List<Method> caps = new ArrayList<>();
+            if (screen != null) for (Method m : screen.getMethods()) if (m.getImplementation() != null
+                    && instructions(m).stream().anyMatch(i -> i.getOpcode() == Opcode.SGET && names(field(i), message))) caps.add(m);
+            Method capped = unique(caps, "the share screen's image cap");
+            if (capped == null) found = false;
+            else {
+                List<Instruction> was = instructions(capped);
+                int said = firstIndex(was, 0, i -> i.getOpcode() == Opcode.SGET && names(field(i), message));
+                Instruction boxed = get(was, said + 1);
+                int cap = boxed instanceof FiveRegisterInstruction f ? f.getRegisterC() : -1;
+                int read = -1, set = -1;
+                for (int k = said; k >= 0 && read < 0; k--) { MethodReference r = called(was.get(k)); if (r != null && r.getName().equals("getParcelableArrayListExtra")) read = k; }
+                for (int k = read; k >= 0 && set < 0; k--) if (was.get(k) instanceof NarrowLiteralInstruction && firstRegister(was.get(k)) == cap) set = k;
+                boolean shaped = isCall(boxed, "Ljava/lang/Integer;", "valueOf", "(I)Ljava/lang/Integer;") && cap >= 0 && cap < 16 && read > 0
+                        && set >= 0 && anyConst(was.get(set), cap, stock) && !writtenBetween(was, set + 1, read, cap);
+                if (!shaped) { fail(reason + ": the share screen's cap isn't the editor's " + stock + " set before it reads its images in " + capped); found = false; }
+                else found &= hookAt(capped, actual(capped), read, hook, List.of(cap), cap, List.of(cap));
+            }
+            capability(c.callee, found);
+        }
+
+        /**
+         * Text size changes none of Tumblr's code. The settings entry's activity callbacks, which the
+         * settings rule holds to Tumblr's application, hand the application and each screen to the
+         * extension. Each hook is in the patched APK, static and void, and the entry calls it.
+         */
+        void textScale(Contract c) {
+            String entry = c.strings.get(c.strings.size() - 1);
+            ClassDef owner = patched.classes.get(entry);
+            boolean found = owner != null;
+            if (owner == null) fail("text size: " + entry + " is absent");
+            for (String hook : c.strings.subList(0, c.strings.size() - 1)) {
+                Method m = patched.methods.get(hook);
+                // The entry or a class nested in it, like the activity callbacks it registers.
+                boolean called = false;
+                String nested = entry.substring(0, entry.length() - 1) + "$";
+                for (ClassDef from : patched.classes.values()) if (from.getType().equals(entry) || from.getType().startsWith(nested))
+                    for (Method m2 : from.getMethods())
+                        if (m2.getImplementation() != null && !callSites(instructions(m2), hook).isEmpty()) called = true;
+                if (m == null || !isStatic(m) || !m.getReturnType().equals("V") || !called) {
+                    fail("text size hook missing, reshaped or never called from " + entry + ": " + hook);
+                    found = false;
+                }
+            }
+            capability(c.callee, found);
+        }
+
         /**
          * A video in a post hands its container and address over right after the binder builds the
          * video's details, and the timeline controls' long-press listener, set up from the controls'
@@ -5874,7 +5969,7 @@ public class DexDiff {
 
             // The timeline hands out its list's adapter, a Graywater adapter that takes an item out and back in quietly.
             ClassDef subclass = clean.classes.get(adapter), above = clean.classes.get(graywater), recycled = clean.classes.get(recycler);
-            boolean adapterShaped = single(host, m -> m.getName().equals("z5") && descriptor(m).equals("()" + adapter) && !isStatic(m)
+            boolean adapterShaped = single(host, m -> m.getName().equals("B5") && descriptor(m).equals("()" + adapter) && !isStatic(m)
                             && !AccessFlags.PRIVATE.isSet(m.getAccessFlags()) && !AccessFlags.ABSTRACT.isSet(m.getAccessFlags())) != null
                     && subclass != null && graywater.equals(subclass.getSuperclass()) && above != null && recycler.equals(above.getSuperclass())
                     && hasPublic(above, "f0", "()" + list) && hasPublic(above, "y0", "(IZ)" + object)
@@ -7540,6 +7635,8 @@ public class DexDiff {
                     case "postLine": postLine(c); break;
                     case "videoLinkPress": videoLinkPress(c); break;
                     case "fullScreenVideoFit": fullScreenVideoFit(c); break;
+                    case "imageLimit": imageLimit(c); break;
+                    case "textScale": textScale(c); break;
                     case "feedVideoTap": feedVideoTap(c); break;
                     case "imageSizes": imageSizes(c); break;
                     case "longPostRows": longPostRows(c); break;

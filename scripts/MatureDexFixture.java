@@ -108,7 +108,7 @@ public final class MatureDexFixture {
         branch(gated, original[10], variant.equals("bypass-cover") ? original[13] : mapped[13]);
         classes.put("Lgi4;", clazz("Lgi4;", List.of(), List.of(), List.of(method("Lgi4;", "k", "Z", PUBLIC, 4, gated, "Lf3g;"))));
         List<Instruction> nsfw = AccountDexFixture.nops(26);
-        nsfw.set(5, call(Opcode.INVOKE_VIRTUAL, "Lze1;", "U0", "Z", new int[]{0})); nsfw.set(6, result(0, false));
+        nsfw.set(5, call(Opcode.INVOKE_VIRTUAL, "Lze1;", "W0", "Z", new int[]{0})); nsfw.set(6, result(0, false));
         nsfw.set(7, new ImmutableInstruction21t(Opcode.IF_EQZ, 0, 1)); nsfw.set(8, integer(3, 0)); nsfw.set(9, returns(3, true));
         nsfw.set(10, call(Opcode.INVOKE_VIRTUAL, "Lgi4;", "k", "Z", new int[]{4, 3}, "Lf3g;")); nsfw.set(11, result(0, false));
         nsfw.set(24, integer(3, 0)); nsfw.set(25, returns(3, true)); branch(nsfw, 7, 10);
