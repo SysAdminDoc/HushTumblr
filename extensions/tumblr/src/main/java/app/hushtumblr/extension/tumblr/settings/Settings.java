@@ -356,6 +356,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_hide_liked_posts", FALSE);
 
     /**
+     * Posts from blogs the signed-in account follows leave each page of the dashboard's For you
+     * tab. Following and every other tab keep them
+     * ({@link app.hushtumblr.extension.tumblr.timeline.DashboardPosts}).
+     */
+    public static final BooleanSetting HIDE_FOLLOWED_IN_FOR_YOU =
+            new BooleanSetting("hushtumblr_hide_followed_in_for_you", FALSE);
+
+    /**
      * Posts with a video anywhere in them, the reblog trail included, leave each page of posts
      * Tumblr loads ({@link app.hushtumblr.extension.tumblr.timeline.PostRules}).
      */

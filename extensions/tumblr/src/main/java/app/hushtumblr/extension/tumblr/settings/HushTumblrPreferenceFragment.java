@@ -677,6 +677,9 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             patchToggle(feed, context, build, PatchFamily.HIDE_LIKED_POSTS, Settings.HIDE_LIKED_POSTS,
                     L10n.t("Hide liked posts"), L10n.t("Takes the posts you've already liked out of your dashboard. "
                         + "Your likes and the rest of Tumblr still show them."), SettingsIcons.BLOCK);
+            patchToggle(feed, context, build, PatchFamily.HIDE_FOLLOWED_IN_FOR_YOU, Settings.HIDE_FOLLOWED_IN_FOR_YOU,
+                    L10n.t("Hide followed blogs in For you"), L10n.t("Takes posts from blogs you follow out of the For you tab. "
+                        + "Following still shows them."), SettingsIcons.BLOCK);
             patchToggle(feed, context, build, PatchFamily.MUTE_ROOT_POSTS, Settings.MUTE_ROOT_POSTS,
                     L10n.t("Mute posts locally"),
                     L10n.t("Add posts to a private list from their menu. Originals and their reblogs stay hidden for this account. "

@@ -299,6 +299,9 @@ public class PausedHooksTest {
         probes.put(Settings.HIDE_REBLOGS_OF_YOURS, Collections.singletonList(TimelineItems::aPageLosesAReblogOfYourPost));
         // A dashboard page with a post you'd already liked comes back without it.
         probes.put(Settings.HIDE_LIKED_POSTS, Collections.singletonList(TimelineItems::aPageLosesItsLikedPost));
+        // A For you page with a post from a blog you follow comes back without it.
+        probes.put(Settings.HIDE_FOLLOWED_IN_FOR_YOU,
+                Collections.singletonList(TimelineItems::aForYouPageLosesAFollowedBlogsPost));
         // A page with a video post comes back without it.
         probes.put(Settings.HIDE_VIDEO_POSTS, Collections.singletonList(TimelineItems::aPageLosesItsVideoPost));
         // A page with a photo post comes back without it.

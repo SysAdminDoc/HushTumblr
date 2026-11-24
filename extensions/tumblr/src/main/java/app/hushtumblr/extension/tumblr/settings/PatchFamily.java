@@ -104,6 +104,8 @@ public enum PatchFamily {
     HIDE_OWN_REBLOGS(FamilyNames.HIDE_OWN_REBLOGS, "hideOwnReblogs", null, Settings.HIDE_OWN_REBLOGS),
     HIDE_REBLOGS_OF_YOURS(FamilyNames.HIDE_REBLOGS_OF_YOURS, "hideReblogsOfYours", null, Settings.HIDE_REBLOGS_OF_YOURS),
     HIDE_LIKED_POSTS(FamilyNames.HIDE_LIKED_POSTS, "hideLikedPosts", null, Settings.HIDE_LIKED_POSTS),
+    HIDE_FOLLOWED_IN_FOR_YOU(FamilyNames.HIDE_FOLLOWED_IN_FOR_YOU, "hideFollowedInForYou", null,
+            Settings.HIDE_FOLLOWED_IN_FOR_YOU),
     HIDE_VIDEO_POSTS(FamilyNames.HIDE_VIDEO_POSTS, "hideVideoPosts", null, Settings.HIDE_VIDEO_POSTS),
     HIDE_PHOTO_POSTS(FamilyNames.HIDE_PHOTO_POSTS, "hidePhotoPosts", null, Settings.HIDE_PHOTO_POSTS),
     HIDE_TEXT_POSTS(FamilyNames.HIDE_TEXT_POSTS, "hideTextPosts", null, Settings.HIDE_TEXT_POSTS),
@@ -186,7 +188,7 @@ public enum PatchFamily {
     /** The families the Feed page holds. The page and its home row both read this. */
     static final Set<PatchFamily> FEED_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_FILTERED_POSTS,
             HIDE_POSTS_WITH_WORDS, HIDE_TEXT_POSTS, HIDE_PHOTO_POSTS, HIDE_VIDEO_POSTS, HIDE_LIKED_POSTS, HIDE_OWN_REBLOGS,
-            HIDE_REBLOGS_OF_YOURS,
+            HIDE_REBLOGS_OF_YOURS, HIDE_FOLLOWED_IN_FOR_YOU,
             HIDE_REBLOGS, HIDE_WATCH_IT_ROWS, HIDE_FEATURED_POSTS,
             HIDE_SUGGESTED_TAGS, HIDE_SUGGESTED_COMMUNITIES, HIDE_SUGGESTED_BLOGS, HIDE_AD_FREE_BANNER, HIDE_ADS,
             MUTE_ROOT_POSTS));
@@ -272,6 +274,7 @@ public enum PatchFamily {
         OWN_REBLOG_POSTS(HIDE_OWN_REBLOGS, "ownReblogPosts", "Hide your own reblogs"),
         REBLOGS_OF_YOURS(HIDE_REBLOGS_OF_YOURS, "reblogsOfYours", "Hide reblogs of your posts"),
         LIKED_POSTS(HIDE_LIKED_POSTS, "likedPosts", "Hide liked posts"),
+        FOLLOWED_IN_FOR_YOU(HIDE_FOLLOWED_IN_FOR_YOU, "followedInForYou", "Hide followed blogs in For you"),
         VIDEO_POSTS(HIDE_VIDEO_POSTS, "videoPosts", "Hide video posts"),
         PHOTO_POSTS(HIDE_PHOTO_POSTS, "photoPosts", "Hide photo posts"),
         TEXT_POSTS(HIDE_TEXT_POSTS, "textPosts", "Hide text posts"),

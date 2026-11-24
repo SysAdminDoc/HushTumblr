@@ -487,7 +487,7 @@
     {
       "name": "Hide Watch it rows",
       "description": "Takes Tumblr TV's Watch it rows and video hub cards out of your dashboard and other feeds, along with their headings. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed.",
-      "category": "Feed",
+      "category": "Navigation",
       "use": true,
       "dependencies": [
         "BytecodePatch",
@@ -643,6 +643,45 @@
     {
       "name": "Hide filtered posts",
       "description": "Takes the posts Tumblr covers with \"This post contains filtered content\" out of your dashboard, searches and other feeds, so your filtered tags and words hide them completely. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed.",
+      "category": "Feed",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch",
+        "HushTumblr settings"
+      ],
+      "compatiblePackages": {
+        "com.tumblr": [
+          "47.3.0.110"
+        ]
+      },
+      "compatibility": [
+        {
+          "name": "Tumblr",
+          "packageName": "com.tumblr",
+          "description": null,
+          "appIconColor": 6453,
+          "signatures": [
+            "39ac9c821ad2d605e4849f066e8aad3cca27d5e13eb03ad8755be234a2985dfd"
+          ],
+          "targets": [
+            {
+              "version": "47.3.0.110",
+              "experimental": false,
+              "versionCodes": {
+                "ARM64_V8A": 1470300110,
+                "ARMEABI_V7A": 1470300110,
+                "X86": 1470300110,
+                "X86_64": 1470300110
+              }
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Hide followed blogs in For you",
+      "description": "Takes posts from blogs you follow out of the For you tab as each page loads. Following and the rest of Tumblr still show them. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed.",
       "category": "Feed",
       "use": true,
       "dependencies": [

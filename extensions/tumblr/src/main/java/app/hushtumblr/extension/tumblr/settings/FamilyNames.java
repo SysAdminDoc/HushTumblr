@@ -78,6 +78,7 @@ public final class FamilyNames {
     public static final String HIDE_OWN_REBLOGS = "Hide your own reblogs";
     public static final String HIDE_REBLOGS_OF_YOURS = "Hide reblogs of your posts";
     public static final String HIDE_LIKED_POSTS = "Hide liked posts";
+    public static final String HIDE_FOLLOWED_IN_FOR_YOU = "Hide followed blogs in For you";
     public static final String HIDE_VIDEO_POSTS = "Hide video posts";
     public static final String HIDE_PHOTO_POSTS = "Hide photo posts";
     public static final String HIDE_TEXT_POSTS = "Hide text posts";

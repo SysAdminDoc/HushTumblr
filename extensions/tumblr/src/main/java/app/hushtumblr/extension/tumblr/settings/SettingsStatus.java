@@ -143,6 +143,8 @@ public final class SettingsStatus {
     public static boolean reblogsOfYours() { return false; }
     public static boolean hideLikedPosts() { return false; }
     public static boolean likedPosts() { return false; }
+    public static boolean hideFollowedInForYou() { return false; }
+    public static boolean followedInForYou() { return false; }
     public static boolean hideVideoPosts() { return false; }
     public static boolean videoPosts() { return false; }
     public static boolean hidePhotoPosts() { return false; }

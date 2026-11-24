@@ -87,6 +87,7 @@ body:
         - App font
         - Hide hashtags
         - Hide liked posts
+        - Hide followed blogs in For you
         - Hide note counts
         - Hide photo posts
         - Hide posts with these words

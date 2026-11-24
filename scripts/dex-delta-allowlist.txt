@@ -30,12 +30,12 @@ method Lapp/hushtumblr/extension/tumblr/settings/SettingsHubRow;->titleOf(Ljava/
 implements Lcom/tumblr/UserInfo; Lapp/hushtumblr/extension/tumblr/rootmute/HushAccountIdentity;
 method Lcom/tumblr/UserInfo;->hushAccountId()Ljava/lang/String; 7ddf84b382aecf3aa277bbb3a89141d858d7bc1027c0ff08f4ec48bd90311fed
 
-[Hide ads | Hide Featured posts | Hide reblogs of your posts | Hide your own reblogs | Mute posts locally]
+[Hide ads | Hide Featured posts | Hide followed blogs in For you | Hide reblogs of your posts | Hide your own reblogs | Mute posts locally]
 field Lcom/tumblr/rumblr/model/post/Post;->hushPaidContextKnown:Z 65ff3748645d34f8d3dcdebe39b70efe464ec5875cb9d4e0a0f1e75310cc9884
 field Lcom/tumblr/rumblr/model/post/Post;->hushRootTrailPresent:Z 65ff3748645d34f8d3dcdebe39b70efe464ec5875cb9d4e0a0f1e75310cc9884
 method Lcom/tumblr/rumblr/model/post/Post;->hushSetJsonPresence(II)V 86723271decc7319912a31885f9fa313cd79f702c6480bbc948e15f61a685a23
 
-[Hide ads | Hide Featured posts | Hide reblogs of your posts | Hide your own reblogs]
+[Hide ads | Hide Featured posts | Hide followed blogs in For you | Hide reblogs of your posts | Hide your own reblogs]
 implements Lcom/tumblr/rumblr/model/post/Post; Lapp/hushtumblr/extension/tumblr/timeline/HushPaidPost;
 method Lcom/tumblr/rumblr/model/post/Post;->hushCanEdit()Z 76a1a339c40ab73ebaead0fd8a2d92b0bc17ecd4db9b8684b17abfa7388f2cf2
 method Lcom/tumblr/rumblr/model/post/Post;->hushFollowed()Z 653e0c99bcf99f278a16dea0ba832b653643afb390be16ad08cc4132d0875e02
@@ -164,7 +164,7 @@ method Lcom/tumblr/rumblr/response/FollowerResponse;->hushMutualPagination()Ljav
 method Lcom/tumblr/rumblr/response/FollowerResponse;->hushMutualUsers()Ljava/util/List; 9ba8576d3ec242d4813be4215cf54d0fb522d72af7b2b0fe9c2c05af471816a3
 method Lcom/tumblr/ui/widget/PostCardHeader;->hushMutualNameView()Ljava/lang/Object; 80276fbf09a745b64838235d9f03ad6d1b9f255f344addf48bcfe905e5a2011d
 
-[Hide liked posts | Hide reblogs of your posts | Hide your own reblogs | Mute posts locally]
+[Hide followed blogs in For you | Hide liked posts | Hide reblogs of your posts | Hide your own reblogs | Mute posts locally]
 field Lze1;->hushPostFacts:I 01c2987b059c8dfc765747cac1285e595dd25e11018464cb658a52de0f6134b5
 implements Lcom/tumblr/ui/fragment/GraywaterDashboardFragment; Lapp/hushtumblr/extension/tumblr/rootmute/HushDashboardTimeline;
 implements Lcom/tumblr/tabbeddashboard/fragments/GraywaterTabFragment; Lapp/hushtumblr/extension/tumblr/rootmute/HushDashboardTimeline;
