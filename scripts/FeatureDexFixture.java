@@ -106,7 +106,7 @@ public final class FeatureDexFixture {
     private static final String PAGINATION_FRAGMENT = "Lcom/tumblr/ui/fragment/PaginationFragment;";
     private static final String PAGE_LINKS = "Lcom/tumblr/timeline/model/link/TimelinePaginationLink;";
     private static final String PAGE_LINK = "Lcom/tumblr/timeline/model/link/Link;";
-    private static final String LOAD_TYPE = "Luxl;";
+    private static final String LOAD_TYPE = "Lk0m;";
     private static final String FEATURE = "Lfixture/Feature;";
     private static final String FEATURE_CHECK = "Lfixture/FeatureCheck;";
     private static final String FEATURE_SWITCHES = BASE + "flags/FeatureSwitches;";
@@ -132,9 +132,9 @@ public final class FeatureDexFixture {
     private static final String PHOTO_CONTAINER = "Lcom/tumblr/ui/widget/graywater/viewholder/PhotoContainer;";
     private static final String PHOTO_HOLDER = "Lcom/tumblr/ui/widget/graywater/viewholder/PhotoViewHolder;";
     private static final String PHOTO_ROW_ITEM = "Lcom/tumblr/ui/widget/graywater/viewholder/PhotosetRowItem;";
-    private static final String PHOTO_BINDER = "Lboa$a;";
-    private static final String GALLERY_BINDER = "Lb6f;";
-    private static final String GALLERY_ROW = "Ly5f;";
+    private static final String PHOTO_BINDER = "Lona$a;";
+    private static final String GALLERY_BINDER = "Lh4f;";
+    private static final String GALLERY_ROW = "Le4f;";
     private static final String ALT_TEXT = BASE + "ui/AltTextCaptions;";
     private static final String IMAGE_DESCRIPTION = BASE + "ui/HushImageDescription;";
     private static final String IMAGE_CONTAINER = BASE + "ui/HushImageContainer;";
@@ -645,7 +645,7 @@ public final class FeatureDexFixture {
         // v0-v3 locals, this in v4, the view in v5. Both branches jump to the last return.
         List<Instruction> click = new ArrayList<>(List.of(
                 new ImmutableInstruction21c(Opcode.SGET_OBJECT, 0, new ImmutableFieldReference(TAG_SCREEN, "BLOG", TAG_SCREEN)),
-                invoke(Opcode.INVOKE_STATIC, ref("Lpv2;", "j", "Z", TAG_SCREEN), 0), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0)));
+                invoke(Opcode.INVOKE_STATIC, ref("Ljv2;", "j", "Z", TAG_SCREEN), 0), new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0)));
         if (hooked && !variant.equals("missing")) click.addAll(List.of(
                 invoke(Opcode.INVOKE_STATIC, ref(BLOG_TAGS, "blogScreen", "Z", "I", OBJECT), variant.equals("wrong-answer") ? 1 : 0, 4),
                 new ImmutableInstruction11x(Opcode.MOVE_RESULT, 0)));
@@ -957,7 +957,7 @@ public final class FeatureDexFixture {
                         new ImmutableFieldReference(PHOTO_BINDER, variant.equals("wrong-photo-field") ? "d" : "c", IMAGE_BLOCK)),
                 invoke(Opcode.INVOKE_STATIC, ref(ALT_TEXT, "photo", VOID, OBJECT, OBJECT), variant.equals("wrong-photo-holder") ? 3 : 2, 0)));
         photo.add(new ImmutableInstruction11n(Opcode.CONST_4, 0, 0)); photo.add(end());
-        classes.put(PHOTO_BINDER, List.of(method(PHOTO_BINDER, "i", VOID, false, 5, photo, PHOTO_HOLDER, "La2k;", STRING)));
+        classes.put(PHOTO_BINDER, List.of(method(PHOTO_BINDER, "i", VOID, false, 5, photo, PHOTO_HOLDER, "Lb5k;", STRING)));
         List<Instruction> gallery = new ArrayList<>(), full = new ArrayList<>();
         if (hooked && !variant.equals("missing-gallery")) gallery.add(invoke(Opcode.INVOKE_STATIC, ref(ALT_TEXT, "gallery", VOID, OBJECT, OBJECT),
                 2, variant.equals("wrong-gallery-image") ? 1 : 3));
@@ -965,7 +965,7 @@ public final class FeatureDexFixture {
                 variant.equals("wrong-clear-row") ? 5 : 6));
         gallery.add(end()); full.add(end());
         classes.put(GALLERY_BINDER, List.of(method(GALLERY_BINDER, "r", VOID, false, 4, gallery, CONTEXT, PHOTO_ROW_ITEM, IMAGE_BLOCK),
-                method(GALLERY_BINDER, "n", VOID, false, 9, full, CONTEXT, "Lcom/tumblr/analytics/ScreenType;", "Ljxn;", "Lny7;", "Ljee;", GALLERY_ROW, "La2k;", "Ltj2;")));
+                method(GALLERY_BINDER, "n", VOID, false, 9, full, CONTEXT, "Lcom/tumblr/analytics/ScreenType;", "Lwzn;", "Ldy7;", "Lsce;", GALLERY_ROW, "Lb5k;", "Lnj2;")));
     }
 
     private static void smallCase(File root, String name, Map<String, List<Method>> classes, String family, String reason) throws Exception {
@@ -1200,7 +1200,7 @@ public final class FeatureDexFixture {
 
     private static void postJsonPresence(Map<String, List<Method>> classes, boolean patched, String fault) {
         String adapter = POST.substring(0, POST.length() - 1) + "JsonAdapter;";
-        String[] parameters = new String[155]; Arrays.fill(parameters, "I"); parameters[154] = "Lh47;";
+        String[] parameters = new String[155]; Arrays.fill(parameters, "I"); parameters[154] = "Lc47;";
         List<Method> model = new ArrayList<>(classes.get(POST));
         model.removeIf(m -> m.getName().equals("<init>") && m.getParameterTypes().size() == 155);
         model.add(new ImmutableMethod(POST, "<init>", Arrays.stream(parameters).map(p -> new ImmutableMethodParameter(p, Set.of(), null)).toList(),
@@ -1237,7 +1237,7 @@ public final class FeatureDexFixture {
         reader.set(2070, new ImmutableInstruction22x(Opcode.MOVE_FROM16, 158, 7));
         reader.set(2166, new ImmutableInstruction3rc(Opcode.INVOKE_DIRECT_RANGE, 4, 156, ref(POST, "<init>", VOID, parameters)));
         reader.set(2167, new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 4));
-        reader.set(2180, invoke(Opcode.INVOKE_STATIC, ref("Lbbb;", "a", VOID, STRING), 0));
+        reader.set(2180, invoke(Opcode.INVOKE_STATIC, ref("Llab;", "a", VOID, STRING), 0));
         reader.set(2181, new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 157));
         int error = 2168;
         if (patched && !fault.equals("missing-presence-hook")) {
@@ -1250,7 +1250,7 @@ public final class FeatureDexFixture {
         reader.set(2069, new ImmutableInstruction21t(Opcode.IF_NEZ, 0, codeOffset(reader, 2069, error)));
         if (patched && fault.equals("missing-error-return")) reader.set(error + 13, new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0));
         List<Method> adapterMethods = new ArrayList<>(classes.get(adapter)); adapterMethods.removeIf(m -> m.getName().equals("fromJson"));
-        adapterMethods.add(method(adapter, "fromJson", OBJECT, false, 178, reader, "Ladb;")); classes.put(adapter, adapterMethods);
+        adapterMethods.add(method(adapter, "fromJson", OBJECT, false, 178, reader, "Lkcb;")); classes.put(adapter, adapterMethods);
     }
 
     private static String postKey(String name) {

@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/version-0.0.11-92BFFF" alt="Version 0.0.11">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License GPL-3.0"></a>
   <img src="https://img.shields.io/badge/platform-Android%208%2B-3DDC84" alt="Platform Android 8+">
-  <img src="https://img.shields.io/badge/Tumblr-47.0.0.108-001935" alt="Tumblr 47.0.0.108">
+  <img src="https://img.shields.io/badge/Tumblr-47.3.0.110-001935" alt="Tumblr 47.3.0.110">
   <img src="https://img.shields.io/badge/for-Morphe%20Manager%202.7.0%2B-8A2BE2" alt="For Morphe Manager 2.7.0 or newer">
 </p>
 
@@ -29,7 +29,7 @@ The latest release is [v0.0.11](https://github.com/SysAdminDoc/HushTumblr/releas
 
 1. Install [Morphe Manager](https://github.com/MorpheApp/morphe-manager) 2.7.0 or newer.
 2. Add HushTumblr as a patch source: https://morphe.software/add-source?github=SysAdminDoc%2FHushTumblr
-3. Download the Tumblr 47.0.0.108 bundle (`.apkm`, version code 1470000108) from [APKMirror](https://www.apkmirror.com/apk/tumblr-inc/tumblr/tumblr-social-media-art-47-0-0-108-release/).
+3. Download the Tumblr 47.3.0.110 bundle (`.apkm`, version code 1470300110) from [APKMirror](https://www.apkmirror.com/apk/tumblr-inc/tumblr/tumblr-social-media-art-47-0-0-108-release/).
 4. Patch it with the default selection. That's every patch except Spoof signature for Google sign-in, which you can pick after turning on **Settings → Advanced → Expert mode** in Morphe Manager.
 5. Uninstall stock Tumblr, then install the patched app. Your blogs and follows come back when you sign in, but drafts kept only on the phone don't.
 
@@ -121,7 +121,7 @@ HushTumblr collects nothing and has no server. The release check is off until yo
 ## Help
 
 - **Android won't install it.** Uninstall stock Tumblr first. Updating a patched copy needs the same signing key.
-- **Morphe Manager says the APK isn't supported.** It has to be the Tumblr 47.0.0.108 `.apkm` bundle with version code 1470000108.
+- **Morphe Manager says the APK isn't supported.** It has to be the Tumblr 47.3.0.110 `.apkm` bundle with version code 1470300110.
 - **A switch seems to do nothing.** Feed filters work as pages load, so scroll or refresh. Tracking and ad changes wait for Tumblr to restart.
 - **A second Tumblr next to the regular one.** Turn on Expert mode in Morphe Manager and pick Morphe's Clone app patch along with HushTumblr's. Keep its `updatePermissions` and `updateProviders` options on. The copy installs beside your regular Tumblr under its own package name. Sign in to it with your email. `Fix push notifications` only works in the regular app, so don't count on notifications in the copy.
 - **Anything else.** [Open an issue](https://github.com/SysAdminDoc/HushTumblr/issues/new/choose) with your HushTumblr and Tumblr versions.
@@ -132,8 +132,8 @@ HushTumblr collects nothing and has no server. The release check is off until yo
 |---|---|
 | App | Tumblr for Android |
 | Package | `com.tumblr` |
-| Version | **47.0.0.108** |
-| Version code | `1470000108` |
+| Version | **47.3.0.110** |
+| Version code | `1470300110` |
 | Android | 8.0 or newer |
 | Architecture | Any (the bundle carries ARM64, 32-bit ARM and x86 builds) |
 | Input | Tumblr's split APK bundle (`.apkm`) |
@@ -176,7 +176,7 @@ The walk also runs Android's verifier against the clean reference and the signed
 - `patches/src/main/kotlin/app/morphe/patches/tumblr/` holds the patches, and `shared/compat/AppCompatibilities.kt` names the supported build.
 - `extensions/tumblr/` and `extensions/shared/library/` are the Java code that runs inside Tumblr, settings and translations included.
 - `patches-list.json` is the generated catalog. `patches-bundle.json` is the Morphe source index and only changes at release time.
-- `docs/` maps the hooks in Tumblr 47.0.0.108, and `scripts/release/release.ps1` cuts a release.
+- `docs/` maps the hooks in Tumblr 47.3.0.110, and `scripts/release/release.ps1` cuts a release.
 
 ## Credits and license
 

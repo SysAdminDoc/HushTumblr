@@ -57,7 +57,7 @@ class PostFiltersFixtureTest {
             assertEquals(body.take(6).sumOf { it.codeUnits }, body.take(2).sumOf { it.codeUnits } +
                 (body[2] as OffsetInstruction).codeOffset)
             assertEquals(0, (body[6] as NarrowLiteralInstruction).narrowLiteral)
-            for ((name, target) in mapOf("hushFollowed" to "x1", "hushCanEdit" to "P")) {
+            for ((name, target) in mapOf("hushFollowed" to "z1", "hushCanEdit" to "P")) {
                 val direct = post.methods.single { it.name == name }.instructionList()
                 assertEquals(listOf(Opcode.INVOKE_VIRTUAL, Opcode.MOVE_RESULT, Opcode.RETURN), direct.map { it.opcode })
                 assertEquals("$POST->$target()Z", direct[0].methodRef().toString())
@@ -91,7 +91,7 @@ class PostFiltersFixtureTest {
             val tagKey = postWriter.indexOfFirst { it.stringRef() == "tags" }
             assertTrue("${build.name}: current-post tags key", tagKey >= 0)
             val getter = postWriter.drop(tagKey + 1).first { it.methodRef()?.definingClass == POST }.methodRef()!!
-            assertEquals("$POST->j1()Ljava/util/List;", getter.toString())
+            assertEquals("$POST->l1()Ljava/util/List;", getter.toString())
             val tagField = classes.getValue(POST).methods.single { it.name == getter.name && it.parameterTypes.isEmpty() }
                 .instructionList().first().fieldRef()!!
             assertEquals(POST, tagField.definingClass)
@@ -246,7 +246,7 @@ class PostFiltersFixtureTest {
             assertTrue("${build.name}: hushCommunity is public", AccessFlags.PUBLIC.isSet(community.accessFlags))
             val body = community.instructionList()
             assertEquals(listOf(Opcode.INVOKE_VIRTUAL, Opcode.MOVE_RESULT_OBJECT, Opcode.RETURN_OBJECT), body.map { it.opcode })
-            assertEquals("${build.name}: the community getter", "$POST->U0()$SHORT_COMMUNITY_INFO", body[0].methodRef().toString())
+            assertEquals("${build.name}: the community getter", "$POST->W0()$SHORT_COMMUNITY_INFO", body[0].methodRef().toString())
         }
     }
 
@@ -269,7 +269,7 @@ class PostFiltersFixtureTest {
             assertTrue("${build.name}: hushLiked is public", AccessFlags.PUBLIC.isSet(liked.accessFlags))
             val body = liked.instructionList()
             assertEquals(listOf(Opcode.INVOKE_VIRTUAL, Opcode.MOVE_RESULT, Opcode.RETURN), body.map { it.opcode })
-            assertEquals("${build.name}: the liked getter", "$POST->y1()Z", body[0].methodRef().toString())
+            assertEquals("${build.name}: the liked getter", "$POST->A1()Z", body[0].methodRef().toString())
             for (flag in listOf("hideLikedPosts", "likedPosts")) {
                 val first = context.mutableClassDefBy(SETTINGS_STATUS).methods.single { it.name == flag }
                     .implementation!!.instructions.first()
