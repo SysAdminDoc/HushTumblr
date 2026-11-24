@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* New **More images per post** switch on the Interface page, off by default. The app stops a post at 10 images while Tumblr's website takes 30. With it on, the editor takes up to 30, and so does sharing a batch of images into Tumblr from your gallery.
 * New **Text size** switch on the Interface page, off by default. It makes Tumblr's text bigger or smaller than your phone's font size, from 85% to 130%. The Size row under it picks how big, and a new size takes effect after a restart.
 * The patches move from 47.0.0.108 to Tumblr 47.3.0.110, the newest release. Every patch applies to it, so that's the version to patch.
 * New **Hide More posts like this** switch on the Interface page, off by default. When you open a post, Tumblr puts a grid of related posts under it with a "More posts like this" heading. With the switch on, the grid and its heading are gone and the post you opened stays.

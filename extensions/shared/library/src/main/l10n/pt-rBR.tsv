@@ -259,6 +259,9 @@ Makes Tumblr's text bigger or smaller than your phone's font size makes it. Pick
 Size	Tamanho
 %1$s of your phone's text size. Tap to change.	%1$s do tamanho de texto do seu celular. Toque para mudar.
 Couldn't save the size. Try again.	Não foi possível salvar o tamanho. Tente de novo.
+# context: the More images per post switch on the Interface page (the post editor's image limit), and the name the settings backup preview gives the Text size row's percentage.
+More images per post	Mais imagens por post
+Lets you add up to 30 images to a post, as Tumblr's website does, instead of 10.	Permite adicionar até 30 imagens a um post, como no site do Tumblr, em vez de 10.
 Text size percentage	Porcentagem do tamanho do texto
 App font	Fonte do app
 Replaces Tumblr's own font with your phone's font, or a font file you choose below. Fonts a post's author picked stay as they are.	Troca a fonte própria do Tumblr pela fonte do seu celular ou por um arquivo de fonte que você escolher abaixo. As fontes que o autor de um post escolheu continuam como estão.

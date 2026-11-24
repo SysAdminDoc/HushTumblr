@@ -262,6 +262,9 @@ Makes Tumblr's text bigger or smaller than your phone's font size makes it. Pick
 Size	Ukuran
 %1$s of your phone's text size. Tap to change.	%1$s dari ukuran teks ponselmu. Ketuk untuk mengubah.
 Couldn't save the size. Try again.	Tidak dapat menyimpan ukuran. Coba lagi.
+# context: the More images per post switch on the Interface page (the post editor's image limit), and the name the settings backup preview gives the Text size row's percentage.
+More images per post	Lebih banyak gambar per postingan
+Lets you add up to 30 images to a post, as Tumblr's website does, instead of 10.	Memungkinkanmu menambahkan hingga 30 gambar ke postingan, seperti di situs web Tumblr, bukan 10.
 Text size percentage	Persentase ukuran teks
 App font	Font aplikasi
 Replaces Tumblr's own font with your phone's font, or a font file you choose below. Fonts a post's author picked stay as they are.	Mengganti font bawaan Tumblr dengan font ponselmu atau file font yang kamu pilih di bawah. Font yang dipilih penulis postingan tetap seperti aslinya.

@@ -165,6 +165,8 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting APP_FONT = new BooleanSetting("hushtumblr_app_font", FALSE, true);
     /** Text size (#23): the size itself is {@link TextSettings#TEXT_SIZE_PERCENT}. Read as each screen opens. */
     public static final BooleanSetting TEXT_SIZE = new BooleanSetting("hushtumblr_text_size", FALSE, true);
+    /** More images per post (#21): Tumblr builds the editor's image limit once a process. */
+    public static final BooleanSetting MORE_IMAGES_PER_POST = new BooleanSetting("hushtumblr_more_images_per_post", FALSE, true);
 
     /**
      * Tumblr stops watching for screenshots and offering to save the post as an image

@@ -859,6 +859,10 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                     L10n.t("Makes Tumblr's text bigger or smaller than your phone's font size makes it. Pick how big below."),
                     SettingsIcons.INTERFACE);
             if (build.contains(PatchFamily.TEXT_SIZE)) ui.addPreference(mark(textSizeRow(context), SettingsIcons.INTERFACE));
+            patchToggle(ui, context, build, PatchFamily.MORE_IMAGES_PER_POST, Settings.MORE_IMAGES_PER_POST,
+                    L10n.t("More images per post"),
+                    L10n.t("Lets you add up to 30 images to a post, as Tumblr's website does, instead of 10."),
+                    SettingsIcons.INTERFACE);
             // Read when a screen's theme is made (DarkBackground), so screens already open keep their colors.
             patchToggle(ui, context, build, PatchFamily.DARK_BACKGROUND, Settings.DARK_BACKGROUND,
                     L10n.t("Dark background color"), L10n.t("Makes newly opened Dark Mode screens black, or the dark "

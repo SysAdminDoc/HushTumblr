@@ -257,6 +257,7 @@ public class SettingsBackupTest {
                 Settings.LINE_BETWEEN_POSTS,
                 Settings.APP_FONT,
                 Settings.TEXT_SIZE,
+                Settings.MORE_IMAGES_PER_POST,
                 Settings.TURN_OFF_SCREENSHOT_SHARING,
                 Settings.DISABLE_UPDATE_PROMPTS,
                 Settings.HIDE_SUGGESTED_BLOGS,

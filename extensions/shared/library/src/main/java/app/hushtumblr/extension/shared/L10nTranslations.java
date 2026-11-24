@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(1042);
+        Map<String, String> table = new HashMap<>(1046);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -533,6 +533,8 @@ public final class L10nTranslations {
                 "Reblogs mit Tags behalten");
         table.put("Lets a patched Tumblr sign up for push notifications when Google would turn it away.",
                 "L\u00e4sst ein gepatchtes Tumblr sich f\u00fcr Push-Benachrichtigungen anmelden, wenn Google es sonst abweisen w\u00fcrde.");
+        table.put("Lets you add up to 30 images to a post, as Tumblr's website does, instead of 10.",
+                "Damit kannst du einem Beitrag bis zu 30 Bilder hinzuf\u00fcgen, wie auf der Tumblr-Website, statt 10.");
         table.put("Licenses",
                 "Lizenzen");
         table.put("Like",
@@ -551,11 +553,11 @@ public final class L10nTranslations {
                 "L\u00e4dt Bilder in Beitr\u00e4gen in h\u00f6herer Aufl\u00f6sung. Verbraucht mehr Daten.");
         table.put("Long-press a video in a post to share or copy its link, or save it.",
                 "Halte ein Video in einem Beitrag gedr\u00fcckt, um seinen Link zu teilen oder zu kopieren oder es zu speichern.");
-        table.put("Looks for: %1$s",
-                "Sucht nach: %1$s");
     }
 
     private static void fillDe4(Map<String, String> table) {
+        table.put("Looks for: %1$s",
+                "Sucht nach: %1$s");
         table.put("Make Tumblr feel like yours.",
                 "Mach Tumblr zu deinem Tumblr.");
         table.put("Makes Tumblr's text bigger or smaller than your phone's font size makes it. Pick how big below.",
@@ -578,6 +580,8 @@ public final class L10nTranslations {
                 "Text der Reblog-Kette pr\u00fcfen");
         table.put("Match whole words or phrases in the fields you chose. Case doesn't matter.",
                 "Sucht nach ganzen W\u00f6rtern oder Wortgruppen in den gew\u00e4hlten Feldern. Gro\u00df- und Kleinschreibung spielt keine Rolle.");
+        table.put("More images per post",
+                "Mehr Bilder pro Beitrag");
         table.put("More settings",
                 "Weitere Einstellungen");
         table.put("Mute posts locally",
@@ -672,13 +676,13 @@ public final class L10nTranslations {
                 "Push-Hinweise");
         table.put("Push notifications",
                 "Push-Benachrichtigungen");
+    }
+
+    private static void fillDe5(Map<String, String> table) {
         table.put("Puts every feature switch back the way it started.",
                 "Setzt jeden Funktionsschalter auf seinen Ausgangszustand zur\u00fcck.");
         table.put("Puts the bottom bar's tabs in the order set below.",
                 "Ordnet die Tabs der unteren Leiste in der unten gew\u00e4hlten Reihenfolge an.");
-    }
-
-    private static void fillDe5(Map<String, String> table) {
         table.put("Putting diagnostic data back",
                 "Diagnosedaten werden wiederhergestellt");
         table.put("Quick setups",
@@ -795,13 +799,13 @@ public final class L10nTranslations {
                 "Zeigt Tumblrs eigene Zeitstempel auf neu dargestellten Beitragskarten.");
         table.put("Shows author-provided image descriptions below images.",
                 "Zeigt Bildbeschreibungen der Verfasser unter den Bildern.");
+    }
+
+    private static void fillDe6(Map<String, String> table) {
         table.put("Shows tall videos whole when you open them full screen, instead of cutting off the sides.",
                 "Zeigt hohe Videos im Vollbild ganz, statt die Seiten abzuschneiden.");
         table.put("Sign in to your existing account",
                 "Mit deinem bestehenden Konto anmelden");
-    }
-
-    private static void fillDe6(Map<String, String> table) {
         table.put("Size",
                 "Gr\u00f6\u00dfe");
         table.put("Skip review prompts",
@@ -918,13 +922,13 @@ public final class L10nTranslations {
                 "Sagt Android, dass dies das originale Tumblr ist, damit die Google-Anmeldung mit microG-RE oder dem XSpoofSignatures-Modul funktionieren kann. Das normale Google Play Services ignoriert es. Das wurde beim Patchen festgelegt. Patche erneut ohne diesen Patch, um es zu entfernen.");
         table.put("Text size",
                 "Textgr\u00f6\u00dfe");
+    }
+
+    private static void fillDe7(Map<String, String> table) {
         table.put("Text size percentage",
                 "Textgr\u00f6\u00dfe in Prozent");
         table.put("That file is too big to be a font.",
                 "Diese Datei ist zu gro\u00df f\u00fcr eine Schriftart.");
-    }
-
-    private static void fillDe7(Map<String, String> table) {
         table.put("That file is too large to be a settings file. Nothing was changed.",
                 "Diese Datei ist zu gro\u00df f\u00fcr eine Einstellungsdatei. Es wurde nichts ge\u00e4ndert.");
         table.put("That file isn't readable text, so it may have been damaged on the way. Nothing was changed.",
@@ -1041,13 +1045,13 @@ public final class L10nTranslations {
                 "Gib oben einen Teil eines Beitrags ein, um zu sehen, was der Wortfilter damit macht.");
         table.put("Undo",
                 "R\u00fcckg\u00e4ngig");
+    }
+
+    private static void fillDe8(Map<String, String> table) {
         table.put("Undo ended because a saved setting changed.",
                 "R\u00fcckg\u00e4ngig ist nicht mehr m\u00f6glich, weil eine gespeicherte Einstellung ge\u00e4ndert wurde.");
         table.put("Undo import",
                 "Import r\u00fcckg\u00e4ngig machen");
-    }
-
-    private static void fillDe8(Map<String, String> table) {
         table.put("Undoing import",
                 "Import wird r\u00fcckg\u00e4ngig gemacht");
         table.put("Unmute post",
@@ -1133,7 +1137,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(1042);
+        Map<String, String> table = new HashMap<>(1046);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -1616,6 +1620,8 @@ public final class L10nTranslations {
                 "Conservar reblogs con etiquetas");
         table.put("Lets a patched Tumblr sign up for push notifications when Google would turn it away.",
                 "Permite que un Tumblr parcheado se registre para recibir notificaciones push cuando Google lo rechazar\u00eda.");
+        table.put("Lets you add up to 30 images to a post, as Tumblr's website does, instead of 10.",
+                "Te deja a\u00f1adir hasta 30 im\u00e1genes a una publicaci\u00f3n, como en la web de Tumblr, en vez de 10.");
         table.put("Licenses",
                 "Licencias");
         table.put("Like",
@@ -1634,11 +1640,11 @@ public final class L10nTranslations {
                 "Carga las im\u00e1genes de las publicaciones en mayor resoluci\u00f3n. Usa m\u00e1s datos.");
         table.put("Long-press a video in a post to share or copy its link, or save it.",
                 "Mant\u00e9n pulsado un video en una publicaci\u00f3n para compartir o copiar su enlace, o guardarlo.");
-        table.put("Looks for: %1$s",
-                "Busca: %1$s");
     }
 
     private static void fillEs4(Map<String, String> table) {
+        table.put("Looks for: %1$s",
+                "Busca: %1$s");
         table.put("Make Tumblr feel like yours.",
                 "Haz que Tumblr sea m\u00e1s tuyo.");
         table.put("Makes Tumblr's text bigger or smaller than your phone's font size makes it. Pick how big below.",
@@ -1661,6 +1667,8 @@ public final class L10nTranslations {
                 "Buscar en el texto de la cadena de reblogs");
         table.put("Match whole words or phrases in the fields you chose. Case doesn't matter.",
                 "Busca palabras o frases completas en los campos que elegiste. No distingue entre may\u00fasculas y min\u00fasculas.");
+        table.put("More images per post",
+                "M\u00e1s im\u00e1genes por publicaci\u00f3n");
         table.put("More settings",
                 "M\u00e1s ajustes");
         table.put("Mute posts locally",
@@ -1755,13 +1763,13 @@ public final class L10nTranslations {
                 "Alertas push");
         table.put("Push notifications",
                 "Notificaciones push");
+    }
+
+    private static void fillEs5(Map<String, String> table) {
         table.put("Puts every feature switch back the way it started.",
                 "Devuelve cada interruptor de funci\u00f3n a como estaba al principio.");
         table.put("Puts the bottom bar's tabs in the order set below.",
                 "Pone las pesta\u00f1as de la barra inferior en el orden elegido abajo.");
-    }
-
-    private static void fillEs5(Map<String, String> table) {
         table.put("Putting diagnostic data back",
                 "Restaurando datos de diagn\u00f3stico");
         table.put("Quick setups",
@@ -1878,13 +1886,13 @@ public final class L10nTranslations {
                 "Muestra las fechas de Tumblr en las tarjetas de publicaciones que se dibujen.");
         table.put("Shows author-provided image descriptions below images.",
                 "Muestra debajo de las im\u00e1genes las descripciones proporcionadas por sus autores.");
+    }
+
+    private static void fillEs6(Map<String, String> table) {
         table.put("Shows tall videos whole when you open them full screen, instead of cutting off the sides.",
                 "Muestra completos los videos verticales al abrirlos a pantalla completa, sin recortar los lados.");
         table.put("Sign in to your existing account",
                 "Inicia sesi\u00f3n en tu cuenta actual");
-    }
-
-    private static void fillEs6(Map<String, String> table) {
         table.put("Size",
                 "Tama\u00f1o");
         table.put("Skip review prompts",
@@ -2001,13 +2009,13 @@ public final class L10nTranslations {
                 "Le dice a Android que esta es la app original de Tumblr, para que el inicio de sesi\u00f3n con Google pueda funcionar con microG-RE o el m\u00f3dulo XSpoofSignatures. Google Play Services normal lo ignora. Esto se defini\u00f3 al parchear. Vuelve a parchear sin \u00e9l para quitarlo.");
         table.put("Text size",
                 "Tama\u00f1o del texto");
+    }
+
+    private static void fillEs7(Map<String, String> table) {
         table.put("Text size percentage",
                 "Porcentaje del tama\u00f1o del texto");
         table.put("That file is too big to be a font.",
                 "Ese archivo es demasiado grande para ser una fuente.");
-    }
-
-    private static void fillEs7(Map<String, String> table) {
         table.put("That file is too large to be a settings file. Nothing was changed.",
                 "Ese archivo es demasiado grande para ser un archivo de configuraci\u00f3n. No se cambi\u00f3 nada.");
         table.put("That file isn't readable text, so it may have been damaged on the way. Nothing was changed.",
@@ -2124,13 +2132,13 @@ public final class L10nTranslations {
                 "Escribe arriba parte de una publicaci\u00f3n para ver qu\u00e9 hace el filtro de palabras con ella.");
         table.put("Undo",
                 "Deshacer");
+    }
+
+    private static void fillEs8(Map<String, String> table) {
         table.put("Undo ended because a saved setting changed.",
                 "Ya no se puede deshacer porque cambi\u00f3 un ajuste guardado.");
         table.put("Undo import",
                 "Deshacer importaci\u00f3n");
-    }
-
-    private static void fillEs8(Map<String, String> table) {
         table.put("Undoing import",
                 "Deshaciendo importaci\u00f3n");
         table.put("Unmute post",
@@ -2216,7 +2224,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(1042);
+        Map<String, String> table = new HashMap<>(1046);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -2699,6 +2707,8 @@ public final class L10nTranslations {
                 "Pertahankan reblog bertag");
         table.put("Lets a patched Tumblr sign up for push notifications when Google would turn it away.",
                 "Memungkinkan Tumblr yang ditambal mendaftar untuk notifikasi push saat Google akan menolaknya.");
+        table.put("Lets you add up to 30 images to a post, as Tumblr's website does, instead of 10.",
+                "Memungkinkanmu menambahkan hingga 30 gambar ke postingan, seperti di situs web Tumblr, bukan 10.");
         table.put("Licenses",
                 "Lisensi");
         table.put("Like",
@@ -2717,11 +2727,11 @@ public final class L10nTranslations {
                 "Memuat gambar di postingan dengan resolusi lebih tinggi. Memakai lebih banyak data.");
         table.put("Long-press a video in a post to share or copy its link, or save it.",
                 "Tekan lama video di postingan untuk membagikan atau menyalin tautannya, atau menyimpannya.");
-        table.put("Looks for: %1$s",
-                "Mencari: %1$s");
     }
 
     private static void fillIn4(Map<String, String> table) {
+        table.put("Looks for: %1$s",
+                "Mencari: %1$s");
         table.put("Make Tumblr feel like yours.",
                 "Buat Tumblr sesuai keinginanmu.");
         table.put("Makes Tumblr's text bigger or smaller than your phone's font size makes it. Pick how big below.",
@@ -2744,6 +2754,8 @@ public final class L10nTranslations {
                 "Cocokkan teks rantai reblog");
         table.put("Match whole words or phrases in the fields you chose. Case doesn't matter.",
                 "Cocokkan kata atau frasa utuh pada bidang yang Anda pilih. Huruf besar dan kecil tidak dibedakan.");
+        table.put("More images per post",
+                "Lebih banyak gambar per postingan");
         table.put("More settings",
                 "Pengaturan lainnya");
         table.put("Mute posts locally",
@@ -2838,13 +2850,13 @@ public final class L10nTranslations {
                 "Peringatan push");
         table.put("Push notifications",
                 "Notifikasi push");
+    }
+
+    private static void fillIn5(Map<String, String> table) {
         table.put("Puts every feature switch back the way it started.",
                 "Mengembalikan setiap sakelar fitur seperti semula.");
         table.put("Puts the bottom bar's tabs in the order set below.",
                 "Menyusun tab di bilah bawah sesuai urutan yang diatur di bawah.");
-    }
-
-    private static void fillIn5(Map<String, String> table) {
         table.put("Putting diagnostic data back",
                 "Memulihkan data diagnostik");
         table.put("Quick setups",
@@ -2961,13 +2973,13 @@ public final class L10nTranslations {
                 "Menampilkan waktu bawaan Tumblr pada kartu postingan yang baru ditampilkan.");
         table.put("Shows author-provided image descriptions below images.",
                 "Menampilkan deskripsi gambar dari penulis di bawah gambar.");
+    }
+
+    private static void fillIn6(Map<String, String> table) {
         table.put("Shows tall videos whole when you open them full screen, instead of cutting off the sides.",
                 "Menampilkan video tinggi secara utuh saat dibuka di layar penuh, tanpa memotong sisinya.");
         table.put("Sign in to your existing account",
                 "Masuk ke akun yang sudah ada");
-    }
-
-    private static void fillIn6(Map<String, String> table) {
         table.put("Size",
                 "Ukuran");
         table.put("Skip review prompts",
@@ -3084,13 +3096,13 @@ public final class L10nTranslations {
                 "Memberi tahu Android bahwa ini Tumblr asli, agar masuk dengan Google bisa berfungsi dengan microG-RE atau modul XSpoofSignatures. Google Play services biasa mengabaikannya. Ini diatur saat Anda menambal. Tambal ulang tanpanya untuk menghapusnya.");
         table.put("Text size",
                 "Ukuran teks");
+    }
+
+    private static void fillIn7(Map<String, String> table) {
         table.put("Text size percentage",
                 "Persentase ukuran teks");
         table.put("That file is too big to be a font.",
                 "File itu terlalu besar untuk sebuah font.");
-    }
-
-    private static void fillIn7(Map<String, String> table) {
         table.put("That file is too large to be a settings file. Nothing was changed.",
                 "File itu terlalu besar untuk sebuah file pengaturan. Tidak ada yang diubah.");
         table.put("That file isn't readable text, so it may have been damaged on the way. Nothing was changed.",
@@ -3207,13 +3219,13 @@ public final class L10nTranslations {
                 "Ketik sebagian postingan di atas untuk melihat apa yang dilakukan filter kata padanya.");
         table.put("Undo",
                 "Urungkan");
+    }
+
+    private static void fillIn8(Map<String, String> table) {
         table.put("Undo ended because a saved setting changed.",
                 "Urungkan tidak lagi tersedia karena pengaturan tersimpan berubah.");
         table.put("Undo import",
                 "Urungkan impor");
-    }
-
-    private static void fillIn8(Map<String, String> table) {
         table.put("Undoing import",
                 "Mengurungkan impor");
         table.put("Unmute post",
@@ -3299,7 +3311,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(1042);
+        Map<String, String> table = new HashMap<>(1046);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -3782,6 +3794,8 @@ public final class L10nTranslations {
                 "Manter reblogs com tags");
         table.put("Lets a patched Tumblr sign up for push notifications when Google would turn it away.",
                 "Permite que um Tumblr com patches se cadastre para receber notifica\u00e7\u00f5es push quando o Google o recusaria.");
+        table.put("Lets you add up to 30 images to a post, as Tumblr's website does, instead of 10.",
+                "Permite adicionar at\u00e9 30 imagens a um post, como no site do Tumblr, em vez de 10.");
         table.put("Licenses",
                 "Licen\u00e7as");
         table.put("Like",
@@ -3800,11 +3814,11 @@ public final class L10nTranslations {
                 "Carrega as imagens das publica\u00e7\u00f5es em resolu\u00e7\u00e3o maior. Usa mais dados.");
         table.put("Long-press a video in a post to share or copy its link, or save it.",
                 "Toque e segure um v\u00eddeo em uma publica\u00e7\u00e3o para compartilhar ou copiar o link, ou salv\u00e1-lo.");
-        table.put("Looks for: %1$s",
-                "Procura: %1$s");
     }
 
     private static void fillPt_rBR4(Map<String, String> table) {
+        table.put("Looks for: %1$s",
+                "Procura: %1$s");
         table.put("Make Tumblr feel like yours.",
                 "Deixe o Tumblr com a sua cara.");
         table.put("Makes Tumblr's text bigger or smaller than your phone's font size makes it. Pick how big below.",
@@ -3827,6 +3841,8 @@ public final class L10nTranslations {
                 "Buscar no texto da cadeia de reblogs");
         table.put("Match whole words or phrases in the fields you chose. Case doesn't matter.",
                 "Busca palavras ou frases inteiras nos campos que voc\u00ea escolheu. N\u00e3o diferencia mai\u00fasculas de min\u00fasculas.");
+        table.put("More images per post",
+                "Mais imagens por post");
         table.put("More settings",
                 "Mais configura\u00e7\u00f5es");
         table.put("Mute posts locally",
@@ -3921,13 +3937,13 @@ public final class L10nTranslations {
                 "Alertas push");
         table.put("Push notifications",
                 "Notifica\u00e7\u00f5es push");
+    }
+
+    private static void fillPt_rBR5(Map<String, String> table) {
         table.put("Puts every feature switch back the way it started.",
                 "Volta cada op\u00e7\u00e3o de recurso ao estado inicial.");
         table.put("Puts the bottom bar's tabs in the order set below.",
                 "Coloca as abas da barra de baixo na ordem escolhida abaixo.");
-    }
-
-    private static void fillPt_rBR5(Map<String, String> table) {
         table.put("Putting diagnostic data back",
                 "Restaurando dados de diagn\u00f3stico");
         table.put("Quick setups",
@@ -4044,13 +4060,13 @@ public final class L10nTranslations {
                 "Mostra as datas do pr\u00f3prio Tumblr nos cart\u00f5es de posts exibidos a partir de agora.");
         table.put("Shows author-provided image descriptions below images.",
                 "Mostra abaixo das imagens as descri\u00e7\u00f5es fornecidas por seus autores.");
+    }
+
+    private static void fillPt_rBR6(Map<String, String> table) {
         table.put("Shows tall videos whole when you open them full screen, instead of cutting off the sides.",
                 "Mostra v\u00eddeos verticais inteiros ao abrir em tela cheia, sem cortar as laterais.");
         table.put("Sign in to your existing account",
                 "Entre na sua conta existente");
-    }
-
-    private static void fillPt_rBR6(Map<String, String> table) {
         table.put("Size",
                 "Tamanho");
         table.put("Skip review prompts",
@@ -4167,13 +4183,13 @@ public final class L10nTranslations {
                 "Diz ao Android que este \u00e9 o Tumblr original, para que o login com Google possa funcionar com o microG-RE ou o m\u00f3dulo XSpoofSignatures. O Google Play Services normal o ignora. Isso foi definido ao aplicar os patches. Aplique de novo sem ele para remov\u00ea-lo.");
         table.put("Text size",
                 "Tamanho do texto");
+    }
+
+    private static void fillPt_rBR7(Map<String, String> table) {
         table.put("Text size percentage",
                 "Porcentagem do tamanho do texto");
         table.put("That file is too big to be a font.",
                 "Esse arquivo \u00e9 grande demais para ser uma fonte.");
-    }
-
-    private static void fillPt_rBR7(Map<String, String> table) {
         table.put("That file is too large to be a settings file. Nothing was changed.",
                 "Esse arquivo \u00e9 grande demais para ser um arquivo de configura\u00e7\u00f5es. Nada foi alterado.");
         table.put("That file isn't readable text, so it may have been damaged on the way. Nothing was changed.",
@@ -4290,13 +4306,13 @@ public final class L10nTranslations {
                 "Digite acima parte de um post para ver o que o filtro de palavras faz com ele.");
         table.put("Undo",
                 "Desfazer");
+    }
+
+    private static void fillPt_rBR8(Map<String, String> table) {
         table.put("Undo ended because a saved setting changed.",
                 "N\u00e3o \u00e9 mais poss\u00edvel desfazer porque uma configura\u00e7\u00e3o salva mudou.");
         table.put("Undo import",
                 "Desfazer importa\u00e7\u00e3o");
-    }
-
-    private static void fillPt_rBR8(Map<String, String> table) {
         table.put("Undoing import",
                 "Desfazendo importa\u00e7\u00e3o");
         table.put("Unmute post",
@@ -4382,7 +4398,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(1042);
+        Map<String, String> table = new HashMap<>(1046);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -4865,6 +4881,8 @@ public final class L10nTranslations {
                 "Etiketli yeniden bloglamalar\u0131 tut");
         table.put("Lets a patched Tumblr sign up for push notifications when Google would turn it away.",
                 "Google geri \u00e7evirecekken yamal\u0131 Tumblr'\u0131n anl\u0131k bildirimlere kaydolmas\u0131n\u0131 sa\u011flar.");
+        table.put("Lets you add up to 30 images to a post, as Tumblr's website does, instead of 10.",
+                "Tumblr'\u0131n web sitesinde oldu\u011fu gibi bir g\u00f6nderiye 10 yerine en fazla 30 g\u00f6rsel eklemeni sa\u011flar.");
         table.put("Licenses",
                 "Lisanslar");
         table.put("Like",
@@ -4883,11 +4901,11 @@ public final class L10nTranslations {
                 "G\u00f6nderilerdeki resimleri daha y\u00fcksek \u00e7\u00f6z\u00fcn\u00fcrl\u00fckte y\u00fckler. Daha fazla veri kullan\u0131r.");
         table.put("Long-press a video in a post to share or copy its link, or save it.",
                 "Ba\u011flant\u0131s\u0131n\u0131 payla\u015fmak, kopyalamak ya da videoyu kaydetmek i\u00e7in g\u00f6nderideki bir videoya uzun bas\u0131n.");
-        table.put("Looks for: %1$s",
-                "Aranan: %1$s");
     }
 
     private static void fillTr4(Map<String, String> table) {
+        table.put("Looks for: %1$s",
+                "Aranan: %1$s");
         table.put("Make Tumblr feel like yours.",
                 "Tumblr sana g\u00f6re olsun.");
         table.put("Makes Tumblr's text bigger or smaller than your phone's font size makes it. Pick how big below.",
@@ -4910,6 +4928,8 @@ public final class L10nTranslations {
                 "Yeniden bloglama zinciri metninde e\u015fle\u015ftir");
         table.put("Match whole words or phrases in the fields you chose. Case doesn't matter.",
                 "Se\u00e7ti\u011fin alanlarda tam kelimeleri veya ifadeleri e\u015fle\u015ftirir. B\u00fcy\u00fck k\u00fc\u00e7\u00fck harf ayr\u0131m\u0131 yap\u0131lmaz.");
+        table.put("More images per post",
+                "G\u00f6nderi ba\u015f\u0131na daha fazla g\u00f6rsel");
         table.put("More settings",
                 "Di\u011fer ayarlar");
         table.put("Mute posts locally",
@@ -5004,13 +5024,13 @@ public final class L10nTranslations {
                 "Anl\u0131k uyar\u0131lar");
         table.put("Push notifications",
                 "Anl\u0131k bildirimler");
+    }
+
+    private static void fillTr5(Map<String, String> table) {
         table.put("Puts every feature switch back the way it started.",
                 "Her \u00f6zellik anahtar\u0131n\u0131 ba\u015flang\u0131\u00e7taki h\u00e2line d\u00f6nd\u00fcr\u00fcr.");
         table.put("Puts the bottom bar's tabs in the order set below.",
                 "Alt \u00e7ubuktaki sekmeleri a\u015fa\u011f\u0131da se\u00e7ilen s\u0131raya koyar.");
-    }
-
-    private static void fillTr5(Map<String, String> table) {
         table.put("Putting diagnostic data back",
                 "Tan\u0131lama verileri geri y\u00fckleniyor");
         table.put("Quick setups",
@@ -5127,13 +5147,13 @@ public final class L10nTranslations {
                 "Yeni \u00e7izilen g\u00f6nderi kartlar\u0131nda Tumblr'\u0131n kendi zamanlar\u0131n\u0131 g\u00f6sterir.");
         table.put("Shows author-provided image descriptions below images.",
                 "Yazar\u0131n sa\u011flad\u0131\u011f\u0131 resim a\u00e7\u0131klamalar\u0131n\u0131 resimlerin alt\u0131nda g\u00f6sterir.");
+    }
+
+    private static void fillTr6(Map<String, String> table) {
         table.put("Shows tall videos whole when you open them full screen, instead of cutting off the sides.",
                 "Uzun videolar\u0131 tam ekranda a\u00e7t\u0131\u011f\u0131n\u0131zda kenarlar\u0131n\u0131 kesmeden b\u00fct\u00fcn olarak g\u00f6sterir.");
         table.put("Sign in to your existing account",
                 "Mevcut hesab\u0131n\u0131za giri\u015f yap\u0131n");
-    }
-
-    private static void fillTr6(Map<String, String> table) {
         table.put("Size",
                 "Boyut");
         table.put("Skip review prompts",
@@ -5250,13 +5270,13 @@ public final class L10nTranslations {
                 "Android'e bunun orijinal Tumblr oldu\u011funu s\u00f6yler; b\u00f6ylece Google ile giri\u015f microG-RE veya XSpoofSignatures mod\u00fcl\u00fcyle \u00e7al\u0131\u015fabilir. Normal Google Play hizmetleri bunu yok sayar. Bu, yamalarken ayarland\u0131. Kald\u0131rmak i\u00e7in bu yama olmadan yeniden yamala.");
         table.put("Text size",
                 "Metin boyutu");
+    }
+
+    private static void fillTr7(Map<String, String> table) {
         table.put("Text size percentage",
                 "Metin boyutu y\u00fczdesi");
         table.put("That file is too big to be a font.",
                 "Bu dosya yaz\u0131 tipi olamayacak kadar b\u00fcy\u00fck.");
-    }
-
-    private static void fillTr7(Map<String, String> table) {
         table.put("That file is too large to be a settings file. Nothing was changed.",
                 "Bu dosya bir ayar dosyas\u0131 olamayacak kadar b\u00fcy\u00fck. Hi\u00e7bir \u015fey de\u011fi\u015ftirilmedi.");
         table.put("That file isn't readable text, so it may have been damaged on the way. Nothing was changed.",
@@ -5373,13 +5393,13 @@ public final class L10nTranslations {
                 "Kelime filtresinin ne yapaca\u011f\u0131n\u0131 g\u00f6rmek i\u00e7in yukar\u0131ya bir g\u00f6nderinin bir k\u0131sm\u0131n\u0131 yaz.");
         table.put("Undo",
                 "Geri al");
+    }
+
+    private static void fillTr8(Map<String, String> table) {
         table.put("Undo ended because a saved setting changed.",
                 "Kay\u0131tl\u0131 bir ayar de\u011fi\u015fti\u011fi i\u00e7in geri alma sona erdi.");
         table.put("Undo import",
                 "\u0130\u00e7e aktarmay\u0131 geri al");
-    }
-
-    private static void fillTr8(Map<String, String> table) {
         table.put("Undoing import",
                 "\u0130\u00e7e aktarma geri al\u0131n\u0131yor");
         table.put("Unmute post",

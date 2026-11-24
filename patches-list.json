@@ -1772,6 +1772,45 @@
       "options": []
     },
     {
+      "name": "More images per post",
+      "description": "Lets you add up to 30 images to a post, as Tumblr's website does, instead of 10. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface.",
+      "category": "Interface",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch",
+        "HushTumblr settings"
+      ],
+      "compatiblePackages": {
+        "com.tumblr": [
+          "47.3.0.110"
+        ]
+      },
+      "compatibility": [
+        {
+          "name": "Tumblr",
+          "packageName": "com.tumblr",
+          "description": null,
+          "appIconColor": 6453,
+          "signatures": [
+            "39ac9c821ad2d605e4849f066e8aad3cca27d5e13eb03ad8755be234a2985dfd"
+          ],
+          "targets": [
+            {
+              "version": "47.3.0.110",
+              "experimental": false,
+              "versionCodes": {
+                "ARM64_V8A": 1470300110,
+                "ARMEABI_V7A": 1470300110,
+                "X86": 1470300110,
+                "X86_64": 1470300110
+              }
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
       "name": "Mute posts locally",
       "description": "Adds a local mute action to post menus. Originals and their reblogs stay hidden for this account. On the dashboard the menu can also hide one blog's reblogs or its originals. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed.",
       "category": "Feed",

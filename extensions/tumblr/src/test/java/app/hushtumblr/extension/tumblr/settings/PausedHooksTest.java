@@ -110,6 +110,7 @@ import app.hushtumblr.extension.tumblr.ui.OptionalNudges;
 import app.hushtumblr.extension.tumblr.ui.AppFontForTests;
 import app.hushtumblr.extension.tumblr.ui.PostLines;
 import app.hushtumblr.extension.tumblr.ui.StoreButtons;
+import app.hushtumblr.extension.tumblr.ui.MoreImages;
 import app.hushtumblr.extension.tumblr.ui.TextSizeForTests;
 import app.hushtumblr.extension.tumblr.ui.VideoFit;
 import app.hushtumblr.extension.tumblr.ui.FeedVideoTap;
@@ -343,6 +344,8 @@ public class PausedHooksTest {
         probes.put(Settings.FIT_FULL_SCREEN_VIDEOS, Collections.singletonList(() -> !VideoFit.fillsHeight(true)));
         // A Tumblr screen starts with its text at the picked size.
         probes.put(Settings.TEXT_SIZE, Collections.singletonList(TextSizeForTests::aStartScales));
+        // The post editor's image limit is the website's 30.
+        probes.put(Settings.MORE_IMAGES_PER_POST, Collections.singletonList(() -> MoreImages.imageBlocks(10) != 10));
         // A tap on a stopped feed video starts it where it sits.
         probes.put(Settings.TAP_TO_PLAY_FEED_VIDEOS, Collections.singletonList(() -> FeedVideoTap.onTap(new HushFeedVideo() {
             @Override public int hushPlayInPlace() { return 1; }

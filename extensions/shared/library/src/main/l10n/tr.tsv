@@ -262,6 +262,9 @@ Makes Tumblr's text bigger or smaller than your phone's font size makes it. Pick
 Size	Boyut
 %1$s of your phone's text size. Tap to change.	Telefonunun metin boyutunun %1$s kadarı. Değiştirmek için dokun.
 Couldn't save the size. Try again.	Boyut kaydedilemedi. Tekrar dene.
+# context: the More images per post switch on the Interface page (the post editor's image limit), and the name the settings backup preview gives the Text size row's percentage.
+More images per post	Gönderi başına daha fazla görsel
+Lets you add up to 30 images to a post, as Tumblr's website does, instead of 10.	Tumblr'ın web sitesinde olduğu gibi bir gönderiye 10 yerine en fazla 30 görsel eklemeni sağlar.
 Text size percentage	Metin boyutu yüzdesi
 App font	Uygulama yazı tipi
 Replaces Tumblr's own font with your phone's font, or a font file you choose below. Fonts a post's author picked stay as they are.	Tumblr'ın kendi yazı tipini telefonunun yazı tipiyle veya aşağıdan seçtiğin bir yazı tipi dosyasıyla değiştirir. Gönderi yazarının seçtiği yazı tipleri olduğu gibi kalır.
