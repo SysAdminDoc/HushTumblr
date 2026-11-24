@@ -104,6 +104,8 @@ public final class SettingsStatus {
     public static boolean suggestedTagCards() { return false; }
     public static boolean hideWatchItRows() { return false; }
     public static boolean watchItRows() { return false; }
+    public static boolean hideMorePostsLikeThis() { return false; }
+    public static boolean morePostsLikeThis() { return false; }
     public static boolean hideFeaturedPosts() { return false; }
     public static boolean featuredPosts() { return false; }
     public static boolean hideHashtags() { return false; }

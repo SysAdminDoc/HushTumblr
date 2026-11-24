@@ -118,6 +118,7 @@ public final class SettingsBackup {
             Settings.HIDE_SUGGESTED_COMMUNITIES,
             Settings.HIDE_SUGGESTED_TAGS,
             Settings.HIDE_WATCH_IT_ROWS,
+            Settings.HIDE_MORE_POSTS_LIKE_THIS,
             Settings.HIDE_FEATURED_POSTS,
             Settings.HIDE_HASHTAGS,
             Settings.HIDE_FOLLOW_BUTTON,

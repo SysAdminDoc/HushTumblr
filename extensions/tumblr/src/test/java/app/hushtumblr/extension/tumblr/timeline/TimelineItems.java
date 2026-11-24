@@ -120,6 +120,10 @@ public final class TimelineItems {
         return aPageLoses(TimelineObjectType.VIDEO_HUBS_ROW);
     }
 
+    public static boolean aPageLosesItsMorePostsRow() {
+        return aPageLoses(TimelineObjectType.CHICLET_ROW);
+    }
+
     /** True when a page with an item of [type] between two posts comes back without it. */
     private static boolean aPageLoses(TimelineObjectType type) {
         return aPageLoses(of(type));

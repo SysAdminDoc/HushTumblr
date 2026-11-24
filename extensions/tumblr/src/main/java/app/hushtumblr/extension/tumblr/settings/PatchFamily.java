@@ -81,6 +81,8 @@ public enum PatchFamily {
             Settings.HIDE_SUGGESTED_COMMUNITIES),
     HIDE_SUGGESTED_TAGS(FamilyNames.HIDE_SUGGESTED_TAGS, "hideSuggestedTags", null, Settings.HIDE_SUGGESTED_TAGS),
     HIDE_WATCH_IT_ROWS(FamilyNames.HIDE_WATCH_IT_ROWS, "hideWatchItRows", null, Settings.HIDE_WATCH_IT_ROWS),
+    HIDE_MORE_POSTS_LIKE_THIS(FamilyNames.HIDE_MORE_POSTS_LIKE_THIS, "hideMorePostsLikeThis", null,
+            Settings.HIDE_MORE_POSTS_LIKE_THIS),
     HIDE_FEATURED_POSTS(FamilyNames.HIDE_FEATURED_POSTS, "hideFeaturedPosts", null, Settings.HIDE_FEATURED_POSTS),
     HIDE_HASHTAGS(FamilyNames.HIDE_HASHTAGS, "hideHashtags", null, Settings.HIDE_HASHTAGS),
     HIDE_FOLLOW_BUTTON(FamilyNames.HIDE_FOLLOW_BUTTON, "hideFollowButton", null, Settings.HIDE_FOLLOW_BUTTON),
@@ -192,7 +194,7 @@ public enum PatchFamily {
             HIDE_NOTIFICATIONS_TAB, HIDE_EXPLORE_TAB, DARK_BACKGROUND, HIDE_UNREAD_DOTS, HIDE_TUMBLRMART,
             TURN_OFF_SCREENSHOT_SHARING, SKIP_REVIEW_PROMPTS, HIDE_BLOG_NOTIFICATION_REMINDERS,
             HIDE_GIFT_MESSAGE_POPUPS, HIDE_BLAZE_PROMPTS, HIDE_COMMUNITIES_TAB, HIDE_TUMBLR_TV, LINE_BETWEEN_POSTS, APP_FONT,
-            FIT_FULL_SCREEN_VIDEOS, TAP_TO_PLAY_FEED_VIDEOS));
+            FIT_FULL_SCREEN_VIDEOS, TAP_TO_PLAY_FEED_VIDEOS, HIDE_MORE_POSTS_LIKE_THIS));
 
     /** The families the Posts page holds. The page and its home row both read this. */
     static final Set<PatchFamily> POSTS_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_SAVE_BUTTON,
@@ -247,6 +249,7 @@ public enum PatchFamily {
                 "Hide suggested communities"),
         SUGGESTED_TAG_CARDS(HIDE_SUGGESTED_TAGS, "suggestedTagCards", "Hide suggested tags"),
         WATCH_IT_ROWS(HIDE_WATCH_IT_ROWS, "watchItRows", "Hide Watch it rows"),
+        MORE_POSTS_LIKE_THIS(HIDE_MORE_POSTS_LIKE_THIS, "morePostsLikeThis", "Hide More posts like this"),
         FEATURED_POSTS(HIDE_FEATURED_POSTS, "featuredPosts", "Hide Featured posts"),
         POST_TAGS(HIDE_HASHTAGS, "postTags", "Hide hashtags"),
         FOLLOW_BUTTON(HIDE_FOLLOW_BUTTON, "followButton", "Hide the Follow button"),

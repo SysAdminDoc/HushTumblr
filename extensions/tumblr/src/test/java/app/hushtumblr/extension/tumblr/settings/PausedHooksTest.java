@@ -250,6 +250,8 @@ public class PausedHooksTest {
         probes.put(Settings.HIDE_SUGGESTED_TAGS, Collections.singletonList(TimelineItems::aPageLosesItsTagCarousel));
         // A page with a Watch it row comes back without it.
         probes.put(Settings.HIDE_WATCH_IT_ROWS, Collections.singletonList(TimelineItems::aPageLosesItsWatchItRow));
+        // A page of More posts like this tiles comes back without them.
+        probes.put(Settings.HIDE_MORE_POSTS_LIKE_THIS, Collections.singletonList(TimelineItems::aPageLosesItsMorePostsRow));
         // A page with a post Tumblr's staff feature comes back without it.
         probes.put(Settings.HIDE_FEATURED_POSTS, Collections.singletonList(TimelineItems::aPageLosesItsFeaturedPost));
         // A post's tags are left out.

@@ -3,6 +3,7 @@
 ## Unreleased
 
 * The patches move from 47.0.0.108 to Tumblr 47.3.0.110, the newest release. Every patch applies to it, so that's the version to patch.
+* New **Hide More posts like this** switch on the Interface page, off by default. When you open a post, Tumblr puts a grid of related posts under it with a "More posts like this" heading. With the switch on, the grid and its heading are gone and the post you opened stays.
 * Collapse long posts can fold much shorter now. Collapsed post length on the Posts page goes down to about 5 or about 10 lines, besides half a screen, a screen and two screens. At those lengths a post only needs a few more lines than fit before it's folded.
 * Settings with TalkBack and a keyboard: pressing Undo on the "HushTumblr is on" card keeps TalkBack on the card's button. When the Restart row went away above the row your keys were on, TalkBack used to jump to that row, usually Quick setups.
 * New **Keep reblogs in communities** option under Hide reblogs on the Feed page, off by default. Reblogs shared to a community stay in place even when the person added no text or tags, and every other reblog stays hidden.

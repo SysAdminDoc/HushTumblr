@@ -206,6 +206,8 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting HIDE_WATCH_IT_ROWS =
             new BooleanSetting("hushtumblr_hide_watch_it_rows", FALSE);
+    public static final BooleanSetting HIDE_MORE_POSTS_LIKE_THIS =
+            new BooleanSetting("hushtumblr_hide_more_posts_like_this", FALSE);
 
     /**
      * The posts Tumblr's staff put in your feeds under a "Featured" header come out of each page

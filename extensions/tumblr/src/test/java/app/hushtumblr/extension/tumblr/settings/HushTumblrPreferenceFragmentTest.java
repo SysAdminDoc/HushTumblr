@@ -109,6 +109,7 @@ public class HushTumblrPreferenceFragmentTest {
         ROW_TITLES.put(PatchFamily.HIDE_SUGGESTED_COMMUNITIES, "Hide suggested communities");
         ROW_TITLES.put(PatchFamily.HIDE_SUGGESTED_TAGS, "Hide suggested tags");
         ROW_TITLES.put(PatchFamily.HIDE_WATCH_IT_ROWS, "Hide Watch it rows");
+        ROW_TITLES.put(PatchFamily.HIDE_MORE_POSTS_LIKE_THIS, "Hide More posts like this");
         ROW_TITLES.put(PatchFamily.HIDE_FEATURED_POSTS, "Hide Featured posts");
         ROW_TITLES.put(PatchFamily.HIDE_HASHTAGS, "Hide hashtags");
         ROW_TITLES.put(PatchFamily.TAG_BLOG_SEARCH, "Tags open the blog's tag search");

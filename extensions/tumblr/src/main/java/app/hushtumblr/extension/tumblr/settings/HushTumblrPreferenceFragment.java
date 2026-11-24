@@ -835,6 +835,10 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                     L10n.t("Tap to play feed videos"),
                     L10n.t("Tap a stopped video in your feed to play it right there. Tap it again while it plays to open it full screen."),
                     SettingsIcons.INTERFACE);
+            patchToggle(ui, context, build, PatchFamily.HIDE_MORE_POSTS_LIKE_THIS, Settings.HIDE_MORE_POSTS_LIKE_THIS,
+                    L10n.t("Hide More posts like this"),
+                    L10n.t("Takes the More posts like this grid out from under a post you open, along with its heading."),
+                    SettingsIcons.BLOCK);
             patchToggle(ui, context, build, PatchFamily.LINE_BETWEEN_POSTS,
                     Settings.LINE_BETWEEN_POSTS, L10n.t("Line between posts"),
                     L10n.t("Draws a thin line in the gap between posts, so it's easier to see where one ends and the next begins."),

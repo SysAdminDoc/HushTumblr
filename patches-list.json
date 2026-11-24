@@ -407,6 +407,45 @@
       "options": []
     },
     {
+      "name": "Hide More posts like this",
+      "description": "Takes the \"More posts like this\" grid out from under a post you open, along with its heading. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface.",
+      "category": "Interface",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch",
+        "HushTumblr settings"
+      ],
+      "compatiblePackages": {
+        "com.tumblr": [
+          "47.3.0.110"
+        ]
+      },
+      "compatibility": [
+        {
+          "name": "Tumblr",
+          "packageName": "com.tumblr",
+          "description": null,
+          "appIconColor": 6453,
+          "signatures": [
+            "39ac9c821ad2d605e4849f066e8aad3cca27d5e13eb03ad8755be234a2985dfd"
+          ],
+          "targets": [
+            {
+              "version": "47.3.0.110",
+              "experimental": false,
+              "versionCodes": {
+                "ARM64_V8A": 1470300110,
+                "ARMEABI_V7A": 1470300110,
+                "X86": 1470300110,
+                "X86_64": 1470300110
+              }
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
       "name": "Hide Tumblr TV",
       "description": "Takes the Tumblr TV tab out of the bottom bar, and stops sign-up from sending you there. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface.",
       "category": "Navigation",

@@ -291,6 +291,9 @@ Hide suggested tags	Vorgeschlagene Tags ausblenden
 Takes the tags Tumblr suggests you follow, and their headings, out of your dashboard and other feeds.	Entfernt die Tags, denen du laut Tumblr folgen sollst, samt ihren Überschriften aus deinem Dashboard und anderen Feeds.
 Hide Watch it rows	Watch-it-Reihen ausblenden
 Takes Tumblr TV's Watch it rows and video hub cards, and their headings, out of your dashboard and other feeds.	Entfernt die Watch-it-Reihen und Video-Hub-Karten von Tumblr TV samt ihren Überschriften aus deinem Dashboard und anderen Feeds.
+# context: the Hide More posts like this switch on the Interface page. More posts like this is the heading Tumblr shows over related posts under a post you open; use the words Tumblr shows in your language.
+Hide More posts like this	„Mehr Beiträge wie dieser“ ausblenden
+Takes the More posts like this grid out from under a post you open, along with its heading.	Entfernt das Raster „Mehr Beiträge wie dieser“ samt Überschrift unter einem Beitrag, den du öffnest.
 # context: the Hide Featured posts switch on the Feed page. Featured is the header Tumblr shows over posts its own staff promote; use the word Tumblr shows in your language.
 Hide Featured posts	Hervorgehobene Beiträge ausblenden
 Takes the posts Tumblr's staff feature under a Featured header out of your dashboard and other feeds.	Entfernt die Beiträge, die das Tumblr-Team unter der Überschrift Hervorgehoben zeigt, aus deinem Dashboard und anderen Feeds.
