@@ -513,6 +513,8 @@ Collapse long posts	Recolher posts longos
 Cuts long posts with a Read more row, at the length below. Tap it to open the whole post.	Corta posts longos no tamanho abaixo, com uma linha de Ler mais. Toque nela para abrir o post inteiro.
 # context: the Collapsed post length row under that switch: its title, the lengths a tap moves through, its summary and the note when a save fails
 Collapsed post length	Tamanho dos posts recolhidos
+About 5 lines	Cerca de 5 linhas
+About 10 lines	Cerca de 10 linhas
 About half a screen	Cerca de meia tela
 About a screen	Cerca de uma tela
 About two screens	Cerca de duas telas

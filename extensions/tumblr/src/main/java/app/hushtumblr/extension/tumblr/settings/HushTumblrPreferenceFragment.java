@@ -1820,6 +1820,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
 
     /** About how much of a long post [size] keeps, read as {@link app.hushtumblr.extension.tumblr.timeline.LongPosts} reads it. */
     static String longPostSizeShown(String size) {
+        if (size.equals("5")) return L10n.t("About 5 lines");
+        if (size.equals("10")) return L10n.t("About 10 lines");
         if (size.equals("20")) return L10n.t("About half a screen");
         if (size.equals("80")) return L10n.t("About two screens");
         return L10n.t("About a screen");

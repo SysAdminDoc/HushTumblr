@@ -102,7 +102,7 @@ val collapseLongPostsPatch = bytecodePatch(
         " under them. Tap it and the whole post opens right there in the timeline. A long entry in a reblog trail gets cut" +
         " the same way, and its Read more opens the post." +
         " Asks keep Tumblr's layout. Starts off." +
-        " Turn it on in Tumblr settings > HushTumblr > Posts, where you can make the cut half a screen or two screens instead.",
+        " Turn it on in Tumblr settings > HushTumblr > Posts, where the cut can be as short as about 5 lines or as long as two screens.",
     default = true,
 ) {
     category("Posts")

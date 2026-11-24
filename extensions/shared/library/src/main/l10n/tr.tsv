@@ -516,6 +516,8 @@ Collapse long posts	Uzun gönderileri kısalt
 Cuts long posts with a Read more row, at the length below. Tap it to open the whole post.	Uzun gönderileri aşağıdaki uzunlukta Devamını oku satırıyla keser. Gönderinin tamamını açmak için ona dokun.
 # context: the Collapsed post length row under that switch: its title, the lengths a tap moves through, its summary and the note when a save fails
 Collapsed post length	Kısaltılmış gönderi uzunluğu
+About 5 lines	Yaklaşık 5 satır
+About 10 lines	Yaklaşık 10 satır
 About half a screen	Yaklaşık yarım ekran
 About a screen	Yaklaşık bir ekran
 About two screens	Yaklaşık iki ekran

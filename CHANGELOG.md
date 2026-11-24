@@ -3,6 +3,7 @@
 ## Unreleased
 
 * The patches move from 47.0.0.108 to Tumblr 47.3.0.110, the newest release. Every patch applies to it, so that's the version to patch.
+* Collapse long posts can fold much shorter now. Collapsed post length on the Posts page goes down to about 5 or about 10 lines, besides half a screen, a screen and two screens. At those lengths a post only needs a few more lines than fit before it's folded.
 * Settings with TalkBack and a keyboard: pressing Undo on the "HushTumblr is on" card keeps TalkBack on the card's button. When the Restart row went away above the row your keys were on, TalkBack used to jump to that row, usually Quick setups.
 * New **Keep reblogs in communities** option under Hide reblogs on the Feed page, off by default. Reblogs shared to a community stay in place even when the person added no text or tags, and every other reblog stays hidden.
 * New **Fit full-screen videos** switch on the Interface page, off by default. Tumblr stretches a tall video to the screen's full height in its full-screen player, and that can cut off the left and right sides. With the switch on you see the whole video.

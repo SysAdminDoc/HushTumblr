@@ -516,6 +516,8 @@ Collapse long posts	Acortar publicaciones largas
 Cuts long posts with a Read more row, at the length below. Tap it to open the whole post.	Corta las publicaciones largas a la longitud de abajo, con una fila de Leer más. Tócala para abrir la publicación completa.
 # context: the Collapsed post length row under that switch: its title, the lengths a tap moves through, its summary and the note when a save fails
 Collapsed post length	Longitud de las publicaciones acortadas
+About 5 lines	Unas 5 líneas
+About 10 lines	Unas 10 líneas
 About half a screen	Más o menos media pantalla
 About a screen	Más o menos una pantalla
 About two screens	Más o menos dos pantallas

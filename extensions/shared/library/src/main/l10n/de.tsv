@@ -516,6 +516,8 @@ Collapse long posts	Lange Beiträge kürzen
 Cuts long posts with a Read more row, at the length below. Tap it to open the whole post.	Kürzt lange Beiträge auf die Länge darunter, mit einer Weiterlesen-Zeile. Tippe darauf, um den ganzen Beitrag zu öffnen.
 # context: the Collapsed post length row under that switch: its title, the lengths a tap moves through, its summary and the note when a save fails
 Collapsed post length	Länge gekürzter Beiträge
+About 5 lines	Etwa 5 Zeilen
+About 10 lines	Etwa 10 Zeilen
 About half a screen	Etwa ein halber Bildschirm
 About a screen	Etwa ein Bildschirm
 About two screens	Etwa zwei Bildschirme
