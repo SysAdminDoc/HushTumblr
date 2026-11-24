@@ -103,6 +103,7 @@ public class HushTumblrPreferenceFragmentTest {
         ROW_TITLES.put(PatchFamily.HIDE_GIFT_MESSAGE_POPUPS, "Hide gift purchase popups");
         ROW_TITLES.put(PatchFamily.LINE_BETWEEN_POSTS, "Line between posts");
         ROW_TITLES.put(PatchFamily.APP_FONT, "App font");
+        ROW_TITLES.put(PatchFamily.TEXT_SIZE, "Text size");
         ROW_TITLES.put(PatchFamily.TURN_OFF_SCREENSHOT_SHARING, "Turn off screenshot sharing");
         ROW_TITLES.put(PatchFamily.DISABLE_UPDATE_PROMPTS, "Disable update prompts");
         ROW_TITLES.put(PatchFamily.HIDE_SUGGESTED_BLOGS, "Hide suggested blogs");
@@ -234,6 +235,7 @@ public class HushTumblrPreferenceFragmentTest {
         editors.put(HushTumblrPreferenceFragment.FONT_FILE_ROW, PatchFamily.APP_FONT);
         editors.put(HushTumblrPreferenceFragment.PHONE_FONT_ROW, PatchFamily.APP_FONT);
         editors.put(HushTumblrPreferenceFragment.LONG_POST_SIZE_ROW, PatchFamily.COLLAPSE_LONG_POSTS);
+        editors.put(HushTumblrPreferenceFragment.TEXT_SIZE_ROW, PatchFamily.TEXT_SIZE);
         editors.put("hushtumblr_manage_root_mutes", PatchFamily.MUTE_ROOT_POSTS);
 
         List<String> wrong = new ArrayList<>();

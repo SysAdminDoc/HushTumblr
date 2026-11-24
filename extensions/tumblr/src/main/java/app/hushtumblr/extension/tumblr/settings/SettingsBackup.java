@@ -112,6 +112,7 @@ public final class SettingsBackup {
             Settings.HIDE_GIFT_MESSAGE_POPUPS,
             Settings.LINE_BETWEEN_POSTS,
             Settings.APP_FONT,
+            Settings.TEXT_SIZE,
             Settings.TURN_OFF_SCREENSHOT_SHARING,
             Settings.DISABLE_UPDATE_PROMPTS,
             Settings.HIDE_SUGGESTED_BLOGS,
@@ -183,7 +184,8 @@ public final class SettingsBackup {
             TextSettings.HIDDEN_WORDS,
             TextSettings.ALLOWED_WORDS,
             TextSettings.TAB_ORDER,
-            TextSettings.LONG_POST_SIZE));
+            TextSettings.LONG_POST_SIZE,
+            TextSettings.TEXT_SIZE_PERCENT));
 
     /**
      * Bounds for the parser, well past anything this class writes, so a file built to be
@@ -570,6 +572,7 @@ public final class SettingsBackup {
     /** [value] as its readers take it: a long post length its row never offers reads as the default. */
     private static String asRead(StringSetting setting, String value) {
         if (setting == TextSettings.LONG_POST_SIZE && textValue(setting, value) == null) return setting.defaultValue;
+        if (setting == TextSettings.TEXT_SIZE_PERCENT && textValue(setting, value) == null) return setting.defaultValue;
         return value;
     }
 
@@ -603,6 +606,7 @@ public final class SettingsBackup {
         String text = (String) value;
         if (setting == TextSettings.HIDDEN_WORDS || setting == TextSettings.ALLOWED_WORDS) return text.trim();
         if (setting == TextSettings.LONG_POST_SIZE) return TextSettings.LONG_POST_SIZES.contains(text) ? text : null;
+        if (setting == TextSettings.TEXT_SIZE_PERCENT) return TextSettings.TEXT_SIZES.contains(text) ? text : null;
         if (setting == TextSettings.TAB_ORDER) {
             return text.isEmpty() || text.equals(BottomBarTabs.join(BottomBarTabs.parse(text))) ? text : null;
         }

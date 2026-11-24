@@ -256,6 +256,13 @@ Hide gift purchase popups	Hediye satın alma pencerelerini gizle
 Hides the pop-up suggesting you buy a gift for a blog. You can still open gifting yourself.	Bir blog için hediye satın almanızı öneren pencereyi gizler. Hediye özelliğini kendiniz açabilirsiniz.
 Line between posts	Gönderiler arasında çizgi
 Draws a thin line in the gap between posts, so it's easier to see where one ends and the next begins.	Gönderiler arasındaki boşluğa ince bir çizgi çizer, böylece birinin nerede bitip diğerinin nerede başladığı daha kolay görülür.
+# context: the Text size switch on the Interface page and the Size row under it, whose summary names a percentage of the phone's own text size, such as 115%.
+Text size	Metin boyutu
+Makes Tumblr's text bigger or smaller than your phone's font size makes it. Pick how big below.	Tumblr'ın metnini telefonunun yazı tipi boyutundan daha büyük ya da küçük yapar. Boyutu aşağıdan seç.
+Size	Boyut
+%1$s of your phone's text size. Tap to change.	Telefonunun metin boyutunun %1$s kadarı. Değiştirmek için dokun.
+Couldn't save the size. Try again.	Boyut kaydedilemedi. Tekrar dene.
+Text size percentage	Metin boyutu yüzdesi
 App font	Uygulama yazı tipi
 Replaces Tumblr's own font with your phone's font, or a font file you choose below. Fonts a post's author picked stay as they are.	Tumblr'ın kendi yazı tipini telefonunun yazı tipiyle veya aşağıdan seçtiğin bir yazı tipi dosyasıyla değiştirir. Gönderi yazarının seçtiği yazı tipleri olduğu gibi kalır.
 Choose a font file	Yazı tipi dosyası seç

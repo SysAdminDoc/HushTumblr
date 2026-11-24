@@ -50,7 +50,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildDe() {
-        Map<String, String> table = new HashMap<>(1030);
+        Map<String, String> table = new HashMap<>(1042);
         fillDe0(table);
         fillDe1(table);
         fillDe2(table);
@@ -82,6 +82,8 @@ public final class L10nTranslations {
                 "%1$s steht bereits an erster Stelle.");
         table.put("%1$s moved to position %2$d of %3$d.",
                 "%1$s wurde auf Position %2$d von %3$d verschoben.");
+        table.put("%1$s of your phone's text size. Tap to change.",
+                "%1$s der Textgr\u00f6\u00dfe deines Telefons. Zum \u00c4ndern tippen.");
         table.put("%1$s. It was set when you patched, so Pause can't turn it off. To rule it out, patch again and leave out that patch.",
                 "%1$s. Das wurde beim Patchen festgelegt, deshalb kann die Pause es nicht ausschalten. Um es auszuschlie\u00dfen, patche erneut und lass diesen Patch weg.");
         table.put("%1$s. Tap to change.",
@@ -182,11 +184,11 @@ public final class L10nTranslations {
                 "W\u00e4hle, wo Tumblr-Links ge\u00f6ffnet werden");
         table.put("Clear diagnostic data",
                 "Diagnosedaten l\u00f6schen");
-        table.put("Clear muted posts",
-                "Stummgeschaltete Posts l\u00f6schen");
     }
 
     private static void fillDe1(Map<String, String> table) {
+        table.put("Clear muted posts",
+                "Stummgeschaltete Posts l\u00f6schen");
         table.put("Clear search",
                 "Suche l\u00f6schen");
         table.put("Clear the example",
@@ -249,6 +251,8 @@ public final class L10nTranslations {
                 "Die Versionspr\u00fcfung konnte nicht gespeichert werden. Versuche es noch einmal.");
         table.put("Couldn't save the settings file. Try again.",
                 "Die Einstellungsdatei lie\u00df sich nicht speichern. Versuche es noch einmal.");
+        table.put("Couldn't save the size. Try again.",
+                "Die Gr\u00f6\u00dfe konnte nicht gespeichert werden. Versuch es noch mal.");
         table.put("Couldn't save the tab order. Your earlier order is unchanged. Try again.",
                 "Die Tab-Reihenfolge konnte nicht gespeichert werden. Deine bisherige Reihenfolge ist unver\u00e4ndert. Versuch es erneut.");
         table.put("Couldn't save the video",
@@ -303,13 +307,13 @@ public final class L10nTranslations {
                 "Zeichnet eine d\u00fcnne Linie in die L\u00fccke zwischen Beitr\u00e4gen, damit besser zu sehen ist, wo einer endet und der n\u00e4chste beginnt.");
         table.put("Every switch but Debug logging acts as if it were off, and what was set when you patched stays in. Your settings stay as they are.",
                 "Jeder Schalter au\u00dfer der Debug-Protokollierung verh\u00e4lt sich, als w\u00e4re er aus, und was beim Patchen festgelegt wurde, bleibt aktiv. Deine Einstellungen bleiben, wie sie sind.");
+    }
+
+    private static void fillDe2(Map<String, String> table) {
         table.put("Every switch here applies to all the accounts in this Tumblr app, not only the one you have open.",
                 "Jeder Schalter hier gilt f\u00fcr alle Konten in dieser Tumblr-App, nicht nur f\u00fcr das gerade ge\u00f6ffnete.");
         table.put("Explore",
                 "Entdecken");
-    }
-
-    private static void fillDe2(Map<String, String> table) {
         table.put("Explore's sponsored header",
                 "den gesponserten Kopfbereich in Entdecken");
         table.put("Export diagnostic report",
@@ -426,13 +430,13 @@ public final class L10nTranslations {
                 "Entdecken-Tab ausblenden");
         table.put("Hide the Follow button",
                 "Folgen-Button ausblenden");
+    }
+
+    private static void fillDe3(Map<String, String> table) {
         table.put("Hide the Notifications count",
                 "Benachrichtigungsz\u00e4hler ausblenden");
         table.put("Hide the Notifications tab",
                 "Benachrichtigungen-Tab ausblenden");
-    }
-
-    private static void fillDe3(Map<String, String> table) {
         table.put("Hide the Save button",
                 "Speichern-Button ausblenden");
         table.put("Hide the ad-free banner",
@@ -549,13 +553,15 @@ public final class L10nTranslations {
                 "Halte ein Video in einem Beitrag gedr\u00fcckt, um seinen Link zu teilen oder zu kopieren oder es zu speichern.");
         table.put("Looks for: %1$s",
                 "Sucht nach: %1$s");
-        table.put("Make Tumblr feel like yours.",
-                "Mach Tumblr zu deinem Tumblr.");
-        table.put("Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.",
-                "F\u00e4rbt neu ge\u00f6ffnete Dunkelmodus-Bildschirme schwarz oder in der beim Patchen gew\u00e4hlten dunklen Farbe. Offene Bildschirme behalten ihre Farben bis zum Neustart von Tumblr.");
     }
 
     private static void fillDe4(Map<String, String> table) {
+        table.put("Make Tumblr feel like yours.",
+                "Mach Tumblr zu deinem Tumblr.");
+        table.put("Makes Tumblr's text bigger or smaller than your phone's font size makes it. Pick how big below.",
+                "Macht den Text in Tumblr gr\u00f6\u00dfer oder kleiner, als die Schriftgr\u00f6\u00dfe deines Telefons ihn macht. Darunter w\u00e4hlst du, wie gro\u00df.");
+        table.put("Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.",
+                "F\u00e4rbt neu ge\u00f6ffnete Dunkelmodus-Bildschirme schwarz oder in der beim Patchen gew\u00e4hlten dunklen Farbe. Offene Bildschirme behalten ihre Farben bis zum Neustart von Tumblr.");
         table.put("Manage muted posts",
                 "Stummgeschaltete Posts verwalten");
         table.put("Marks blogs that follow your primary blog when you follow them.",
@@ -670,15 +676,15 @@ public final class L10nTranslations {
                 "Setzt jeden Funktionsschalter auf seinen Ausgangszustand zur\u00fcck.");
         table.put("Puts the bottom bar's tabs in the order set below.",
                 "Ordnet die Tabs der unteren Leiste in der unten gew\u00e4hlten Reihenfolge an.");
+    }
+
+    private static void fillDe5(Map<String, String> table) {
         table.put("Putting diagnostic data back",
                 "Diagnosedaten werden wiederhergestellt");
         table.put("Quick setups",
                 "Schnelleinstellungen");
         table.put("Quick setups hidden. Bring it back from %1$s.",
                 "Schnelleinstellungen ausgeblendet. Du findest sie wieder unter \u201e%1$s\u201c.");
-    }
-
-    private static void fillDe5(Map<String, String> table) {
         table.put("Quick setups on the home page",
                 "Schnelleinstellungen auf der Startseite");
         table.put("Quiet",
@@ -793,15 +799,17 @@ public final class L10nTranslations {
                 "Zeigt hohe Videos im Vollbild ganz, statt die Seiten abzuschneiden.");
         table.put("Sign in to your existing account",
                 "Mit deinem bestehenden Konto anmelden");
+    }
+
+    private static void fillDe6(Map<String, String> table) {
+        table.put("Size",
+                "Gr\u00f6\u00dfe");
         table.put("Skip review prompts",
                 "Bewertungsaufforderungen \u00fcberspringen");
         table.put("Source code and issues",
                 "Quellcode und Issues");
         table.put("Split tags with commas",
                 "Tags mit Kommas trennen");
-    }
-
-    private static void fillDe6(Map<String, String> table) {
         table.put("Spoof signature for Google sign-in",
                 "Signatur f\u00fcr Google-Anmeldung vort\u00e4uschen");
         table.put("Status",
@@ -908,8 +916,15 @@ public final class L10nTranslations {
                 "Ein Tipp auf einen Tag unter einem Beitrag durchsucht die Beitr\u00e4ge dieses Blogs nach dem Tag, im Dashboard, in anderen Feeds und in einem einzeln ge\u00f6ffneten Beitrag.");
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
                 "Sagt Android, dass dies das originale Tumblr ist, damit die Google-Anmeldung mit microG-RE oder dem XSpoofSignatures-Modul funktionieren kann. Das normale Google Play Services ignoriert es. Das wurde beim Patchen festgelegt. Patche erneut ohne diesen Patch, um es zu entfernen.");
+        table.put("Text size",
+                "Textgr\u00f6\u00dfe");
+        table.put("Text size percentage",
+                "Textgr\u00f6\u00dfe in Prozent");
         table.put("That file is too big to be a font.",
                 "Diese Datei ist zu gro\u00df f\u00fcr eine Schriftart.");
+    }
+
+    private static void fillDe7(Map<String, String> table) {
         table.put("That file is too large to be a settings file. Nothing was changed.",
                 "Diese Datei ist zu gro\u00df f\u00fcr eine Einstellungsdatei. Es wurde nichts ge\u00e4ndert.");
         table.put("That file isn't readable text, so it may have been damaged on the way. Nothing was changed.",
@@ -922,9 +937,6 @@ public final class L10nTranslations {
                 "Das ist keine Schriftdatei. Nichts wurde ge\u00e4ndert.");
         table.put("That settings file holds a value HushTumblr can't read. Nothing was changed.",
                 "Diese Einstellungsdatei enth\u00e4lt einen Wert, den HushTumblr nicht lesen kann. Es wurde nichts ge\u00e4ndert.");
-    }
-
-    private static void fillDe7(Map<String, String> table) {
         table.put("That settings file is damaged or only partly downloaded. Nothing was changed.",
                 "Diese Einstellungsdatei ist besch\u00e4digt oder nur teilweise heruntergeladen. Es wurde nichts ge\u00e4ndert.");
         table.put("That settings file was written by a newer HushTumblr than this one. Nothing was changed.",
@@ -1033,6 +1045,9 @@ public final class L10nTranslations {
                 "R\u00fcckg\u00e4ngig ist nicht mehr m\u00f6glich, weil eine gespeicherte Einstellung ge\u00e4ndert wurde.");
         table.put("Undo import",
                 "Import r\u00fcckg\u00e4ngig machen");
+    }
+
+    private static void fillDe8(Map<String, String> table) {
         table.put("Undoing import",
                 "Import wird r\u00fcckg\u00e4ngig gemacht");
         table.put("Unmute post",
@@ -1045,9 +1060,6 @@ public final class L10nTranslations {
                 "Bis zum Fortsetzen verh\u00e4lt sich jeder Schalter au\u00dfer der Debug-Protokollierung, als w\u00e4re er aus. Was beim Patchen festgelegt wurde, bleibt aktiv.");
         table.put("Update instructions",
                 "Anleitung zum Aktualisieren");
-    }
-
-    private static void fillDe8(Map<String, String> table) {
         table.put("Updates",
                 "Updates");
         table.put("Updating muted posts",
@@ -1121,7 +1133,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildEs() {
-        Map<String, String> table = new HashMap<>(1030);
+        Map<String, String> table = new HashMap<>(1042);
         fillEs0(table);
         fillEs1(table);
         fillEs2(table);
@@ -1153,6 +1165,8 @@ public final class L10nTranslations {
                 "%1$s ya est\u00e1 en primer lugar.");
         table.put("%1$s moved to position %2$d of %3$d.",
                 "%1$s se movi\u00f3 a la posici\u00f3n %2$d de %3$d.");
+        table.put("%1$s of your phone's text size. Tap to change.",
+                "%1$s del tama\u00f1o de texto de tu tel\u00e9fono. Toca para cambiarlo.");
         table.put("%1$s. It was set when you patched, so Pause can't turn it off. To rule it out, patch again and leave out that patch.",
                 "%1$s. Este cambio se aplic\u00f3 al parchear, as\u00ed que Pausar no puede desactivarlo. Para descartarlo, vuelve a parchear sin ese parche.");
         table.put("%1$s. Tap to change.",
@@ -1253,11 +1267,11 @@ public final class L10nTranslations {
                 "Elige d\u00f3nde se abren los enlaces de Tumblr");
         table.put("Clear diagnostic data",
                 "Borrar datos de diagn\u00f3stico");
-        table.put("Clear muted posts",
-                "Vaciar publicaciones silenciadas");
     }
 
     private static void fillEs1(Map<String, String> table) {
+        table.put("Clear muted posts",
+                "Vaciar publicaciones silenciadas");
         table.put("Clear search",
                 "Borrar b\u00fasqueda");
         table.put("Clear the example",
@@ -1320,6 +1334,8 @@ public final class L10nTranslations {
                 "No se pudo guardar la b\u00fasqueda de nuevas versiones. Int\u00e9ntalo de nuevo.");
         table.put("Couldn't save the settings file. Try again.",
                 "No se pudo guardar el archivo de configuraci\u00f3n. Int\u00e9ntalo de nuevo.");
+        table.put("Couldn't save the size. Try again.",
+                "No se pudo guardar el tama\u00f1o. Int\u00e9ntalo de nuevo.");
         table.put("Couldn't save the tab order. Your earlier order is unchanged. Try again.",
                 "No se pudo guardar el orden de las pesta\u00f1as. El orden anterior no ha cambiado. Int\u00e9ntalo de nuevo.");
         table.put("Couldn't save the video",
@@ -1374,13 +1390,13 @@ public final class L10nTranslations {
                 "Dibuja una l\u00ednea fina en el espacio entre publicaciones, para ver mejor d\u00f3nde termina una y empieza la siguiente.");
         table.put("Every switch but Debug logging acts as if it were off, and what was set when you patched stays in. Your settings stay as they are.",
                 "Todos los interruptores, salvo el Registro de depuraci\u00f3n, funcionan como si estuvieran desactivados, y lo que se aplic\u00f3 al parchear se mantiene. Tu configuraci\u00f3n no cambia.");
+    }
+
+    private static void fillEs2(Map<String, String> table) {
         table.put("Every switch here applies to all the accounts in this Tumblr app, not only the one you have open.",
                 "Cada interruptor de aqu\u00ed se aplica a todas las cuentas de esta app de Tumblr, no solo a la que tienes abierta.");
         table.put("Explore",
                 "Explorar");
-    }
-
-    private static void fillEs2(Map<String, String> table) {
         table.put("Explore's sponsored header",
                 "el encabezado patrocinado de Explorar");
         table.put("Export diagnostic report",
@@ -1497,13 +1513,13 @@ public final class L10nTranslations {
                 "Ocultar la pesta\u00f1a Explorar");
         table.put("Hide the Follow button",
                 "Ocultar el bot\u00f3n Seguir");
+    }
+
+    private static void fillEs3(Map<String, String> table) {
         table.put("Hide the Notifications count",
                 "Ocultar el contador de Notificaciones");
         table.put("Hide the Notifications tab",
                 "Ocultar la pesta\u00f1a Notificaciones");
-    }
-
-    private static void fillEs3(Map<String, String> table) {
         table.put("Hide the Save button",
                 "Ocultar el bot\u00f3n Guardar");
         table.put("Hide the ad-free banner",
@@ -1620,13 +1636,15 @@ public final class L10nTranslations {
                 "Mant\u00e9n pulsado un video en una publicaci\u00f3n para compartir o copiar su enlace, o guardarlo.");
         table.put("Looks for: %1$s",
                 "Busca: %1$s");
-        table.put("Make Tumblr feel like yours.",
-                "Haz que Tumblr sea m\u00e1s tuyo.");
-        table.put("Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.",
-                "Pone en negro las nuevas pantallas del modo oscuro, o usa el color oscuro elegido al aplicar los parches. Las pantallas abiertas conservan sus colores hasta que reinicies Tumblr.");
     }
 
     private static void fillEs4(Map<String, String> table) {
+        table.put("Make Tumblr feel like yours.",
+                "Haz que Tumblr sea m\u00e1s tuyo.");
+        table.put("Makes Tumblr's text bigger or smaller than your phone's font size makes it. Pick how big below.",
+                "Hace el texto de Tumblr m\u00e1s grande o m\u00e1s peque\u00f1o que el tama\u00f1o de fuente de tu tel\u00e9fono. Elige el tama\u00f1o abajo.");
+        table.put("Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.",
+                "Pone en negro las nuevas pantallas del modo oscuro, o usa el color oscuro elegido al aplicar los parches. Las pantallas abiertas conservan sus colores hasta que reinicies Tumblr.");
         table.put("Manage muted posts",
                 "Gestionar publicaciones silenciadas");
         table.put("Marks blogs that follow your primary blog when you follow them.",
@@ -1741,15 +1759,15 @@ public final class L10nTranslations {
                 "Devuelve cada interruptor de funci\u00f3n a como estaba al principio.");
         table.put("Puts the bottom bar's tabs in the order set below.",
                 "Pone las pesta\u00f1as de la barra inferior en el orden elegido abajo.");
+    }
+
+    private static void fillEs5(Map<String, String> table) {
         table.put("Putting diagnostic data back",
                 "Restaurando datos de diagn\u00f3stico");
         table.put("Quick setups",
                 "Configuraci\u00f3n r\u00e1pida");
         table.put("Quick setups hidden. Bring it back from %1$s.",
                 "Configuraci\u00f3n r\u00e1pida oculta. Vuelve a mostrarla desde %1$s.");
-    }
-
-    private static void fillEs5(Map<String, String> table) {
         table.put("Quick setups on the home page",
                 "Configuraci\u00f3n r\u00e1pida en la p\u00e1gina de inicio");
         table.put("Quiet",
@@ -1864,15 +1882,17 @@ public final class L10nTranslations {
                 "Muestra completos los videos verticales al abrirlos a pantalla completa, sin recortar los lados.");
         table.put("Sign in to your existing account",
                 "Inicia sesi\u00f3n en tu cuenta actual");
+    }
+
+    private static void fillEs6(Map<String, String> table) {
+        table.put("Size",
+                "Tama\u00f1o");
         table.put("Skip review prompts",
                 "Omitir solicitudes de rese\u00f1a");
         table.put("Source code and issues",
                 "C\u00f3digo fuente e incidencias");
         table.put("Split tags with commas",
                 "Separa las etiquetas con comas");
-    }
-
-    private static void fillEs6(Map<String, String> table) {
         table.put("Spoof signature for Google sign-in",
                 "Falsear la firma para iniciar sesi\u00f3n con Google");
         table.put("Status",
@@ -1979,8 +1999,15 @@ public final class L10nTranslations {
                 "Al tocar una etiqueta debajo de una publicaci\u00f3n se buscan las publicaciones de ese blog con esa etiqueta, en el panel, en otros feeds y en una publicaci\u00f3n abierta por s\u00ed sola.");
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
                 "Le dice a Android que esta es la app original de Tumblr, para que el inicio de sesi\u00f3n con Google pueda funcionar con microG-RE o el m\u00f3dulo XSpoofSignatures. Google Play Services normal lo ignora. Esto se defini\u00f3 al parchear. Vuelve a parchear sin \u00e9l para quitarlo.");
+        table.put("Text size",
+                "Tama\u00f1o del texto");
+        table.put("Text size percentage",
+                "Porcentaje del tama\u00f1o del texto");
         table.put("That file is too big to be a font.",
                 "Ese archivo es demasiado grande para ser una fuente.");
+    }
+
+    private static void fillEs7(Map<String, String> table) {
         table.put("That file is too large to be a settings file. Nothing was changed.",
                 "Ese archivo es demasiado grande para ser un archivo de configuraci\u00f3n. No se cambi\u00f3 nada.");
         table.put("That file isn't readable text, so it may have been damaged on the way. Nothing was changed.",
@@ -1993,9 +2020,6 @@ public final class L10nTranslations {
                 "Eso no es un archivo de fuente. No cambi\u00f3 nada.");
         table.put("That settings file holds a value HushTumblr can't read. Nothing was changed.",
                 "Ese archivo de configuraci\u00f3n contiene un valor que HushTumblr no puede leer. No se cambi\u00f3 nada.");
-    }
-
-    private static void fillEs7(Map<String, String> table) {
         table.put("That settings file is damaged or only partly downloaded. Nothing was changed.",
                 "Ese archivo de configuraci\u00f3n est\u00e1 da\u00f1ado o solo se descarg\u00f3 en parte. No se cambi\u00f3 nada.");
         table.put("That settings file was written by a newer HushTumblr than this one. Nothing was changed.",
@@ -2104,6 +2128,9 @@ public final class L10nTranslations {
                 "Ya no se puede deshacer porque cambi\u00f3 un ajuste guardado.");
         table.put("Undo import",
                 "Deshacer importaci\u00f3n");
+    }
+
+    private static void fillEs8(Map<String, String> table) {
         table.put("Undoing import",
                 "Deshaciendo importaci\u00f3n");
         table.put("Unmute post",
@@ -2116,9 +2143,6 @@ public final class L10nTranslations {
                 "Hasta que reanudes, todos los interruptores, salvo el Registro de depuraci\u00f3n, funcionan como si estuvieran desactivados. Lo que se aplic\u00f3 al parchear se mantiene.");
         table.put("Update instructions",
                 "Instrucciones de actualizaci\u00f3n");
-    }
-
-    private static void fillEs8(Map<String, String> table) {
         table.put("Updates",
                 "Actualizaciones");
         table.put("Updating muted posts",
@@ -2192,7 +2216,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildIn() {
-        Map<String, String> table = new HashMap<>(1030);
+        Map<String, String> table = new HashMap<>(1042);
         fillIn0(table);
         fillIn1(table);
         fillIn2(table);
@@ -2224,6 +2248,8 @@ public final class L10nTranslations {
                 "%1$s sudah berada di urutan pertama.");
         table.put("%1$s moved to position %2$d of %3$d.",
                 "%1$s dipindahkan ke posisi %2$d dari %3$d.");
+        table.put("%1$s of your phone's text size. Tap to change.",
+                "%1$s dari ukuran teks ponselmu. Ketuk untuk mengubah.");
         table.put("%1$s. It was set when you patched, so Pause can't turn it off. To rule it out, patch again and leave out that patch.",
                 "%1$s. Ini diatur saat Anda menambal, jadi Jeda tidak dapat mematikannya. Untuk memastikan bukan ini penyebabnya, tambal ulang tanpa tambalan yang tertera dalam kurung setelahnya.");
         table.put("%1$s. Tap to change.",
@@ -2324,11 +2350,11 @@ public final class L10nTranslations {
                 "Pilih tempat tautan Tumblr dibuka");
         table.put("Clear diagnostic data",
                 "Hapus data diagnostik");
-        table.put("Clear muted posts",
-                "Hapus postingan yang dibisukan");
     }
 
     private static void fillIn1(Map<String, String> table) {
+        table.put("Clear muted posts",
+                "Hapus postingan yang dibisukan");
         table.put("Clear search",
                 "Hapus pencarian");
         table.put("Clear the example",
@@ -2391,6 +2417,8 @@ public final class L10nTranslations {
                 "Pemeriksaan rilis tidak dapat disimpan. Coba lagi.");
         table.put("Couldn't save the settings file. Try again.",
                 "File pengaturan tidak dapat disimpan. Coba lagi.");
+        table.put("Couldn't save the size. Try again.",
+                "Tidak dapat menyimpan ukuran. Coba lagi.");
         table.put("Couldn't save the tab order. Your earlier order is unchanged. Try again.",
                 "Urutan tab tidak dapat disimpan. Urutan sebelumnya tidak berubah. Coba lagi.");
         table.put("Couldn't save the video",
@@ -2445,13 +2473,13 @@ public final class L10nTranslations {
                 "Menggambar garis tipis di celah antar postingan, sehingga lebih mudah melihat di mana satu postingan berakhir dan berikutnya dimulai.");
         table.put("Every switch but Debug logging acts as if it were off, and what was set when you patched stays in. Your settings stay as they are.",
                 "Semua sakelar kecuali Pencatatan debug dianggap nonaktif, dan yang diatur saat Anda menambal tetap aktif. Pengaturan Anda tetap seperti semula.");
+    }
+
+    private static void fillIn2(Map<String, String> table) {
         table.put("Every switch here applies to all the accounts in this Tumblr app, not only the one you have open.",
                 "Setiap sakelar di sini berlaku untuk semua akun di aplikasi Tumblr ini, bukan hanya akun yang sedang Anda buka.");
         table.put("Explore",
                 "Jelajahi");
-    }
-
-    private static void fillIn2(Map<String, String> table) {
         table.put("Explore's sponsored header",
                 "header bersponsor di Jelajahi");
         table.put("Export diagnostic report",
@@ -2568,13 +2596,13 @@ public final class L10nTranslations {
                 "Sembunyikan tab Jelajahi");
         table.put("Hide the Follow button",
                 "Sembunyikan tombol Ikuti");
+    }
+
+    private static void fillIn3(Map<String, String> table) {
         table.put("Hide the Notifications count",
                 "Sembunyikan hitungan Notifikasi");
         table.put("Hide the Notifications tab",
                 "Sembunyikan tab Notifikasi");
-    }
-
-    private static void fillIn3(Map<String, String> table) {
         table.put("Hide the Save button",
                 "Sembunyikan tombol simpan");
         table.put("Hide the ad-free banner",
@@ -2691,13 +2719,15 @@ public final class L10nTranslations {
                 "Tekan lama video di postingan untuk membagikan atau menyalin tautannya, atau menyimpannya.");
         table.put("Looks for: %1$s",
                 "Mencari: %1$s");
-        table.put("Make Tumblr feel like yours.",
-                "Buat Tumblr sesuai keinginanmu.");
-        table.put("Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.",
-                "Membuat layar Mode Gelap yang baru dibuka berwarna hitam, atau warna gelap yang dipilih saat memasang patch. Layar yang terbuka mempertahankan warnanya sampai Tumblr dimulai ulang.");
     }
 
     private static void fillIn4(Map<String, String> table) {
+        table.put("Make Tumblr feel like yours.",
+                "Buat Tumblr sesuai keinginanmu.");
+        table.put("Makes Tumblr's text bigger or smaller than your phone's font size makes it. Pick how big below.",
+                "Membuat teks Tumblr lebih besar atau lebih kecil dari ukuran font ponselmu. Pilih ukurannya di bawah.");
+        table.put("Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.",
+                "Membuat layar Mode Gelap yang baru dibuka berwarna hitam, atau warna gelap yang dipilih saat memasang patch. Layar yang terbuka mempertahankan warnanya sampai Tumblr dimulai ulang.");
         table.put("Manage muted posts",
                 "Kelola postingan yang dibisukan");
         table.put("Marks blogs that follow your primary blog when you follow them.",
@@ -2812,15 +2842,15 @@ public final class L10nTranslations {
                 "Mengembalikan setiap sakelar fitur seperti semula.");
         table.put("Puts the bottom bar's tabs in the order set below.",
                 "Menyusun tab di bilah bawah sesuai urutan yang diatur di bawah.");
+    }
+
+    private static void fillIn5(Map<String, String> table) {
         table.put("Putting diagnostic data back",
                 "Memulihkan data diagnostik");
         table.put("Quick setups",
                 "Penyiapan cepat");
         table.put("Quick setups hidden. Bring it back from %1$s.",
                 "Penyiapan cepat disembunyikan. Tampilkan lagi dari %1$s.");
-    }
-
-    private static void fillIn5(Map<String, String> table) {
         table.put("Quick setups on the home page",
                 "Penyiapan cepat di beranda");
         table.put("Quiet",
@@ -2935,15 +2965,17 @@ public final class L10nTranslations {
                 "Menampilkan video tinggi secara utuh saat dibuka di layar penuh, tanpa memotong sisinya.");
         table.put("Sign in to your existing account",
                 "Masuk ke akun yang sudah ada");
+    }
+
+    private static void fillIn6(Map<String, String> table) {
+        table.put("Size",
+                "Ukuran");
         table.put("Skip review prompts",
                 "Lewati permintaan ulasan");
         table.put("Source code and issues",
                 "Kode sumber dan laporan masalah");
         table.put("Split tags with commas",
                 "Pisahkan tag dengan koma");
-    }
-
-    private static void fillIn6(Map<String, String> table) {
         table.put("Spoof signature for Google sign-in",
                 "Palsukan tanda tangan untuk login Google");
         table.put("Status",
@@ -3050,8 +3082,15 @@ public final class L10nTranslations {
                 "Mengetuk tag di bawah postingan akan mencari postingan blog itu dengan tag tersebut, di dasbor, feed lainnya, dan postingan yang dibuka tersendiri.");
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
                 "Memberi tahu Android bahwa ini Tumblr asli, agar masuk dengan Google bisa berfungsi dengan microG-RE atau modul XSpoofSignatures. Google Play services biasa mengabaikannya. Ini diatur saat Anda menambal. Tambal ulang tanpanya untuk menghapusnya.");
+        table.put("Text size",
+                "Ukuran teks");
+        table.put("Text size percentage",
+                "Persentase ukuran teks");
         table.put("That file is too big to be a font.",
                 "File itu terlalu besar untuk sebuah font.");
+    }
+
+    private static void fillIn7(Map<String, String> table) {
         table.put("That file is too large to be a settings file. Nothing was changed.",
                 "File itu terlalu besar untuk sebuah file pengaturan. Tidak ada yang diubah.");
         table.put("That file isn't readable text, so it may have been damaged on the way. Nothing was changed.",
@@ -3064,9 +3103,6 @@ public final class L10nTranslations {
                 "Itu bukan file font. Tidak ada yang berubah.");
         table.put("That settings file holds a value HushTumblr can't read. Nothing was changed.",
                 "File pengaturan itu memuat nilai yang tidak dapat dibaca HushTumblr. Tidak ada yang diubah.");
-    }
-
-    private static void fillIn7(Map<String, String> table) {
         table.put("That settings file is damaged or only partly downloaded. Nothing was changed.",
                 "File pengaturan itu rusak atau hanya terunduh sebagian. Tidak ada yang diubah.");
         table.put("That settings file was written by a newer HushTumblr than this one. Nothing was changed.",
@@ -3175,6 +3211,9 @@ public final class L10nTranslations {
                 "Urungkan tidak lagi tersedia karena pengaturan tersimpan berubah.");
         table.put("Undo import",
                 "Urungkan impor");
+    }
+
+    private static void fillIn8(Map<String, String> table) {
         table.put("Undoing import",
                 "Mengurungkan impor");
         table.put("Unmute post",
@@ -3187,9 +3226,6 @@ public final class L10nTranslations {
                 "Sampai Anda melanjutkan, semua sakelar kecuali Pencatatan debug dianggap nonaktif. Yang diatur saat Anda menambal tetap aktif.");
         table.put("Update instructions",
                 "Petunjuk pembaruan");
-    }
-
-    private static void fillIn8(Map<String, String> table) {
         table.put("Updates",
                 "Pembaruan");
         table.put("Updating muted posts",
@@ -3263,7 +3299,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildPt_rBR() {
-        Map<String, String> table = new HashMap<>(1030);
+        Map<String, String> table = new HashMap<>(1042);
         fillPt_rBR0(table);
         fillPt_rBR1(table);
         fillPt_rBR2(table);
@@ -3295,6 +3331,8 @@ public final class L10nTranslations {
                 "%1$s j\u00e1 est\u00e1 em primeiro lugar.");
         table.put("%1$s moved to position %2$d of %3$d.",
                 "%1$s foi movida para a posi\u00e7\u00e3o %2$d de %3$d.");
+        table.put("%1$s of your phone's text size. Tap to change.",
+                "%1$s do tamanho de texto do seu celular. Toque para mudar.");
         table.put("%1$s. It was set when you patched, so Pause can't turn it off. To rule it out, patch again and leave out that patch.",
                 "%1$s. Isso foi definido quando voc\u00ea aplicou os patches, ent\u00e3o a pausa n\u00e3o pode desativ\u00e1-lo. Para descartar essa possibilidade, aplique os patches novamente sem esse patch.");
         table.put("%1$s. Tap to change.",
@@ -3395,11 +3433,11 @@ public final class L10nTranslations {
                 "Escolha onde os links do Tumblr abrem");
         table.put("Clear diagnostic data",
                 "Limpar dados de diagn\u00f3stico");
-        table.put("Clear muted posts",
-                "Limpar posts silenciados");
     }
 
     private static void fillPt_rBR1(Map<String, String> table) {
+        table.put("Clear muted posts",
+                "Limpar posts silenciados");
         table.put("Clear search",
                 "Limpar busca");
         table.put("Clear the example",
@@ -3462,6 +3500,8 @@ public final class L10nTranslations {
                 "N\u00e3o foi poss\u00edvel salvar a verifica\u00e7\u00e3o de novas vers\u00f5es. Tente de novo.");
         table.put("Couldn't save the settings file. Try again.",
                 "N\u00e3o foi poss\u00edvel salvar o arquivo de configura\u00e7\u00f5es. Tente de novo.");
+        table.put("Couldn't save the size. Try again.",
+                "N\u00e3o foi poss\u00edvel salvar o tamanho. Tente de novo.");
         table.put("Couldn't save the tab order. Your earlier order is unchanged. Try again.",
                 "N\u00e3o foi poss\u00edvel salvar a ordem das abas. A ordem anterior n\u00e3o foi alterada. Tente novamente.");
         table.put("Couldn't save the video",
@@ -3516,13 +3556,13 @@ public final class L10nTranslations {
                 "Desenha uma linha fina no espa\u00e7o entre os posts, para ficar mais f\u00e1cil ver onde um termina e o pr\u00f3ximo come\u00e7a.");
         table.put("Every switch but Debug logging acts as if it were off, and what was set when you patched stays in. Your settings stay as they are.",
                 "Todas as op\u00e7\u00f5es, exceto Registro de depura\u00e7\u00e3o, funcionam como se estivessem desativadas, e o que foi definido ao aplicar os patches permanece ativo. Suas configura\u00e7\u00f5es n\u00e3o s\u00e3o alteradas.");
+    }
+
+    private static void fillPt_rBR2(Map<String, String> table) {
         table.put("Every switch here applies to all the accounts in this Tumblr app, not only the one you have open.",
                 "Cada op\u00e7\u00e3o aqui vale para todas as contas deste app do Tumblr, n\u00e3o s\u00f3 para a que est\u00e1 aberta.");
         table.put("Explore",
                 "Explorar");
-    }
-
-    private static void fillPt_rBR2(Map<String, String> table) {
         table.put("Explore's sponsored header",
                 "o cabe\u00e7alho patrocinado do Explorar");
         table.put("Export diagnostic report",
@@ -3639,13 +3679,13 @@ public final class L10nTranslations {
                 "Ocultar a aba Explorar");
         table.put("Hide the Follow button",
                 "Ocultar o bot\u00e3o Seguir");
+    }
+
+    private static void fillPt_rBR3(Map<String, String> table) {
         table.put("Hide the Notifications count",
                 "Ocultar a contagem de Notifica\u00e7\u00f5es");
         table.put("Hide the Notifications tab",
                 "Ocultar a aba Notifica\u00e7\u00f5es");
-    }
-
-    private static void fillPt_rBR3(Map<String, String> table) {
         table.put("Hide the Save button",
                 "Ocultar o bot\u00e3o de salvar");
         table.put("Hide the ad-free banner",
@@ -3762,13 +3802,15 @@ public final class L10nTranslations {
                 "Toque e segure um v\u00eddeo em uma publica\u00e7\u00e3o para compartilhar ou copiar o link, ou salv\u00e1-lo.");
         table.put("Looks for: %1$s",
                 "Procura: %1$s");
-        table.put("Make Tumblr feel like yours.",
-                "Deixe o Tumblr com a sua cara.");
-        table.put("Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.",
-                "Deixa as novas telas do modo escuro pretas ou com a cor escura escolhida ao aplicar os patches. As telas abertas mant\u00eam suas cores at\u00e9 o Tumblr reiniciar.");
     }
 
     private static void fillPt_rBR4(Map<String, String> table) {
+        table.put("Make Tumblr feel like yours.",
+                "Deixe o Tumblr com a sua cara.");
+        table.put("Makes Tumblr's text bigger or smaller than your phone's font size makes it. Pick how big below.",
+                "Deixa o texto do Tumblr maior ou menor do que o tamanho de fonte do seu celular. Escolha o tamanho abaixo.");
+        table.put("Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.",
+                "Deixa as novas telas do modo escuro pretas ou com a cor escura escolhida ao aplicar os patches. As telas abertas mant\u00eam suas cores at\u00e9 o Tumblr reiniciar.");
         table.put("Manage muted posts",
                 "Gerenciar posts silenciados");
         table.put("Marks blogs that follow your primary blog when you follow them.",
@@ -3883,15 +3925,15 @@ public final class L10nTranslations {
                 "Volta cada op\u00e7\u00e3o de recurso ao estado inicial.");
         table.put("Puts the bottom bar's tabs in the order set below.",
                 "Coloca as abas da barra de baixo na ordem escolhida abaixo.");
+    }
+
+    private static void fillPt_rBR5(Map<String, String> table) {
         table.put("Putting diagnostic data back",
                 "Restaurando dados de diagn\u00f3stico");
         table.put("Quick setups",
                 "Configura\u00e7\u00f5es r\u00e1pidas");
         table.put("Quick setups hidden. Bring it back from %1$s.",
                 "Configura\u00e7\u00f5es r\u00e1pidas ocultas. Traga de volta em %1$s.");
-    }
-
-    private static void fillPt_rBR5(Map<String, String> table) {
         table.put("Quick setups on the home page",
                 "Configura\u00e7\u00f5es r\u00e1pidas na p\u00e1gina inicial");
         table.put("Quiet",
@@ -4006,15 +4048,17 @@ public final class L10nTranslations {
                 "Mostra v\u00eddeos verticais inteiros ao abrir em tela cheia, sem cortar as laterais.");
         table.put("Sign in to your existing account",
                 "Entre na sua conta existente");
+    }
+
+    private static void fillPt_rBR6(Map<String, String> table) {
+        table.put("Size",
+                "Tamanho");
         table.put("Skip review prompts",
                 "Pular pedidos de avalia\u00e7\u00e3o");
         table.put("Source code and issues",
                 "C\u00f3digo-fonte e relatos de problemas");
         table.put("Split tags with commas",
                 "Separe as tags com v\u00edrgulas");
-    }
-
-    private static void fillPt_rBR6(Map<String, String> table) {
         table.put("Spoof signature for Google sign-in",
                 "Falsificar assinatura para login com Google");
         table.put("Status",
@@ -4121,8 +4165,15 @@ public final class L10nTranslations {
                 "Tocar numa tag embaixo de um post busca os posts daquele blog com a tag, no painel, em outros feeds e num post aberto sozinho.");
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
                 "Diz ao Android que este \u00e9 o Tumblr original, para que o login com Google possa funcionar com o microG-RE ou o m\u00f3dulo XSpoofSignatures. O Google Play Services normal o ignora. Isso foi definido ao aplicar os patches. Aplique de novo sem ele para remov\u00ea-lo.");
+        table.put("Text size",
+                "Tamanho do texto");
+        table.put("Text size percentage",
+                "Porcentagem do tamanho do texto");
         table.put("That file is too big to be a font.",
                 "Esse arquivo \u00e9 grande demais para ser uma fonte.");
+    }
+
+    private static void fillPt_rBR7(Map<String, String> table) {
         table.put("That file is too large to be a settings file. Nothing was changed.",
                 "Esse arquivo \u00e9 grande demais para ser um arquivo de configura\u00e7\u00f5es. Nada foi alterado.");
         table.put("That file isn't readable text, so it may have been damaged on the way. Nothing was changed.",
@@ -4135,9 +4186,6 @@ public final class L10nTranslations {
                 "Isso n\u00e3o \u00e9 um arquivo de fonte. Nada mudou.");
         table.put("That settings file holds a value HushTumblr can't read. Nothing was changed.",
                 "Esse arquivo de configura\u00e7\u00f5es tem um valor que o HushTumblr n\u00e3o consegue ler. Nada foi alterado.");
-    }
-
-    private static void fillPt_rBR7(Map<String, String> table) {
         table.put("That settings file is damaged or only partly downloaded. Nothing was changed.",
                 "Esse arquivo de configura\u00e7\u00f5es est\u00e1 corrompido ou foi baixado apenas parcialmente. Nada foi alterado.");
         table.put("That settings file was written by a newer HushTumblr than this one. Nothing was changed.",
@@ -4246,6 +4294,9 @@ public final class L10nTranslations {
                 "N\u00e3o \u00e9 mais poss\u00edvel desfazer porque uma configura\u00e7\u00e3o salva mudou.");
         table.put("Undo import",
                 "Desfazer importa\u00e7\u00e3o");
+    }
+
+    private static void fillPt_rBR8(Map<String, String> table) {
         table.put("Undoing import",
                 "Desfazendo importa\u00e7\u00e3o");
         table.put("Unmute post",
@@ -4258,9 +4309,6 @@ public final class L10nTranslations {
                 "At\u00e9 voc\u00ea retomar, todas as op\u00e7\u00f5es, menos o Registro de depura\u00e7\u00e3o, funcionam como se estivessem desligadas. O que foi definido ao aplicar os patches continua ativo.");
         table.put("Update instructions",
                 "Instru\u00e7\u00f5es de atualiza\u00e7\u00e3o");
-    }
-
-    private static void fillPt_rBR8(Map<String, String> table) {
         table.put("Updates",
                 "Atualiza\u00e7\u00f5es");
         table.put("Updating muted posts",
@@ -4334,7 +4382,7 @@ public final class L10nTranslations {
     }
 
     private static Map<String, String> buildTr() {
-        Map<String, String> table = new HashMap<>(1030);
+        Map<String, String> table = new HashMap<>(1042);
         fillTr0(table);
         fillTr1(table);
         fillTr2(table);
@@ -4366,6 +4414,8 @@ public final class L10nTranslations {
                 "%1$s zaten ilk s\u0131rada.");
         table.put("%1$s moved to position %2$d of %3$d.",
                 "%1$s, %3$d sekme i\u00e7inde %2$d. s\u0131raya ta\u015f\u0131nd\u0131.");
+        table.put("%1$s of your phone's text size. Tap to change.",
+                "Telefonunun metin boyutunun %1$s kadar\u0131. De\u011fi\u015ftirmek i\u00e7in dokun.");
         table.put("%1$s. It was set when you patched, so Pause can't turn it off. To rule it out, patch again and leave out that patch.",
                 "%1$s. Yamalad\u0131\u011f\u0131nda ayarland\u0131\u011f\u0131 i\u00e7in Duraklatma bunu kapatamaz. Bunu elemek i\u00e7in yeniden yamala ve o yamay\u0131 d\u0131\u015far\u0131da b\u0131rak.");
         table.put("%1$s. Tap to change.",
@@ -4466,11 +4516,11 @@ public final class L10nTranslations {
                 "Tumblr ba\u011flant\u0131lar\u0131n\u0131n nerede a\u00e7\u0131laca\u011f\u0131n\u0131 se\u00e7");
         table.put("Clear diagnostic data",
                 "Tan\u0131lama verilerini temizle");
-        table.put("Clear muted posts",
-                "Susturulan g\u00f6nderileri temizle");
     }
 
     private static void fillTr1(Map<String, String> table) {
+        table.put("Clear muted posts",
+                "Susturulan g\u00f6nderileri temizle");
         table.put("Clear search",
                 "Aramay\u0131 temizle");
         table.put("Clear the example",
@@ -4533,6 +4583,8 @@ public final class L10nTranslations {
                 "S\u00fcr\u00fcm denetimi kaydedilemedi. Tekrar dene.");
         table.put("Couldn't save the settings file. Try again.",
                 "Ayar dosyas\u0131 kaydedilemedi. Tekrar dene.");
+        table.put("Couldn't save the size. Try again.",
+                "Boyut kaydedilemedi. Tekrar dene.");
         table.put("Couldn't save the tab order. Your earlier order is unchanged. Try again.",
                 "Sekme s\u0131ras\u0131 kaydedilemedi. \u00d6nceki s\u0131ra de\u011fi\u015fmedi. Tekrar deneyin.");
         table.put("Couldn't save the video",
@@ -4587,13 +4639,13 @@ public final class L10nTranslations {
                 "G\u00f6nderiler aras\u0131ndaki bo\u015flu\u011fa ince bir \u00e7izgi \u00e7izer, b\u00f6ylece birinin nerede bitip di\u011ferinin nerede ba\u015flad\u0131\u011f\u0131 daha kolay g\u00f6r\u00fcl\u00fcr.");
         table.put("Every switch but Debug logging acts as if it were off, and what was set when you patched stays in. Your settings stay as they are.",
                 "Hata ay\u0131klama g\u00fcnl\u00fc\u011f\u00fc d\u0131\u015f\u0131ndaki her anahtar kapal\u0131ym\u0131\u015f gibi davran\u0131r, yamalad\u0131\u011f\u0131nda ayarlananlar ise devrede kal\u0131r. Ayarlar\u0131n oldu\u011fu gibi kal\u0131r.");
+    }
+
+    private static void fillTr2(Map<String, String> table) {
         table.put("Every switch here applies to all the accounts in this Tumblr app, not only the one you have open.",
                 "Buradaki her anahtar yaln\u0131zca a\u00e7\u0131k olan hesap i\u00e7in de\u011fil, bu Tumblr uygulamas\u0131ndaki t\u00fcm hesaplar i\u00e7in ge\u00e7erlidir.");
         table.put("Explore",
                 "Ke\u015ffet");
-    }
-
-    private static void fillTr2(Map<String, String> table) {
         table.put("Explore's sponsored header",
                 "Ke\u015ffet'teki sponsorlu ba\u015fl\u0131k");
         table.put("Export diagnostic report",
@@ -4710,13 +4762,13 @@ public final class L10nTranslations {
                 "Ke\u015ffet sekmesini gizle");
         table.put("Hide the Follow button",
                 "Takip et d\u00fc\u011fmesini gizle");
+    }
+
+    private static void fillTr3(Map<String, String> table) {
         table.put("Hide the Notifications count",
                 "Bildirimler sayac\u0131n\u0131 gizle");
         table.put("Hide the Notifications tab",
                 "Bildirimler sekmesini gizle");
-    }
-
-    private static void fillTr3(Map<String, String> table) {
         table.put("Hide the Save button",
                 "Kaydet d\u00fc\u011fmesini gizle");
         table.put("Hide the ad-free banner",
@@ -4833,13 +4885,15 @@ public final class L10nTranslations {
                 "Ba\u011flant\u0131s\u0131n\u0131 payla\u015fmak, kopyalamak ya da videoyu kaydetmek i\u00e7in g\u00f6nderideki bir videoya uzun bas\u0131n.");
         table.put("Looks for: %1$s",
                 "Aranan: %1$s");
-        table.put("Make Tumblr feel like yours.",
-                "Tumblr sana g\u00f6re olsun.");
-        table.put("Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.",
-                "Yeni a\u00e7\u0131lan Karanl\u0131k Mod ekranlar\u0131n\u0131 siyah veya yama s\u0131ras\u0131nda se\u00e7ilen koyu renkte g\u00f6sterir. A\u00e7\u0131k ekranlar Tumblr yeniden ba\u015flat\u0131lana kadar renklerini korur.");
     }
 
     private static void fillTr4(Map<String, String> table) {
+        table.put("Make Tumblr feel like yours.",
+                "Tumblr sana g\u00f6re olsun.");
+        table.put("Makes Tumblr's text bigger or smaller than your phone's font size makes it. Pick how big below.",
+                "Tumblr'\u0131n metnini telefonunun yaz\u0131 tipi boyutundan daha b\u00fcy\u00fck ya da k\u00fc\u00e7\u00fck yapar. Boyutu a\u015fa\u011f\u0131dan se\u00e7.");
+        table.put("Makes newly opened Dark Mode screens black, or the dark color picked when patching. Open screens keep their colors until Tumblr restarts.",
+                "Yeni a\u00e7\u0131lan Karanl\u0131k Mod ekranlar\u0131n\u0131 siyah veya yama s\u0131ras\u0131nda se\u00e7ilen koyu renkte g\u00f6sterir. A\u00e7\u0131k ekranlar Tumblr yeniden ba\u015flat\u0131lana kadar renklerini korur.");
         table.put("Manage muted posts",
                 "Susturulan g\u00f6nderileri y\u00f6net");
         table.put("Marks blogs that follow your primary blog when you follow them.",
@@ -4954,15 +5008,15 @@ public final class L10nTranslations {
                 "Her \u00f6zellik anahtar\u0131n\u0131 ba\u015flang\u0131\u00e7taki h\u00e2line d\u00f6nd\u00fcr\u00fcr.");
         table.put("Puts the bottom bar's tabs in the order set below.",
                 "Alt \u00e7ubuktaki sekmeleri a\u015fa\u011f\u0131da se\u00e7ilen s\u0131raya koyar.");
+    }
+
+    private static void fillTr5(Map<String, String> table) {
         table.put("Putting diagnostic data back",
                 "Tan\u0131lama verileri geri y\u00fckleniyor");
         table.put("Quick setups",
                 "H\u0131zl\u0131 kurulumlar");
         table.put("Quick setups hidden. Bring it back from %1$s.",
                 "H\u0131zl\u0131 kurulumlar gizlendi. %1$s sayfas\u0131ndan geri getirebilirsin.");
-    }
-
-    private static void fillTr5(Map<String, String> table) {
         table.put("Quick setups on the home page",
                 "Ana sayfada h\u0131zl\u0131 kurulumlar");
         table.put("Quiet",
@@ -5077,15 +5131,17 @@ public final class L10nTranslations {
                 "Uzun videolar\u0131 tam ekranda a\u00e7t\u0131\u011f\u0131n\u0131zda kenarlar\u0131n\u0131 kesmeden b\u00fct\u00fcn olarak g\u00f6sterir.");
         table.put("Sign in to your existing account",
                 "Mevcut hesab\u0131n\u0131za giri\u015f yap\u0131n");
+    }
+
+    private static void fillTr6(Map<String, String> table) {
+        table.put("Size",
+                "Boyut");
         table.put("Skip review prompts",
                 "De\u011ferlendirme isteklerini atla");
         table.put("Source code and issues",
                 "Kaynak kodu ve sorunlar");
         table.put("Split tags with commas",
                 "Etiketleri virg\u00fclle ay\u0131r");
-    }
-
-    private static void fillTr6(Map<String, String> table) {
         table.put("Spoof signature for Google sign-in",
                 "Google ile oturum a\u00e7ma i\u00e7in imzay\u0131 taklit et");
         table.put("Status",
@@ -5192,8 +5248,15 @@ public final class L10nTranslations {
                 "Bir g\u00f6nderinin alt\u0131ndaki etikete dokunmak, o blogun g\u00f6nderilerinde etiketi arar. Panoda, di\u011fer ak\u0131\u015flarda ve tek ba\u015f\u0131na a\u00e7\u0131lan bir g\u00f6nderide \u00e7al\u0131\u015f\u0131r.");
         table.put("Tells Android this is the original Tumblr, so Google sign-in can work with microG-RE or the XSpoofSignatures module. Stock Google Play services ignores it. This was set when you patched. Patch again without it to take it out.",
                 "Android'e bunun orijinal Tumblr oldu\u011funu s\u00f6yler; b\u00f6ylece Google ile giri\u015f microG-RE veya XSpoofSignatures mod\u00fcl\u00fcyle \u00e7al\u0131\u015fabilir. Normal Google Play hizmetleri bunu yok sayar. Bu, yamalarken ayarland\u0131. Kald\u0131rmak i\u00e7in bu yama olmadan yeniden yamala.");
+        table.put("Text size",
+                "Metin boyutu");
+        table.put("Text size percentage",
+                "Metin boyutu y\u00fczdesi");
         table.put("That file is too big to be a font.",
                 "Bu dosya yaz\u0131 tipi olamayacak kadar b\u00fcy\u00fck.");
+    }
+
+    private static void fillTr7(Map<String, String> table) {
         table.put("That file is too large to be a settings file. Nothing was changed.",
                 "Bu dosya bir ayar dosyas\u0131 olamayacak kadar b\u00fcy\u00fck. Hi\u00e7bir \u015fey de\u011fi\u015ftirilmedi.");
         table.put("That file isn't readable text, so it may have been damaged on the way. Nothing was changed.",
@@ -5206,9 +5269,6 @@ public final class L10nTranslations {
                 "Bu bir yaz\u0131 tipi dosyas\u0131 de\u011fil. Hi\u00e7bir \u015fey de\u011fi\u015fmedi.");
         table.put("That settings file holds a value HushTumblr can't read. Nothing was changed.",
                 "Bu ayar dosyas\u0131nda HushTumblr'\u0131n okuyamad\u0131\u011f\u0131 bir de\u011fer var. Hi\u00e7bir \u015fey de\u011fi\u015ftirilmedi.");
-    }
-
-    private static void fillTr7(Map<String, String> table) {
         table.put("That settings file is damaged or only partly downloaded. Nothing was changed.",
                 "Bu ayar dosyas\u0131 hasarl\u0131 ya da yaln\u0131zca bir k\u0131sm\u0131 indirilmi\u015f. Hi\u00e7bir \u015fey de\u011fi\u015ftirilmedi.");
         table.put("That settings file was written by a newer HushTumblr than this one. Nothing was changed.",
@@ -5317,6 +5377,9 @@ public final class L10nTranslations {
                 "Kay\u0131tl\u0131 bir ayar de\u011fi\u015fti\u011fi i\u00e7in geri alma sona erdi.");
         table.put("Undo import",
                 "\u0130\u00e7e aktarmay\u0131 geri al");
+    }
+
+    private static void fillTr8(Map<String, String> table) {
         table.put("Undoing import",
                 "\u0130\u00e7e aktarma geri al\u0131n\u0131yor");
         table.put("Unmute post",
@@ -5329,9 +5392,6 @@ public final class L10nTranslations {
                 "Devam ettirene kadar Hata ay\u0131klama g\u00fcnl\u00fc\u011f\u00fc d\u0131\u015f\u0131ndaki her anahtar kapal\u0131ym\u0131\u015f gibi davran\u0131r. Yamalad\u0131\u011f\u0131nda ayarlananlar devrede kal\u0131r.");
         table.put("Update instructions",
                 "G\u00fcncelleme talimatlar\u0131");
-    }
-
-    private static void fillTr8(Map<String, String> table) {
         table.put("Updates",
                 "G\u00fcncellemeler");
         table.put("Updating muted posts",

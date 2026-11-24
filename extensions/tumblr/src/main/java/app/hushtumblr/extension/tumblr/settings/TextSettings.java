@@ -55,4 +55,13 @@ public final class TextSettings {
      * itself can't travel in one, and an imported switch on the next phone means the phone's font.
      */
     public static final StringSetting APP_FONT_FILE = new StringSetting("hushtumblr_app_font_file", "", true);
+
+    /**
+     * How big {@link Settings#TEXT_SIZE} makes Tumblr's text, as a percentage of the phone's font size:
+     * one of {@link #TEXT_SIZES}. A change waits for a restart while the switch is on.
+     */
+    public static final StringSetting TEXT_SIZE_PERCENT = new StringSetting("hushtumblr_text_size_percent", "115", true);
+    /** The sizes its row offers, smallest first. 100% is the switch off. */
+    public static final List<String> TEXT_SIZES = Collections.unmodifiableList(Arrays.asList(
+            "85", "90", "110", "115", "120", "130"));
 }

@@ -102,6 +102,7 @@ import app.hushtumblr.extension.tumblr.rootmute.RootPostMutePreference;
 import app.hushtumblr.extension.tumblr.timeline.PostRules;
 import app.hushtumblr.extension.tumblr.ui.AppFont;
 import app.hushtumblr.extension.tumblr.ui.BottomBarTabs;
+import app.hushtumblr.extension.tumblr.ui.TextSize;
 import app.hushtumblr.extension.shared.settings.StringSetting;
 
 /**
@@ -140,6 +141,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
     static final String TAB_ORDER_ROW = "action_tab_order";
     /** The Collapsed post length row's key. What it picked is {@link TextSettings#LONG_POST_SIZE}. */
     static final String LONG_POST_SIZE_ROW = "action_long_post_size";
+    /** The Text size row's key. What it picked is {@link TextSettings#TEXT_SIZE_PERCENT}. */
+    static final String TEXT_SIZE_ROW = "action_text_size";
     /** The Choose a font file row's key. What it chose is {@link TextSettings#APP_FONT_FILE}. */
     static final String FONT_FILE_ROW = "action_font_file";
     static final String PHONE_FONT_ROW = "action_phone_font";
@@ -580,6 +583,8 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
         if (tabs != null) tabs.setSummary(tabOrderSummary(TextSettings.TAB_ORDER.savedValue()));
         Preference size = findPreference(LONG_POST_SIZE_ROW);
         if (size != null) size.setSummary(longPostSizeSummary(TextSettings.LONG_POST_SIZE.savedValue()));
+        Preference textSize = findPreference(TEXT_SIZE_ROW);
+        if (textSize != null) textSize.setSummary(textSizeSummary(TextSettings.TEXT_SIZE_PERCENT.savedValue()));
         String font = TextSettings.APP_FONT_FILE.savedValue();
         Preference fontFile = findPreference(FONT_FILE_ROW);
         if (fontFile != null) fontFile.setSummary(fontFileSummary(font));
@@ -850,6 +855,10 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                 ui.addPreference(mark(fontFileRow(context), SettingsIcons.INTERFACE));
                 ui.addPreference(mark(phoneFontRow(context), SettingsIcons.INTERFACE));
             }
+            patchToggle(ui, context, build, PatchFamily.TEXT_SIZE, Settings.TEXT_SIZE, L10n.t("Text size"),
+                    L10n.t("Makes Tumblr's text bigger or smaller than your phone's font size makes it. Pick how big below."),
+                    SettingsIcons.INTERFACE);
+            if (build.contains(PatchFamily.TEXT_SIZE)) ui.addPreference(mark(textSizeRow(context), SettingsIcons.INTERFACE));
             // Read when a screen's theme is made (DarkBackground), so screens already open keep their colors.
             patchToggle(ui, context, build, PatchFamily.DARK_BACKGROUND, Settings.DARK_BACKGROUND,
                     L10n.t("Dark background color"), L10n.t("Makes newly opened Dark Mode screens black, or the dark "
@@ -1659,6 +1668,7 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
     static String restartKeyOf(@Nullable String rowKey) {
         if (rowKey == null) return null;
         if (FONT_FILE_ROW.equals(rowKey) || PHONE_FONT_ROW.equals(rowKey)) return TextSettings.APP_FONT_FILE.key;
+        if (TEXT_SIZE_ROW.equals(rowKey)) return TextSettings.TEXT_SIZE_PERCENT.key;
         return app.hushtumblr.extension.shared.settings.Setting.getSettingFromPath(rowKey) == null ? null : rowKey;
     }
 
@@ -1859,6 +1869,79 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
             if (!saved[0]) rowResult(LONG_POST_SIZE_ROW, L10n.t("Couldn't save the length. Try again."));
         })) {
             rowResult(LONG_POST_SIZE_ROW, L10n.t("Couldn't start that. Try again in a moment."));
+        }
+    }
+
+    /**
+     * The row that picks how big Text size makes Tumblr's text. A tap saves the next size at once,
+     * back to the smallest after the largest, and its summary names the one saved. While the
+     * switch is on, a new size waits for a restart, so every screen draws at one size.
+     */
+    private Preference textSizeRow(Context context) {
+        Row row = new Row(context);
+        row.actsAtOnce = true;
+        row.setKey(TEXT_SIZE_ROW);
+        row.setTitle(L10n.t("Size"));
+        row.setPersistent(false);
+        row.setSummary(textSizeSummary(TextSettings.TEXT_SIZE_PERCENT.savedValue()));
+        row.setOnPreferenceClickListener(p -> {
+            saveNextTextSize();
+            return true;
+        });
+        return row;
+    }
+
+    private static String textSizeSummary(String saved) {
+        return L10n.f("%1$s of your phone's text size. Tap to change.", textSizeShown(saved));
+    }
+
+    /** The size [saved] names as the phone writes a percentage. One its row never offers reads as the default. */
+    static String textSizeShown(String saved) {
+        String size = TextSettings.TEXT_SIZES.contains(saved) ? saved : TextSettings.TEXT_SIZE_PERCENT.defaultValue;
+        TextSize.Scale scale = TextSize.Scale.fromFile(size);
+        return scale == null ? size : scale.label();
+    }
+
+    /** The size after [saved], back to the smallest after the largest. One its row never offers reads as the default. */
+    static String nextTextSize(String saved) {
+        List<String> sizes = TextSettings.TEXT_SIZES;
+        int at = sizes.indexOf(saved);
+        if (at < 0) at = sizes.indexOf(TextSettings.TEXT_SIZE_PERCENT.defaultValue);
+        return sizes.get((at + 1) % sizes.size());
+    }
+
+    /**
+     * Saves the size after the saved one. The next size is read as the save runs, so taps in a row
+     * each move it on. With the switch on, the restart it waits for is said under the row.
+     */
+    private void saveNextTextSize() {
+        rowResult(TEXT_SIZE_ROW, null);
+        boolean[] saved = new boolean[1];
+        if (!submitEdit(() -> {
+            try {
+                synchronized (app.hushtumblr.extension.shared.settings.Setting.class) {
+                    String before = TextSettings.TEXT_SIZE_PERCENT.persistedValue();
+                    saved[0] = SettingsBackup.saveText(TextSettings.TEXT_SIZE_PERCENT,
+                            nextTextSize(TextSettings.TEXT_SIZE_PERCENT.savedValue()));
+                    if (saved[0] && Settings.TEXT_SIZE.savedValue()) {
+                        recordRestartPendingChanges(Collections.singletonMap(TextSettings.TEXT_SIZE_PERCENT, before));
+                    }
+                }
+            } catch (SettingsBackup.Rejected | RuntimeException failure) {
+                Logger.printInfo(() -> "Could not save the text size: " + failure.getClass().getSimpleName());
+            }
+        }, () -> {
+            if (!saved[0]) {
+                rowResult(TEXT_SIZE_ROW, L10n.t("Couldn't save the size. Try again."));
+                return;
+            }
+            if (!isAdded()) return;
+            if (restartPending.contains(TextSettings.TEXT_SIZE_PERCENT.key)) {
+                restartOwed(TEXT_SIZE_ROW, String.valueOf(restartMessage(getContext())));
+            }
+            onRestartPendingChanged();
+        })) {
+            rowResult(TEXT_SIZE_ROW, L10n.t("Couldn't start that. Try again in a moment."));
         }
     }
 

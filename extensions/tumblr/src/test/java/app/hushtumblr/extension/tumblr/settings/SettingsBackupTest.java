@@ -77,6 +77,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -255,6 +256,7 @@ public class SettingsBackupTest {
                 Settings.HIDE_GIFT_MESSAGE_POPUPS,
                 Settings.LINE_BETWEEN_POSTS,
                 Settings.APP_FONT,
+                Settings.TEXT_SIZE,
                 Settings.TURN_OFF_SCREENSHOT_SHARING,
                 Settings.DISABLE_UPDATE_PROMPTS,
                 Settings.HIDE_SUGGESTED_BLOGS,
@@ -552,6 +554,42 @@ public class SettingsBackupTest {
         assertFalse(snapshot.texts.containsKey(TextSettings.LONG_POST_SIZE));
         SettingsBackup.apply(snapshot);
         assertEquals("20", TextSettings.LONG_POST_SIZE.persistedValue());
+    }
+
+    /**
+     * #23: the text size goes out and comes back, reads in the preview as a percentage, and only a
+     * size its row offers imports.
+     */
+    @Test
+    public void theTextSizeGoesOutAndComesBackAndOnlyItsSizesImport() throws Exception {
+        Locale before = Locale.getDefault();
+        Locale.setDefault(Locale.US);
+        try {
+            TextSettings.TEXT_SIZE_PERCENT.save("130");
+            String file = SettingsBackup.create();
+            assertEquals("130", new JSONObject(file).getJSONObject("text").get(TextSettings.TEXT_SIZE_PERCENT.key));
+            TextSettings.TEXT_SIZE_PERCENT.save("85");
+            SettingsBackup.Snapshot snapshot = SettingsBackup.parse(file);
+            assertEquals(1, snapshot.switchChanges());
+            String preview = SettingsBackupPreference.previewMessage(snapshot);
+            assertTrue(preview, preview.contains(L10n.f("%1$s (%2$s to %3$s)", L10n.t("Text size percentage"), "85%", "130%")));
+            assertEquals(1, SettingsBackup.apply(snapshot));
+            assertEquals("130", TextSettings.TEXT_SIZE_PERCENT.persistedValue());
+            SettingsBackup.discardUndo();
+
+            for (Object never : new Object[]{"", "100", "95", " 115", "115%", 115, true, JSONObject.NULL}) {
+                JSONObject bad = new JSONObject(file);
+                bad.getJSONObject("text").put(TextSettings.TEXT_SIZE_PERCENT.key, never);
+                snapshot = SettingsBackup.parse(bad.toString());
+                assertEquals(String.valueOf(never), Collections.singletonList(TextSettings.TEXT_SIZE_PERCENT), snapshot.skipped);
+                SettingsBackup.apply(snapshot);
+                assertEquals("a size its row never offers was written", "130", TextSettings.TEXT_SIZE_PERCENT.persistedValue());
+                SettingsBackup.discardUndo();
+            }
+        } finally {
+            Locale.setDefault(before);
+            TextSettings.TEXT_SIZE_PERCENT.resetToDefault();
+        }
     }
 
     /**

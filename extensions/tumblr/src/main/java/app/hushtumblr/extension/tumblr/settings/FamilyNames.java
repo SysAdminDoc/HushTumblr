@@ -60,6 +60,7 @@ public final class FamilyNames {
     public static final String HIDE_SUGGESTED_TAGS = "Hide suggested tags";
     public static final String HIDE_WATCH_IT_ROWS = "Hide Watch it rows";
     public static final String HIDE_MORE_POSTS_LIKE_THIS = "Hide More posts like this";
+    public static final String TEXT_SIZE = "Text size";
     public static final String HIDE_FEATURED_POSTS = "Hide Featured posts";
     public static final String HIDE_HASHTAGS = "Hide hashtags";
     public static final String HIDE_FOLLOW_BUTTON = "Hide the Follow button";

@@ -45,7 +45,7 @@ Long-press the Tumblr logo at the top of your dashboard. You can also tap **Hush
 
 ## Patches
 
-There are 60 patches.
+There are 61 patches.
 
 | Patch | What it does |
 |---|---|
@@ -68,6 +68,7 @@ There are 60 patches.
 | `Hide gift purchase popups` | Hides the pop-up suggesting you buy a gift for a blog. You can still open gifting yourself. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `Line between posts` | Draws a thin line in the gap between posts, so it's easier to see where one ends and the next begins. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `App font` | Replaces Tumblr's own font with your phone's font, or a font file you choose in settings. Fonts a post's author picked stay as they are. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
+| `Text size` | Makes Tumblr's text bigger or smaller than your phone's font size, from 85% to 130%. Starts off. Turn it on and pick a size in Tumblr settings > HushTumblr > Interface. |
 | `Hide hashtags` | Takes the tags off the bottom of posts in your dashboard, other feeds and Tumblr TV, and keeps the source link. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |
 | `Hide liked posts` | Takes the posts you've already liked out of your dashboard as each page loads. Your likes and the rest of Tumblr still show them. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |
 | `Hide note counts` | Takes the like, reblog and comment counts off the footer under posts, community posts included, and the counts off a post's notes, from the top and its tabs to each comment's likes and replies. The buttons stay and still work. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts. |

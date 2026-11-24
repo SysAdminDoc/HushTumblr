@@ -253,6 +253,13 @@ Hide gift purchase popups	Ocultar pop-ups de compra de presentes
 Hides the pop-up suggesting you buy a gift for a blog. You can still open gifting yourself.	Oculta o pop-up que sugere comprar um presente para um blog. Você ainda pode abrir a opção de presentes por conta própria.
 Line between posts	Linha entre posts
 Draws a thin line in the gap between posts, so it's easier to see where one ends and the next begins.	Desenha uma linha fina no espaço entre os posts, para ficar mais fácil ver onde um termina e o próximo começa.
+# context: the Text size switch on the Interface page and the Size row under it, whose summary names a percentage of the phone's own text size, such as 115%.
+Text size	Tamanho do texto
+Makes Tumblr's text bigger or smaller than your phone's font size makes it. Pick how big below.	Deixa o texto do Tumblr maior ou menor do que o tamanho de fonte do seu celular. Escolha o tamanho abaixo.
+Size	Tamanho
+%1$s of your phone's text size. Tap to change.	%1$s do tamanho de texto do seu celular. Toque para mudar.
+Couldn't save the size. Try again.	Não foi possível salvar o tamanho. Tente de novo.
+Text size percentage	Porcentagem do tamanho do texto
 App font	Fonte do app
 Replaces Tumblr's own font with your phone's font, or a font file you choose below. Fonts a post's author picked stay as they are.	Troca a fonte própria do Tumblr pela fonte do seu celular ou por um arquivo de fonte que você escolher abaixo. As fontes que o autor de um post escolheu continuam como estão.
 Choose a font file	Escolher um arquivo de fonte

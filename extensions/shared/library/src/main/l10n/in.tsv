@@ -256,6 +256,13 @@ Hide gift purchase popups	Sembunyikan pop-up pembelian hadiah
 Hides the pop-up suggesting you buy a gift for a blog. You can still open gifting yourself.	Menyembunyikan pop-up yang menyarankan untuk membeli hadiah bagi sebuah blog. Anda tetap dapat membuka fitur hadiah sendiri.
 Line between posts	Garis antar postingan
 Draws a thin line in the gap between posts, so it's easier to see where one ends and the next begins.	Menggambar garis tipis di celah antar postingan, sehingga lebih mudah melihat di mana satu postingan berakhir dan berikutnya dimulai.
+# context: the Text size switch on the Interface page and the Size row under it, whose summary names a percentage of the phone's own text size, such as 115%.
+Text size	Ukuran teks
+Makes Tumblr's text bigger or smaller than your phone's font size makes it. Pick how big below.	Membuat teks Tumblr lebih besar atau lebih kecil dari ukuran font ponselmu. Pilih ukurannya di bawah.
+Size	Ukuran
+%1$s of your phone's text size. Tap to change.	%1$s dari ukuran teks ponselmu. Ketuk untuk mengubah.
+Couldn't save the size. Try again.	Tidak dapat menyimpan ukuran. Coba lagi.
+Text size percentage	Persentase ukuran teks
 App font	Font aplikasi
 Replaces Tumblr's own font with your phone's font, or a font file you choose below. Fonts a post's author picked stay as they are.	Mengganti font bawaan Tumblr dengan font ponselmu atau file font yang kamu pilih di bawah. Font yang dipilih penulis postingan tetap seperti aslinya.
 Choose a font file	Pilih file font

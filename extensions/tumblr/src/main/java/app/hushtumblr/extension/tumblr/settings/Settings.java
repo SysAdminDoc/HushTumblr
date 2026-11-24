@@ -163,6 +163,8 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushtumblr_line_between_posts", FALSE);
     /** Swaps Tumblr's own font as fonts load. Tumblr keeps what it loaded for as long as it runs. */
     public static final BooleanSetting APP_FONT = new BooleanSetting("hushtumblr_app_font", FALSE, true);
+    /** Text size (#23): the size itself is {@link TextSettings#TEXT_SIZE_PERCENT}. Read as each screen opens. */
+    public static final BooleanSetting TEXT_SIZE = new BooleanSetting("hushtumblr_text_size", FALSE, true);
 
     /**
      * Tumblr stops watching for screenshots and offering to save the post as an image

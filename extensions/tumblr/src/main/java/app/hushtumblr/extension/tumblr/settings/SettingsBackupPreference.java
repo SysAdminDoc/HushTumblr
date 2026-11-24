@@ -465,6 +465,7 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
     static String textName(StringSetting setting) {
         if (setting == TextSettings.ALLOWED_WORDS) return L10n.t("Allowed words");
         if (setting == TextSettings.LONG_POST_SIZE) return L10n.t("Collapsed post length");
+        if (setting == TextSettings.TEXT_SIZE_PERCENT) return L10n.t("Text size percentage");
         return setting == TextSettings.TAB_ORDER ? L10n.t("Tab order") : L10n.t("Words to hide");
     }
 
@@ -474,6 +475,7 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
      */
     static String textShown(StringSetting setting, String value) {
         if (setting == TextSettings.LONG_POST_SIZE) return HushTumblrPreferenceFragment.longPostSizeShown(value);
+        if (setting == TextSettings.TEXT_SIZE_PERCENT) return HushTumblrPreferenceFragment.textSizeShown(value);
         if (setting == TextSettings.TAB_ORDER) {
             if (BottomBarTabs.parse(value).isEmpty()) return L10n.t("Tumblr's order");
             return HushTumblrPreferenceFragment.tabsShown(value);
@@ -508,6 +510,7 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
             case "hushtumblr_hide_suggested_tags": return L10n.t("Hide suggested tags");
             case "hushtumblr_hide_watch_it_rows": return L10n.t("Hide Watch it rows");
             case "hushtumblr_hide_more_posts_like_this": return L10n.t("Hide More posts like this");
+            case "hushtumblr_text_size": return L10n.t("Text size");
             case "hushtumblr_hide_featured_posts": return L10n.t("Hide Featured posts");
             case "hushtumblr_hide_hashtags": return L10n.t("Hide hashtags");
             case "hushtumblr_hide_follow_button": return L10n.t("Hide the Follow button");
