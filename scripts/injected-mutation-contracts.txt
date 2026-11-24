@@ -176,7 +176,7 @@ mutation|imageLimit|imageLimit|Lapp/hushtumblr/extension/tumblr/ui/MoreImages;->
 # A related tag's fixed height goes through its hook, with the tag, on its way into the tag's layout
 # params, and the blog search box's tint through its hook, with the box and the text color, on its way
 # into setTint. Then the height's dimension, the tag row and the blog search screen.
-mutation|readableText|readableText|Lapp/hushtumblr/extension/tumblr/ui/ReadableText;->relatedTagHeight(Landroid/view/View;I)I|Lapp/hushtumblr/extension/tumblr/ui/ReadableText;->blogSearchBox(Landroid/graphics/drawable/Drawable;II)I|Lcom/tumblr/R$dimen;->dashboard_card_carousel_tag_height|Lcom/tumblr/ui/widget/TagCarousel;|Lcom/tumblr/ui/activity/GraywaterBlogSearchActivity;
+mutation|readableText|readableText|Lapp/hushtumblr/extension/tumblr/ui/ReadableText;->relatedTagHeight(Landroid/view/View;I)I|Lapp/hushtumblr/extension/tumblr/ui/ReadableText;->blogSearchBox(Landroid/graphics/drawable/Drawable;II)I|Lcom/tumblr/R$dimen;->dashboard_card_carousel_tag_height|Lcom/tumblr/ui/widget/TagCarousel;|Lcom/tumblr/ui/activity/GraywaterBlogSearchActivity;|Lcom/tumblr/ui/widget/blogpages/search/InblogSearchTabbedFragment;
 # Explore's search bar and a blog's Follow item are each handed to their hook right after Tumblr's own
 # code keeps them. Then the two ids and the blog header whose menu builder keeps the item.
 mutation|darkControls|darkControls|Lapp/hushtumblr/extension/tumblr/ui/DarkControls;->exploreSearchBar(Landroid/view/View;)V|Lapp/hushtumblr/extension/tumblr/ui/DarkControls;->blogFollowButton(Landroid/view/MenuItem;)V|Lcom/tumblr/R$id;->search_bar|Lcom/tumblr/R$id;->action_follow|Lcom/tumblr/ui/fragment/BlogHeaderFragment;

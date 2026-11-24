@@ -308,7 +308,7 @@ public class DexDiff {
             Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("blazeButtons", 8), Map.entry("accountIdentity", 10),
             Map.entry("matureContent", 12), Map.entry("rootPostMutes", 9), Map.entry("dashboardPage", 9), Map.entry("mutualMarkers", 13),
             Map.entry("reblogSources", 5), Map.entry("imageLimit", 3), Map.entry("textScale", 4),
-            Map.entry("readableText", 5), Map.entry("darkControls", 5));
+            Map.entry("readableText", 6), Map.entry("darkControls", 5));
 
     /**
      * A start-call, next-call, sole-call or once-call line: its method reference, the next-call's
@@ -5739,8 +5739,8 @@ public class DexDiff {
 
         /**
          * A related tag's fixed height goes through the extension, with the tag, on its way into the
-         * tag's layout params, and the blog search box's tint goes through it, with the box's
-         * drawable and the text color, on its way into setTint.
+         * tag's layout params, and on both blog search screens the box's tint goes through it, with
+         * the box's drawable and the text color, on its way into setTint.
          */
         void readableText(Contract c) {
             String tagHook = c.strings.get(0), boxHook = c.strings.get(1), dimen = c.strings.get(2);
@@ -5773,34 +5773,42 @@ public class DexDiff {
                 if (!shaped) { fail(tagHook + ": the related tag height doesn't go straight into the tag's layout params in " + builder); found = false; }
                 else found &= hookAt(builder, actual(builder), load + 3, tagHook, List.of(tag, height), height, List.of(tag, height));
             }
-            ClassDef screen = clean.classes.get(c.strings.get(4));
+            found &= searchBoxHook(c.strings.get(4), boxHook, "the blog search results screen");
+            found &= searchBoxHook(c.strings.get(5), boxHook, "the blog search typing screen");
+            capability(c.callee, found);
+        }
+
+        /**
+         * One blog search screen's color method, the one in its class that sets the hint color and
+         * tints a drawable: the tint is the text color at 20%, and it goes through the hook with the
+         * box's drawable and the text color on its way into setTint.
+         */
+        boolean searchBoxHook(String type, String boxHook, String what) {
+            ClassDef screen = clean.classes.get(type);
             List<Method> colors = new ArrayList<>();
             if (screen != null) for (Method m : screen.getMethods()) if (m.getImplementation() != null && !isStatic(m) && descriptor(m).equals("(I)V")
                     && instructions(m).stream().anyMatch(i -> isCall(i, "Landroid/graphics/drawable/Drawable;", "setTint", "(I)V"))
                     && instructions(m).stream().anyMatch(i -> isCall(i, "Landroid/widget/TextView;", "setHintTextColor", "(I)V"))) colors.add(m);
-            Method color = unique(colors, "the blog search screen's color method");
-            if (color == null) found = false;
-            else {
-                List<Instruction> was = instructions(color);
-                List<Integer> tints = new ArrayList<>();
-                for (int k = 0; k < was.size(); k++) if (isCall(was.get(k), "Landroid/graphics/drawable/Drawable;", "setTint", "(I)V")) tints.add(k);
-                int set = tints.size() == 1 ? tints.get(0) : -1;
-                Instruction mutated = get(was, set - 4), strength = get(was, set - 3), fade = get(was, set - 2), faded = get(was, set - 1);
-                MethodReference fader = called(fade);
-                int box = mutated != null && mutated.getOpcode() == Opcode.MOVE_RESULT_OBJECT ? firstRegister(mutated) : -1;
-                int tint = faded != null && faded.getOpcode() == Opcode.MOVE_RESULT ? firstRegister(faded) : -1;
-                List<Integer> fadeArgs = fader == null ? List.of() : arguments(fade);
-                int text = fadeArgs.size() == 2 ? fadeArgs.get(0) : -1;
-                boolean shaped = set >= 5 && box >= 0 && tint >= 0 && text >= 0
-                        && isCall(get(was, set - 5), "Landroid/graphics/drawable/Drawable;", "mutate", "()Landroid/graphics/drawable/Drawable;")
-                        && strength.getOpcode() == Opcode.CONST && strength instanceof NarrowLiteralInstruction n && n.getNarrowLiteral() == 0x3e4ccccd
-                        && fade.getOpcode() == Opcode.INVOKE_STATIC && descriptor(fader).equals("(IF)I") && fadeArgs.get(1) == firstRegister(strength)
-                        && arguments(was.get(set)).equals(List.of(box, tint)) && box != tint && box != text && tint != text
-                        && box < 16 && tint < 16 && text < 16;
-                if (!shaped) { fail(boxHook + ": the blog search box's tint isn't the text color at 20% in " + color); found = false; }
-                else found &= hookAt(color, actual(color), set, boxHook, List.of(box, text, tint), tint, List.of(box, text, tint));
-            }
-            capability(c.callee, found);
+            Method color = unique(colors, what + "'s color method");
+            if (color == null) return false;
+            List<Instruction> was = instructions(color);
+            List<Integer> tints = new ArrayList<>();
+            for (int k = 0; k < was.size(); k++) if (isCall(was.get(k), "Landroid/graphics/drawable/Drawable;", "setTint", "(I)V")) tints.add(k);
+            int set = tints.size() == 1 ? tints.get(0) : -1;
+            Instruction mutated = get(was, set - 4), strength = get(was, set - 3), fade = get(was, set - 2), faded = get(was, set - 1);
+            MethodReference fader = called(fade);
+            int box = mutated != null && mutated.getOpcode() == Opcode.MOVE_RESULT_OBJECT ? firstRegister(mutated) : -1;
+            int tint = faded != null && faded.getOpcode() == Opcode.MOVE_RESULT ? firstRegister(faded) : -1;
+            List<Integer> fadeArgs = fader == null ? List.of() : arguments(fade);
+            int text = fadeArgs.size() == 2 ? fadeArgs.get(0) : -1;
+            boolean shaped = set >= 5 && box >= 0 && tint >= 0 && text >= 0
+                    && isCall(get(was, set - 5), "Landroid/graphics/drawable/Drawable;", "mutate", "()Landroid/graphics/drawable/Drawable;")
+                    && strength.getOpcode() == Opcode.CONST && strength instanceof NarrowLiteralInstruction n && n.getNarrowLiteral() == 0x3e4ccccd
+                    && fade.getOpcode() == Opcode.INVOKE_STATIC && descriptor(fader).equals("(IF)I") && fadeArgs.get(1) == firstRegister(strength)
+                    && arguments(was.get(set)).equals(List.of(box, tint)) && box != tint && box != text && tint != text
+                    && box < 16 && tint < 16 && text < 16;
+            if (!shaped) { fail(boxHook + ": " + what + "'s box tint isn't the text color at 20% in " + color); return false; }
+            return hookAt(color, actual(color), set, boxHook, List.of(box, text, tint), tint, List.of(box, text, tint));
         }
 
         /**

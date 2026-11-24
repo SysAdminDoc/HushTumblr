@@ -31,15 +31,15 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 
 /**
- * #24: a related tag's fixed height and the blog search box's tint each go through the extension on
- * their way to where Tumblr stores them, and nothing else moves.
+ * #24: a related tag's fixed height and the box's tint on both blog search screens each go through
+ * the extension on their way to where Tumblr stores them, and nothing else moves.
  */
 @Category(FixtureTests::class)
 class FixHardToReadTextFixtureTest {
     private val flags = listOf("fixHardToReadText", "readableText")
 
     private fun context(build: java.io.File) =
-        PatchContexts.of(ExtensionDex.classes() + FixtureDex.classes(build, setOf(TAG_CAROUSEL, BLOG_SEARCH)).values)
+        PatchContexts.of(ExtensionDex.classes() + FixtureDex.classes(build, setOf(TAG_CAROUSEL, BLOG_SEARCH, BLOG_SEARCH_TYPING)).values)
 
     /** The method's own steps, leaving out the ones at [added]. */
     private fun opcodes(method: Method, added: Set<Int> = emptySet()): List<Opcode> =
@@ -56,15 +56,16 @@ class FixHardToReadTextFixtureTest {
     private fun Instruction.takesTheAnswer(register: Int): Boolean =
         opcode == Opcode.MOVE_RESULT && (this as OneRegisterInstruction).registerA == register
 
-    @Test fun `a tag's height and the search box's tint go through the extension, and nothing else moves`() {
+    @Test fun `a tag's height and both search boxes' tints go through the extension, and nothing else moves`() {
         for (build in Fixtures.declaredBuilds()) {
             val context = context(build)
             val tag = context.resolveRelatedTagHeight()
-            val box = context.resolveBlogSearchBox()
+            val boxes = context.resolveBlogSearchBoxes()
             assertEquals(TAG_CAROUSEL, tag.method.definingClass)
-            assertEquals(BLOG_SEARCH, box.method.definingClass)
+            assertEquals("${build.name}: the typing screen and the results screen",
+                listOf(BLOG_SEARCH_TYPING, BLOG_SEARCH), boxes.map { it.method.definingClass })
             val tagSteps = opcodes(tag.method)
-            val boxSteps = opcodes(box.method)
+            val boxSteps = boxes.map { opcodes(it.method) }
 
             fixHardToReadTextPatch.execute(context)
 
@@ -82,16 +83,19 @@ class FixHardToReadTextFixtureTest {
             assertEquals("${build.name}: the tag row keeps every step of its own",
                 tagSteps, opcodes(tag.method, setOf(tag.at, tag.at + 1)))
 
-            val tinted = box.method.instructionList()
-            assertTrue("${build.name}: the hook takes the box, the text color and Tumblr's tint",
-                tinted[box.at].hands(BLOG_SEARCH_BOX_HOOK, listOf(box.box, box.text, box.tint)))
-            assertTrue(tinted[box.at + 1].takesTheAnswer(box.tint))
-            val set = tinted[box.at + 2]
-            assertEquals("${build.name}: the answer is the tint the box gets", "setTint", set.methodRef()?.name)
-            assertEquals(box.box, (set as FiveRegisterInstruction).registerC)
-            assertEquals(box.tint, set.registerD)
-            assertEquals("${build.name}: the search screen keeps every step of its own",
-                boxSteps, opcodes(box.method, setOf(box.at, box.at + 1)))
+            for ((box, steps) in boxes.zip(boxSteps)) {
+                val screen = "${build.name} ${box.method.definingClass}"
+                val tinted = box.method.instructionList()
+                assertTrue("$screen: the hook takes the box, the text color and Tumblr's tint",
+                    tinted[box.at].hands(BLOG_SEARCH_BOX_HOOK, listOf(box.box, box.text, box.tint)))
+                assertTrue(tinted[box.at + 1].takesTheAnswer(box.tint))
+                val set = tinted[box.at + 2]
+                assertEquals("$screen: the answer is the tint the box gets", "setTint", set.methodRef()?.name)
+                assertEquals(box.box, (set as FiveRegisterInstruction).registerC)
+                assertEquals(box.tint, set.registerD)
+                assertEquals("$screen: the search screen keeps every step of its own",
+                    steps, opcodes(box.method, setOf(box.at, box.at + 1)))
+            }
             assertFlags(context, 1)
         }
     }
@@ -100,16 +104,19 @@ class FixHardToReadTextFixtureTest {
         for (build in Fixtures.declaredBuilds()) {
             val context = context(build)
             val tag = context.resolveRelatedTagHeight()
-            val box = context.resolveBlogSearchBox()
+            val boxes = context.resolveBlogSearchBoxes()
+            // The last one looked at, so everything before it has already passed its checks.
+            val box = boxes.last()
             val strength = box.method.instructionList()[box.at - 3]
             assertEquals(SEARCH_BOX_TINT, (strength as NarrowLiteralInstruction).narrowLiteral)
             // Half strength where Tumblr's 20% was: the box is no longer the one the fix was made for.
             box.method.replaceInstruction(box.at - 3, "const v${(strength as OneRegisterInstruction).registerA}, 0x3f000000")
             val tagSteps = opcodes(tag.method)
-            val boxSteps = opcodes(box.method)
+            val boxSteps = boxes.map { opcodes(it.method) }
             assertThrows(PatchException::class.java) { fixHardToReadTextPatch.execute(context) }
             assertEquals("${build.name}: the tag row was edited before the refusal", tagSteps, opcodes(tag.method))
-            assertEquals(boxSteps, opcodes(box.method))
+            assertEquals("${build.name}: a search screen was edited before the refusal",
+                boxSteps, boxes.map { opcodes(it.method) })
             assertFlags(context, 0)
         }
     }

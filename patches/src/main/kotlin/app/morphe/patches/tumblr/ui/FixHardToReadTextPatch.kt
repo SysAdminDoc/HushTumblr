@@ -49,8 +49,14 @@ internal const val TUMBLR_DIMENS = "Lcom/tumblr/R\$dimen;"
 /** The fixed height the row gives each tag, 23.5 dp. */
 internal const val RELATED_TAG_HEIGHT = "dashboard_card_carousel_tag_height"
 
-/** The search screen inside a blog. An activity in the manifest, so its name is kept. */
+/** The results of a search inside a blog. An activity in the manifest, so its name is kept. */
 internal const val BLOG_SEARCH = "Lcom/tumblr/ui/activity/GraywaterBlogSearchActivity;"
+
+/**
+ * The screen that search is typed on, the one fragment `InblogSearchActivity` shows. It colors its
+ * own box, with the same steps the results screen uses.
+ */
+internal const val BLOG_SEARCH_TYPING = "Lcom/tumblr/ui/widget/blogpages/search/InblogSearchTabbedFragment;"
 
 /** 0.2 as a float, the strength of the tint Tumblr gives the search box. */
 internal const val SEARCH_BOX_TINT = 0x3e4ccccd
@@ -65,7 +71,7 @@ private const val MUTATE = "Landroid/graphics/drawable/Drawable;->mutate()Landro
 internal class RelatedTagSite(val method: MutableMethod, val at: Int, val tag: Int, val height: Int)
 
 /**
- * The blog search screen's color method: the hook goes at [at], before `setTint`, and reads the box's
+ * A blog search screen's color method: the hook goes at [at], before `setTint`, and reads the box's
  * background in [box], the text color in [text] and Tumblr's tint in [tint].
  */
 internal class SearchBoxSite(val method: MutableMethod, val at: Int, val box: Int, val text: Int, val tint: Int)
@@ -79,10 +85,12 @@ internal class SearchBoxSite(val method: MutableMethod, val at: Int, val box: In
  * `ReadableText.relatedTagHeight` on its way into the params, which answers wrap content and keeps
  * Tumblr's height as the least.
  *
- * [BLOG_SEARCH] is themed by the blog: with a header image, its top bar is that image blurred and
- * the text color is always white. The box typed in is a 20% white shape under a 20% tint of the
- * text color, so over a bright header white text has nothing behind it. The tint goes through
- * `ReadableText.blogSearchBox` on its way into `setTint`, with the box's drawable and the text color.
+ * A search inside a blog is two screens, [BLOG_SEARCH_TYPING] where it's typed and [BLOG_SEARCH]
+ * for its results, and both are themed by the blog: with a header image, the top bar is that image
+ * blurred and the text color is always white. The box typed in is a 20% white shape under a 20%
+ * tint of the text color, so over a bright header white text has nothing behind it. On each screen
+ * the tint goes through `ReadableText.blogSearchBox` on its way into `setTint`, with the box's
+ * drawable and the text color.
  */
 @Suppress("unused")
 val fixHardToReadTextPatch = bytecodePatch(
@@ -99,15 +107,15 @@ val fixHardToReadTextPatch = bytecodePatch(
     execute {
         requireStatusMethod("fixHardToReadText")
         requireStatusMethod("readableText")
-        // Both found and checked before any edit, so a refusal leaves the APK as it was.
+        // All three found and checked before any edit, so a refusal leaves the APK as it was.
         val tag = resolveRelatedTagHeight()
-        val box = resolveBlogSearchBox()
+        val boxes = resolveBlogSearchBoxes()
         tag.method.addInstructions(
             tag.at,
             "invoke-static { v${tag.tag}, v${tag.height} }, $RELATED_TAG_HEIGHT_HOOK\n" +
                 "move-result v${tag.height}",
         )
-        box.method.addInstructions(
+        for (box in boxes) box.method.addInstructions(
             box.at,
             "invoke-static { v${box.box}, v${box.text}, v${box.tint} }, $BLOG_SEARCH_BOX_HOOK\n" +
                 "move-result v${box.tint}",
@@ -178,24 +186,34 @@ internal fun BytecodePatchContext.resolveRelatedTagHeight(): RelatedTagSite {
 }
 
 /**
- * Where the blog search screen tints its box, throwing when this build has none, several, or one of
- * another shape.
+ * Where the two blog search screens tint their boxes, the typing screen first, throwing when either
+ * has none, several, or one of another shape.
+ */
+internal fun BytecodePatchContext.resolveBlogSearchBoxes(): List<SearchBoxSite> {
+    requireExtensionHook(PATCH, BLOG_SEARCH_BOX_HOOK)
+    return listOf(
+        resolveSearchBox(BLOG_SEARCH_TYPING, "the blog search typing screen"),
+        resolveSearchBox(BLOG_SEARCH, "the blog search results screen"),
+    )
+}
+
+/**
+ * Where the screen in [owner] tints its box.
  *
  * The screen's color method takes the text color, sets the hint color, and tints the box's own
  * background: `mutate()`, the 0.2 float, a static call that fades the text color by it, and
  * `setTint` with the answer.
  */
-internal fun BytecodePatchContext.resolveBlogSearchBox(): SearchBoxSite {
-    requireExtensionHook(PATCH, BLOG_SEARCH_BOX_HOOK)
-    val colors = (classDefByOrNull(BLOG_SEARCH)?.methods ?: emptyList<Method>())
+private fun BytecodePatchContext.resolveSearchBox(owner: String, screen: String): SearchBoxSite {
+    val colors = (classDefByOrNull(owner)?.methods ?: emptyList<Method>())
         .filter { method ->
             !method.isStatic() && method.hasShape(listOf("I"), "V") &&
                 method.instructionList().let { steps -> steps.any { it.calls(SET_TINT) } && steps.any { it.calls(SET_HINT_COLOR) } }
         }
-        .only(PATCH, "the blog search screen's color method")
+        .only(PATCH, "$screen's color method")
     val steps = colors.instructionList()
-    val set = steps.indices.filter { steps[it].calls(SET_TINT) }.only(PATCH, "the blog search box's tint")
-    requireShape(PATCH, set >= 5, "the blog search box is tinted at the start of its method")
+    val set = steps.indices.filter { steps[it].calls(SET_TINT) }.only(PATCH, "$screen's box tint")
+    requireShape(PATCH, set >= 5, "$screen tints its box at the start of its method")
     val mutate = steps[set - 5]
     val mutated = steps[set - 4]
     val strength = steps[set - 3]
@@ -207,7 +225,7 @@ internal fun BytecodePatchContext.resolveBlogSearchBox(): SearchBoxSite {
             strength.opcode == Opcode.CONST && (strength as NarrowLiteralInstruction).narrowLiteral == SEARCH_BOX_TINT &&
             fade.opcode == Opcode.INVOKE_STATIC && fade.methodRef()?.hasShape(listOf("I", "F"), "I") == true &&
             faded.opcode == Opcode.MOVE_RESULT,
-        "the blog search box's tint is no longer the text color at 20%",
+        "$screen's box tint is no longer the text color at 20%",
     )
     val box = (mutated as OneRegisterInstruction).registerA
     val tint = (faded as OneRegisterInstruction).registerA
@@ -217,11 +235,11 @@ internal fun BytecodePatchContext.resolveBlogSearchBox(): SearchBoxSite {
         PATCH,
         tinted.registerCount == 2 && tinted.registerC == box && tinted.registerD == tint &&
             fade.registerCount == 2 && fade.registerD == (strength as OneRegisterInstruction).registerA,
-        "the blog search box's tint goes to another drawable",
+        "$screen's box tint goes to another drawable",
     )
-    requireShape(PATCH, setOf(box, tint, text).size == 3, "the blog search box, its tint and the text color share a register")
-    requireShape(PATCH, box < 16 && tint < 16 && text < 16, "the blog search box's tint sits past what the added call can name")
+    requireShape(PATCH, setOf(box, tint, text).size == 3, "$screen's box, its tint and the text color share a register")
+    requireShape(PATCH, box < 16 && tint < 16 && text < 16, "$screen's box tint sits past what the added call can name")
     val method = mutableOf(colors)
-    for (at in set - 4..set) method.requireNoJumpTo(at, "the middle of the blog search box's tint")
+    for (at in set - 4..set) method.requireNoJumpTo(at, "the middle of $screen's box tint")
     return SearchBoxSite(method, set, box, text, tint)
 }
