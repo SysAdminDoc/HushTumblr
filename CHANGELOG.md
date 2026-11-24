@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* New **Fix hard-to-read text** switch on the Interface page, on by default. With bigger text, the related tags under a trending topic on Explore were cut in half, because Tumblr gives them a fixed height. They grow to fit now. Searching inside a blog with a bright header left what you typed nearly invisible, so the search box gets a shade behind it.
+* Three new switches on the Interface page, all off by default. **Dark search bar** turns the white search bar on Explore dark, and **Hide the Search Tumblr label** takes the text off it and leaves the icon. Both show after a restart. **Dark Follow button on blogs** turns the white Follow button at the top of a blog dark the next time you open one.
 * New **Hide followed blogs in For you** switch on the Feed page, off by default. For you mixes posts from blogs you already follow in with the ones Tumblr picks for you. With the switch on, those posts stay out of For you. Following still shows them, and so does the rest of Tumblr.
 * New **More images per post** switch on the Interface page, off by default. The app stops a post at 10 images while Tumblr's website takes 30. With it on, the editor takes up to 30, and so does sharing a batch of images into Tumblr from your gallery.
 * New **Text size** switch on the Interface page, off by default. It makes Tumblr's text bigger or smaller than your phone's font size, from 85% to 130%. The Size row under it picks how big, and a new size takes effect after a restart.

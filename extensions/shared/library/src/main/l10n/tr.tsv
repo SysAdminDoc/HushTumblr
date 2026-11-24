@@ -265,6 +265,15 @@ Couldn't save the size. Try again.	Boyut kaydedilemedi. Tekrar dene.
 # context: the More images per post switch on the Interface page (the post editor's image limit), and the name the settings backup preview gives the Text size row's percentage.
 More images per post	Gönderi başına daha fazla görsel
 Lets you add up to 30 images to a post, as Tumblr's website does, instead of 10.	Tumblr'ın web sitesinde olduğu gibi bir gönderiye 10 yerine en fazla 30 görsel eklemeni sağlar.
+Fix hard-to-read text	Okunması zor metni düzelt
+Fits the related tags under a trending topic at bigger text sizes, where Tumblr cuts them in half, and shades the box you type in when you search a blog so the words show over a bright header.	Trend bir konunun altındaki ilgili etiketleri, Tumblr'ın yarıdan kestiği büyük metin boyutlarında sığdırır ve bir blogda arama yaparken yazdığın kutuya zemin ekler, böylece yazı açık renkli bir başlığın üzerinde de okunur.
+Dark search bar and Follow button	Koyu arama çubuğu ve Takip et düğmesi
+Dark search bar	Koyu arama çubuğu
+Turns the white search bar on Explore dark.	Keşfet'teki beyaz arama çubuğunu koyu yapar.
+Hide the Search Tumblr label	Tumblr'da ara yazısını gizle
+Takes the Search Tumblr text off Explore's search bar and leaves the icon.	Keşfet'in arama çubuğundan Tumblr'da ara yazısını kaldırır ve simgeyi bırakır.
+Dark Follow button on blogs	Bloglarda koyu Takip et düğmesi
+Turns the white Follow button at the top of a blog dark.	Bir blogun üstündeki beyaz Takip et düğmesini koyu yapar.
 Text size percentage	Metin boyutu yüzdesi
 App font	Uygulama yazı tipi
 Replaces Tumblr's own font with your phone's font, or a font file you choose below. Fonts a post's author picked stay as they are.	Tumblr'ın kendi yazı tipini telefonunun yazı tipiyle veya aşağıdan seçtiğin bir yazı tipi dosyasıyla değiştirir. Gönderi yazarının seçtiği yazı tipleri olduğu gibi kalır.

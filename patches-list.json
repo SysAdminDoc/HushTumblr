@@ -133,6 +133,45 @@
       ]
     },
     {
+      "name": "Dark search bar and Follow button",
+      "description": "Adds switches that turn Explore's white search bar and the white Follow button at the top of a blog dark, and one that takes the Search Tumblr label off the bar. They start off. Turn them on in Tumblr settings > HushTumblr > Interface.",
+      "category": "Navigation",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch",
+        "HushTumblr settings"
+      ],
+      "compatiblePackages": {
+        "com.tumblr": [
+          "47.3.0.110"
+        ]
+      },
+      "compatibility": [
+        {
+          "name": "Tumblr",
+          "packageName": "com.tumblr",
+          "description": null,
+          "appIconColor": 6453,
+          "signatures": [
+            "39ac9c821ad2d605e4849f066e8aad3cca27d5e13eb03ad8755be234a2985dfd"
+          ],
+          "targets": [
+            {
+              "version": "47.3.0.110",
+              "experimental": false,
+              "versionCodes": {
+                "ARM64_V8A": 1470300110,
+                "ARMEABI_V7A": 1470300110,
+                "X86": 1470300110,
+                "X86_64": 1470300110
+              }
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
       "name": "Disable analytics",
       "description": "Turns off Firebase and Google's analytics collection, and Tumblr's own tracking and ad measurement once it restarts. LiveRamp's identity tracker doesn't start when Tumblr launches, and Crashlytics crash reports stay off while the switch is on. The Firebase and Google analytics part stays until you patch again without it. On by default. Turn it off in Tumblr settings > HushTumblr > Privacy.",
       "category": "Privacy",
@@ -253,6 +292,45 @@
     {
       "name": "Fit full-screen videos",
       "description": "Shows tall videos whole in the full-screen player, instead of filling the screen's height and cutting off the sides. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface.",
+      "category": "Interface",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch",
+        "HushTumblr settings"
+      ],
+      "compatiblePackages": {
+        "com.tumblr": [
+          "47.3.0.110"
+        ]
+      },
+      "compatibility": [
+        {
+          "name": "Tumblr",
+          "packageName": "com.tumblr",
+          "description": null,
+          "appIconColor": 6453,
+          "signatures": [
+            "39ac9c821ad2d605e4849f066e8aad3cca27d5e13eb03ad8755be234a2985dfd"
+          ],
+          "targets": [
+            {
+              "version": "47.3.0.110",
+              "experimental": false,
+              "versionCodes": {
+                "ARM64_V8A": 1470300110,
+                "ARMEABI_V7A": 1470300110,
+                "X86": 1470300110,
+                "X86_64": 1470300110
+              }
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Fix hard-to-read text",
+      "description": "Fits the related tags under a trending topic at bigger text sizes, where Tumblr cuts them in half, and shades the box you type in when you search a blog so the words show over a bright header. On by default. Turn it off in Tumblr settings > HushTumblr > Interface.",
       "category": "Interface",
       "use": true,
       "dependencies": [

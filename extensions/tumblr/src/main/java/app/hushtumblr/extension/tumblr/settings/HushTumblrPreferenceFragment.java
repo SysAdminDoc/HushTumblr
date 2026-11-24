@@ -866,6 +866,22 @@ public final class HushTumblrPreferenceFragment extends AbstractPreferenceFragme
                     L10n.t("More images per post"),
                     L10n.t("Lets you add up to 30 images to a post, as Tumblr's website does, instead of 10."),
                     SettingsIcons.INTERFACE);
+            patchToggle(ui, context, build, PatchFamily.FIX_HARD_TO_READ_TEXT, Settings.FIX_HARD_TO_READ_TEXT,
+                    L10n.t("Fix hard-to-read text"),
+                    L10n.t("Fits the related tags under a trending topic at bigger text sizes, where Tumblr cuts them in half, and shades the box you type in when you search a blog so the words show over a bright header."),
+                    SettingsIcons.INTERFACE);
+            // Explore keeps its screen, so the two bar switches show after a restart. A blog reads its switch as it opens.
+            patchToggle(ui, context, build, PatchFamily.DARK_SEARCH_BAR_AND_FOLLOW, Settings.DARK_SEARCH_BAR,
+                    L10n.t("Dark search bar"), L10n.t("Turns the white search bar on Explore dark."),
+                    SettingsIcons.INTERFACE);
+            patchToggle(ui, context, build, PatchFamily.DARK_SEARCH_BAR_AND_FOLLOW, Settings.HIDE_SEARCH_BAR_LABEL,
+                    L10n.t("Hide the Search Tumblr label"),
+                    L10n.t("Takes the Search Tumblr text off Explore's search bar and leaves the icon."),
+                    SettingsIcons.INTERFACE);
+            patchToggle(ui, context, build, PatchFamily.DARK_SEARCH_BAR_AND_FOLLOW, Settings.DARK_BLOG_FOLLOW_BUTTON,
+                    L10n.t("Dark Follow button on blogs"),
+                    L10n.t("Turns the white Follow button at the top of a blog dark."),
+                    SettingsIcons.INTERFACE);
             // Read when a screen's theme is made (DarkBackground), so screens already open keep their colors.
             patchToggle(ui, context, build, PatchFamily.DARK_BACKGROUND, Settings.DARK_BACKGROUND,
                     L10n.t("Dark background color"), L10n.t("Makes newly opened Dark Mode screens black, or the dark "

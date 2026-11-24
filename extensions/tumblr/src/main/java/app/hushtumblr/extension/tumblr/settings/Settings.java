@@ -167,6 +167,13 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting TEXT_SIZE = new BooleanSetting("hushtumblr_text_size", FALSE, true);
     /** More images per post (#21): Tumblr builds the editor's image limit once a process. */
     public static final BooleanSetting MORE_IMAGES_PER_POST = new BooleanSetting("hushtumblr_more_images_per_post", FALSE, true);
+    /** Fix hard-to-read text (#24): on to start. Read as each tag row and each blog search screen is built. */
+    public static final BooleanSetting FIX_HARD_TO_READ_TEXT = new BooleanSetting("hushtumblr_fix_hard_to_read_text", TRUE);
+    /** Dark search bar and Follow button (#24). Explore finds its bar once and keeps the screen, so both bar switches wait for a restart. */
+    public static final BooleanSetting DARK_SEARCH_BAR = new BooleanSetting("hushtumblr_dark_search_bar", FALSE, true);
+    public static final BooleanSetting HIDE_SEARCH_BAR_LABEL = new BooleanSetting("hushtumblr_hide_search_bar_label", FALSE, true);
+    /** Read each time a blog builds its top bar, so the next blog opened has it. */
+    public static final BooleanSetting DARK_BLOG_FOLLOW_BUTTON = new BooleanSetting("hushtumblr_dark_blog_follow_button", FALSE);
 
     /**
      * Tumblr stops watching for screenshots and offering to save the post as an image

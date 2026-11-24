@@ -307,7 +307,8 @@ public class DexDiff {
             Map.entry("noteCounts", 9), Map.entry("unreadDots", 2), Map.entry("nativeTimestamps", 6), Map.entry("bottomBarTabs", 3),
             Map.entry("darkBackground", 9), Map.entry("storeButtons", 5), Map.entry("blazeButtons", 8), Map.entry("accountIdentity", 10),
             Map.entry("matureContent", 12), Map.entry("rootPostMutes", 9), Map.entry("dashboardPage", 9), Map.entry("mutualMarkers", 13),
-            Map.entry("reblogSources", 5), Map.entry("imageLimit", 3), Map.entry("textScale", 4));
+            Map.entry("reblogSources", 5), Map.entry("imageLimit", 3), Map.entry("textScale", 4),
+            Map.entry("readableText", 5), Map.entry("darkControls", 5));
 
     /**
      * A start-call, next-call, sole-call or once-call line: its method reference, the next-call's
@@ -5686,6 +5687,123 @@ public class DexDiff {
         }
 
         /**
+         * The one read of the id [id] in [old], looked up through [owner]'s [name] and kept in a
+         * field, with only a null check and a cast of the same register between. The hook takes
+         * what was found right after it's kept.
+         */
+        boolean keptLookupHook(Method old, String id, String owner, String name, String shape, String hook) {
+            if (old == null) return false;
+            List<Instruction> was = instructions(old);
+            List<Integer> reads = new ArrayList<>();
+            for (int k = 0; k < was.size(); k++) if (was.get(k).getOpcode() == Opcode.SGET && names(field(was.get(k)), id)) reads.add(k);
+            int load = reads.size() == 1 ? reads.get(0) : -1;
+            Instruction result = load < 0 ? null : get(was, load + 2);
+            int found = result != null && result.getOpcode() == Opcode.MOVE_RESULT_OBJECT ? firstRegister(result) : -1;
+            int kept = -1;
+            if (found >= 0 && isCall(get(was, load + 1), owner, name, shape)) {
+                for (int k = load + 3; k < Math.min(load + 6, was.size()); k++) {
+                    Instruction step = was.get(k);
+                    if (step.getOpcode() == Opcode.IPUT_OBJECT) { if (firstRegister(step) == found) kept = k; break; }
+                    if (step.getOpcode() == Opcode.CHECK_CAST ? firstRegister(step) != found
+                            : !isCall(step, "Ljava/lang/Object;", "getClass", "()Ljava/lang/Class;")) break;
+                }
+            }
+            if (kept < 0 || found >= 16 || kept + 1 >= was.size()) {
+                fail(hook + ": " + id + " isn't looked up and kept in a field in " + old);
+                return false;
+            }
+            return hookAt(old, actual(old), kept + 1, hook, List.of(found), -1, List.of(found));
+        }
+
+        /**
+         * Explore's search bar, found by the one method in the app that reads its id, and a blog's
+         * Follow item, found by the blog header's menu builder: each is handed to the extension right
+         * after Tumblr's own code keeps it.
+         */
+        void darkControls(Contract c) {
+            String barHook = c.strings.get(0), followHook = c.strings.get(1), barId = c.strings.get(2), followId = c.strings.get(3);
+            List<Method> finders = new ArrayList<>();
+            for (Method m : tumblrMethods())
+                if (instructions(m).stream().anyMatch(i -> i.getOpcode() == Opcode.SGET && names(field(i), barId))) finders.add(m);
+            boolean found = keptLookupHook(unique(finders, "the code that finds Explore's search bar"), barId,
+                    "Landroid/view/View;", "findViewById", "(I)Landroid/view/View;", barHook);
+            ClassDef header = clean.classes.get(c.strings.get(4));
+            List<Method> builders = new ArrayList<>();
+            if (header != null) for (Method m : header.getMethods()) if (m.getImplementation() != null && !isStatic(m)
+                    && descriptor(m).equals("(Landroid/view/Menu;Landroid/view/MenuInflater;)V")
+                    && instructions(m).stream().anyMatch(i -> i.getOpcode() == Opcode.SGET && names(field(i), followId))) builders.add(m);
+            found &= keptLookupHook(unique(builders, "the blog top bar's menu builder"), followId,
+                    "Landroid/view/Menu;", "findItem", "(I)Landroid/view/MenuItem;", followHook);
+            capability(c.callee, found);
+        }
+
+        /**
+         * A related tag's fixed height goes through the extension, with the tag, on its way into the
+         * tag's layout params, and the blog search box's tint goes through it, with the box's
+         * drawable and the text color, on its way into setTint.
+         */
+        void readableText(Contract c) {
+            String tagHook = c.strings.get(0), boxHook = c.strings.get(1), dimen = c.strings.get(2);
+            boolean found = true;
+            ClassDef row = clean.classes.get(c.strings.get(3));
+            List<Method> builders = new ArrayList<>();
+            if (row != null) for (Method m : row.getMethods()) if (m.getImplementation() != null
+                    && instructions(m).stream().anyMatch(i -> i.getOpcode() == Opcode.SGET && names(field(i), dimen))) builders.add(m);
+            Method builder = unique(builders, "the related tags row's tag builder");
+            if (builder == null) found = false;
+            else {
+                List<Instruction> was = instructions(builder);
+                List<Integer> reads = new ArrayList<>();
+                for (int k = 0; k < was.size(); k++) if (was.get(k).getOpcode() == Opcode.SGET && names(field(was.get(k)), dimen)) reads.add(k);
+                int load = reads.size() == 1 ? reads.get(0) : -1;
+                Instruction pixels = load < 0 ? null : get(was, load + 1), answer = load < 0 ? null : get(was, load + 2);
+                Instruction store = load < 0 ? null : get(was, load + 3);
+                MethodReference toPixels = called(pixels);
+                FieldReference into = field(store);
+                int height = answer != null && answer.getOpcode() == Opcode.MOVE_RESULT ? firstRegister(answer) : -1;
+                int params = store instanceof TwoRegisterInstruction t ? t.getRegisterB() : -1;
+                int handed = firstIndex(was, load < 0 ? -1 : load + 4,
+                        i -> isCall(i, "Landroid/view/View;", "setLayoutParams", "(Landroid/view/ViewGroup$LayoutParams;)V"));
+                List<Integer> hand = handed < 0 ? List.of() : arguments(was.get(handed));
+                int tag = hand.size() == 2 && hand.get(1) == params ? hand.get(0) : -1;
+                boolean shaped = pixels != null && pixels.getOpcode() == Opcode.INVOKE_STATIC && toPixels != null
+                        && toPixels.getReturnType().equals("I") && height >= 0 && store != null && store.getOpcode() == Opcode.IPUT
+                        && firstRegister(store) == height && into != null && into.getName().equals("height") && into.getType().equals("I")
+                        && tag >= 0 && tag != height && tag != params && tag < 16 && height < 16 && !writtenBetween(was, load, handed, tag);
+                if (!shaped) { fail(tagHook + ": the related tag height doesn't go straight into the tag's layout params in " + builder); found = false; }
+                else found &= hookAt(builder, actual(builder), load + 3, tagHook, List.of(tag, height), height, List.of(tag, height));
+            }
+            ClassDef screen = clean.classes.get(c.strings.get(4));
+            List<Method> colors = new ArrayList<>();
+            if (screen != null) for (Method m : screen.getMethods()) if (m.getImplementation() != null && !isStatic(m) && descriptor(m).equals("(I)V")
+                    && instructions(m).stream().anyMatch(i -> isCall(i, "Landroid/graphics/drawable/Drawable;", "setTint", "(I)V"))
+                    && instructions(m).stream().anyMatch(i -> isCall(i, "Landroid/widget/TextView;", "setHintTextColor", "(I)V"))) colors.add(m);
+            Method color = unique(colors, "the blog search screen's color method");
+            if (color == null) found = false;
+            else {
+                List<Instruction> was = instructions(color);
+                List<Integer> tints = new ArrayList<>();
+                for (int k = 0; k < was.size(); k++) if (isCall(was.get(k), "Landroid/graphics/drawable/Drawable;", "setTint", "(I)V")) tints.add(k);
+                int set = tints.size() == 1 ? tints.get(0) : -1;
+                Instruction mutated = get(was, set - 4), strength = get(was, set - 3), fade = get(was, set - 2), faded = get(was, set - 1);
+                MethodReference fader = called(fade);
+                int box = mutated != null && mutated.getOpcode() == Opcode.MOVE_RESULT_OBJECT ? firstRegister(mutated) : -1;
+                int tint = faded != null && faded.getOpcode() == Opcode.MOVE_RESULT ? firstRegister(faded) : -1;
+                List<Integer> fadeArgs = fader == null ? List.of() : arguments(fade);
+                int text = fadeArgs.size() == 2 ? fadeArgs.get(0) : -1;
+                boolean shaped = set >= 5 && box >= 0 && tint >= 0 && text >= 0
+                        && isCall(get(was, set - 5), "Landroid/graphics/drawable/Drawable;", "mutate", "()Landroid/graphics/drawable/Drawable;")
+                        && strength.getOpcode() == Opcode.CONST && strength instanceof NarrowLiteralInstruction n && n.getNarrowLiteral() == 0x3e4ccccd
+                        && fade.getOpcode() == Opcode.INVOKE_STATIC && descriptor(fader).equals("(IF)I") && fadeArgs.get(1) == firstRegister(strength)
+                        && arguments(was.get(set)).equals(List.of(box, tint)) && box != tint && box != text && tint != text
+                        && box < 16 && tint < 16 && text < 16;
+                if (!shaped) { fail(boxHook + ": the blog search box's tint isn't the text color at 20% in " + color); found = false; }
+                else found &= hookAt(color, actual(color), set, boxHook, List.of(box, text, tint), tint, List.of(box, text, tint));
+            }
+            capability(c.callee, found);
+        }
+
+        /**
          * Text size changes none of Tumblr's code. The settings entry's activity callbacks, which the
          * settings rule holds to Tumblr's application, hand the application and each screen to the
          * extension. Each hook is in the patched APK, static and void, and the entry calls it.
@@ -7636,6 +7754,8 @@ public class DexDiff {
                     case "videoLinkPress": videoLinkPress(c); break;
                     case "fullScreenVideoFit": fullScreenVideoFit(c); break;
                     case "imageLimit": imageLimit(c); break;
+                    case "readableText": readableText(c); break;
+                    case "darkControls": darkControls(c); break;
                     case "textScale": textScale(c); break;
                     case "feedVideoTap": feedVideoTap(c); break;
                     case "imageSizes": imageSizes(c); break;

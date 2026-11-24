@@ -111,6 +111,8 @@ import app.hushtumblr.extension.tumblr.ui.AppFontForTests;
 import app.hushtumblr.extension.tumblr.ui.PostLines;
 import app.hushtumblr.extension.tumblr.ui.StoreButtons;
 import app.hushtumblr.extension.tumblr.ui.MoreImages;
+import app.hushtumblr.extension.tumblr.ui.DarkControls;
+import app.hushtumblr.extension.tumblr.ui.ReadableText;
 import app.hushtumblr.extension.tumblr.ui.TextSizeForTests;
 import app.hushtumblr.extension.tumblr.ui.VideoFit;
 import app.hushtumblr.extension.tumblr.ui.FeedVideoTap;
@@ -349,6 +351,15 @@ public class PausedHooksTest {
         probes.put(Settings.TEXT_SIZE, Collections.singletonList(TextSizeForTests::aStartScales));
         // The post editor's image limit is the website's 30.
         probes.put(Settings.MORE_IMAGES_PER_POST, Collections.singletonList(() -> MoreImages.imageBlocks(10) != 10));
+        // A related tag grows to fit its text, and a blog's search box gets a shade behind what's typed.
+        probes.put(Settings.FIX_HARD_TO_READ_TEXT, Arrays.asList(
+                () -> ReadableText.relatedTagHeight(new android.widget.TextView(context), 47) != 47,
+                () -> ReadableText.blogSearchBox(new android.graphics.drawable.GradientDrawable(), 0xFFFFFFFF, 0x33FFFFFF)
+                        != 0x33FFFFFF));
+        // Explore's search bar turns dark and loses its label, and a blog's Follow button turns dark.
+        probes.put(Settings.DARK_SEARCH_BAR, Collections.singletonList(() -> searchBar(context, false)));
+        probes.put(Settings.HIDE_SEARCH_BAR_LABEL, Collections.singletonList(() -> searchBar(context, true)));
+        probes.put(Settings.DARK_BLOG_FOLLOW_BUTTON, Collections.singletonList(() -> followButton(context)));
         // A tap on a stopped feed video starts it where it sits.
         probes.put(Settings.TAP_TO_PLAY_FEED_VIDEOS, Collections.singletonList(() -> FeedVideoTap.onTap(new HushFeedVideo() {
             @Override public int hushPlayInPlace() { return 1; }
@@ -586,6 +597,25 @@ public class PausedHooksTest {
             switched.addAll(family.switches);
         }
         return switched;
+    }
+
+    /** Explore's search bar as its layout builds it, handed to the hook: whether the pill was tinted, or its label taken off. */
+    private static boolean searchBar(Context context, boolean label) {
+        android.widget.LinearLayout bar = new android.widget.LinearLayout(context);
+        android.widget.TextView text = new android.widget.TextView(context);
+        bar.addView(new android.widget.ImageView(context));
+        bar.addView(text);
+        DarkControls.exploreSearchBar(bar);
+        return label ? text.getVisibility() == android.view.View.GONE : bar.getBackgroundTintList() != null;
+    }
+
+    /** A blog's Follow item with its button, handed to the hook: whether the button was tinted. */
+    private static boolean followButton(Context context) {
+        android.widget.Button button = new android.widget.Button(context);
+        android.view.MenuItem item = new org.robolectric.fakes.RoboMenuItem(context);
+        item.setActionView(button);
+        DarkControls.blogFollowButton(item);
+        return button.getBackgroundTintList() != null;
     }
 
     /** Adds a line to [wrong] for every probe that didn't answer [changes]. */

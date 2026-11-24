@@ -105,6 +105,8 @@ public class HushTumblrPreferenceFragmentTest {
         ROW_TITLES.put(PatchFamily.APP_FONT, "App font");
         ROW_TITLES.put(PatchFamily.TEXT_SIZE, "Text size");
         ROW_TITLES.put(PatchFamily.MORE_IMAGES_PER_POST, "More images per post");
+        ROW_TITLES.put(PatchFamily.FIX_HARD_TO_READ_TEXT, "Fix hard-to-read text");
+        ROW_TITLES.put(PatchFamily.DARK_SEARCH_BAR_AND_FOLLOW, "Dark search bar");
         ROW_TITLES.put(PatchFamily.TURN_OFF_SCREENSHOT_SHARING, "Turn off screenshot sharing");
         ROW_TITLES.put(PatchFamily.DISABLE_UPDATE_PROMPTS, "Disable update prompts");
         ROW_TITLES.put(PatchFamily.HIDE_SUGGESTED_BLOGS, "Hide suggested blogs");

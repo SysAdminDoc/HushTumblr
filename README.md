@@ -45,16 +45,18 @@ Long-press the Tumblr logo at the top of your dashboard. You can also tap **Hush
 
 ## Patches
 
-There are 63 patches.
+There are 65 patches.
 
 | Patch | What it does |
 |---|---|
 | `Collapse long posts` | Cuts long posts in your timelines to about a screen, with Tumblr's own Read more row under them. Tap it and the whole post opens right there in the timeline. A long entry in a reblog trail gets cut the same way, and its Read more opens the post. Asks keep Tumblr's layout. Starts off. Turn it on in Tumblr settings > HushTumblr > Posts, where the cut can be as short as about 5 lines or as long as two screens. |
 | `Dark background color` | Makes the background of Tumblr's Dark Mode palette black, which can save battery on OLED screens, or another dark color you pick when patching. On Android 12 or newer it can follow your wallpaper's colors instead. Blog and tag pages take it too, in place of their own colors. Other palettes stay as they are. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
+| `Dark search bar and Follow button` | Adds switches that turn Explore's white search bar and the white Follow button at the top of a blog dark, and one that takes the Search Tumblr label off the bar. They start off. Turn them on in Tumblr settings > HushTumblr > Interface. |
 | `Disable analytics` | Turns off Firebase and Google's analytics collection, and Tumblr's own tracking and ad measurement once it restarts. LiveRamp's identity tracker doesn't start when Tumblr launches, and Crashlytics crash reports stay off while the switch is on. The Firebase and Google analytics part stays until you patch again without it. On by default. Turn it off in Tumblr settings > HushTumblr > Privacy. |
 | `Disable update prompts` | Stops Tumblr asking Google Play for a newer version and showing Play's update prompt. Starts off. Turn it on in Tumblr settings > HushTumblr > Updates. |
 | `Filter activity notifications` | Hides selected likes, reblogs, replies, follows, mentions, asks and boops from the activity list as pages load. Each switch starts off. Choose them in Tumblr settings > HushTumblr > Notifications. |
 | `Fit full-screen videos` | Shows tall videos whole in the full-screen player, instead of filling the screen's height and cutting off the sides. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
+| `Fix hard-to-read text` | Fits the related tags under a trending topic at bigger text sizes, where Tumblr cuts them in half, and shades the box you type in when you search a blog so the words show over a bright header. On by default. Turn it off in Tumblr settings > HushTumblr > Interface. |
 | `Fix push notifications` | Lets the patched app sign up for push notifications. Firebase can refuse a patched Tumblr whose request doesn't name Tumblr's original signature, so this sends its fingerprint. On by default. Turn it off in Tumblr settings > HushTumblr > Notifications. |
 | `Hide Blaze prompts` | Hides the prompts to pay for Blaze, Tumblr's way to promote a post. That covers the Blaze buttons on your blog and dashboard, the nudge after you post, the Blaze banners, and the Blaze buttons on posts: the flame under your own posts, Blaze in a post's menu and the share sheet, and Promote in community posts. Starts off. Turn it on in Tumblr settings > HushTumblr > Interface. |
 | `Hide Featured posts` | Takes the staff-picked posts Tumblr shows under a Featured header out of your dashboard and other feeds. Starts off. Turn it on in Tumblr settings > HushTumblr > Feed. |

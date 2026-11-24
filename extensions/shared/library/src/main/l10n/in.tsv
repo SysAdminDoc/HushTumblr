@@ -265,6 +265,15 @@ Couldn't save the size. Try again.	Tidak dapat menyimpan ukuran. Coba lagi.
 # context: the More images per post switch on the Interface page (the post editor's image limit), and the name the settings backup preview gives the Text size row's percentage.
 More images per post	Lebih banyak gambar per postingan
 Lets you add up to 30 images to a post, as Tumblr's website does, instead of 10.	Memungkinkanmu menambahkan hingga 30 gambar ke postingan, seperti di situs web Tumblr, bukan 10.
+Fix hard-to-read text	Perbaiki teks yang sulit dibaca
+Fits the related tags under a trending topic at bigger text sizes, where Tumblr cuts them in half, and shades the box you type in when you search a blog so the words show over a bright header.	Menyesuaikan tag terkait di bawah topik yang sedang tren pada ukuran teks lebih besar, yang oleh Tumblr terpotong setengah, dan memberi latar pada kotak tempat kamu mengetik saat mencari di sebuah blog agar tulisannya terlihat di atas header yang terang.
+Dark search bar and Follow button	Bilah pencarian dan tombol Ikuti gelap
+Dark search bar	Bilah pencarian gelap
+Turns the white search bar on Explore dark.	Membuat bilah pencarian putih di Jelajahi menjadi gelap.
+Hide the Search Tumblr label	Sembunyikan label Cari Tumblr
+Takes the Search Tumblr text off Explore's search bar and leaves the icon.	Menghapus teks Cari Tumblr dari bilah pencarian Jelajahi dan menyisakan ikonnya.
+Dark Follow button on blogs	Tombol Ikuti gelap di blog
+Turns the white Follow button at the top of a blog dark.	Membuat tombol Ikuti putih di bagian atas blog menjadi gelap.
 Text size percentage	Persentase ukuran teks
 App font	Font aplikasi
 Replaces Tumblr's own font with your phone's font, or a font file you choose below. Fonts a post's author picked stay as they are.	Mengganti font bawaan Tumblr dengan font ponselmu atau file font yang kamu pilih di bawah. Font yang dipilih penulis postingan tetap seperti aslinya.

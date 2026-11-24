@@ -262,6 +262,15 @@ Couldn't save the size. Try again.	Não foi possível salvar o tamanho. Tente de
 # context: the More images per post switch on the Interface page (the post editor's image limit), and the name the settings backup preview gives the Text size row's percentage.
 More images per post	Mais imagens por post
 Lets you add up to 30 images to a post, as Tumblr's website does, instead of 10.	Permite adicionar até 30 imagens a um post, como no site do Tumblr, em vez de 10.
+Fix hard-to-read text	Corrigir texto difícil de ler
+Fits the related tags under a trending topic at bigger text sizes, where Tumblr cuts them in half, and shades the box you type in when you search a blog so the words show over a bright header.	Ajusta as tags relacionadas embaixo de um assunto em alta em tamanhos de texto maiores, onde o Tumblr corta pela metade, e põe um fundo na caixa em que você digita ao buscar em um blog para as palavras aparecerem sobre um cabeçalho claro.
+Dark search bar and Follow button	Barra de busca e botão Seguir escuros
+Dark search bar	Barra de busca escura
+Turns the white search bar on Explore dark.	Deixa escura a barra de busca branca do Explorar.
+Hide the Search Tumblr label	Ocultar o texto Buscar no Tumblr
+Takes the Search Tumblr text off Explore's search bar and leaves the icon.	Tira o texto Buscar no Tumblr da barra de busca do Explorar e deixa o ícone.
+Dark Follow button on blogs	Botão Seguir escuro nos blogs
+Turns the white Follow button at the top of a blog dark.	Deixa escuro o botão Seguir branco no topo de um blog.
 Text size percentage	Porcentagem do tamanho do texto
 App font	Fonte do app
 Replaces Tumblr's own font with your phone's font, or a font file you choose below. Fonts a post's author picked stay as they are.	Troca a fonte própria do Tumblr pela fonte do seu celular ou por um arquivo de fonte que você escolher abaixo. As fontes que o autor de um post escolheu continuam como estão.

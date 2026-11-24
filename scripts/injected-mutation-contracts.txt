@@ -90,6 +90,8 @@ family|darkBackground|Dark background color|themeBackground
 family|showMutualMarkers|Show mutual markers|primaryBlogMutuals
 family|hideMorePostsLikeThis|Hide More posts like this|morePostsLikeThis
 family|moreImagesPerPost|More images per post|imageLimit
+family|fixHardToReadText|Fix hard-to-read text|readableText
+family|darkSearchBarAndFollow|Dark search bar and Follow button|darkControls
 family|textSize|Text size|fontScale
 
 mutation|settings|settings|Lcom/tumblr/App;|Lcom/tumblr/ui/activity/JumpoffActivity;|Lapp/hushtumblr/extension/tumblr/settings/SettingsEntry;
@@ -171,6 +173,13 @@ mutation|feedVideoTap|feedVideoTap|Lapp/hushtumblr/extension/tumblr/ui/FeedVideo
 # gets the stock number back once it's stored, and the share screen's cap goes through the hook right
 # before it reads the images it was handed. Then the message only those two read, and the share screen.
 mutation|imageLimit|imageLimit|Lapp/hushtumblr/extension/tumblr/ui/MoreImages;->imageBlocks(I)I|Lcom/tumblr/R$array;->canvas_image_blocks_limit|Lcom/tumblr/creation/receiver/ShareActivity;
+# A related tag's fixed height goes through its hook, with the tag, on its way into the tag's layout
+# params, and the blog search box's tint through its hook, with the box and the text color, on its way
+# into setTint. Then the height's dimension, the tag row and the blog search screen.
+mutation|readableText|readableText|Lapp/hushtumblr/extension/tumblr/ui/ReadableText;->relatedTagHeight(Landroid/view/View;I)I|Lapp/hushtumblr/extension/tumblr/ui/ReadableText;->blogSearchBox(Landroid/graphics/drawable/Drawable;II)I|Lcom/tumblr/R$dimen;->dashboard_card_carousel_tag_height|Lcom/tumblr/ui/widget/TagCarousel;|Lcom/tumblr/ui/activity/GraywaterBlogSearchActivity;
+# Explore's search bar and a blog's Follow item are each handed to their hook right after Tumblr's own
+# code keeps them. Then the two ids and the blog header whose menu builder keeps the item.
+mutation|darkControls|darkControls|Lapp/hushtumblr/extension/tumblr/ui/DarkControls;->exploreSearchBar(Landroid/view/View;)V|Lapp/hushtumblr/extension/tumblr/ui/DarkControls;->blogFollowButton(Landroid/view/MenuItem;)V|Lcom/tumblr/R$id;->search_bar|Lcom/tumblr/R$id;->action_follow|Lcom/tumblr/ui/fragment/BlogHeaderFragment;
 # Text size changes none of Tumblr's code: its hooks, then the settings entry whose activity callbacks call them.
 mutation|fontScale|textScale|Lapp/hushtumblr/extension/tumblr/ui/TextSize;->application(Landroid/content/Context;)V|Lapp/hushtumblr/extension/tumblr/ui/TextSize;->activity(Landroid/app/Activity;)V|Lapp/hushtumblr/extension/tumblr/ui/TextSize;->destroyed(Landroid/app/Activity;)V|Lapp/hushtumblr/extension/tumblr/settings/SettingsEntry;
 # Each return of the image size chooser hands the image's sizes, its pick and the width asked for to the

@@ -512,6 +512,10 @@ public class SettingsBackupPreference extends Preference implements ImmediateAct
             case "hushtumblr_hide_more_posts_like_this": return L10n.t("Hide More posts like this");
             case "hushtumblr_text_size": return L10n.t("Text size");
             case "hushtumblr_more_images_per_post": return L10n.t("More images per post");
+            case "hushtumblr_fix_hard_to_read_text": return L10n.t("Fix hard-to-read text");
+            case "hushtumblr_dark_search_bar": return L10n.t("Dark search bar");
+            case "hushtumblr_hide_search_bar_label": return L10n.t("Hide the Search Tumblr label");
+            case "hushtumblr_dark_blog_follow_button": return L10n.t("Dark Follow button on blogs");
             case "hushtumblr_hide_featured_posts": return L10n.t("Hide Featured posts");
             case "hushtumblr_hide_hashtags": return L10n.t("Hide hashtags");
             case "hushtumblr_hide_follow_button": return L10n.t("Hide the Follow button");

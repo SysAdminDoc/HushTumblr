@@ -62,6 +62,8 @@ public final class FamilyNames {
     public static final String HIDE_MORE_POSTS_LIKE_THIS = "Hide More posts like this";
     public static final String TEXT_SIZE = "Text size";
     public static final String MORE_IMAGES_PER_POST = "More images per post";
+    public static final String FIX_HARD_TO_READ_TEXT = "Fix hard-to-read text";
+    public static final String DARK_SEARCH_BAR_AND_FOLLOW = "Dark search bar and Follow button";
     public static final String HIDE_FEATURED_POSTS = "Hide Featured posts";
     public static final String HIDE_HASHTAGS = "Hide hashtags";
     public static final String HIDE_FOLLOW_BUTTON = "Hide the Follow button";

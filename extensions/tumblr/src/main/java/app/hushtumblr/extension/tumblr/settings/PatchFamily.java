@@ -75,6 +75,9 @@ public enum PatchFamily {
     APP_FONT(FamilyNames.APP_FONT, "appFont", null, Settings.APP_FONT),
     TEXT_SIZE(FamilyNames.TEXT_SIZE, "textSize", null, Settings.TEXT_SIZE),
     MORE_IMAGES_PER_POST(FamilyNames.MORE_IMAGES_PER_POST, "moreImagesPerPost", null, Settings.MORE_IMAGES_PER_POST),
+    FIX_HARD_TO_READ_TEXT(FamilyNames.FIX_HARD_TO_READ_TEXT, "fixHardToReadText", null, Settings.FIX_HARD_TO_READ_TEXT),
+    DARK_SEARCH_BAR_AND_FOLLOW(FamilyNames.DARK_SEARCH_BAR_AND_FOLLOW, "darkSearchBarAndFollow", null,
+            Settings.DARK_SEARCH_BAR, Settings.HIDE_SEARCH_BAR_LABEL, Settings.DARK_BLOG_FOLLOW_BUTTON),
     TURN_OFF_SCREENSHOT_SHARING(FamilyNames.TURN_OFF_SCREENSHOT_SHARING, "turnOffScreenshotSharing", null,
             Settings.TURN_OFF_SCREENSHOT_SHARING),
     DISABLE_UPDATE_PROMPTS(FamilyNames.DISABLE_UPDATE_PROMPTS, "disableUpdatePrompts", null, Settings.DISABLE_UPDATE_PROMPTS),
@@ -198,7 +201,8 @@ public enum PatchFamily {
             HIDE_NOTIFICATIONS_TAB, HIDE_EXPLORE_TAB, DARK_BACKGROUND, HIDE_UNREAD_DOTS, HIDE_TUMBLRMART,
             TURN_OFF_SCREENSHOT_SHARING, SKIP_REVIEW_PROMPTS, HIDE_BLOG_NOTIFICATION_REMINDERS,
             HIDE_GIFT_MESSAGE_POPUPS, HIDE_BLAZE_PROMPTS, HIDE_COMMUNITIES_TAB, HIDE_TUMBLR_TV, LINE_BETWEEN_POSTS, APP_FONT,
-            FIT_FULL_SCREEN_VIDEOS, TAP_TO_PLAY_FEED_VIDEOS, HIDE_MORE_POSTS_LIKE_THIS, TEXT_SIZE, MORE_IMAGES_PER_POST));
+            FIT_FULL_SCREEN_VIDEOS, TAP_TO_PLAY_FEED_VIDEOS, HIDE_MORE_POSTS_LIKE_THIS, TEXT_SIZE, MORE_IMAGES_PER_POST,
+            FIX_HARD_TO_READ_TEXT, DARK_SEARCH_BAR_AND_FOLLOW));
 
     /** The families the Posts page holds. The page and its home row both read this. */
     static final Set<PatchFamily> POSTS_PAGE = Collections.unmodifiableSet(EnumSet.of(HIDE_SAVE_BUTTON,
@@ -248,6 +252,8 @@ public enum PatchFamily {
         FONT_CHOICE(APP_FONT, "fontChoice", "App font"),
         FONT_SCALE(TEXT_SIZE, "fontScale", "Text size"),
         IMAGE_LIMIT(MORE_IMAGES_PER_POST, "imageLimit", "More images per post"),
+        READABLE_TEXT(FIX_HARD_TO_READ_TEXT, "readableText", "Fix hard-to-read text"),
+        DARK_CONTROLS(DARK_SEARCH_BAR_AND_FOLLOW, "darkControls", "Dark search bar and Follow button"),
         SCREENSHOT_SHARING_FLAGS(TURN_OFF_SCREENSHOT_SHARING, "screenshotSharingFlags", "Turn off screenshot sharing"),
         UPDATE_PROMPT_FLAGS(DISABLE_UPDATE_PROMPTS, "updatePromptFlags", "Disable update prompts"),
         SUGGESTED_BLOG_CARDS(HIDE_SUGGESTED_BLOGS, "suggestedBlogCards", "Hide suggested blogs"),

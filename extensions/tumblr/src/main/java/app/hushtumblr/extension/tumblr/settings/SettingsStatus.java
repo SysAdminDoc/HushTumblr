@@ -109,6 +109,10 @@ public final class SettingsStatus {
     public static boolean fontScale() { return false; }
     public static boolean moreImagesPerPost() { return false; }
     public static boolean imageLimit() { return false; }
+    public static boolean fixHardToReadText() { return false; }
+    public static boolean readableText() { return false; }
+    public static boolean darkSearchBarAndFollow() { return false; }
+    public static boolean darkControls() { return false; }
     public static boolean morePostsLikeThis() { return false; }
     public static boolean hideFeaturedPosts() { return false; }
     public static boolean featuredPosts() { return false; }
